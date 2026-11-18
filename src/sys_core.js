@@ -6,19 +6,37 @@ function rng(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; 
 const GAMES = [];
 
 // ---------- audio condiviso ----------
-let actx = null, master = null, noiseBuf = null, muted = false;
-try { muted = localStorage.getItem('px_muted') === '1'; } catch (e) {}
+let actx = null, master = null, noiseBuf = null, muted = false, volLevel = 2;   // volume: 0 spento, 1 medio, 2 alto
+const VOLS = [0, 0.8, 1.6];
+try { const v = localStorage.getItem('px_vol'); volLevel = v !== null ? clamp(parseInt(v, 10) || 0, 0, 2) : (localStorage.getItem('px_muted') === '1' ? 0 : 2); } catch (e) {}
+muted = volLevel === 0;
+// su iPhone "playback" fa suonare i giochi anche con il tasto silenzioso; da spento non interrompe la musica
+function audioSession() { try { if (navigator.audioSession) navigator.audioSession.type = muted ? 'ambient' : 'playback'; } catch (e) {} }
+function setVolume(l) {
+  volLevel = l; muted = l === 0;
+  if (master) master.gain.setTargetAtTime(VOLS[l], actx.currentTime, 0.02);
+  audioSession();
+  try { localStorage.setItem('px_vol', String(l)); } catch (e) {}
+}
+// I telefoni accendono l'audio solo dentro un gesto completo (dito che si stacca, tap, tasto):
+// audioUnlock viene chiamata a ogni tocco finché il suono non è attivo davvero.
 function audioUnlock() {
   if (!actx) {
     try {
       actx = new (window.AudioContext || window.webkitAudioContext)();
-      const comp = actx.createDynamicsCompressor(); master = actx.createGain(); master.gain.value = 0.55;
+      const comp = actx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 8; comp.attack.value = 0.003; comp.release.value = 0.12;
+      master = actx.createGain(); master.gain.value = VOLS[volLevel];
       master.connect(comp); comp.connect(actx.destination);
       noiseBuf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.8), actx.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      audioSession();
     } catch (e) { actx = null; }
   }
-  if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  if (actx && actx.state !== 'running') {
+    actx.resume().catch(() => {});
+    try { const s = actx.createBufferSource(); s.buffer = actx.createBuffer(1, 1, 22050); s.connect(actx.destination); s.start(0); } catch (e) {}
+  }
 }
 const aok = () => !muted && actx && actx.state === 'running';
 function tone(f, dur, type = 'square', vol = 0.035, to = null, delay = 0) {

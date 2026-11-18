@@ -4,6 +4,9 @@
     python3 tools/build.py                    # index.html installabile (GitHub Pages)
     python3 tools/build.py --artifact out.html  # versione per l'artifact di Claude (senza PWA)
 """
+import datetime
+import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -23,28 +26,36 @@ PWA_HEAD = '''<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 '''
 PWA_BODY = '''<script>
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
 </script>
 '''
 
 
-def build(pwa: bool) -> str:
+def build(pwa: bool):
     code = '\n'.join((SRC / p).read_text(encoding='utf-8') for p in PARTS)
     html = (SRC / 'shell.html').read_text(encoding='utf-8')
     assert '/*__CODE__*/' in html, 'segnaposto del codice mancante in shell.html'
-    html = html.replace('/*__CODE__*/', code)
+    # la versione: numero scritto in VERSION + impronta del codice (cambia a ogni modifica)
+    ver = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
+    app = {'v': ver, 'id': ver + '-' + hashlib.sha1((code + html).encode('utf-8')).hexdigest()[:8],
+           'date': datetime.date.today().strftime('%d/%m/%Y'), 'pwa': pwa}
+    html = html.replace('/*__CODE__*/', 'const APP = ' + json.dumps(app) + ';\n' + code)
     if pwa:
         html = html.replace('<title>Pixel Box</title>\n', '<title>Pixel Box</title>\n' + PWA_HEAD, 1)
         html = html.replace('</body>', PWA_BODY + '</body>', 1)
         assert 'rel="manifest"' in html and 'serviceWorker' in html
-    return html
+    return html, app
 
 
 if __name__ == '__main__':
     if len(sys.argv) >= 3 and sys.argv[1] == '--artifact':
         out = Path(sys.argv[2])
-        out.write_text(build(pwa=False), encoding='utf-8')
+        html, app = build(pwa=False)
+        out.write_text(html, encoding='utf-8')
     else:
         out = ROOT / 'index.html'
-        out.write_text(build(pwa=True), encoding='utf-8')
-    print('scritto', out, f'({out.stat().st_size // 1024} KB)')
+        html, app = build(pwa=True)
+        out.write_text(html, encoding='utf-8')
+        # l'app installata confronta questo file con la propria versione
+        (ROOT / 'version.json').write_text(json.dumps({k: app[k] for k in ('v', 'id', 'date')}) + '\n', encoding='utf-8')
+    print('scritto', out, f'({out.stat().st_size // 1024} KB)', 'versione', app['id'])

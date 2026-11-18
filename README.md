@@ -23,10 +23,16 @@ Sette giochi in una console tascabile in stile Game Boy: un'unica pagina web che
 
 Dopo la prima apertura funziona anche offline. I salvataggi restano sul telefono.
 
+## Aggiornamenti
+
+All'avvio l'app controlla da sola se su GitHub c'è una versione nuova: nel menu compare «NUOVA VERSIONE! PREMI SELECT».
+Premendo SELECT nel menu vedi la versione installata e puoi cercare gli aggiornamenti a mano; «A: AGGIORNA ORA» scarica la versione nuova. I salvataggi restano.
+
 ## Comandi
 
 Croce direzionale, A, B, START e SELECT (torna al menu). Sotto lo schermo c'è sempre l'elenco dei tasti del gioco in corso.
 Sul computer: frecce, X = A, Z = B, Invio = START, Esc = SELECT.
+Il pulsante dell'altoparlante in alto a destra cambia il volume: alto, medio, spento.
 
 ## Com'è fatto
 
@@ -46,4 +52,5 @@ python3 tools/rimbalzo_livelli.py --scrivi    # dopo aver cambiato le mappe di R
 node tools/rbbot.js 5 6 7                     # verifica i livelli indicati
 ```
 
-Se cambi icone o manifest, aumenta `VERSIONE` in `sw.js` così i telefoni scaricano i file nuovi.
+Per pubblicare una novità: aumenta il numero in `VERSION`, esegui `python3 tools/build.py` e carica insieme `index.html` e `version.json`.
+Se cambi icone o manifest, aumenta anche `VERSIONE` in `sw.js` così i telefoni scaricano i file nuovi.

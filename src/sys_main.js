@@ -94,12 +94,56 @@ const KEYS = {
 addEventListener('keydown', e => { const n = KEYS[e.code]; if (!n) return; e.preventDefault(); audioUnlock(); if (!e.repeat) setKb(n, true); });
 addEventListener('keyup', e => { const n = KEYS[e.code]; if (n) setKb(n, false); });
 addEventListener('blur', () => { for (const n in BTN) { kbB[n] = false; tB[n] = false; syncBtn(n); } dptr.clear(); });
-document.addEventListener('pointerdown', audioUnlock, true);
+for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(ev, audioUnlock, { capture: true, passive: true });
 document.addEventListener('visibilitychange', () => { if (document.hidden && cur && cur.hidden) cur.hidden(); });
 
-function volIcon() { $('vol').textContent = muted ? '🔇' : '🔊'; }
+// icona del volume a pixel: alto, medio, spento
+const VOLICON = [
+  ['.....#.......', '....##.......', '...###.......', '######.#...#.', '######..#.#..', '######...#...', '######..#.#..', '######.#...#.', '...###.......', '....##.......', '.....#.......'],
+  ['.....#.......', '....##.......', '...###.......', '######..#....', '######...#...', '######...#...', '######...#...', '######..#....', '...###.......', '....##.......', '.....#.......'],
+  ['.....#.......', '....##...#...', '...###....#..', '######..#..#.', '######...#.#.', '######...#.#.', '######...#.#.', '######..#..#.', '...###....#..', '....##...#...', '.....#.......']];
+function pixSvg(rows, k) {
+  let d = '';
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] === '#') d += 'M' + x + ' ' + y + 'h1v1h-1z'; });
+  return '<svg viewBox="0 0 ' + rows[0].length + ' ' + rows.length + '" width="' + rows[0].length * k + '" height="' + rows.length * k + '" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+}
+function volIcon() {
+  const b = $('vol'); b.innerHTML = pixSvg(VOLICON[volLevel], 2);
+  b.classList.toggle('off', volLevel === 0); b.title = ['Audio spento', 'Audio medio', 'Audio alto'][volLevel];
+}
 volIcon();
-$('vol').addEventListener('click', () => { muted = !muted; volIcon(); audioUnlock(); try { localStorage.setItem('px_muted', muted ? '1' : '0'); } catch (e) {} if (!muted) tone(1318, 0.05); });
+$('vol').addEventListener('click', () => { audioUnlock(); setVolume((volLevel + 2) % 3); volIcon(); if (volLevel) tone(1318, 0.07); });
+
+// ---------- versione e aggiornamenti (solo nell'app installata) ----------
+let infoOpen = false;
+const upd = { st: 'idle', remote: null, last: 0 };
+async function checkUpdate(manual) {
+  if (!APP.pwa || upd.st === 'checking' || upd.st === 'updating') return;
+  upd.st = 'checking'; upd.last = Date.now();
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const j = await r.json(); upd.remote = j;
+    upd.st = j.id && j.id !== APP.id ? 'new' : 'ok';
+    if (upd.st === 'new') seq([784, 1047, 1319], 0.08, 0.08, 0.04);
+  } catch (e) { upd.st = manual ? 'err' : 'idle'; }
+}
+async function applyUpdate() {
+  if (upd.st === 'updating') return;
+  upd.st = 'updating';
+  try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) {}
+  try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+  location.replace(location.pathname + '?agg=' + Date.now());   // indirizzo nuovo: niente copie vecchie
+}
+if (APP.pwa) {
+  if (location.search.indexOf('agg=') >= 0) try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  setTimeout(() => checkUpdate(false), 2500);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - upd.last > 10 * 60 * 1000) checkUpdate(false); });
+}
+function infoButton(name) {
+  if (name === 'a') { if (!APP.pwa) return; if (upd.st === 'new') applyUpdate(); else checkUpdate(true); tone(1046, 0.05); }
+  else if (name === 'b' || name === 'select' || name === 'start') { infoOpen = false; tone(660, 0.04); }
+}
 
 // tocco sullo schermo
 const toDev = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; };
@@ -114,6 +158,7 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => { if (mode === 'game' && !quitAsk && cur && cur.pointer) { const [x, y] = toDev(e); cur.pointer('move', x, y, e.pointerId); } });
 cv.addEventListener('pointerup', e => {
   const [x, y] = toDev(e);
+  if (mode === 'menu' && infoOpen && menuTap && menuTap.id === e.pointerId) { menuTap = null; infoButton(upd.st === 'new' ? 'a' : 'b'); return; }
   if (mode === 'menu' && menuTap && menuTap.id === e.pointerId) {
     menuTap = null;
     const i = menuRects.findIndex(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
@@ -153,6 +198,8 @@ function leave() {
 }
 function menuCols() { return W / H > 1.15 ? 2 : 1; }
 function menuButton(name) {
+  if (infoOpen) return infoButton(name);
+  if (name === 'select') { infoOpen = true; tone(988, 0.05); if (APP.pwa && upd.st !== 'new') checkUpdate(true); return; }
   const n = GAMES.length, cols = menuCols();
   let s = msel;
   if (name === 'up') s -= cols; else if (name === 'down') s += cols;
@@ -202,8 +249,28 @@ function drawMenu() {
       const bs = u * 0.9; drawIcon(ctx, BELL, { '#': '#ffd23f' }, x + cw - bs - u * 0.3, y + u * 0.25, bs);
     }
   }
-  const hs = Math.min(u * 0.42, W / 34);
-  shadowText(cols > 1 ? 'CROCE: SCEGLI   A: GIOCA' : '▲▼ SCEGLI   A GIOCA', W / 2, H - u * 1.25, hs, '#6f849b', null, 'center');
+  if (upd.st === 'new') {
+    const t = 'NUOVA VERSIONE! PREMI SELECT', hs = fitFont(t, W - pad * 2, u * 0.5);
+    if (Math.floor(gtime * 2.5) % 2 === 0) shadowText(t, W / 2, H - u * 1.3, hs, '#ffd23f', '#000000', 'center');
+  } else {
+    const t = cols > 1 ? 'CROCE: SCEGLI   A: GIOCA   SELECT: INFO' : '▲▼ SCEGLI   A GIOCA   SELECT INFO';
+    shadowText(t, W / 2, H - u * 1.25, fitFont(t, W - pad * 2, Math.min(u * 0.42, W / 34)), '#6f849b', null, 'center');
+  }
+  if (infoOpen) drawInfo();
+}
+function drawInfo() {
+  ctx.fillStyle = 'rgba(6,9,14,.82)'; ctx.fillRect(0, 0, W, H);
+  const bw = Math.min(W * 0.9, H * 1.25), bh = Math.min(H * 0.62, bw * 0.78), bx = (W - bw) / 2, by = (H - bh) / 2, u = bh / 10;
+  rrect(bx, by, bw, bh, u * 0.4); ctx.fillStyle = '#16202c'; ctx.fill(); ctx.lineWidth = Math.max(2, u * 0.12); ctx.strokeStyle = '#ffd23f'; ctx.stroke();
+  const line = (t, y, sz, col) => shadowText(t, W / 2, by + u * y, fitFont(t, bw * 0.86, u * sz), col, '#000000', 'center');
+  line('PIXEL BOX', 0.9, 1.25, '#ffd23f');
+  line('VERSIONE ' + APP.v + ' · ' + APP.date, 2.6, 0.55, '#c9d3e6');
+  const st = !APP.pwa ? ['QUESTA PAGINA SI AGGIORNA DA SOLA', '#8fa3b8'] : {
+    idle: ['', '#fff'], checking: ['CONTROLLO IN CORSO...', '#c9d3e6'], ok: ['SEI AGGIORNATO!', '#4ade80'],
+    new: ['NUOVA VERSIONE ' + (upd.remote && upd.remote.v || '') + ' PRONTA!', '#ffd23f'], err: ['NESSUNA CONNESSIONE: RIPROVA PIU TARDI', '#ff8f8f'], updating: ['AGGIORNAMENTO...', '#ffd23f'] }[upd.st];
+  if (st[0]) line(st[0], 4.4, 0.5, st[1]);
+  if (APP.pwa) line(upd.st === 'new' ? 'A: AGGIORNA ORA' : 'A: CERCA AGGIORNAMENTI', 6.2, 0.6, upd.st === 'new' ? '#ffd23f' : '#ffffff');
+  line('B: INDIETRO', 7.8, 0.5, '#8fa3b8');
 }
 function drawBoot() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -212,6 +279,7 @@ function drawBoot() {
   const y = Math.min(1, bootT / 1.1) * (H / 2 - ts) - ts * 1.2 * (1 - Math.min(1, bootT / 1.1));
   shadowText('PIXEL BOX', W / 2, y, ts, '#2c3a7a', '#a9adb8', 'center');
   if (bootT > 1.2) shadowText(GAMES.length + ' GIOCHI DEI RICORDI', W / 2, H / 2 + ts * 0.6, Math.min(u * 0.5, ts * 0.42), '#5b6488', null, 'center');
+  if (bootT > 1.2) shadowText('VERSIONE ' + APP.v, W / 2, H - u * 0.9, u * 0.32, '#8a8fa0', null, 'center');
 }
 function drawQuit() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);

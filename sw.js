@@ -1,6 +1,6 @@
 // Pixel Box · service worker: fa funzionare l'app anche senza connessione.
 // Cambia VERSIONE quando aggiorni le icone o il manifest.
-const VERSIONE = 'pixelbox-v1';
+const VERSIONE = 'pixelbox-v2';
 const BASE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
   './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 
@@ -17,10 +17,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
-  // la pagina: prima la rete (così arrivano gli aggiornamenti), poi la copia salvata se sei offline
+  // il file della versione arriva sempre dalla rete
+  if (new URL(req.url).pathname.endsWith('/version.json')) return;
+  // la pagina: prima la rete senza copie vecchie (così arrivano gli aggiornamenti), poi la copia salvata se sei offline
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req)
-      .then(r => { const copia = r.clone(); caches.open(VERSIONE).then(c => c.put('./index.html', copia)); return r; })
+    e.respondWith(fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
+      .then(r => { if (r.ok) { const copia = r.clone(); caches.open(VERSIONE).then(c => c.put('./index.html', copia)); } return r; })
       .catch(() => caches.match('./index.html')));
     return;
   }
