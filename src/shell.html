@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pixel Box</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{--dp:clamp(116px,33vw,150px);--bs:clamp(54px,15vw,68px)}
+  html,body{margin:0;height:100%;background:#1b1f24;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:"Press Start 2P",system-ui,sans-serif}
+  #wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #console{position:relative;box-sizing:border-box;width:min(100vw,470px);height:min(100%,940px);display:flex;flex-direction:column;
+    background:linear-gradient(160deg,#dedad2,#c8c4bc 55%,#b7b3ab);border-radius:14px 14px 72px 14px;padding:12px 12px 0;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.65),inset 0 -6px 0 rgba(0,0,0,.08),0 10px 30px rgba(0,0,0,.5)}
+  #bezel{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:#575c69;border-radius:10px 10px 44px 10px;
+    padding:22px 16px 16px 28px;box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
+  #bzl{position:absolute;top:8px;left:12px;right:46px;display:flex;align-items:center;gap:7px;font-size:6px;color:#c3c6d4;letter-spacing:1px;white-space:nowrap}
+  #bzl i{flex:1;height:2px;background:#9b2f61;border-bottom:2px solid #3e5396}
+  #vol{position:absolute;top:2px;right:8px;border:0;background:transparent;font-size:15px;padding:3px;cursor:pointer;line-height:1}
+  #led{position:absolute;left:10px;top:40%;width:9px;height:9px;border-radius:50%;background:#e8252b;box-shadow:0 0 8px #ff3b3b,inset 0 -2px 2px rgba(0,0,0,.3)}
+  #ledl{position:absolute;left:3px;top:calc(40% + 15px);font-size:5px;color:#c3c6d4}
+  #screenbox{position:relative;flex:1 1 auto;min-height:0;background:#0d130e;border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 2px #15181c}
+  #scr{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;touch-action:none}
+  #brand{flex:none;padding:9px 4px 0 6px;color:#2c3a7a;font-size:14px;font-style:italic;letter-spacing:1px}
+  #brand b{font-style:normal;margin-left:6px}
+  #controls{position:relative;flex:none}
+  #legend{display:none}
+  #console.fit #bezel{flex:0 1 auto}
+  #console.fit #screenbox{flex:none}
+  #console.fit #legend{display:flex;flex:1 1 0;min-height:0;overflow:hidden;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px 6px;color:#2c3a7a}
+  #legend .gt{font-size:clamp(17px,5.4vw,24px);font-weight:800;font-style:italic;letter-spacing:2px;opacity:.85}
+  #legend .ks{display:flex;flex-wrap:wrap;justify-content:center;gap:9px 15px;max-width:380px}
+  #legend .it{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.5px;white-space:nowrap}
+  #legend .k{display:inline-flex;align-items:center;justify-content:center;flex:none}
+  #legend .k.r{width:19px;height:19px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d4508a,#9c1b55);color:#fff;font-size:10px;font-weight:700}
+  #legend .k.p{height:13px;padding:0 6px;border-radius:7px;background:#8e8f99;color:#fff;font-size:7.5px;font-weight:700;letter-spacing:1px}
+  #legend .k.d{width:17px;height:17px;background:linear-gradient(#34373f,#34373f) center/6px 17px no-repeat,linear-gradient(#34373f,#34373f) center/17px 6px no-repeat}
+  #legend.compact .gt{display:none}
+  #legend.tiny{visibility:hidden}
+  #ctrlin{position:relative;width:100%;height:clamp(200px,33vh,280px)}
+  #cl{position:absolute;left:4%;top:10%}
+  #dpad{position:relative;width:var(--dp);height:var(--dp);touch-action:none;perspective:320px;cursor:pointer}
+  #dpin{position:absolute;inset:0;transition:transform .04s;transform-style:preserve-3d}
+  #dpin .h,#dpin .v{position:absolute;background:linear-gradient(#41444c,#1e2025);border-radius:7px;box-shadow:0 5px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.14)}
+  #dpin .h{left:0;right:0;top:33.5%;height:33%}
+  #dpin .v{top:0;bottom:0;left:33.5%;width:33%}
+  #dpin .c{position:absolute;left:41%;top:41%;width:18%;height:18%;border-radius:50%;background:radial-gradient(circle at 50% 35%,#16171b,#33363d)}
+  #dpin .ar{position:absolute;color:#5d616b;font-size:10px;font-family:system-ui,sans-serif;transform:translate(-50%,-50%)}
+  #cr{position:absolute;right:4%;top:6%;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75)}
+  .bt{position:absolute;width:var(--bs);height:var(--bs);border-radius:50%;background:radial-gradient(circle at 35% 30%,#cf5a8d,#9c2459 58%,#7a1743);
+    box-shadow:0 5px 0 #4f0d2b,inset 0 2px 0 rgba(255,255,255,.25);touch-action:none;cursor:pointer}
+  .bt.on{transform:translateY(4px);box-shadow:0 1px 0 #4f0d2b}
+  .bt span{position:absolute;left:50%;top:calc(100% + 11px);transform:translateX(-50%);font-size:11px;color:#2c3a7a}
+  #bB{left:0;bottom:0} #bA{right:0;top:0}
+  #cm{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);display:flex;gap:20px}
+  .pw{display:flex;flex-direction:column;align-items:center;gap:8px;transform:rotate(-24deg)}
+  .pill{width:52px;height:14px;border-radius:8px;background:linear-gradient(#a2a2aa,#7a7a82);box-shadow:0 3px 0 #55555c,inset 0 1px 0 rgba(255,255,255,.35);touch-action:none;cursor:pointer}
+  .pill.on{transform:translateY(2px);box-shadow:0 1px 0 #55555c}
+  .pw span{font-size:7px;color:#2c3a7a;letter-spacing:1px}
+  #grille{position:absolute;right:6%;bottom:6%;display:flex;gap:7px;transform:rotate(-28deg)}
+  #grille i{width:6px;height:52px;border-radius:4px;background:#a9a59d;box-shadow:inset 1px 2px 2px rgba(0,0,0,.35)}
+  #hint{display:none;color:#8a93a0;font-size:8px;line-height:2;text-align:center;padding:8px}
+  @media (hover:hover) and (pointer:fine){#hint{display:block}#console{height:min(calc(100% - 52px),900px)}}
+  @media (orientation:landscape) and (max-height:560px){
+    :root{--dp:min(128px,36vh);--bs:min(58px,17vh)}
+    #console{width:100vw;height:100%;border-radius:0;padding:8px;display:grid;grid-template-columns:1fr auto 1fr;grid-template-rows:1fr auto;
+      grid-template-areas:"cl bezel cr" "cm bezel gr";column-gap:8px}
+    #bezel{grid-area:bezel;width:min(calc((100vh - 16px) * 1.3),64vw);padding:18px 12px 12px 24px}
+    #brand,#legend{display:none!important}
+    #controls,#ctrlin{display:contents}
+    #cl{grid-area:cl;position:static;align-self:center;justify-self:center}
+    #cr{grid-area:cr;position:relative;right:auto;top:auto;align-self:center;justify-self:center}
+    #cm{grid-area:cm;position:static;transform:none;justify-self:center;align-self:center;gap:12px}
+    #grille{grid-area:gr;position:static;justify-self:center;align-self:center;transform:rotate(-28deg) scale(.6)}
+    #hint{display:none!important}
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="console">
+    <div id="bezel">
+      <div id="bzl"><i></i><span>PIXEL BOX · 6 GIOCHI</span><i></i></div>
+      <button id="vol" title="Suono">🔊</button>
+      <div id="led"></div><div id="ledl">ON</div>
+      <div id="screenbox"><canvas id="scr"></canvas></div>
+    </div>
+    <div id="brand">PIXEL<b>BOX</b></div>
+    <div id="legend"></div>
+    <div id="controls"><div id="ctrlin">
+      <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div>
+        <span class="ar" style="left:50%;top:16%">▲</span><span class="ar" style="left:50%;top:84%">▼</span>
+        <span class="ar" style="left:16%;top:50%">◀</span><span class="ar" style="left:84%;top:50%">▶</span></div></div></div>
+      <div id="cr"><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
+      <div id="cm"><div class="pw"><div class="pill" id="bSel"></div><span>SELECT</span></div><div class="pw"><div class="pill" id="bSta"></div><span>START</span></div></div>
+      <div id="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div></div>
+  </div>
+  <div id="hint">FRECCE = CROCE · X = A · Z = B · INVIO = START · ESC = SELECT (MENU)</div>
+</div>
+<script>
+(() => {
+'use strict';
+/*__CODE__*/
+})();
+</script>
+</body>
+</html>
