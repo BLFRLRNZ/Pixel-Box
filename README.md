@@ -1,6 +1,6 @@
 # Pixel Box
 
-Sei giochi classici in una console tascabile in stile Game Boy: un'unica pagina web che si installa sul telefono e funziona anche senza connessione.
+Sette giochi in una console tascabile in stile Game Boy: un'unica pagina web che si installa sul telefono e funziona anche senza connessione.
 
 **Gioca:** https://blfrlrnz.github.io/Pixel-Box/
 
@@ -14,6 +14,7 @@ Sei giochi classici in una console tascabile in stile Game Boy: un'unica pagina 
 | Snake | Il serpente affamato |
 | Roll Down | Scendi di piattaforma in piattaforma senza cadere |
 | Ovetto | Il cucciolo virtuale da accudire: vive anche quando l'app è chiusa |
+| Pixel Kart | Corse sui kart in prospettiva: 4 piloti, 4 piste, oggetti e derapate |
 
 ## Installarla sul telefono
 
@@ -31,6 +32,7 @@ Sul computer: frecce, X = A, Z = B, Invio = START, Esc = SELECT.
 
 - `index.html`: l'app completa, generata dai sorgenti (non modificarla a mano).
 - `src/`: i sorgenti. `shell.html` è la console con i tasti, `sys_core.js` e `sys_main.js` contengono suoni, carattere a pixel, menu e ciclo di gioco, poi c'è un file per ogni gioco (`g_*.js`).
+  Pixel Kart disegna la pista in prospettiva riga per riga e i kart come piccoli modelli 3D visti da 16 angolazioni.
 - `tools/build.py`: ricostruisce `index.html` dai sorgenti.
 - `tools/rimbalzo_livelli.py`: le mappe ASCII dei livelli 5-15 di Rimbalzo. `tools/rbbot.js` è un bot che verifica che ogni livello si possa finire.
 - `tools/icone.py`: disegna le icone a pixel.

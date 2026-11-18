@@ -2,6 +2,7 @@
 let mode = 'boot', bootT = 0, cur = null, quitAsk = false, gtime = 0, msel = 0, menuRects = [], menuTap = null;
 try { msel = clamp(+localStorage.getItem('px_sel') || 0, 0, GAMES.length - 1); } catch (e) {}
 
+$('bzt').textContent = 'PIXEL BOX · ' + GAMES.length + ' GIOCHI';
 function landscape() { return innerWidth > innerHeight && innerHeight < 560; }
 function legendHTML(g) {
   const chip = k => k === 'D' ? '<span class="k d"></span>' : (k === 'A' || k === 'B') ? '<span class="k r">' + k + '</span>' : '<span class="k p">' + k + '</span>';
@@ -210,7 +211,7 @@ function drawBoot() {
   const u = Math.min(W / 16, H / 12), ts = fitFont('PIXEL BOX', W * 0.86, u * 1.5);
   const y = Math.min(1, bootT / 1.1) * (H / 2 - ts) - ts * 1.2 * (1 - Math.min(1, bootT / 1.1));
   shadowText('PIXEL BOX', W / 2, y, ts, '#2c3a7a', '#a9adb8', 'center');
-  if (bootT > 1.2) shadowText('6 GIOCHI DEI RICORDI', W / 2, H / 2 + ts * 0.6, Math.min(u * 0.5, ts * 0.42), '#5b6488', null, 'center');
+  if (bootT > 1.2) shadowText(GAMES.length + ' GIOCHI DEI RICORDI', W / 2, H / 2 + ts * 0.6, Math.min(u * 0.5, ts * 0.42), '#5b6488', null, 'center');
 }
 function drawQuit() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);

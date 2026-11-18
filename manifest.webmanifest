@@ -1,7 +1,7 @@
 {
   "name": "Pixel Box",
   "short_name": "Pixel Box",
-  "description": "Sei giochi classici in una console tascabile: Palline, Rimbalzo, Astro Raid, Snake, Roll Down e Ovetto.",
+  "description": "Sette giochi in una console tascabile: Palline, Rimbalzo, Astro Raid, Snake, Roll Down, Ovetto e Pixel Kart.",
   "lang": "it",
   "id": "./",
   "start_url": "./",
