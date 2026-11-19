@@ -19,7 +19,7 @@ function layoutFor(g) {
       const r = box.getBoundingClientRect(), bzr = bz.getBoundingClientRect();
       const padW = bzr.width - r.width, want = r.height * asp + padW;
       const side = Math.max($('cl').getBoundingClientRect().width, $('cr').getBoundingClientRect().width) + 24;
-      bz.style.width = Math.min(innerWidth - 32 - 2 * side, Math.max(bzr.width, want)) + 'px';
+      bz.style.width = Math.round(Math.min(innerWidth - 32 - 2 * side, want) - padW) + 'px';   // width è senza i margini interni
     }
   } else if (asp) {
     const r = box.getBoundingClientRect(), h = Math.round(r.width / asp);

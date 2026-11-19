@@ -344,7 +344,7 @@ function render() {
 function draw(cc, w, h) {
   render();
   let k = Math.min(w / PW, h / PH);
-  const ki = Math.floor(k); if (ki >= 2 && ki / k > 0.8) k = ki;
+  const ki = Math.floor(k); if (ki >= 2 && ki / k > 0.985) k = ki;
   const dw = Math.round(PW * k), dh = Math.round(PH * k);
   ox = Math.round((w - dw) / 2); oy = Math.round((h - dh) / 2); scale = dw / GW;
   cc.setTransform(1, 0, 0, 1, 0, 0);

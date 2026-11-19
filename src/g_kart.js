@@ -619,10 +619,10 @@ return {
   draw(c, w, h) {
     render();
     let k = Math.min(w / SW, h / SH);
-    const ki = Math.floor(k); if (ki >= 2 && ki / k > 0.8) k = ki;
+    const ki = Math.floor(k); if (ki >= 2 && ki / k > 0.985) k = ki;
     const dw = Math.round(SW * k), dh = Math.round(SH * k);
     ox = Math.round((w - dw) / 2); oy = Math.round((h - dh) / 2);
-    c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#0b0d12'; c.fillRect(0, 0, w, h);
+    c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = TR ? TR.T.sky[0] : '#0b0d12'; c.fillRect(0, 0, w, h);
     c.imageSmoothingEnabled = false; c.drawImage(scr, ox, oy, dw, dh);
   },
   button(name, down) {
