@@ -173,7 +173,81 @@ const DEF = {
       m.at(22, -4, 'M'); m.at(5, -13, 't'); m.at(40, -13, 't'); m.at(5, 5, 't'); m.at(40, 5, 't');
     },
   },
+  // ---------- le grotte nascoste: niente guardiano, solo tesori (e qualche mostro) ----------
+  funghi: {
+    name: 'GROTTA DEI FUNGHI', cave: true, foes: { e: 'slime', f: 'goblin', g: 'bat', h: 'plant' },
+    floor: 49, wall: 50, crack: 55, fog: '#0a120a', amb: 0.34, water: '#2a5a4a', torch: [1, 0.74, 0.44], shot: 'seed', pot: ['#9a6a4a', '#5a3a24'], glow: '#8af07a',
+    make(m) {
+      m.room(10, 22, 21, 31); m.at(15, 31, '@@'); m.at(11, 23, 't'); m.at(20, 23, 't'); m.at(11, 30, 'v'); m.at(20, 30, 'v');
+      m.sign(13, 28, 'GROTTA DEI FUNGHI.\nSUI MURI QUALCUNO HA DISEGNATO TRE FUNGHI E UNA CREPA. CHISSÀ COSA VUOL DIRE...');
+      m.at(15, 22, '++');
+      // la sala dei funghi giganti
+      m.room(5, 10, 26, 22); m.at(8, 13, 'e'); m.at(22, 14, 'e'); m.at(15, 17, 'h'); m.at(10, 19, 'g'); m.at(20, 12, 'g');
+      m.at(6, 11, 't'); m.at(25, 11, 't'); m.at(6, 21, 'v'); m.at(25, 21, 'v'); m.chest(24, 19, 'c', 'pozione:2');
+      // la crepa a ovest: una stanza segreta
+      m.col(5, 15, '%'); m.room(0, 12, 5, 19); m.chest(2, 15, 'c', 'anelloForza'); m.at(1, 13, 'v'); m.at(1, 18, 'v');
+      // est: la tana dei goblin (trappola)
+      m.col(26, 15, '33'); m.room(26, 9, 38, 22); m.at(29, 12, 'f'); m.at(35, 13, 'f'); m.at(32, 19, 'f'); m.at(29, 18, 'h'); m.at(36, 20, 'h');
+      m.at(27, 10, 't'); m.at(37, 10, 't'); m.at(27, 21, 't'); m.at(37, 21, 't'); m.at(37, 16, 'v');
+      m.trig(3, 'kill', 32, 15); m.chest(32, 15, 'Q', 'mantello');
+    },
+  },
+  mare: {
+    name: 'GROTTA DEL CONTRABBANDIERE', cave: true, foes: { e: 'slimeB', f: 'crab', g: 'bat' },
+    floor: 54, wall: 53, crack: 55, fog: '#081218', amb: 0.38, water: '#2a7a9a', torch: [1, 0.82, 0.56], shot: 'bubble', pot: ['#8a6a4a', '#5a3a24'], glow: '#5ac8ff',
+    make(m) {
+      m.room(12, 24, 23, 32); m.at(17, 32, '@@'); m.at(13, 25, 't'); m.at(22, 25, 't'); m.at(13, 31, 'v'); m.fill(20, 28, 22, 30, '~');
+      m.sign(15, 29, "GROTTA DEL CONTRABBANDIERE.\nQUI I PIRATI DELLA COSTA NASCONDEVANO IL BOTTINO. IL PIÙ PREZIOSO, DICONO, STA OLTRE L'ACQUA PROFONDA.");
+      m.at(17, 24, '++');
+      // il canale, con un ponte di assi
+      m.room(6, 12, 29, 24); m.fill(7, 16, 28, 19, '~'); m.fill(17, 16, 18, 19, '=');
+      m.at(9, 13, 'f'); m.at(26, 22, 'f'); m.at(12, 21, 'e'); m.at(24, 14, 'g'); m.at(7, 13, 't'); m.at(28, 13, 't'); m.at(7, 23, 't'); m.at(28, 23, 't');
+      m.chest(26, 20, 'c', 'monete:60');
+      // ovest, oltre l'acqua profonda (serve l'elmo delle maree)
+      m.fill(6, 16, 6, 19, '~'); m.room(-6, 13, 6, 23); m.fill(-1, 16, 5, 19, '~'); m.chest(-4, 17, 'c', 'piuma'); m.at(-5, 14, 'v'); m.at(-5, 22, 'v'); m.at(-3, 21, 't');
+      // nord: il deposito dei contrabbandieri (trappola)
+      m.at(17, 12, '44'); m.room(8, 2, 27, 12); m.at(11, 5, 'f'); m.at(23, 5, 'f'); m.at(14, 9, 'e'); m.at(21, 9, 'e'); m.at(17, 4, 'g');
+      m.at(9, 3, 't'); m.at(26, 3, 't'); m.at(9, 11, 'v'); m.at(10, 11, 'v'); m.at(26, 11, 'v');
+      m.trig(4, 'kill', 17, 7); m.chest(17, 6, 'Q', 'monete:150');
+    },
+  },
+  cristalli: {
+    name: 'GROTTA DEI CRISTALLI', cave: true, foes: { e: 'bat', f: 'skel', g: 'slime' },
+    floor: 49, wall: 52, crack: 55, fog: '#0c0a16', amb: 0.36, water: '#5a4aa8', torch: [0.8, 0.62, 1], shot: 'ice', pot: ['#6a5a8a', '#3a2a5a'], glow: '#c8a0ff',
+    make(m) {
+      m.room(12, 22, 23, 30); m.at(17, 30, '@@'); m.at(13, 23, 't'); m.at(22, 23, 't'); m.at(13, 29, 'v'); m.at(22, 29, 'v');
+      m.sign(15, 27, 'GROTTA DEI CRISTALLI.\nI MINATORI SCAVAVANO QUI PRIMA DEI MOSTRI. UN MASSO SULLA PIASTRA APRIVA IL LORO DEPOSITO.');
+      m.at(17, 22, '++');
+      // la galleria
+      m.room(8, 12, 27, 22); m.at(10, 14, 'e'); m.at(24, 15, 'e'); m.at(15, 18, 'f'); m.at(20, 14, 'f'); m.at(12, 20, 'g');
+      m.at(9, 13, 't'); m.at(26, 13, 't'); m.at(9, 21, 't'); m.at(26, 21, 't'); m.chest(25, 19, 'c', 'monete:100');
+      // nord: una crepa nella roccia
+      m.at(17, 12, '%'); m.room(14, 4, 21, 12); m.chest(17, 7, 'c', 'elisir'); m.at(15, 5, 'v'); m.at(20, 5, 'v');
+      // ovest: l'enigma del masso e il deposito dei minatori
+      m.col(8, 16, '++'); m.room(-6, 12, 8, 22); m.at(2, 18, 'O'); m.at(-3, 14, 'p'); m.at(-5, 21, 't'); m.at(7, 13, 't');
+      m.at(0, 12, '55'); m.trig(5, 'plates'); m.room(-6, 2, 8, 12); m.chest(0, 6, 'c', 'bastone'); m.at(-5, 3, 't'); m.at(7, 3, 't'); m.at(-5, 11, 'v'); m.at(7, 11, 'v');
+    },
+  },
+  gelo: {
+    name: 'GROTTA GELATA', cave: true, foes: { e: 'icewolf', f: 'iceskel', g: 'icebat' },
+    floor: 24, wall: 51, crack: 55, fog: '#0a1018', amb: 0.44, water: '#4a8ac8', torch: [0.8, 0.9, 1], shot: 'ice', pot: ['#8ab8e0', '#4a6a90'], glow: '#bff0ff',
+    make(m) {
+      m.room(12, 22, 23, 30); m.at(17, 30, '@@'); m.at(13, 23, 't'); m.at(22, 23, 't'); m.at(13, 29, 'v'); m.at(22, 29, 'v');
+      m.sign(15, 27, 'GROTTA GELATA.\nSUL GHIACCIO NON CI SI FERMA: PRIMA DI LANCIARTI, GUARDA DOVE ANDRAI A SBATTERE.');
+      m.at(17, 22, '++');
+      // il lago ghiacciato
+      m.room(6, 8, 29, 22); m.fill(9, 11, 26, 19, 'I'); m.at(12, 14, 'e'); m.at(23, 16, 'e'); m.at(18, 10, 'g'); m.at(8, 20, 'g');
+      m.at(7, 9, 't'); m.at(28, 9, 't'); m.at(7, 21, 't'); m.at(28, 21, 't'); m.chest(27, 19, 'c', 'pozione:3');
+      // una crepa nel muro nord: la veste d'ombra
+      m.at(17, 8, '%'); m.room(12, 0, 23, 8); m.chest(17, 3, 'c', 'ombra'); m.at(13, 1, 't'); m.at(22, 1, 't'); m.at(13, 7, 'v'); m.at(22, 7, 'v');
+      // est: la trappola degli scheletri di ghiaccio
+      m.col(29, 14, '66'); m.room(29, 9, 40, 21); m.at(33, 12, 'f'); m.at(37, 16, 'f'); m.at(33, 19, 'f'); m.at(36, 11, 'g');
+      m.at(30, 10, 't'); m.at(39, 10, 't'); m.at(30, 20, 't'); m.at(39, 20, 't');
+      m.trig(6, 'kill', 35, 15); m.chest(35, 15, 'Q', 'cuore');
+    },
+  },
 };
+const CAVES = Object.keys(DEF).filter(k => DEF[k].cave);
 
 // ---------- dalla mappa disegnata alle celle, alle stanze e agli oggetti ----------
 const cache = {};
@@ -286,7 +360,7 @@ function buildStatic(P, cell, filled) {
   for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) {
     const t = at(i, j), x0 = i * CS, z0 = j * CS, x1 = x0 + CS, z1 = z0 + CS, k = j * Wd + i;
     if (t === WALL || t === CRACK) {
-      const tile = t === CRACK ? 41 : D.wall;
+      const tile = t === CRACK ? (D.crack || 41) : D.wall;
       for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (!isSolid(n)) sideTo(wall, i, j, s, bottomOf(n), WH, tile); }
       let open = false; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) if (!isSolid(at(i + a, j + b))) open = true;
       if (open) flatTo(wall, x0, z0, x1, z1, WH, tile, 1, 1, LIT.top);
@@ -370,6 +444,34 @@ function tilesOn(c, R) {
   at(43, () => fill('#1e3a4a', 60, 0.4));
   at(44, () => { flags('#4a4448', '#1e1a20'); g.fillStyle = '#a8842a'; for (const [x, y] of [[0, 0], [T - 3, 0], [0, T - 3], [T - 3, T - 3]]) g.fillRect(x, y, 3, 3); g.fillStyle = '#6a2a30'; g.fillRect(13, 13, 6, 6); g.fillStyle = '#a8842a'; g.fillRect(15, 15, 2, 2); });
   at(45, () => { for (let y = 0; y < T; y++) { const k = y / T; g.fillStyle = 'rgb(' + Math.round(255 - 90 * k) + ',' + Math.round(250 - 34 * k) + ',' + Math.round(224 + 31 * k) + ')'; g.fillRect(0, y, T, 1); } });
+  // grotte: roccia viva a sassi tondi, pavimenti di terra e sabbia, l'imbocco visto da fuori
+  const rocky = (cols, mortar, gem) => {
+    g.fillStyle = mortar; g.fillRect(0, 0, T, T);
+    for (let k = 0; k < 26; k++) {
+      const cx = rnd(T), cy = rnd(T), rx = 3 + rnd(5), ry = 2 + rnd(4), c0 = cols[rnd(cols.length)];
+      for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { if ((x / rx) ** 2 + (y / ry) ** 2 > 1) continue; g.fillStyle = y < -ry * 0.4 ? sh(c0, 1.18) : y > ry * 0.5 ? sh(c0, 0.8) : c0; g.fillRect((cx + x + T) % T, (cy + y + T) % T, 1, 1); }
+    }
+    if (gem) for (let k = 0; k < 3; k++) { const x = rnd(T - 6) + 3, y = rnd(T - 8) + 4; g.fillStyle = gem[0]; g.fillRect(x, y, 2, 5); g.fillRect(x + 2, y + 2, 2, 3); g.fillStyle = gem[1]; g.fillRect(x, y, 1, 3); }
+  };
+  at(48, () => {
+    g.clearRect(0, 0, T, T);
+    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+      const dx = (x + 0.5 - 16) / 14, dy = (y + 0.5 - 17) / 15, top = y < 17;
+      if (top ? dx * dx + dy * dy > 1 : Math.abs(dx) > 1) continue;
+      const inner = top ? dx * dx + dy * dy < 0.5 : Math.abs(dx) < 0.7;
+      g.fillStyle = inner ? (y > 27 ? '#16121a' : '#09070c') : ((x * 7 + y * 3) % 5 < 2 ? '#6a6670' : (x + y) % 4 ? '#58545e' : '#7e7a86');
+      g.fillRect(x, y, 1, 1);
+    }
+    g.fillStyle = '#3a7a2a'; for (const [x, y, h] of [[6, 7, 5], [9, 4, 7], [22, 4, 6], [25, 8, 4], [15, 2, 3]]) g.fillRect(x, y, 1, h);
+  });
+  at(49, () => { fill('#5a4a3c', 120, 0.35); speck(['#7a6a58', '#3e3228', '#8a7a68'], 40, 2, 1); });
+  at(50, () => rocky(['#6a6460', '#7a726a', '#5a5450'], '#2e2a28'));
+  at(51, () => rocky(['#8ab0d0', '#a8c8e4', '#7aa0c0'], '#3a5068'));
+  at(52, () => rocky(['#4a4258', '#5a5068', '#3e3850'], '#1e1a26', ['#c8a0ff', '#f0e0ff']));
+  at(53, () => { rocky(['#3a5a5e', '#4a6a6e', '#2e4a4e'], '#16262a'); speck(['#e8e0d0', '#c8c0b0'], 10, 2, 1); });
+  at(54, () => { fill('#c8b080', 140, 0.25); speck(['#e8d8b0', '#a08860', '#f4e8c8'], 40); });
+  at(56, () => { rocky(['#8a8690', '#9a96a2', '#7a7682', '#a8a4ae'], '#4a4652'); speck(['#5a8a3a', '#6a9a44'], 14, 2, 1); });
+  at(55, () => { rocky(['#6a6460', '#7a726a', '#5a5450'], '#2e2a28'); g.fillStyle = '#141210'; let x = 15, y = 0; while (y < T) { g.fillRect(x, y, 2, 2); y += 2; x += rnd(3) - 1; } g.fillRect(8, 12, 8, 2); g.fillRect(18, 20, 7, 2); });
   at(47, () => { g.fillStyle = '#5a5a66'; g.fillRect(0, 0, T, T); g.fillStyle = '#7a7a86'; g.fillRect(1, 1, T - 2, T - 2); g.fillStyle = '#5a5a66'; g.fillRect(15, 1, 2, T - 2); g.fillRect(1, 15, T - 2, 2); });
   return c;
 }
@@ -510,8 +612,8 @@ const BOSS = {
 function art(id, atlas) {
   const P = parse(id), D = P.def, CH = {}, SP = {};
   const k = A.SR, dirs = (make, w, h, o = {}) => { const oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); return out; };
-  const B = BOSS[D.boss];
-  CH.boss = []; for (let p = 0; p < B.poses; p++) CH.boss.push(dirs(() => B.make(p), B.w, B.h, { sc: B.sc, base: B.h - 4 }));
+  const B = BOSS[D.boss] || null;
+  CH.boss = []; if (B) for (let p = 0; p < B.poses; p++) CH.boss.push(dirs(() => B.make(p), B.w, B.h, { sc: B.sc, base: B.h - 4 }));
   const need = new Set(Object.values(D.foes));
   if (need.has('plant')) CH.plant = [0, 1].map(f => dirs(() => plant(f), 26, 28));
   if (need.has('crab')) CH.crab = [0, 1].map(f => dirs(() => crab(f), 34, 22));
@@ -531,5 +633,5 @@ function art(id, atlas) {
   return { CH, SP, boss: B };
 }
 
-SG.dun = { CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT }, ORDER, DEF, BOSS, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
+SG.dun = { CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT }, ORDER, CAVES, DEF, BOSS, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
 })();

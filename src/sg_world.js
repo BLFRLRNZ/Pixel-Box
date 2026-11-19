@@ -85,6 +85,11 @@ const BUILD = [
   { k: 'ruin', x: 3330, z: 1700, w: 70, d: 6, h: 9, wall: 10, gate: true }, { k: 'ruin', x: 3420, z: 1660, w: 6, d: 60, h: 11, wall: 10 }, { k: 'ruin', x: 3300, z: 1630, w: 6, d: 40, h: 7, wall: 10 },
   { k: 'ruin', x: 1870, z: 1240, w: 30, d: 5, h: 6, wall: 11 }, { k: 'ruin', x: 1600, z: 3460, w: 5, d: 24, h: 5, wall: 9 },
   { k: 'tower', x: 1310, z: 3610, r: 9, h: 46, wall: 9, roof: 4 },
+  // grotte segrete: un poggio di roccia con l'imbocco, nascosto tra alberi e massi
+  { k: 'cave', x: 520, z: 1560, w: 28, d: 22, h: 12, door: 's', id: 'funghi' },
+  { k: 'cave', x: 2400, z: 3815, w: 30, d: 20, h: 11, door: 's', id: 'mare' },
+  { k: 'cave', x: 1750, z: 690, w: 28, d: 22, h: 13, door: 's', id: 'cristalli' },
+  { k: 'cave', x: 360, z: 640, w: 24, d: 22, h: 12, door: 'e', id: 'gelo' },
 ];
 // oggetti messi a mano: [tipo, x, z]
 const PROPS = [
@@ -98,13 +103,21 @@ const PROPS = [
 ];
 // forzieri: [id, x, z, contenuto, rarità, direzione]
 const CHESTS = [
-  ['c01', 2045, 2600, 'pozione', 0], ['c02', 2410, 2830, 'monete:40', 0], ['c03', 1700, 2405, 'giaco', 0], ['c04', 1260, 1700, 'monete:60', 0],
-  ['c05', 1035, 1360, 'cuore', 1], ['c06', 2150, 1352, 'aurora', 3], ['c07', 2316, 452, 'drago', 3], ['c08', 3395, 1655, 'corona', 3],
-  ['c09', 665, 2650, 'luna', 3], ['c10', 3702, 905, 'grifone', 3], ['c11', 792, 588, 'vento', 2], ['c12', 3302, 3050, 'runica', 2],
-  ['c13', 2735, 3012, 'elmoFerro', 1], ['c14', 1480, 3540, 'cotta', 1], ['c15', 2985, 2310, 'argento', 1], ['c16', 900, 1100, 'monete:80', 0],
-  ['c17', 3620, 1920, 'ascia', 2], ['c18', 2950, 3420, 'cuore', 1], ['c19', 1150, 3150, 'pozione:2', 0], ['c20', 3210, 1100, 'acciaio', 2],
-  ['c21', 1650, 2850, 'cuore', 1], ['c22', 2600, 1150, 'monete:100', 0], ['c23', 1890, 905, 'alato', 2], ['c24', 2550, 3700, 'pozione:3', 0],
+  ['c01', 1925, 2562, 'pozione', 0], ['c02', 2475, 2930, 'monete:40', 0], ['c03', 1625, 2330, 'giaco', 0], ['c04', 1195, 1765, 'monete:60', 0],
+  ['c05', 1080, 1392, 'cuore', 1], ['c06', 2150, 1352, 'aurora', 3], ['c07', 2316, 452, 'drago', 3], ['c08', 3395, 1655, 'corona', 3],
+  ['c09', 665, 2650, 'luna', 3], ['c10', 3702, 905, 'grifone', 3], ['c11', 860, 480, 'vento', 2], ['c12', 3230, 3150, 'runica', 2],
+  ['c13', 2829, 2960, 'elmoFerro', 1], ['c14', 1292, 3632, 'cotta', 1], ['c15', 3060, 2385, 'argento', 1], ['c16', 830, 1175, 'monete:80', 0],
+  ['c17', 3620, 1920, 'ascia', 2], ['c18', 2950, 3420, 'cuore', 1], ['c19', 1150, 3150, 'pozione:2', 0], ['c20', 3210, 1140, 'acciaio', 2],
+  ['c21', 1650, 2850, 'cuore', 1], ['c22', 2600, 1150, 'monete:100', 0], ['c23', 1904, 897, 'alato', 2], ['c24', 2550, 3700, 'pozione:3', 0],
   ['c25', 820, 1900, 'scudoFerro', 1], ['c26', 1850, 3650, 'monete:70', 0], ['c27', 3150, 2700, 'pozione:2', 0], ['c28', 1550, 1050, 'anello2', 1],
+  ['c29', 610, 2960, 'elisir', 1], ['c30', 1330, 1180, 'monete:90', 0], ['c31', 3500, 2150, 'elisir', 1],
+];
+// nascondigli: un cerchio di cespugli, alberi o massi attorno a un forziere (stile, apertura verso...)
+const NOOKS = [
+  [1925, 2562, 'cespugli'], [2475, 2930, 'cespugli'], [1625, 2330, 'cespugli'], [1195, 1765, 'bosco'], [1080, 1392, 'bosco'], [860, 480, 'neve'],
+  [3230, 3150, 'brace'], [1292, 3632, 'cespugli'], [3060, 2385, 'sabbia'], [830, 1175, 'bosco'], [3620, 1920, 'sabbia'], [2950, 3420, 'brace'],
+  [1150, 3150, 'cespugli'], [3210, 1140, 'rocce'], [2600, 1150, 'rocce'], [1904, 897, 'rocce'], [2550, 3700, 'cespugli'], [820, 1900, 'bosco'],
+  [1850, 3650, 'cespugli'], [3150, 2700, 'brace'], [1550, 1050, 'bosco'], [610, 2960, 'palude'], [1330, 1180, 'bosco'], [3500, 2150, 'sabbia'],
 ];
 // abitanti e creature con un nome: [id, x, z, direzione]
 const NPCS = [
@@ -201,7 +214,7 @@ function height0(x, z) {
 
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, N, CELL, V, TEX, WL, CH, CS, B, REG, PLACES, BUILD, PROPS, CHESTS, NPCS, CAMPS, ROADS, RIVER, STONES, ISLAND,
+  WS, N, CELL, V, TEX, WL, CH, CS, B, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, STONES, ISLAND,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, objs: [], colliders: null, boxes: [], mapImg: null,
 };
 W.ground = (x, z) => {
@@ -392,11 +405,37 @@ function gable(x0, z0, x1, z1, y, rh, roof, wall) {
 }
 // porta o finestra: un riquadro appena staccato dal muro
 function onWall(side, x0, z0, x1, z1, c, y0, w, h, tile) {
-  const e = 0.18, a = c - w / 2, b = c + w / 2;
+  const e = 0.18, a = c - w / 2, b = c + w / 2, n0 = W.mesh.length;
   if (side === 's') quad([a, y0, z1 + e], [b, y0, z1 + e], [b, y0 + h, z1 + e], [a, y0 + h, z1 + e], tile, 1, 1);
   if (side === 'n') quad([b, y0, z0 - e], [a, y0, z0 - e], [a, y0 + h, z0 - e], [b, y0 + h, z0 - e], tile, 1, 1);
   if (side === 'e') quad([x1 + e, y0, b], [x1 + e, y0, a], [x1 + e, y0 + h, a], [x1 + e, y0 + h, b], tile, 1, 1);
   if (side === 'w') quad([x0 - e, y0, a], [x0 - e, y0, b], [x0 - e, y0 + h, b], [x0 - e, y0 + h, a], tile, 1, 1);
+  // segno «decalcomania»: nello shader si stacca dal muro anche da lontano (niente sfarfallio con i mattoni dietro)
+  for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] += 2;
+}
+// poggio di roccia: quattro anelli di punti un po' storti e una cupola in cima; il lato della porta è una parete dritta
+function crag(b, g) {
+  const R = rng(Math.round(b.x * 13 + b.z * 7)), N = 12, rx = b.w / 2, rz = b.d / 2, cx = b.x, cz = b.z, TAU2 = Math.PI * 2;
+  const dv = { s: [0, 1], n: [0, -1], e: [1, 0], w: [-1, 0] }[b.door] || [0, 1];
+  let lo = Infinity, hi = -Infinity; for (let i = 0; i < N; i++) { const a = i / N * TAU2, h = g(cx + Math.cos(a) * rx, cz + Math.sin(a) * rz); lo = Math.min(lo, h); hi = Math.max(hi, h); }
+  const H = b.h, se = v => Math.sign(v) * Math.pow(Math.abs(v), 0.6), jit = []; for (let i = 0; i < N; i++) jit.push(0.86 + R() * 0.14);
+  const P = [[1, lo - 4], [0.95, hi + H * 0.72], [0.72, hi + H * 1.0], [0.38, hi + H * 1.2]].map(([k, y], ri) => {
+    const out = [];
+    for (let i = 0; i < N; i++) {
+      const a = i / N * TAU2, ca = Math.cos(a), sa = Math.sin(a), j = ri === 3 ? 1 : jit[i];
+      let x = cx + se(ca) * rx * k * j, z = cz + se(sa) * rz * k * j;
+      if (ri < 2 && ca * dv[0] + sa * dv[1] > 0.6) { if (dv[0]) x = cx + dv[0] * rx; else z = cz + dv[1] * rz; }
+      out.push([x, y + (ri > 0 ? (R() - 0.5) * 1.6 : 0), z]);
+    }
+    return out;
+  });
+  for (let r = 0; r < 3; r++) for (let i = 0; i < N; i++) {
+    const i1 = (i + 1) % N, a = P[r][i], c1 = P[r][i1], up = P[r + 1][i], up1 = P[r + 1][i1];
+    quad(c1, a, up, up1, 56, Math.max(1, Math.round(Math.hypot(a[0] - c1[0], a[2] - c1[2]) / 8)), Math.max(1, Math.round((up[1] - a[1]) / 8)));
+  }
+  const tp = [cx, hi + H * 1.32, cz];
+  for (let i = 0; i < N; i++) { const i1 = (i + 1) % N; quad(P[3][i1], P[3][i], tp, tp, 56, 1, 1); }
+  return tp[1];
 }
 function prism(cx, cz, r, y0, y1, tile, sides = 8, cap) {
   for (let k = 0; k < sides; k++) {
@@ -444,6 +483,13 @@ function buildMeshes() {
         if (along) box(a0, z0, a1, z1, y0, y0 + 3 + hh, b.wall); else box(x0, a0, x1, a1, y0, y0 + 3 + hh, b.wall);
         W.boxes.push(along ? [a0, z0, a1, z1, y0 + 3 + hh, b] : [x0, a0, x1, a1, y0 + 3 + hh, b]);
       }
+    } else if (b.k === 'cave') {
+      // un poggio di roccia dalla forma irregolare, con una parete dritta dove si apre la grotta
+      const top = crag(b, g), x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, z0 = b.z - b.d / 2, z1 = b.z + b.d / 2;
+      const dx = b.door === 'e' ? x1 + 2 : b.door === 'w' ? x0 - 2 : b.x, dz = b.door === 's' ? z1 + 2 : b.door === 'n' ? z0 - 2 : b.z, gy = g(dx, dz);
+      onWall(b.door, x0, z0, x1, z1, (b.door === 'n' || b.door === 's') ? b.x : b.z, gy - 0.6, 7.5, 7.6, 48);
+      W.lights.push({ x: dx, z: dz, id: b.id, cave: true });
+      W.boxes.push([x0 + 1, z0 + 1, x1 - 1, z1 - 1, top, b]);
     } else if (b.k === 'tower') {
       const y0 = g(b.x, b.z) - 2; prism(b.x, b.z, b.r, y0, y0 + b.h, b.wall, 8, 'cone');
       onWall('s', b.x - 3, b.z - b.r, b.x + 3, b.z + b.r * 0.92, b.x, y0 + 2, 5, 8, 7);
@@ -470,14 +516,41 @@ function buildMeshes() {
 
 // ---------- oggetti: alberi, rocce, fiori... ----------
 function placeObjects(S) {
-  const objs = W.objs = [], R = rng(4242);
+  const objs = W.objs = [], R = rng(4242), TAU2 = Math.PI * 2;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
     const y = o.y !== undefined ? o.y : W.ground(x, z);
     objs.push({ k: key, x, z, y: y - (o.sink || 0.4), s: o.s || sp.s, small: !!o.small || sp.small, sp: sp.r[Math.floor(R() * sp.r.length)] });
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
   };
-  const busy = (x, z, m) => { for (const f of FLAT.slice(0, 4)) if (Math.hypot(x - f[0], z - f[1]) < f[2] * 0.85 + m) return true; return !!W.inBox(x, z, m + 4); };
+  const busy = (x, z, m) => { for (const f of FLAT.slice(0, 4)) if (Math.hypot(x - f[0], z - f[1]) < f[2] * 0.85 + m) return true; for (const n of NOOKS) if (Math.hypot(x - n[0], z - n[1]) < 17) return true; for (const b of BUILD) if (b.k === 'cave' && Math.hypot(x - b.x, z - b.z) < 30) return true; return !!W.inBox(x, z, m + 4); };
+  // un nascondiglio: chi passa sulla strada non vede il forziere
+  const NK = {
+    cespugli: { ring: ['bush', 7, 6.5], back: [['oak', 2, 13]], deco: ['flower', 'tuft'] },
+    bosco: { ring: ['bush', 6, 6.5], back: [['oakbig', 3, 14]], deco: ['mushroom', 'fern'] },
+    rocce: { ring: ['rock', 5, 8, true], back: [['pine', 2, 14]], deco: ['tuft'] },
+    neve: { ring: ['rocksnow', 5, 8, true], back: [['snowpine', 3, 14]], deco: [] },
+    sabbia: { ring: ['sandrock', 4, 8, true], back: [['cactus', 1, 13], ['drybush', 3, 6]], deco: ['bones'] },
+    palude: { ring: ['reeds', 7, 6], back: [['willow', 3, 13]], deco: ['mushroom'] },
+    brace: { ring: ['lavarock', 5, 8, true], back: [['burnt', 2, 14]], deco: ['bones'] },
+  };
+  for (const [nx, nz, st] of NOOKS) {
+    const S2 = NK[st], open = Math.atan2(2400 - nz, 2048 - nx), [rk, rn, rr, solid] = S2.ring, slots = solid ? 7 : rn;
+    for (let i = 0, put = 0; i < slots && put < rn; i++) {
+      const a = open + Math.PI / slots + i / slots * TAU2;
+      if (solid && Math.abs(Math.atan2(Math.sin(a - open), Math.cos(a - open))) < 0.75) continue;   // lascia un varco
+      add(rk, nx + Math.cos(a) * (rr + (R() - 0.5)), nz + Math.sin(a) * (rr + (R() - 0.5)), rk === 'bush' || rk === 'reeds' ? { small: rk === 'reeds' } : {}); put++;
+    }
+    for (const [bk, bn, br] of S2.back) for (let i = 0; i < bn; i++) { const a = open + Math.PI + (i - (bn - 1) / 2) * 0.75 + (R() - 0.5) * 0.2; add(bk, nx + Math.cos(a) * br, nz + Math.sin(a) * br); }
+    for (const dk of S2.deco) for (let i = 0; i < 3; i++) { const a = R() * TAU2, r = 3 + R() * 4; add(dk, nx + Math.cos(a) * r, nz + Math.sin(a) * r, { small: true }); }
+  }
+  // massi e alberi attorno agli imbocchi delle grotte (il davanti resta libero)
+  for (const b of BUILD) if (b.k === 'cave') {
+    const fw = b.door === 's' ? Math.PI / 2 : b.door === 'n' ? -Math.PI / 2 : b.door === 'e' ? 0 : Math.PI, bio = W.biomeAt(b.x, b.z);
+    const rk = bio === B.SNOW ? 'rocksnow' : bio === B.DESERT ? 'sandrock' : bio === B.VOLCANO ? 'lavarock' : 'rock', tr = bio === B.SNOW ? 'snowpine' : bio === B.MOUNT ? 'pine' : bio === B.FOREST ? 'oakbig' : bio === B.MEADOW ? 'palm' : 'oak';
+    for (let i = 0; i < 9; i++) { const a = fw + 0.9 + i / 8 * (TAU2 - 1.8), r = Math.max(b.w, b.d) * 0.55 + 4 + R() * 4; add(i % 3 === 1 ? tr : rk, b.x + Math.cos(a) * r, b.z + Math.sin(a) * r); }
+    for (const sd of [-1, 1]) { const a = fw + sd * 0.62, r = Math.max(b.w, b.d) * 0.62 + 6; add(bio === B.SNOW ? 'snowpine' : 'bush', b.x + Math.cos(a) * r, b.z + Math.sin(a) * r); }
+  }
   for (const p of PROPS) {
     const [k, x, z] = p;
     if (k === 'ore') continue;   // i minerali si raccolgono: li disegna il gioco

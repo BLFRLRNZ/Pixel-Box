@@ -18,7 +18,10 @@ const M4 = {
 const DITHER = `
 float bay(vec2 p) { vec2 q = mod(floor(p), 4.0), h = floor(q / 2.0), l = q - 2.0 * h;
   return (4.0 * mod(2.0 * l.x + 3.0 * l.y, 4.0) + mod(2.0 * h.x + 3.0 * h.y, 4.0) + 0.5) / 16.0; }
-vec3 dith(vec3 c) { return floor(c * 40.0 + 0.5) / 40.0; }
+vec3 grade(vec3 c) { float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b)), l = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(vec3(l), c, 1.0 + 0.55 * (1.0 - (mx - mn))); c = c + (c - 0.5) * 0.08; return clamp(c, 0.0, 1.0); }
+vec3 dith(vec3 c) { return floor(grade(c) * 40.0 + 0.5) / 40.0; }
+vec3 band(vec3 l, float n) { float m = max(l.r, max(l.g, l.b)); return l * (floor(m * n + 0.5) / n / max(m, 0.001)); }
 float fogk(float f) { return f * f * (3.0 - 2.0 * f); }
 `;
 const DLIGHT = `
@@ -61,8 +64,9 @@ void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP 
   float occ = 0.0;
   if (uNear > 0.0) {
     vec2 rel = aC.xz - uCam.xz, ch = uHero.xz - uCam.xz; float L = max(length(ch), 0.001); vec2 dir = ch / L;
-    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), top = aC.y + max(-aK.a, 0.0);
-    if (along > 0.0 && along < L - 1.0 && perp < abs(aO.x) + 1.0 && top > mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0)) - 0.5) occ = 1.0;
+    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), hh = max(-aK.a, 0.0), top = aC.y + hh, line = mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0));
+    float wd = abs(aO.x) * ((line - aC.y) / max(hh, 0.1) < 0.4 ? 0.14 : 1.0);
+    if (along > 0.0 && along < L - 1.0 && perp - wd < 3.0 * along / L + 0.4 && top > line - 0.5) occ = 1.0;
     if (length(rel) < uNear) occ = 1.0;
   }
   vOcc = occ; }`, PREC + DITHER + `
@@ -76,7 +80,7 @@ void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
 attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog;
-void main() { gl_Position = uVP * vec4(aPos, 1.0); vT = aT; vL = aL; vSh = aSh;
+void main() { float dec = step(1.5, aSh); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * dec;
   vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
 uniform sampler2D uTex; uniform vec3 uFogC; uniform float uLight; uniform vec2 uTiles;
 varying vec2 vT, vL; varying float vSh, vFog;
@@ -124,7 +128,7 @@ void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5
     a = min(a, vDist < 14.0 ? 0.0 : vDist < 18.0 ? 0.35 : 1.0);
   }
   if (a < 0.01 || (uGhost > 0.0 ? a > 0.99 : a < 0.99)) discard;
-  vec3 L = floor(lightAt(vP) * 6.0 + 0.5) / 6.0;
+  vec3 L = band(lightAt(vP), 6.0);
   vec3 c = vSh > 0.995 ? t.rgb : t.rgb * vSh * L;
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), a); }`],
   dbb: [`
@@ -137,7 +141,7 @@ void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP 
 uniform sampler2D uTex; uniform vec3 uFogC;
 varying vec2 vUV; varying vec4 vK; varying float vFog; varying vec3 vLi;
 void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
-  vec3 L = (vK.r > 1.05 || vK.g > 1.05) ? vec3(1.0) : min(floor(vLi * 6.0 + 0.5) / 6.0, vec3(1.25));
+  vec3 L = (vK.r > 1.05 || vK.g > 1.05) ? vec3(1.0) : min(band(vLi, 6.0), vec3(1.25));
   vec3 c = mix(t.rgb * vK.rgb * L, vec3(1.0), vK.a);
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
 };

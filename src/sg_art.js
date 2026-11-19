@@ -253,6 +253,8 @@ function weapon(B, C, E, w, rot, y) {
   if (w.kind === 'axe') { C([0, y, -4], [0, y, 11], 0.55, '#7a5230', rot); E([2.2, y, -2.6], [2.6, 0.55, 2.6], w.col, rot, 1.1); return; }
   if (w.kind === 'spear') { C([0, y, -8], [0, y, 17], 0.48, '#7a5a3a', rot); P2(C, E, [0, y, 17], [0, y, 21.5], 1.1, 0.25, '#c8d0dc', rot); return; }
   if (w.kind === 'club') { P2(C, E, [0, y, 10], [0, y, -2], 0.7, 1.6, '#7a5230', rot); return; }
+  if (w.kind === 'hammer') { C([0, y, -2], [0, y, 11], 0.5, '#7a5230', rot); B([-1.5, 1.5, y - 2.9, y + 2.9, -4.8, -1.4], w.col, rot, 1.05); return; }
+  if (w.kind === 'staff') { C([0, y, -8], [0, y, 13], 0.45, '#7a5a3a', rot); E([0, y, 14.4], [1.5, 1.5, 1.5], w.col, rot, 1.3); return; }
   C([0, y, 9.2], [0, y, 11.2], 0.55, '#5a3a20', rot);
   B([-1.9, 1.9, y - 0.75, y + 0.75, 8.2, 9.1], w.guard || '#c8a040', rot);
   B([-0.7, 0.7, y - 0.55, y + 0.55, -3.8 - (w.len || 0), 8.2], w.col, rot, 1.12);
@@ -711,27 +713,37 @@ function shard(D, c1, c2) {
 // ---------- texture degli edifici: 8x8 riquadri da 32 pixel ----------
 function tiles(R) {
   const T = 32, c = mk(T * 8, T * 8), g = c.getContext('2d');
-  const at = (i, fn) => { g.save(); g.translate((i % 8) * T, Math.floor(i / 8) * T); fn(); g.restore(); };
+  const at = (i, fn) => { g.save(); g.translate((i % 8) * T, Math.floor(i / 8) * T); g.beginPath(); g.rect(0, 0, T, T); g.clip(); fn(); g.restore(); };
   const fill = (col, n, v) => { g.fillStyle = col; g.fillRect(0, 0, T, T); for (let k = 0; k < n; k++) { g.fillStyle = shade(col, 1 + (R() - 0.5) * v); g.fillRect(R() * T | 0, R() * T | 0, 1 + (R() < 0.3), 1); } };
   const bricks = (col, mortar, bw, bh) => { g.fillStyle = mortar; g.fillRect(0, 0, T, T); for (let y = 0; y < T; y += bh) { const off = (y / bh) % 2 ? bw / 2 : 0; for (let x = -bw; x < T; x += bw) { g.fillStyle = shade(col, 0.88 + R() * 0.24); g.fillRect(x + off + 1, y + 1, bw - 1, bh - 1); g.fillStyle = shade(col, 1.12); g.fillRect(x + off + 1, y + 1, bw - 1, 1); } } };
   at(0, () => { fill('#e6d8b8', 90, 0.12); g.fillStyle = 'rgba(90,70,50,.18)'; g.fillRect(0, T - 4, T, 4); });
   at(1, () => { fill('#e6d8b8', 70, 0.12); g.fillStyle = '#5a3a22'; g.fillRect(0, 0, T, 3); g.fillRect(0, T - 3, T, 3); g.fillRect(0, 0, 3, T); g.fillRect(T - 3, 0, 3, T); for (let i = 0; i < T; i++) { g.fillRect(i, Math.round(i * 0.95), 2, 2); } });
-  at(2, () => bricks('#8a8c96', '#4a4a54', 10, 6));
-  at(3, () => { for (let x = 0; x < T; x += 6) { g.fillStyle = shade('#8a5e34', 0.85 + R() * 0.3); g.fillRect(x, 0, 6, T); g.fillStyle = '#4a2e1a'; g.fillRect(x, 0, 1, T); for (let k = 0; k < 5; k++) { g.fillStyle = '#6a4424'; g.fillRect(x + 2 + (R() * 3 | 0), R() * T | 0, 1, 3); } } });
-  const roof = (col) => { g.fillStyle = shade(col, 0.6); g.fillRect(0, 0, T, T); for (let y = 0; y < T; y += 6) for (let x = ((y / 6) % 2) * 4 - 4; x < T; x += 8) { g.fillStyle = shade(col, 0.9 + R() * 0.2); g.fillRect(x, y, 7, 5); g.fillStyle = shade(col, 1.2); g.fillRect(x, y + 4, 7, 1); g.fillStyle = shade(col, 0.7); g.fillRect(x + 6, y, 1, 5); } };
+  at(2, () => bricks('#8a8c96', '#4a4a54', 16, 8));
+  at(3, () => { for (let x = 0; x < T; x += 8) { g.fillStyle = shade('#8a5e34', 0.85 + R() * 0.3); g.fillRect(x, 0, 8, T); g.fillStyle = '#4a2e1a'; g.fillRect(x, 0, 1, T); for (let k = 0; k < 5; k++) { g.fillStyle = '#6a4424'; g.fillRect(x + 2 + (R() * 3 | 0), R() * T | 0, 1, 3); } } });
+  const roof = (col) => { g.fillStyle = shade(col, 0.6); g.fillRect(0, 0, T, T); for (let y = 0; y < T; y += 8) for (let x = ((y / 8) % 2) * 4 - 8; x < T; x += 8) { g.fillStyle = shade(col, 0.9 + R() * 0.2); g.fillRect(x, y, 7, 7); g.fillStyle = shade(col, 1.2); g.fillRect(x, y + 6, 7, 1); g.fillStyle = shade(col, 0.7); g.fillRect(x + 6, y, 1, 7); } };
   at(4, () => roof('#b8402c'));
   at(5, () => roof('#4a5a7a'));
   at(6, () => { fill('#c8a04a', 0, 0); for (let k = 0; k < 160; k++) { g.fillStyle = R() < 0.5 ? '#a8803a' : '#e0c070'; g.fillRect(R() * T | 0, R() * T | 0, 1, 3 + (R() * 3 | 0)); } g.fillStyle = '#8a6a2a'; for (let y = 5; y < T; y += 8) g.fillRect(0, y, T, 1); });
   at(7, () => { g.fillStyle = '#3a2416'; g.fillRect(0, 0, T, T); for (let x = 2; x < T - 2; x += 7) { g.fillStyle = shade('#7a4e2a', 0.85 + R() * 0.3); g.fillRect(x, 3, 6, T - 3); } g.fillStyle = '#2a1a10'; g.fillRect(0, 0, T, 3); g.fillStyle = '#c8a040'; g.fillRect(T - 9, 17, 3, 3); g.fillStyle = '#5a5a66'; for (const y of [8, 24]) g.fillRect(2, y, T - 4, 2); });
-  at(8, () => { fill('#e6d8b8', 60, 0.1); g.fillStyle = '#3a2416'; g.fillRect(7, 6, 18, 20); g.fillStyle = '#5a8ac8'; g.fillRect(9, 8, 14, 16); g.fillStyle = '#9ac4f0'; g.fillRect(10, 9, 4, 6); g.fillStyle = '#3a2416'; g.fillRect(15, 8, 2, 16); g.fillRect(9, 15, 14, 2); g.fillStyle = '#6a8a3a'; g.fillRect(6, 26, 20, 3); g.fillStyle = '#d84a4a'; for (let i = 0; i < 4; i++) g.fillRect(8 + i * 5, 25, 2, 2); });
+  at(8, () => {
+    g.clearRect(0, 0, T, T);
+    for (const x0 of [1, 25]) { g.fillStyle = '#1e3a24'; g.fillRect(x0, 4, 6, 23); g.fillStyle = '#3a8a4a'; g.fillRect(x0 + 1, 5, 4, 21); g.fillStyle = '#2a6a38'; for (let y = 7; y < 26; y += 3) g.fillRect(x0 + 1, y, 4, 1); }
+    g.fillStyle = '#3a2416'; g.fillRect(7, 3, 18, 25);
+    g.fillStyle = '#3a6ab8'; g.fillRect(9, 5, 14, 21); g.fillStyle = '#5a8ad8'; g.fillRect(9, 5, 14, 9);
+    g.fillStyle = '#bfe0ff'; g.fillRect(10, 6, 2, 4); g.fillRect(12, 6, 1, 2); g.fillRect(18, 17, 2, 3);
+    g.fillStyle = '#3a2416'; g.fillRect(15, 5, 2, 21); g.fillRect(9, 14, 14, 2);
+    g.fillStyle = '#a07a52'; g.fillRect(5, 27, 22, 2); g.fillStyle = '#c89a6a'; g.fillRect(5, 27, 22, 1);
+    g.fillStyle = '#6a4424'; g.fillRect(7, 29, 18, 3);
+    for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#e8364e'; g.fillRect(8 + i * 3, 25 + (i % 2), 2, 2); g.fillStyle = '#3e8a3a'; g.fillRect(8 + i * 3, 27 + (i % 2), 1, 2); }
+  });
   at(9, () => bricks('#b8b4a8', '#7a7670', 16, 8));
-  at(10, () => bricks('#d8b878', '#9a7a48', 12, 7));
-  at(11, () => { bricks('#7a8a7a', '#3a443a', 11, 7); for (let k = 0; k < 40; k++) { g.fillStyle = R() < 0.5 ? '#4a7a3a' : '#5a9a44'; g.fillRect(R() * T | 0, R() * T | 0, 2, 1 + (R() < 0.4)); } });
+  at(10, () => bricks('#d8b878', '#9a7a48', 16, 8));
+  at(11, () => { bricks('#7a8a7a', '#3a443a', 16, 8); for (let k = 0; k < 40; k++) { g.fillStyle = R() < 0.5 ? '#4a7a3a' : '#5a9a44'; g.fillRect(R() * T | 0, R() * T | 0, 2, 1 + (R() < 0.4)); } });
   at(12, () => { g.fillStyle = '#2a2a3a'; g.fillRect(0, 0, T, T); g.fillStyle = '#1a1a26'; g.fillRect(0, 0, T, 2); g.fillRect(0, 0, 2, T); g.fillRect(T - 2, 0, 2, T); g.strokeStyle = '#4ae0e8'; g.lineWidth = 1; g.beginPath(); g.arc(16, 15, 8, 0, TAU); g.stroke(); g.fillStyle = '#4ae0e8'; for (const [x, y] of [[16, 5], [6, 15], [26, 15], [16, 25], [11, 10], [21, 20]]) g.fillRect(x - 1, y - 1, 2, 2); g.fillStyle = '#b8f8ff'; g.fillRect(15, 14, 2, 2); });
   at(13, () => { for (let x = 0; x < T; x += 4) { g.fillStyle = (x / 4) % 2 ? '#e8e0d0' : '#c8342c'; g.fillRect(x, 0, 4, T); } g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, T - 3, T, 3); });
   at(14, () => fill('#5a4a40', 60, 0.25));
   at(15, () => { fill('#3a3a46', 50, 0.2); g.fillStyle = '#ffc145'; g.fillRect(14, 10, 4, 8); g.fillStyle = '#fff4b8'; g.fillRect(15, 12, 2, 4); });
-  at(16, () => bricks('#9a6a4a', '#5a3a2a', 10, 6));
+  at(16, () => bricks('#9a6a4a', '#5a3a2a', 8, 4));
   at(17, () => { fill('#e8e2d0', 30, 0.08); g.fillStyle = '#c8a040'; g.fillRect(0, 0, T, 2); g.fillRect(0, T - 2, T, 2); });
   return c;
 }
@@ -789,6 +801,14 @@ const ICO = {
   bigkey: ['............', '.aaaa.......', 'abbbba......', 'abccba......', 'abbbbaaaaaaa', '.aaaabbbbbba', '......abaaba', '......aba.ba', '.......a..a.', '............', '............', '............'],
   gem: ['.....a......', '....aba.....', '...abcba....', '..abccdba...', '.abcccddba..', 'abccccddbba.', '.abcccdbba..', '..abccbba...', '...abbba....', '....aba.....', '.....a......', '............'],
   seal: ['............', '...aaaaaa...', '..abbbbbba..', '.abbccccbba.', '.abcbbbbcba.', '.abcbddbcba.', '.abcbddbcba.', '.abcbbbbcba.', '.abbccccbba.', '..abbbbbba..', '...aaaaaa...', '............'],
+  axe: ['............', '..aaaa......', '.abbbba.....', 'abbbbbaa....', 'abbbbaccaa..', '.abbbacca...', '..aaa.acca..', '.......acca.', '........acca', '.........aca', '..........a.', '............'],
+  spear: ['..........a.', '.........aba', '........abba', '.......abba.', '......acaa..', '.....aca....', '....aca.....', '...aca......', '..aca.......', '.aca........', '.aa.........', '............'],
+  hammer: ['............', '..aaaaaaaa..', '..abbbbbba..', '..abbbbbba..', '..adddddda..', '..aaaacaaa..', '.....aca....', '.....aca....', '.....aca....', '.....aca....', '.....aaa....', '............'],
+  staff: ['........aaa.', '.......abbba', '.......abcba', '.......abbba', '......acaaa.', '.....aca....', '....aca.....', '...aca......', '..aca.......', '.aca........', '.aa.........', '............'],
+  hood: ['............', '....aaaa....', '...abbbba...', '..abbbbbba..', '..abbaaabba.', '.abba...abba', '.abba...abba', '.abbba.abbba', '..abbbabbba.', '...aaaaaaa..', '............', '............'],
+  hat: ['......a.....', '.....aba....', '.....abba...', '....abbba...', '....abcbba..', '...abbbbba..', '...abbbbbba.', '..abbbbbbba.', 'aaaaaaaaaaaa', 'abbbbbbbbbba', 'aaaaaaaaaaaa', '............'],
+  clover: ['............', '..aa....aa..', '.abba..abba.', '.abbbaabbba.', '..abbbbbba..', '...abccba...', '..abbccbba..', '.abbbaabbba.', '.abba.aabba.', '..aa..ada...', '.......ad...', '............'],
+  feather: ['.........aa.', '........abba', '.......abbca', '......abbca.', '.....abbca..', '....abbca...', '...abbca....', '..abbca.....', '..abca......', '.adaa.......', '.da.........', 'a...........'],
   fish: ['............', '............', '..aaaa....a.', '.abbbba..aa.', 'abcbbbbaaba.', 'abbbbbbbbba.', '.abbbba..aa.', '..aaaa....a.', '............', '............', '............', '............'],
 };
 function icon(name, c1, c2 = '#fff4b0') {

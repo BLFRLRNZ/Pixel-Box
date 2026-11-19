@@ -47,17 +47,37 @@ const IT = {
   pSole: { n: "PIETRA DELL'ALBA DEL SOLE", t: 'pietra', r: 3, c: '#ffd23f', d: 'BRILLA DELLA LUCE DORATA DEL DESERTO.' },
   pGhiaccio: { n: "PIETRA DELL'ALBA DEL GHIACCIO", t: 'pietra', r: 3, c: '#bff0ff', d: 'BRILLA DELLA LUCE BIANCA DEI GHIACCI.' },
   pFuoco: { n: "PIETRA DELL'ALBA DEL FUOCO", t: 'pietra', r: 3, c: '#ff5a3a', d: 'BRILLA DELLA LUCE ROSSA DEL VULCANO.' },
+  // armi, armature e amuleti nuovi: nei negozi e nelle grotte nascoste
+  pugnale: { n: 'PUGNALE DEL LADRO', t: 'arma', r: 0, att: 3, d: 'CORTO E AFFILATO. MEGLIO DI UN BASTONE.', look: { col: '#d8dce4', guard: '#5a3a20', len: -2.5 } },
+  lancia: { n: 'LANCIA DEL CACCIATORE', t: 'arma', r: 1, att: 6, d: 'LA USAVANO I CACCIATORI DI LUPI DEL BOSCO.', look: { kind: 'spear', col: '#c8d0dc' } },
+  mazza: { n: 'MAZZA FERRATA', t: 'arma', r: 1, att: 7, d: 'NON È ELEGANTE, MA FA IL SUO LAVORO.', look: { kind: 'hammer', col: '#6a6e78' } },
+  bastone: { n: 'BASTONE DEL SAGGIO', t: 'arma', r: 2, att: 8, regen: 1, d: 'LA SFERA IN CIMA RICUCE LE FERITE A POCO A POCO.', look: { kind: 'staff', col: '#7ae0ff' } },
+  martello: { n: 'MARTELLO DI BRUNO', t: 'arma', r: 2, att: 12, d: 'IL CAPOLAVORO DELLA FUCINA: PESA COME UN SOMARO.', look: { kind: 'hammer', col: '#c8d0dc' } },
+  mantello: { n: 'MANTELLO DEL BOSCO', t: 'armatura', r: 2, dif: 2, vel: 0.15, d: 'LEGGERO COME UNA FOGLIA. +15% VELOCITÀ.', look: { shirt: '#4a8a3a', sleeve: '#3a7a30', belt: '#6a4424', pants: '#3a4a2a', cape: '#2e6a24' } },
+  scaglie: { n: 'CORAZZA A SCAGLIE', t: 'armatura', r: 2, dif: 4, d: 'CENTINAIA DI SCAGLIE DI BRONZO CUCITE SUL CUOIO.', look: { shirt: '#b08a3a', plate: '#e0b860', pauldron: '#a07a2a', belt: '#5a3a1a', pants: '#5a4a3a' } },
+  ombra: { n: "VESTE D'OMBRA", t: 'armatura', r: 3, dif: 4, vel: 0.2, d: 'TESSUTA CON IL BUIO DELLE GROTTE. +20% VELOCITÀ.', look: { shirt: '#4a2a7a', sleeve: '#3a2066', belt: '#e0b040', pants: '#2a1e44', cape: '#6a3aaa' } },
+  cappuccio: { n: 'CAPPUCCIO DEL VIANDANTE', t: 'elmo', r: 0, dif: 0, vel: 0.08, d: 'TIENE LONTANI IL VENTO E LA PIOGGIA. +8% VELOCITÀ.', look: { hood: '#7a6a3a' } },
+  elmoCuoio: { n: 'ELMO DI CUOIO', t: 'elmo', r: 0, dif: 1, d: 'CUOIO BOLLITO, DURO COME IL LEGNO.', look: { helm: { c: '#8a5a34' } } },
+  cappello: { n: 'CAPPELLO DEL MAGO', t: 'elmo', r: 2, dif: 1, hp: 2, d: 'APPARTENEVA A UN MAGO MOLTO DISTRATTO. +1 CUORE.', look: { hat: '#3a4aaa' } },
+  brocchiere: { n: 'BROCCHIERE', t: 'scudo', r: 0, dif: 1, d: 'UNO SCUDO PICCOLO E TONDO, LEGGERISSIMO.', look: { shield: '#a07a4a', emblem: '#d8dce4' } },
+  torre: { n: 'SCUDO A TORRE', t: 'scudo', r: 2, dif: 3, d: 'ALTO COME UNA PORTA: DIETRO CI SI STA COMODI.', look: { shield: '#5a6a8a', emblem: '#ffd23f' } },
+  trifoglio: { n: 'QUADRIFOGLIO', t: 'acc', r: 1, luck: true, d: 'PORTA FORTUNA: I MOSTRI LASCIANO IL DOPPIO DELLE MONETE.', ico: 'clover' },
+  talismano: { n: 'TALISMANO DI PIETRA', t: 'acc', r: 1, dif: 1, d: 'UNA PIETRA LISCIA CON INCISA UNA RUNA. DIF +1.', ico: 'amulet' },
+  anelloForza: { n: 'ANELLO DELLA FORZA', t: 'acc', r: 2, att: 3, d: 'IL BRACCIO SI FA PESANTE COME IL FERRO. ATT +3.', ico: 'ring' },
+  piuma: { n: 'PIUMA DEL GRIFONE', t: 'acc', r: 2, vel: 0.25, dif: 1, d: 'UNA PIUMA DORATA CHE TI FA LEGGERO. +25% VELOCITÀ, DIF +1.', ico: 'feather' },
+  elisir: { n: 'ELISIR', t: 'elisir', r: 1, d: 'RIDÀ TUTTI I CUORI. SI BEVE DAL MENU (START).' },
 };
 const SLOTS = [['arma', 'ARMA'], ['armatura', 'ARMATURA'], ['elmo', 'ELMO'], ['scudo', 'SCUDO'], ['acc', 'ACCESSORIO']];
 function itemIcon(id) {
   const it = IT[id]; if (!it) return null;
   if (iconCache[id]) return iconCache[id];
   let c;
-  if (it.t === 'arma') c = A.icon('sword', it.look.col, it.look.guard || '#c8a040');
+  if (it.t === 'arma') { const k = it.look.kind; c = k === 'axe' ? A.icon('axe', it.look.col, '#a07040') : k === 'spear' ? A.icon('spear', it.look.col, '#a07040') : k === 'hammer' ? A.icon('hammer', it.look.col, '#a07040') : k === 'staff' ? A.icon('staff', it.look.col, '#a07040') : A.icon('sword', it.look.col, it.look.guard || '#c8a040'); }
   else if (it.t === 'armatura') c = A.icon('armor', it.look.shirt, it.look.plate || '#fff4b0');
-  else if (it.t === 'elmo') c = A.icon('helm', it.look.helm ? it.look.helm.c : '#3e6a3a', '#ffe14a');
+  else if (it.t === 'elmo') c = it.look.hood ? A.icon('hood', it.look.hood) : it.look.hat ? A.icon('hat', it.look.hat, '#ffe14a') : A.icon('helm', it.look.helm ? it.look.helm.c : '#3e6a3a', '#ffe14a');
   else if (it.t === 'scudo') c = A.icon('shield', it.look.shield, it.look.emblem || '#e8d0a0');
-  else if (it.t === 'acc') c = A.icon(it.ico, it.r === 3 ? '#cfe8ff' : '#ffc83a', '#e8304a');
+  else if (it.t === 'acc') c = it.ico === 'clover' ? A.icon('clover', '#4ab84a', '#9af07a') : it.ico === 'feather' ? A.icon('feather', '#ffc83a', '#fff4b0') : A.icon(it.ico, it.r === 3 ? '#cfe8ff' : id === 'talismano' ? '#9aa4b2' : '#ffc83a', '#e8304a');
+  else if (it.t === 'elisir') c = A.icon('potion', '#3a8ae8', '#bfe8ff');
   else if (it.t === 'cuore') c = A.icon('heart', '#ff4a6a', '#ffd0d8');
   else if (it.t === 'pozione') c = A.icon('potion', '#e8304a', '#ffb0c0');
   else if (it.t === 'chiave') c = id === 'grandeChiave' ? A.icon('bigkey', '#ffd86a', '#e8304a') : id === 'sigillo' ? A.icon('seal', '#c89a2a', '#e8304a') : A.icon('key', '#ffc83a');
@@ -144,15 +164,16 @@ function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length
 
 // ---------- statistiche dell'eroe ----------
 const eqIt = s => save.eq[s] ? IT[save.eq[s]] : null;
-const ATT = () => { const w = eqIt('arma'); return w ? w.att : 1; };
-const DIF = () => ['armatura', 'elmo', 'scudo'].reduce((s, k) => s + ((eqIt(k) || {}).dif || 0), 0);
-const MAXHP = () => 6 + save.hearts * 2 + ['elmo', 'acc'].reduce((s, k) => s + ((eqIt(k) || {}).hp || 0), 0);
-const VEL = () => 1 + ((eqIt('acc') || {}).vel || 0);
+const EQS = ['arma', 'armatura', 'elmo', 'scudo', 'acc'], eqSum = f => EQS.reduce((s, k) => s + ((eqIt(k) || {})[f] || 0), 0), eqHas = f => EQS.some(k => (eqIt(k) || {})[f]);
+const ATT = () => { const w = eqIt('arma'); return (w ? w.att : 1) + ((eqIt('acc') || {}).att || 0); };
+const DIF = () => eqSum('dif');
+const MAXHP = () => 6 + save.hearts * 2 + eqSum('hp');
+const VEL = () => 1 + eqSum('vel');
 function heroLook() {
   const L = { skin: SKIN, hairStyle: 'short', hair: '#6a4024', boots: '#5a3a22' };
   Object.assign(L, IT.tunica.look);
   for (const s of ['armatura', 'elmo', 'scudo']) { const it = eqIt(s); if (it && it.look) Object.assign(L, it.look); }
-  if (L.helm) L.hairStyle = 'none';
+  if (L.helm || L.hood) L.hairStyle = 'none';
   const w = eqIt('arma'); L.weapon = w ? w.look : null;
   if (save.eq.acc === 'vento') L.boots = '#e8eef6';
   return L;
@@ -343,6 +364,7 @@ function give(id, quiet) {
   const it = IT[id];
   if (it.t === 'cuore') { save.hearts++; hero.hp = MAXHP(); if (!quiet) toast('+1 CUORE!', '#ff6a8a'); return 'UN CUORE IN PIÙ!'; }
   if (it.t === 'pozione') { save.pot++; return null; }
+  if (it.t === 'elisir') { save.eli = (save.eli || 0) + 1; return 'ELISIR NELLA BORSA: ' + save.eli; }
   if (it.t === 'mappa') { save.flags.mappa = 1; return 'I FORZIERI LEGGENDARI SONO SEGNATI SULLA MAPPA.'; }
   if (it.t === 'chiave') { if (id === 'sigillo') save.flags.sigillo = 1; return null; }
   if (it.t === 'pietra') return "PIETRE DELL'ALBA: " + gemsN() + ' SU 5';
@@ -375,8 +397,9 @@ function talk(n) {
     if (q.ferro === 0) return say(id, ['BENVENUTO NELLA MIA FUCINA! PECCATO CHE IL FUOCO SIA QUASI SPENTO: MI MANCA IL FERRO.', 'SULLE COLLINE A NORD-EST DEL BORGO CI SONO ROCCE CON VENATURE DI FERRO. LUCCICANO TRA L\'ERBA.', 'PORTAMENE TRE E TI FORGIO UNA SPADA VERA.'], () => { q.ferro = 1; trackQuest('ferro'); toast('MISSIONE: FERRO PER LA FORGIA', '#ffd23f'); jingle(); });
     if (q.ferro === 1 && save.ore < 3) return say(id, ['MINERALE DI FERRO: NE HAI ' + save.ore + ' SU 3.', 'LE ROCCE CON IL FERRO SONO A NORD-EST DEL BORGO, TRA LE COLLINE.']);
     if (q.ferro <= 2) return say(id, ['CHE BEL FERRO! DAMMI UN MOMENTO...', 'ECCO: UNA SPADA DI FERRO, TEMPRATA A DOVERE. MOLTO MEGLIO DI QUEL BASTONE!'], () => { q.ferro = 3; openLoot('ferro'); });
-    if (save.inv.includes('aurora')) return say(id, ["QUELLA... È LA LAMA DELL'AURORA?! NON CREDEVO DI VEDERLA CON I MIEI OCCHI!", 'TIENILA CARA. NESSUN FABBRO AL MONDO SAPREBBE FORGIARNE UN\'ALTRA.']);
-    return say(id, ['SE UN GIORNO TROVI UN\'ARMA LEGGENDARIA, PORTAMELA: VOGLIO SOLO GUARDARLA, GIURO!']);
+    const open = () => { shop = { sel: 0, top: 0, who: 'bruno' }; };
+    if (save.inv.includes('aurora') && !save.flags.brunoAurora) { save.flags.brunoAurora = 1; return say(id, ["QUELLA... È LA LAMA DELL'AURORA?! NON CREDEVO DI VEDERLA CON I MIEI OCCHI!", 'TIENILA CARA. INTANTO, DAI UN\'OCCHIATA A COSA HO FORGIATO COL TUO FERRO.'], open); }
+    return say(id, [save.q.main >= 4 ? 'IL FUOCO È ALTO E IL FERRO CANTA! HO FINITO IL MIO CAPOLAVORO: VUOI VEDERLO?' : 'COL TUO FERRO LA FUCINA È RINATA. GUARDA COSA TI POSSO FORGIARE!'], open);
   }
   if (id === 'lia') {
     if (q.gatto === 0) return say(id, ['IL MIO GATTO BISCOTTO È SCAPPATO VERSO IL BOSCO! È ARANCIONE E HA PAURA DI TUTTO...', 'MI AIUTI A TROVARLO? L\'HO VISTO CORRERE LUNGO LA STRADA PER IL BOSCO ANTICO.'], () => { q.gatto = 1; trackQuest('gatto'); toast('MISSIONE: IL GATTO BISCOTTO', '#ffd23f'); jingle(); });
@@ -394,12 +417,17 @@ function talk(n) {
     if (q.melme === 2) return say(id, ['SEI MELME! I CONTADINI TI RINGRAZIANO.', 'PRENDI IL MIO VECCHIO SCUDO. E ANCHE QUESTE CINQUANTA MONETE.'], () => { q.melme = 3; save.coins += 50; openLoot('scudoLegno'); });
     return say(id, ['DA QUANDO I CAMPI SONO PULITI IL GRANO CRESCE DORATO COME NON MAI.']);
   }
-  if (id === 'nino') return say(id, ['BENVENUTO! MERCI DA TUTTA LUMEN, PREZZI ONESTI... QUASI.'], () => { shop = { sel: 0 }; });
+  if (id === 'nino') return say(id, ['BENVENUTO! MERCI DA TUTTA LUMEN, PREZZI ONESTI... QUASI.'], () => { shop = { sel: 0, top: 0, who: 'nino' }; });
   if (id === 'viandante') {
     const H = ['HO GIRATO TUTTA LUMEN. SAPEVI CHE SULL\'ISOLA DEL LAGO DI CRISTALLO C\'È UN ANTICO SANTUARIO?', "L'ACQUA DEL LAGO È PROFONDA... MA DALLA RIVA SUD-OVEST HO VISTO UN PUNTO DOVE SEMBRA PIÙ CHIARA.",
       'IN CIMA AL PICCO DEL DRAGO C\'È UN TESORO. IL SENTIERO PARTE DALLA RIVA NORD DEL LAGO: È RIPIDO, MA SI SALE.', 'LE RUPI DEL GRIFONE, A NORD-EST, SEMBRANO IMPOSSIBILI DA SCALARE. MA DAL DESERTO, TRA LE ROCCE, QUALCUNO CI È RIUSCITO.',
       "NEL CUORE DELLA PALUDE D'OMBRA BRILLA QUALCOSA. LE POZZE SONO BASSE: SI POSSONO GUADARE.", 'NEL CERCHIO DI PIETRE, A SUD-OVEST DEL BORGO, GLI ANTICHI LASCIAVANO DONI AGLI DEI.',
-      'DIETRO AL GRANDE ALBERO DEL BOSCO, TRA LE RADICI, I BAMBINI DICONO DI AVER VISTO UN FORZIERE.'];
+      'DIETRO AL GRANDE ALBERO DEL BOSCO, TRA LE RADICI, I BAMBINI DICONO DI AVER VISTO UN FORZIERE.',
+      "NEL FITTO DEL BOSCO ANTICO, VERSO OVEST, C'È UNA GROTTA PIENA DI FUNGHI. I GOBLIN CI NASCONDONO IL LORO BOTTINO.",
+      "I CERCATORI DI TESORI NON LASCIANO MAI I FORZIERI IN MEZZO AL SENTIERO: GUARDA TRA I CESPUGLI, DIETRO I MASSI E DIETRO LE CASE.",
+      "SULLA SPIAGGIA A SUD, A EST DELLA FOCE DEL FIUME, I PIRATI AVEVANO UNA GROTTA. IL TESORO PIÙ BELLO STA OLTRE L'ACQUA PROFONDA.",
+      "SUI MONTI A NORD, SOTTO IL PICCO DEL DRAGO, I MINATORI SCAVAVANO CRISTALLI. LA LORO GROTTA È ANCORA LÌ, TRA LE ROCCE.",
+      "NELLA VALLE GELATA, VICINO AL MARE A OVEST, C'È UNA GROTTA DI GHIACCIO. DICONO CHE NASCONDA UNA VESTE FATTA DI BUIO."];
     const h = H[save.hint % H.length]; save.hint++;
     return say(id, [h]);
   }
@@ -432,7 +460,12 @@ const SIGNS = {
 const PROPTXT = { well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
-const SHOP = [['pozione', 20], ['giaco', 60], ['scudoLegno', 45], ['mappa', 150]];
+const SHOPS = {
+  nino: { title: 'NINO IL MERCANTE', list: [['pozione', 20], ['elisir', 110], ['cappuccio', 40], ['brocchiere', 35], ['giaco', 60], ['scudoLegno', 45], ['talismano', 90], ['trifoglio', 160], ['mappa', 150], ['cappello', 380, 4]] },
+  bruno: { title: 'LA FUCINA DI BRUNO', list: [['pugnale', 45], ['elmoCuoio', 70], ['lancia', 120], ['mazza', 190], ['torre', 270], ['scaglie', 350], ['martello', 520, 4]] },
+};
+const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= r[2]);
+const shopOwned = id => id !== 'pozione' && id !== 'elisir' && id !== 'esci' && (id === 'mappa' ? !!save.flags.mappa : save.inv.includes(id));
 
 // ---------- suoni ----------
 const jingle = () => seq([784, 988, 1175, 1568], 0.09, 0.08, 0.04);
@@ -561,7 +594,7 @@ function heroUpdate(dt) {
   const lava = D ? dCellAt(h.x, h.z) === DT.LAVA : lavaAt(h.x, h.z);
   if (lava && (D || !h.wade) && !fireProof()) { h.burnT -= dt; if (h.burnT <= 0) { h.burnT = 0.7; hurtHero(1, null); toast('SCOTTA! LA LAVA BRUCIA!', '#ff8a4a'); } if (Math.random() < 0.3) fx.push({ k: 'ember', x: h.x, z: h.z, y: h.y + 1, vy: 10, t: 0.5, s: 0.4 }); }
   // amuleti che curano
-  if ((eqIt('acc') || {}).regen && h.hp < MAXHP()) { h.regenT += dt; if (h.regenT > 8) { h.regenT = 0; h.hp++; } }
+  if (eqHas('regen') && h.hp < MAXHP()) { h.regenT += dt; if (h.regenT > 8) { h.regenT = 0; h.hp++; } }
 }
 function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEX - 1, Math.floor(z / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
 
@@ -573,7 +606,8 @@ function hitFoe(e, dmg, a) {
   tone(240, 0.07, 'square', 0.05, 120); vib(15);
   if (e.hp <= 0) {
     e.st = 'dead'; e.fade = 0.5; puffAt(e.x, e.z, 8, e.y + 2); seq([523, 392, 262], 0.05, 0.05, 0.035);
-    const n = T.coins[0] + Math.floor(Math.random() * (T.coins[1] - T.coins[0] + 1));
+    let n = T.coins[0] + Math.floor(Math.random() * (T.coins[1] - T.coins[0] + 1));
+    if (eqHas('luck')) n *= 2;
     for (let i = 0; i < Math.min(5, Math.ceil(n / 2)); i++) drops.push({ k: 'coin', v: Math.ceil(n / Math.min(5, Math.ceil(n / 2))), x: e.x, z: e.z, y: e.y + 2, vx: (Math.random() - 0.5) * 18, vz: (Math.random() - 0.5) * 18, vy: 20, t: 20 });
     if (hero.hp < MAXHP() && Math.random() < 0.3) drops.push({ k: 'heart', x: e.x, z: e.z, y: e.y + 2, vx: 0, vz: 0, vy: 22, t: 20 });
     if (e.type === 'slime' && save.q.melme === 1) { save.slimes++; toast('MELME: ' + Math.min(6, save.slimes) + '/6', '#9af0b0'); if (save.slimes >= 6) { save.q.melme = 2; toast('TORNA DA OTTO!', '#ffd23f'); jingle(); } }
@@ -840,9 +874,9 @@ function dUpload() {
   D.gl = { floor: buf(m.floor), nf: m.floor.length / 32, wall: buf(m.wall), nw: m.wall.length / 32, water: buf(m.water), nwa: m.water.length / 8, lava: buf(m.lava), nl: m.lava.length / 8 };
 }
 function enterDungeon(id) {
-  const door = doors.find(d => d.id === id), b = W.BUILD.find(q => q.id === id), out = b && b.door === 'n' ? -1 : 1;
+  const door = doors.find(d => d.id === id), b = W.BUILD.find(q => q.id === id), ov = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b ? b.door : 's'] || [0, 1];
   D = makeDungeon(id);
-  D.outX = door ? door.x : hero.x; D.outZ = door ? door.z + out * 8 : hero.z; D.outYaw = out > 0 ? Math.PI / 2 : -Math.PI / 2;
+  D.outX = door ? door.x + ov[0] * 8 : hero.x; D.outZ = door ? door.z + ov[1] * 8 : hero.z; D.outYaw = Math.atan2(ov[1], ov[0]);
   if (DID !== id) {
     DAT = A.Atlas(2048, 1024); const r = DS.art(id, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
     if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DAT.c.width = DAT.c.height = 1; DID = id;
@@ -868,6 +902,7 @@ function exitDungeon() {
 }
 function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(392, 0.12, 'triangle', 0.04, 260); }
 function templeDoor(d) {
+  if (d.cave) { if (dsave(d.id).vis) startFade(() => enterDungeon(d.id)); else say(null, ["UN'APERTURA BUIA TRA LE ROCCE. DA DENTRO ARRIVA UN'ARIA FREDDA E UMIDA...", 'ENTRI CON CAUTELA.'], () => startFade(() => enterDungeon(d.id))); return; }
   const id = d.id, q = save.q.main, nm = SANCT[id];
   if (q < 4) { say(null, ['UN ANTICO SIGILLO CHIUDE LA PORTA DEL ' + nm + '. LE RUNE BRILLANO DEBOLMENTE.', q === 3 ? 'FORSE IL CAPITANO ARDEA SA COME SPEZZARLO.' : 'SOLO IL SANGUE DEI RE DI LUMEN PUÒ SPEZZARLO.']); return; }
   const nx = nextSanct();
@@ -1107,7 +1142,7 @@ function breakPot(p) {
   p.alive = false; puffAt(p.x, p.z, 6, 3); noise(0.2, 0.05); tone(700, 0.05, 'square', 0.03, 300);
   const r = Math.random();
   if (r < 0.35 && hero.hp < MAXHP()) drops.push({ k: 'heart', x: p.x, z: p.z, y: 3, vx: 0, vz: 0, vy: 18, t: 20 });
-  else if (r < 0.8) drops.push({ k: 'coin', v: 1 + Math.floor(Math.random() * 4), x: p.x, z: p.z, y: 3, vx: (Math.random() - 0.5) * 10, vz: (Math.random() - 0.5) * 10, vy: 18, t: 20 });
+  else if (r < 0.8) drops.push({ k: 'coin', v: (1 + Math.floor(Math.random() * 4)) * (eqHas('luck') ? 2 : 1), x: p.x, z: p.z, y: 3, vx: (Math.random() - 0.5) * 10, vz: (Math.random() - 0.5) * 10, vy: 18, t: 20 });
 }
 function hitXtal(x) {
   if (x.cd > 0) return; x.cd = 0.6;
@@ -1542,7 +1577,7 @@ function buildDynamic() {
   for (const e of foes) if (near(e.x, e.z, 520)) drawFoe(e);
   for (const p of props) if (p.k === 'ore' && !taken(p) && near(p.x, p.z, 420)) { pushBB(p.x, gH(p.x, p.z) - 0.4, p.z, SPR.ore.r[0], SPR.ore.s); if (near(p.x, p.z, 200) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, gH(p.x, p.z) + 4, p.z, SPR.glint, 0.3); }
   for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 900)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 7.45 : 0.3), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.25 : 0.27, 1.2);
-  for (const d of doors) if (near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
+  for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
   for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
@@ -1598,7 +1633,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { npc: 'PARLA', chest: 'APRI', door: save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id)) ? 'ENTRA' : 'ESAMINA', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
+    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   if (help > 0) {
@@ -1633,26 +1668,32 @@ function drawLoot() {
   if (ic) hg.drawImage(ic, Math.round(Wr / 2 - nw / 2), y + 15);
   T(name, Math.round(Wr / 2 - nw / 2) + 16, y + 17, RAR[r]);
   if (it && it.r) T(RARN[r], Wr / 2, y + 28, RAR[r], 1, 'center');
-  if (it && loot.id !== 'pozione') { const st2 = [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : ''].filter(Boolean).join('  '); const L = A.wrap(it.d, w - 16); T(L[0], Wr / 2, y + 37, '#e6e9f2', 1, 'center'); if (st2) T(st2, Wr / 2, y + 46, '#9af0b0', 1, 'center'); }
+  if (it && loot.id !== 'pozione') { const st2 = statLine(it); const L = A.wrap(it.d, w - 16); T(L[0], Wr / 2, y + 37, '#e6e9f2', 1, 'center'); if (st2) T(st2, Wr / 2, y + 46, '#9af0b0', 1, 'center'); }
   if (loot.note) T(loot.note, Wr / 2, y + 55, '#ffd23f', 1, 'center');
   if (loot.t > 0.6 && Math.floor(time * 2.5) % 2) T('A', x + w - 10, y + h - 9, '#ffffff');
   // un po' di scintille per i leggendari
   if (r === 3) for (let i = 0; i < 8; i++) { const a = time * 1.3 + i * TAU / 8; hg.fillStyle = i % 2 ? '#ffb02e' : '#fff4b0'; hg.fillRect(Math.round(Wr / 2 + Math.cos(a) * (w / 2 + 4)), Math.round(y + h / 2 + Math.sin(a) * (h / 2 + 4)), 2, 2); }
 }
 function drawShop() {
-  const w = Math.min(260, dialogW()), h = 20 + (SHOP.length + 1) * 12 + 16, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr / 2 - h / 2);
-  panel(x, y, w, h); T('NINO IL MERCANTE', x + 8, y + 5, '#ffd23f'); hg.drawImage(ICOIN, x + w - 50, y + 3); T(String(save.coins), x + w - 36, y + 6, '#ffd23f');
-  const rows = SHOP.concat([['esci', 0]]);
-  rows.forEach(([id, price], i) => {
-    const yy = y + 20 + i * 12, on = i === shop.sel, owned = id !== 'pozione' && id !== 'esci' && (id === 'mappa' ? save.flags.mappa : save.inv.includes(id));
+  const list = shopList(), rows = list.concat([['esci', 0]]), VIS = Math.max(4, Math.min(rows.length, Math.floor((Hr - 74) / 12)));
+  if (shop.sel < shop.top) shop.top = shop.sel; if (shop.sel >= shop.top + VIS) shop.top = shop.sel - VIS + 1;
+  const w = Math.min(270, dialogW()), h = 20 + VIS * 12 + 30, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr / 2 - h / 2);
+  panel(x, y, w, h); T(SHOPS[shop.who].title, x + 8, y + 5, '#ffd23f'); hg.drawImage(ICOIN, x + w - 50, y + 3); T(String(save.coins), x + w - 36, y + 6, '#ffd23f');
+  for (let i = shop.top; i < Math.min(rows.length, shop.top + VIS); i++) {
+    const [id, price] = rows[i], yy = y + 20 + (i - shop.top) * 12, on = i === shop.sel, owned = shopOwned(id);
     if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 2, w - 8, 11); }
-    if (id === 'esci') { T('ESCI', x + 22, yy, on ? '#ffffff' : '#8a96aa'); return; }
+    if (id === 'esci') { T('ESCI', x + 22, yy, on ? '#ffffff' : '#8a96aa'); continue; }
     hg.drawImage(itemIcon(id), x + 6, yy - 3);
-    T(IT[id].n, x + 22, yy, owned ? '#5a6478' : on ? '#ffffff' : '#c9d3e6');
-    T(owned ? 'PRESO' : price + '', x + w - 10, yy, owned ? '#5a6478' : save.coins >= price ? '#ffd23f' : '#ff8f8f', 1, 'right');
-  });
-  const sel = rows[shop.sel][0]; if (sel !== 'esci') T(IT[sel].d, Wr / 2, y + h - 11, '#a9c6e3', 1, 'center');
+    T(IT[id].n, x + 22, yy, owned ? '#5a6478' : on ? '#ffffff' : RAR[IT[id].r] === RAR[0] ? '#c9d3e6' : RAR[IT[id].r]);
+    T(owned ? 'PRESO' : id === 'pozione' ? price + '  x' + save.pot : id === 'elisir' ? price + '  x' + (save.eli || 0) : price + '', x + w - 10, yy, owned ? '#5a6478' : save.coins >= price ? '#ffd23f' : '#ff8f8f', 1, 'right');
+  }
+  if (shop.top > 0) T('^', x + w - 10, y + 13, '#8a96aa', 1, 'right');
+  if (shop.top + VIS < rows.length) T('v', x + w - 10, y + 20 + VIS * 12 - 3, '#8a96aa', 1, 'right');
+  const sel = rows[shop.sel][0];
+  if (sel !== 'esci') { const it = IT[sel], st2 = statLine(it); A.wrap(it.d, w - 16).slice(0, 1).forEach(l => T(l, Wr / 2, y + h - 22, '#a9c6e3', 1, 'center')); if (st2) T(st2, Wr / 2, y + h - 11, '#9af0b0', 1, 'center'); }
 }
+// riga con le statistiche di un oggetto
+function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
 function drawMap() {
   if (D) return drawDungeonMap();
   const S = Math.min(Hr - 26, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, k = S / W.WS;
@@ -1664,7 +1705,7 @@ function drawMap() {
   const dot = (x, z, c, s = 2) => { hg.fillStyle = '#0b0a12'; hg.fillRect(Math.round(x0 + x * k) - s, Math.round(y0 + z * k) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(Math.round(x0 + x * k) - s + 1, Math.round(y0 + z * k) - s + 1, s * 2 - 1, s * 2 - 1); };
   const isSeen = (x, z) => seen[Math.min(63, Math.floor(z / 64)) * 64 + Math.min(63, Math.floor(x / 64))];
   dot(2000, 2650, '#ffffff'); dot(2760, 2960, '#c9d3e6');
-  for (const d of doors) if (isSeen(d.x, d.z)) dot(d.x, d.z, '#4ae0e8');
+  for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r === 3 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
   const q = curTrack(), tg = q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3);
   // freccia dell'eroe
@@ -1677,7 +1718,7 @@ function drawMap() {
 const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
-  if (menu.tab === 1) return ['pozione'].concat(save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
+  if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return ['main', 'ferro', 'gatto', 'melme'].filter(q => q === 'main' || save.q[q] > 0);
   return ['vol', 'vib', 'salva', 'esci'];
 }
@@ -1698,16 +1739,16 @@ function drawMenu() {
     else { T('SCEGLI: ' + SLOTS.find(s => s[0] === menu.pick)[1], x + 8, top + 12, '#ffd23f');
       rows.forEach((id, i) => { const yy = top + 25 + i * 12, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 12); } if (id === '-') { T('TOGLI', x + 26, yy, on ? '#fff' : '#8a96aa'); return; } const it = IT[id]; hg.drawImage(itemIcon(id), x + 8, yy - 3); T(it.n + (save.eq[menu.pick] === id ? '  (IN USO)' : ''), x + 26, yy, RAR[it.r]); }); }
     const sel = menu.pick ? rows[menu.sel] : save.eq[rows[menu.sel]];
-    if (sel && sel !== '-' && IT[sel]) { const it = IT[sel], s = [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : ''].filter(Boolean).join('  '); A.wrap(it.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); if (s) T(s, x + w - 8, y + h - 12, '#9af0b0', 1, 'right'); }
+    if (sel && sel !== '-' && IT[sel]) { const it = IT[sel], s = statLine(it); A.wrap(it.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); if (s) T(s, x + w - 8, y + h - 12, '#9af0b0', 1, 'right'); }
     T(menu.pick ? 'A: USA   B: INDIETRO' : 'A: CAMBIA', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 1) {
-    rows.forEach((id, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } hg.drawImage(itemIcon(id), x + 8, yy - 3); T(id === 'pozione' ? 'POZIONI  x' + save.pot : IT[id].n, x + 26, yy, '#ffffff'); });
+    rows.forEach((id, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } hg.drawImage(itemIcon(id), x + 8, yy - 3); T(id === 'pozione' ? 'POZIONI  x' + save.pot : id === 'elisir' ? 'ELISIR  x' + save.eli : IT[id].n, x + 26, yy, '#ffffff'); });
     let yy = top + 8 + rows.length * 14;
     hg.drawImage(ICOIN, x + 8, yy - 3); T('MONETE  ' + save.coins, x + 26, yy, '#ffd23f'); yy += 14;
     if (save.q.ferro === 1 || save.q.ferro === 2) { hg.drawImage(IORE, x + 8, yy - 3); T('MINERALE DI FERRO  ' + Math.min(3, save.ore) + '/3', x + 26, yy, '#ffb070'); yy += 14; }
     T('CUORI DI CRISTALLO TROVATI: ' + save.hearts, x + 8, yy + 2, '#ff8aa0');
     if (save.q.main >= 4) { yy += 14; T("PIETRE DELL'ALBA", x + 8, yy + 2, '#ffd23f'); DS.ORDER.forEach((id, i) => { hg.globalAlpha = sanctDone(id) ? 1 : 0.22; hg.drawImage(itemIcon(DS.DEF[id].gem), x + 104 + i * 15, yy - 1); hg.globalAlpha = 1; }); }
-    T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI LEGGENDARI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
+    T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI LEGGENDARI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 2) {
     rows.forEach((q, i) => { const yy = top + 2 + i * 26, on = i === menu.sel, done = questDone(q); if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + QN[q], x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
@@ -1780,15 +1821,21 @@ function onKey(name) {
     return;
   }
   if (shop) {
-    const rows = SHOP.length + 1;
+    const list = shopList(), rows = list.length + 1;
     if (name === 'up') { shop.sel = (shop.sel + rows - 1) % rows; tone(1318, 0.03); }
     else if (name === 'down') { shop.sel = (shop.sel + 1) % rows; tone(1318, 0.03); }
-    else if (name === 'b' || name === 'start' || (name === 'a' && shop.sel === SHOP.length)) shop = null;
+    else if (name === 'b' || name === 'start' || (name === 'a' && shop.sel === list.length)) shop = null;
     else if (name === 'a') {
-      const [id, price] = SHOP[shop.sel], owned = id !== 'pozione' && (id === 'mappa' ? save.flags.mappa : save.inv.includes(id));
-      if (owned) tone(200, 0.1, 'square', 0.03);
+      const [id, price] = list[shop.sel];
+      if (shopOwned(id)) tone(200, 0.1, 'square', 0.03);
       else if (save.coins < price) { tone(160, 0.2, 'square', 0.04, 100); toast('MONETE INSUFFICIENTI', '#ff8f8f'); }
-      else { save.coins -= price; if (id === 'pozione') { save.pot++; seq([659, 880], 0.06, 0.06); toast('+1 POZIONE', '#ffb0c0'); } else { const s = shop; shop = null; openLoot(id); shop = s; } writeSave(); }
+      else {
+        save.coins -= price;
+        if (id === 'pozione') { save.pot++; seq([659, 880], 0.06, 0.06); toast('+1 POZIONE', '#ffb0c0'); }
+        else if (id === 'elisir') { save.eli = (save.eli || 0) + 1; seq([659, 988], 0.06, 0.06); toast('+1 ELISIR', '#9ac8ff'); }
+        else { const s2 = shop; shop = null; openLoot(id); shop = s2; }
+        writeSave();
+      }
     }
     return;
   }
@@ -1814,6 +1861,7 @@ function menuKey(name) {
     else { if (r === '-') { save.eq[menu.pick] = menu.pick === 'armatura' ? 'tunica' : null; hero.hp = Math.min(hero.hp, MAXHP()); drawHeroSprites(); } else equip(r); tone(1046, 0.06); menu.sel = SLOTS.findIndex(s => s[0] === menu.pick); menu.pick = null; }
   } else if (menu.tab === 1) {
     if (r === 'pozione') { if (save.pot > 0 && hero.hp < MAXHP()) { save.pot--; hero.hp = Math.min(MAXHP(), hero.hp + 6); seq([523, 659, 784], 0.07, 0.07); toast('+3 CUORI', '#ff8aa0'); } else tone(200, 0.1, 'square', 0.03); }
+    else if (r === 'elisir') { if (save.eli > 0 && hero.hp < MAXHP()) { save.eli--; hero.hp = MAXHP(); seq([523, 659, 784, 1046], 0.07, 0.07); toast('CUORI PIENI!', '#9ac8ff'); if (!save.eli) menu.sel = 0; } else tone(200, 0.1, 'square', 0.03); }
     else if (r === 'mappa') { menu = null; mapOpen = true; }
   } else if (menu.tab === 2) { trackQuest(r); tone(1046, 0.05); }
   else {
@@ -1852,7 +1900,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
