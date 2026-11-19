@@ -215,11 +215,11 @@ function slime(o, f) {
   if (o.crown) P.push({ t: 'b', b: [-2.5, 2.5, -2.5, 2.5, 11 / q, 13.5 / q], c: '#ffc83a' });
   return P;
 }
-function bat(f) {
-  const P = [], a = f ? 0.7 : -0.5, c = '#4a3a6a';
+function bat(f, c = '#4a3a6a', c2 = '#3a2a54', eye = '#ff4a4a') {
+  const P = [], a = f ? 0.7 : -0.5;
   P.push({ t: 'o', o: [0, 0, 14], r: 3.2, c });
-  for (const s of [1, -1]) P.push({ t: 'b', b: [-2.5, 2.5, s > 0 ? 2.5 : -11, s > 0 ? 11 : -2.5, 13.6, 14.2], c: '#3a2a54', rot: [['x', s * a, 0, s * 2.5, 14]] });
-  P.push({ t: 'b', b: [2.8, 3.1, 0.6, 1.6, 14.4, 15.4], c: '#ff4a4a' }, { t: 'b', b: [2.8, 3.1, -1.6, -0.6, 14.4, 15.4], c: '#ff4a4a' });
+  for (const s of [1, -1]) P.push({ t: 'b', b: [-2.5, 2.5, s > 0 ? 2.5 : -11, s > 0 ? 11 : -2.5, 13.6, 14.2], c: c2, rot: [['x', s * a, 0, s * 2.5, 14]] });
+  P.push({ t: 'b', b: [2.8, 3.1, 0.6, 1.6, 14.4, 15.4], c: eye }, { t: 'b', b: [2.8, 3.1, -1.6, -0.6, 14.4, 15.4], c: eye });
   return P;
 }
 function dragon(f) {
@@ -505,6 +505,9 @@ const ICO = {
   map: ['............', '.aaaaaaaaaa.', 'abbbbbbbbbba', 'abcbbbbddbba', 'abbcbbbdbbba', 'abbbcccbbbba', 'abbbbbbbcbba', 'abddbbbbbcba', 'abdbbbbbbbba', 'abbbbbbbbbba', '.aaaaaaaaaa.', '............'],
   coin: ['............', '....aaaa....', '..aabbbbaa..', '.abbcccbbba.', '.abcbbbbbba.', 'abbcbbbbbbba', 'abbcbbbbbbba', 'abbbbbbbbbba', '.abbbbbbbba.', '.aabbbbbbaa.', '...aaaaaa...', '............'],
   key: ['............', '..aaaa......', '.abbbba.....', '.ab..ba.....', '.abbbbaaaaaa', '..aaaabbbbba', '.......ab.ba', '.......a..a.', '............', '............', '............', '............'],
+  bigkey: ['............', '.aaaa.......', 'abbbba......', 'abccba......', 'abbbbaaaaaaa', '.aaaabbbbbba', '......abaaba', '......aba.ba', '.......a..a.', '............', '............', '............'],
+  gem: ['.....a......', '....aba.....', '...abcba....', '..abccdba...', '.abcccddba..', 'abccccddbba.', '.abcccdbba..', '..abccbba...', '...abbba....', '....aba.....', '.....a......', '............'],
+  seal: ['............', '...aaaaaa...', '..abbbbbba..', '.abbccccbba.', '.abcbbbbcba.', '.abcbddbcba.', '.abcbddbcba.', '.abcbbbbcba.', '.abbccccbba.', '..abbbbbba..', '...aaaaaa...', '............'],
   fish: ['............', '............', '..aaaa....a.', '.abbbba..aa.', 'abcbbbbaaba.', 'abbbbbbbbba.', '.abbbba..aa.', '..aaaa....a.', '............', '............', '............', '............'],
 };
 function icon(name, c1, c2 = '#fff4b0') {
@@ -526,6 +529,7 @@ function Atlas(AW, AH) {
       x += w + 2; rowH = Math.max(rowH, h); return r;
     },
     put(img, r) { g.clearRect(r.x, r.y, r.w, r.h); g.drawImage(img, r.x, r.y); },
+    get used() { return y + rowH; },
   };
 }
 

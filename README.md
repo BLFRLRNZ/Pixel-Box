@@ -15,7 +15,7 @@ Otto giochi in una console tascabile in stile Game Boy: un'unica pagina web che 
 | Roll Down | Scendi di piattaforma in piattaforma senza cadere |
 | Ovetto | Il cucciolo virtuale da accudire: vive anche quando l'app è chiusa |
 | Pixel Kart | Corse sui kart in prospettiva: Gran Premio a punti, gara singola e prova a tempo col fantasma, 6 piste, 6 piloti (2 da sbloccare) |
-| Pixel Saga | Avventura fantasy in un mondo aperto in 3D a pixel: 12 regioni, missioni, nemici, forzieri con equipaggiamento leggendario. Si gioca a schermo intero in orizzontale |
+| Pixel Saga | Avventura fantasy in un mondo aperto in 3D a pixel: 12 regioni, missioni, cinque santuari con enigmi e guardiani, equipaggiamento leggendario. Si gioca a schermo intero in orizzontale |
 
 ## Installarla sul telefono
 
@@ -46,13 +46,16 @@ Premendo SELECT nel menu vedi la versione installata e puoi cercare gli aggiorna
 Un'avventura fantasy in un mondo aperto, vista da dietro l'eroe come in Pixel Kart. Si gioca a schermo intero con il telefono in orizzontale: i tasti della console compaiono sopra l'immagine (croce a sinistra, A e B a destra, SELECT e START in alto a destra).
 
 - **Il mondo:** un'isola grande, disegnata a mano e sempre uguale, divisa in 12 regioni: Prati di Lumen, Campi Dorati, Bosco Antico, Lago di Cristallo, Monti e Picco del Drago, Rupi del Grifone, Valle Gelata, Deserto di Solis, Palude d'Ombra, Monte Brace, Rocca di Lumen e Costa delle Conchiglie. Ogni regione ha il suo cielo, la sua luce e la sua nebbia.
-- **Missioni:** la storia del capitolo 1 e tre missioni secondarie, con 13 personaggi da incontrare tra il borgo, la rocca e le terre selvagge.
+- **Missioni:** la storia dei capitoli 1 e 2 e tre missioni secondarie, con 13 personaggi da incontrare tra il borgo, la rocca e le terre selvagge.
 - **Nemici:** melme, lupi, goblin, scheletri, diavoletti, lupi dei ghiacci e pipistrelli, a gruppi intorno ai loro accampamenti.
-- **Tesori:** 28 forzieri, alcuni ben nascosti. Armi, armature, elmi, scudi e amuleti comuni, rari, epici e leggendari; i pezzi leggendari hanno poteri speciali.
+- **Tesori:** 28 forzieri nel mondo, alcuni ben nascosti. Armi, armature, elmi, scudi e amuleti comuni, rari, epici e leggendari; i pezzi leggendari hanno poteri speciali.
+- **I cinque santuari (capitolo 2):** dungeon del Bosco, del Lago, del Sole, del Ghiaccio e del Fuoco, da liberare in quest'ordine con il Sigillo del Re. Dentro: piccole chiavi e porte chiuse, stanze trappola, massi da spingere sulle piastre, cristalli che alzano e abbassano i blocchi rossi e blu, pavimenti di ghiaccio, punte, pozzi, acqua profonda, fiumi di lava, statue che sputano fuoco e muri crepati con stanze segrete. Le torce illuminano le sale e i muri tra te e la telecamera diventano trasparenti.
+- **I guardiani:** il Golem di muschio, il Serpente del lago, lo Scarabeo d'oro, la Regina di brina e la Salamandra di brace, ognuno con i suoi attacchi e un momento in cui si può colpire. Ogni guardiano lascia un cuore in più e una Pietra dell'Alba.
+- **I tesori dei santuari:** lo Scudo delle radici (respinge i colpi magici), l'Elmo delle maree (si cammina sott'acqua), la Lama del sole (lancia un raggio di luce), l'Armatura di brina (si cammina sulla lava) e l'Amuleto della fenice. Ogni tesoro serve nei santuari successivi.
 - **Segreti:** sentieri nascosti, un'isola nel lago raggiungibile solo da chi trova la strada, e un drago che volteggia intorno al Picco del Drago.
-- **Comandi:** croce per camminare e girare, B per correre, A per parlare, aprire e colpire, START per il menu (eroe, borsa, missioni, opzioni), SELECT per la mappa, che si scopre man mano che esplori.
+- **Comandi:** croce per camminare e girare, B per correre, A per parlare, aprire e colpire, START per il menu (eroe, borsa, missioni, opzioni), SELECT per la mappa, che si scopre man mano che esplori (nei santuari mostra le stanze già visitate). Per spingere un masso basta camminarci contro.
 - **Tornare a Pixel Box:** START → OPZIONI → «TORNA AL MENU DI PIXEL BOX». Il gioco si salva da solo ogni 20 secondi.
-- **In arrivo:** nel capitolo 2 i cinque santuari sigillati diventano dungeon con i loro guardiani; nel capitolo 3 le creature leggendarie, la musica, il giorno e la notte.
+- **In arrivo:** nel capitolo 3 le creature leggendarie e lo scontro con il drago, la musica, il giorno e la notte.
 
 ## Comandi
 
@@ -65,7 +68,7 @@ Il pulsante dell'altoparlante in alto a destra cambia il volume: alto, medio, sp
 - `index.html`: l'app completa, generata dai sorgenti (non modificarla a mano).
 - `src/`: i sorgenti. `shell.html` è la console con i tasti, `sys_core.js` e `sys_main.js` contengono suoni, carattere a pixel, menu e ciclo di gioco, poi c'è un file per ogni gioco (`g_*.js`).
   Pixel Kart disegna la pista in prospettiva riga per riga e i kart come piccoli modelli 3D visti da 16 angolazioni.
-  Pixel Saga usa WebGL a bassa risoluzione: `sg_gl.js` (shader e matematica 3D), `sg_art.js` (tutta la pixel art, disegnata dal codice), `sg_world.js` (la mappa: rilievi, regioni, strade, edifici, oggetti) e `g_saga.js` (il gioco). Il mondo viene costruito all'avvio, in qualche secondo.
+  Pixel Saga usa WebGL a bassa risoluzione: `sg_gl.js` (shader e matematica 3D), `sg_art.js` (tutta la pixel art, disegnata dal codice), `sg_world.js` (la mappa: rilievi, regioni, strade, edifici, oggetti), `sg_dun.js` (le mappe dei cinque santuari disegnate a stanze, la loro geometria, i mostri e i guardiani) e `g_saga.js` (il gioco). Il mondo viene costruito all'avvio, in qualche secondo.
 - `tools/build.py`: ricostruisce `index.html` dai sorgenti.
 - `tools/rimbalzo_livelli.py`: le mappe ASCII dei livelli 5-15 di Rimbalzo. `tools/rbbot.js` è un bot che verifica che ogni livello si possa finire.
 - `tools/icone.py`: disegna le icone a pixel.
