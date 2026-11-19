@@ -321,6 +321,9 @@ function human(o, pose = {}) {
     if (m.crown) { E([fx, 0, hc + hs * 0.7], [hs * 0.98, hs * 0.98, 0.85], m.c, null, 1.12); for (const [a, b] of [[1, 0], [0, 1], [0, -1], [-1, 0]]) C([fx + a * hs * 0.8, b * hs * 0.8, hc + hs * 0.75], [fx + a * hs * 0.85, b * hs * 0.85, hc + hs + 1.7], 0.6, m.c, null, 1.15); E([fx + hs * 0.95, 0, hc + hs * 0.7], [0.65, 0.65, 0.65], m.gem || '#e8304a', null, 1.25, 0.2); }
   }
   if (o.hat) { E([fx, 0, hc + hs * 0.6], [hs + 2, hs + 2, 0.5], o.hat); E([fx - 0.2, 0, hc + hs * 0.95], [hs * 0.82, hs * 0.82, 1.9], o.hat, null, 0.92); }
+  // corona (una fascia d'oro con le punte) e turbante (una palla schiacciata con la gemma)
+  if (o.crown) { E([fx, 0, hc + hs * 0.72], [hs * 0.9, hs * 0.9, 0.9], o.crown, null, 1.15); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; E([fx + Math.cos(a) * hs * 0.74, Math.sin(a) * hs * 0.74, hc + hs * 0.72 + 1.3], [0.5, 0.5, 0.9], o.crown, null, 1.2); } }
+  if (o.turban) { E([fx - 0.2, 0, hc + hs * 0.55], [hs * 1.12, hs * 1.14, hs * 0.7], o.turban); E([fx - 0.3, 0, hc + hs * 1.0], [hs * 0.7, hs * 0.72, hs * 0.5], o.turban, null, 1.08); E([fx + hs * 0.95, 0, hc + hs * 0.6], [0.5, 0.6, 0.6], o.gem || '#e8364e', null, 1.2); }
   if (o.ears) for (const s of [1, -1]) C.k([fx - 0.3, s * hs * 0.85, hc + 0.2], [fx - 0.8, s * (hs + 3.2), hc + 1.8], 1.1, 0.35, o.skin);
   if (o.horns) for (const s of [1, -1]) C.k([fx - 0.3, s * 1.8, hc + hs * 0.75], [fx - 1.8, s * 2.7, hc + hs + 2.8], 0.8, 0.25, o.horns);
   if (o.antlers) for (const s of [1, -1]) { C.k([fx - 0.2, s * 2, hc + hs * 0.75], [fx - 0.5, s * 3, hc + hs + 4.2], 0.6, 0.4, o.antlers); C.k([fx - 0.3, s * 2.5, hc + hs + 2], [fx + 1.4, s * 3.9, hc + hs + 3.6], 0.45, 0.3, o.antlers); }
@@ -459,6 +462,16 @@ function pine(R, W, H, pal, snow) {
       }
     }
   }
+  return finish(c);
+}
+// acacia: chioma piatta e larga su un tronco a forcella
+function acacia(R, W, H, pal) {
+  const c = mk(W, H), g = c.getContext('2d'), tp = ['#4a3420', '#6a4a2c', '#8a6238'];
+  trunk(g, W / 2, H * 0.45, H - 1, Math.max(3, W * 0.07), tp, 0.5);
+  for (const s of [-1, 1]) for (let i = 0; i < W * 0.3; i++) { g.fillStyle = tp[1]; g.fillRect(Math.round(W / 2 + s * i), Math.round(H * 0.5 - i * 0.55), 2, 2); }
+  const blobs = [];
+  for (let i = 0; i < 9; i++) blobs.push([W * (0.14 + 0.72 * i / 8) + (R() - 0.5) * 3, H * (0.2 + (R() - 0.5) * 0.08) + Math.abs(i - 4) * H * 0.012, H * (0.13 + R() * 0.05)]);
+  canopy(g, blobs, pal, R);
   return finish(c);
 }
 function palm(R, W, H) {
@@ -712,7 +725,7 @@ function shard(D, c1, c2) {
 
 // ---------- texture degli edifici: 8x8 riquadri da 32 pixel ----------
 function tiles(R) {
-  const T = 32, c = mk(T * 8, T * 8), g = c.getContext('2d');
+  const T = 32, c = mk(T * 8, T * 16), g = c.getContext('2d');
   const at = (i, fn) => { g.save(); g.translate((i % 8) * T, Math.floor(i / 8) * T); g.beginPath(); g.rect(0, 0, T, T); g.clip(); fn(); g.restore(); };
   const fill = (col, n, v) => { g.fillStyle = col; g.fillRect(0, 0, T, T); for (let k = 0; k < n; k++) { g.fillStyle = shade(col, 1 + (R() - 0.5) * v); g.fillRect(R() * T | 0, R() * T | 0, 1 + (R() < 0.3), 1); } };
   const bricks = (col, mortar, bw, bh) => { g.fillStyle = mortar; g.fillRect(0, 0, T, T); for (let y = 0; y < T; y += bh) { const off = (y / bh) % 2 ? bw / 2 : 0; for (let x = -bw; x < T; x += bw) { g.fillStyle = shade(col, 0.88 + R() * 0.24); g.fillRect(x + off + 1, y + 1, bw - 1, bh - 1); g.fillStyle = shade(col, 1.12); g.fillRect(x + off + 1, y + 1, bw - 1, 1); } } };
@@ -837,6 +850,6 @@ function Atlas(AW, AH) {
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
 SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
-  oak, giantTree, pine, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
+  oak, acacia, giantTree, pine, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, pano, icon, Atlas, TRUNK, BIRCH };
 })();

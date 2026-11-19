@@ -64,7 +64,7 @@ void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP 
   float occ = 0.0;
   if (uNear > 0.0) {
     vec2 rel = aC.xz - uCam.xz, ch = uHero.xz - uCam.xz; float L = max(length(ch), 0.001); vec2 dir = ch / L;
-    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), hh = max(-aK.a, 0.0), top = aC.y + hh, line = mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0));
+    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), hh = mod(max(-aK.a, 0.0), 1000.0), top = aC.y + hh, line = mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0));
     float wd = abs(aO.x) * ((line - aC.y) / max(hh, 0.1) < 0.4 ? 0.14 : 1.0);
     if (along > 0.0 && along < L - 1.0 && perp - wd < 3.0 * along / L + 0.4 && top > line - 0.5) occ = 1.0;
     if (length(rel) < uNear) occ = 1.0;

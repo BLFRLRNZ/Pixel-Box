@@ -66,6 +66,19 @@ const IT = {
   anelloForza: { n: 'ANELLO DELLA FORZA', t: 'acc', r: 2, att: 3, d: 'IL BRACCIO SI FA PESANTE COME IL FERRO. ATT +3.', ico: 'ring' },
   piuma: { n: 'PIUMA DEL GRIFONE', t: 'acc', r: 2, vel: 0.25, dif: 1, d: 'UNA PIUMA DORATA CHE TI FA LEGGERO. +25% VELOCITÀ, DIF +1.', ico: 'feather' },
   elisir: { n: 'ELISIR', t: 'elisir', r: 1, d: 'RIDÀ TUTTI I CUORI. SI BEVE DAL MENU (START).' },
+  // il grande viaggio: tesori e mercanzie delle terre oltre il Ponte dei Re
+  scimitarra: { n: 'SCIMITARRA DI ZAFIRA', t: 'arma', r: 2, att: 11, d: 'UNA LAMA CURVA TEMPRATA NELLA SABBIA ROVENTE.', look: { col: '#e8eef6', guard: '#e8b42a', len: 1 } },
+  tridente: { n: 'TRIDENTE DEL NOSTROMO', t: 'arma', r: 2, att: 10, vel: 0.1, d: 'LEGGERO E LUNGO, BUONO PER I PESCI E PER I PREDONI. +10% VELOCITÀ.', look: { kind: 'spear', col: '#5ad0e8' } },
+  katana: { n: 'LAMA DEI PETALI', t: 'arma', r: 3, att: 15, vel: 0.12, d: 'TAGLIA UN PETALO CHE CADE SENZA FERMARLO. +12% VELOCITÀ.', look: { col: '#f8f8ff', guard: '#c85a7a', glow: '#ffd8e8', len: 3 } },
+  seta: { n: 'VESTE DI SETA', t: 'armatura', r: 1, dif: 2, vel: 0.1, d: 'SETA FITTA COME UNA MAGLIA DI FERRO, MA NON PESA NULLA. +10% VELOCITÀ.', look: { shirt: '#c85a8a', sleeve: '#e07aa8', belt: '#ffd23f', pants: '#4a3a6a' } },
+  pelliccia: { n: 'PELLICCIA DEL NORD', t: 'armatura', r: 2, dif: 4, hp: 2, d: "PELO D'ORSO BIANCO SU CUOIO SPESSO. +1 CUORE.", look: { shirt: '#e8e8f0', sleeve: '#c8d0dc', pauldron: '#f4f8ff', belt: '#6a4424', pants: '#4a5a6a', cape: '#e8e8f0' } },
+  eclisse: { n: "ARMATURA DELL'ECLISSE", t: 'armatura', r: 3, dif: 7, d: 'NERA COME IL SOLE CHE SI SPEGNE. NIENTE LA SCALFISCE.', look: { shirt: '#2a1e3a', plate: '#4a3a6a', pauldron: '#8a5ae0', belt: '#c8a0ff', pants: '#1e1628', cape: '#5a2a7a' } },
+  turbante: { n: 'TURBANTE DEL DESERTO', t: 'elmo', r: 1, dif: 1, hp: 2, d: 'TIENE LA TESTA FRESCA ANCHE SOTTO IL SOLE DELLE DUNE. +1 CUORE.', look: { turban: '#f0ece0', gem: '#e8364e' } },
+  kabuto: { n: 'ELMO DEL GUERRIERO', t: 'elmo', r: 2, dif: 3, d: 'LACCA NERA E CORNA DORATE: IL NEMICO SCAPPA SOLO A VEDERLO.', look: { helm: { c: '#3a2a3a', spike: true } } },
+  madreperla: { n: 'SCUDO DI MADREPERLA', t: 'scudo', r: 2, dif: 4, d: 'LA CONCHIGLIA DI UN GIGANTE DEL MARE, LUCIDA COME UNO SPECCHIO.', look: { shield: '#e8f4ff', emblem: '#f8a8c8' } },
+  bussola: { n: 'BUSSOLA DEL CAPITANO', t: 'acc', r: 2, vel: 0.3, dif: 1, d: 'CHI SA DOVE ANDARE ARRIVA PRIMA. +30% VELOCITÀ, DIF +1.', ico: 'amulet' },
+  perla: { n: 'PERLA DELLA LAGUNA', t: 'acc', r: 3, hp: 4, regen: 1, d: 'GRANDE COME UN PUGNO. +2 CUORI, E LE FERITE SI RIMARGINANO.', ico: 'amulet' },
+  alleanza: { n: "STELLA DELL'ALLEANZA", t: 'acc', r: 3, att: 3, dif: 2, hp: 2, d: 'CINQUE POPOLI, UN SOLO GIURAMENTO. ATT +3, DIF +2, +1 CUORE.', ico: 'amulet' },
 };
 const SLOTS = [['arma', 'ARMA'], ['armatura', 'ARMATURA'], ['elmo', 'ELMO'], ['scudo', 'SCUDO'], ['acc', 'ACCESSORIO']];
 function itemIcon(id) {
@@ -118,6 +131,11 @@ const FOE = {
   bat: { n: 'PIPISTRELLO', k: 'bat', hp: 4, dmg: 1, sp: 32, aggro: 60, range: 6, r: 2.5, coins: [2, 4], fly: 7 },
   plant: { n: 'PIANTA CARNIVORA', k: 'plant', sc: 0.3, hp: 4, dmg: 1, sp: 0, aggro: 95, range: 0, r: 3, coins: [1, 3], shoot: 2.4 },
   crab: { n: 'GRANCHIO', k: 'crab', sc: 0.26, hp: 9, dmg: 2, sp: 30, aggro: 70, range: 8, r: 3.5, coins: [3, 6] },
+  jackal: { n: 'SCIACALLO', k: 'beast', sc: 0.22, hp: 10, dmg: 3, sp: 40, aggro: 85, range: 8, r: 3.5, coins: [6, 10] },
+  slime2: { n: 'MELMA DORATA', k: 'slime', hp: 9, dmg: 2, sp: 18, aggro: 55, range: 6, r: 3, coins: [5, 10] },
+  bandit: { n: 'PREDONE', k: 'human', hp: 16, dmg: 3, sp: 28, aggro: 75, range: 9, r: 3, coins: [10, 18] },
+  tiger: { n: 'TIGRE DELLA SELVA', k: 'beast', sc: 0.26, hp: 20, dmg: 4, sp: 44, aggro: 90, range: 9, r: 4, coins: [10, 18] },
+  wraith: { n: 'SPETTRO', k: 'human', hp: 22, dmg: 4, sp: 26, aggro: 85, range: 10, r: 3, coins: [12, 22] },
   slimeB: { n: 'MELMA BLU', k: 'slime', hp: 6, dmg: 1, sp: 17, aggro: 55, range: 6, r: 3, coins: [2, 4] },
   mummy: { n: 'MUMMIA', k: 'human', hp: 18, dmg: 3, sp: 13, aggro: 70, range: 9, r: 3, coins: [6, 12] },
   iceskel: { n: 'SCHELETRO DI GHIACCIO', k: 'human', hp: 18, dmg: 3, sp: 24, aggro: 75, range: 9, r: 3, coins: [7, 12] },
@@ -129,6 +147,8 @@ const FOE = {
 const ATMO = [
   ['#bcd8ee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#c4dcee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#a8c8b4', '#4a8ac0', 240, 900, '#3a6aa0'], ['#c8d6e8', '#3a7ccc', 450, 1450, '#3a72b8'],
   ['#dce6f2', '#7aa4d4', 200, 860, '#5a8ac0'], ['#f0d8a8', '#5a9cdc', 400, 1300, '#3a8ab8'], ['#8a9a7a', '#4a5a4e', 70, 480, '#4a5e46'], ['#b8786a', '#4a2424', 190, 820, '#5a3a3a'],
+  ['#ecc8a0', '#6a9ad0', 300, 1050, '#3a7ab0'], ['#ecdcb0', '#5aa0dc', 420, 1350, '#3a86c0'], ['#f0c8a0', '#5a94d8', 400, 1300, '#3a8ab8'], ['#a8d0b0', '#4a90b8', 180, 760, '#2a8a80'],
+  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'],
 ].map(a => [hexf(a[0]), hexf(a[1]), a[2], a[3], hexf(a[4])]);
 
 // ---------- stato ----------
@@ -147,10 +167,10 @@ const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
 // ---------- salvataggio ----------
 function newSave() {
   return { v: 1, x: 2005, z: 2700, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
-    eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0 }, track: 'main',
+    eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0, viaggio: 0 }, track: 'main',
     chests: {}, flags: {}, seen: '', time: 0, hint: 0, opt: { vib: true }, dun: {} };
 }
-function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) return Object.assign(newSave(), s); } catch (e) {} return null; }
+function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) { const n = Object.assign(newSave(), s); n.q = Object.assign(newSave().q, s.q); return n; } } catch (e) {} return null; }
 function writeSave() {
   if (!save || !hero) return;
   if (D) { save.x = D.outX; save.z = D.outZ; save.yaw = D.outYaw; dsave(D.id).seen = b64(D.seen); } else { save.x = hero.x; save.z = hero.z; save.yaw = hero.yaw; }
@@ -158,7 +178,9 @@ function writeSave() {
   save.seen = b64(seen);
   try { localStorage.setItem(SAVEKEY, JSON.stringify(save)); } catch (e) {}
 }
-const seen = new Uint8Array(64 * 64), LAND = new Uint8Array(64 * 64);
+const MG = 128, seen = new Uint8Array(MG * MG), LAND = new Uint8Array(MG * MG);
+// i salvataggi di prima del grande viaggio ricordano solo l'isola di Lumen (64x64 caselle)
+function loadSeen(str) { seen.fill(0); if (!str) return; if (str.length > 700) return unb64(str, seen); const o = new Uint8Array(4096); unb64(str, o); for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) seen[j * MG + i] = o[j * 64 + i]; }
 function b64(u) { let s = ''; for (let i = 0; i < u.length; i += 8) { let b = 0; for (let k = 0; k < 8; k++) if (u[i + k]) b |= 1 << k; s += String.fromCharCode(b); } return btoa(s); }
 function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length; i++) { const b = s.charCodeAt(i); for (let k = 0; k < 8; k++) u[i * 8 + k] = (b >> k) & 1; } } catch (e) {} }
 
@@ -183,7 +205,8 @@ function heroLook() {
 const POSE_HERO = [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 3.1, leg: 0.15 }, { armR: 1.45, leg: -0.25, armL: -0.4 }];
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
-function dirs(make, w, h, o = {}) { const k = o.raw ? 1 : SR, oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); return out; }
+// otto direzioni: cinque disegnate, tre ottenute allo specchio (metà dello spazio nell'atlante)
+function dirs(make, w, h, o = {}) { const k = o.raw ? 1 : SR, oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 5; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); for (let d = 3; d > 0; d--) out.push(Object.assign({}, out[d], { u0: out[d].u1, u1: out[d].u0 })); return out; }
 const SR = A.SR, HS = Math.round(48 * SR);
 function buildStatics() {
   const R = rng(99), S = SPR, SH = {};
@@ -226,6 +249,29 @@ function buildStatics() {
   set('campfire', [A.campfire()], 0.2, 2);
   set('snowman', [A.snowman()], 0.2, 3.5);
   set('banner', [A.banner('#c8342c', '#ffd23f')], 0.2, 1);
+  // le piante delle terre nuove
+  const RED = ['#6a1e14', '#a8341c', '#d8562a', '#f08a3a'], RED2 = ['#7a2a14', '#b84a1c', '#e0702a', '#f8a03a'], GOLD = ['#7a5a14', '#b8861c', '#e0b030', '#f8dc5a'], PINK = ['#b04a7a', '#e07aa8', '#f8a8c8', '#ffd8e8'], PINK2 = ['#c05a8a', '#ec8ab4', '#fcb8d4', '#ffe4f0'];
+  const DARKT = ['#3a2420', '#5a3a30', '#7a5244'], MES = ['#6a2e1e', '#a04a2c', '#c86a3c', '#e89a5a'];
+  setZ('oakred', [A.oak(R, Z(44), Z(56), RED, A.TRUNK, 10), A.oak(R, Z(40), Z(52), RED2), A.oak(R, Z(52), Z(66), RED2, A.TRUNK, 12)], 0.44, 2.2);
+  setZ('oakgold', [A.oak(R, Z(42), Z(54), GOLD), A.oak(R, Z(38), Z(50), GOLD)], 0.43, 2);
+  setZ('birchgold', [A.oak(R, Z(32), Z(54), ['#8a6a14', '#c89a24', '#f0c840', '#fff07a'], A.BIRCH, 7)], 0.42, 1.4);
+  setZ('bushred', [A.bush(R, Z(24), Z(18), RED), A.bush(R, Z(24), Z(18), GOLD)], 0.34);
+  set('leaves', [A.pix(['a..b..', '..c..a', '.b..c.'], { a: '#e0702a', b: '#c8342c', c: '#f0c840' }), A.pix(['.b..a', 'c..b.', '..a..'], { a: '#e0702a', b: '#b84a1c', c: '#f0c840' })], 0.3, 0, true);
+  setZ('acacia', [A.acacia(R, Z(58), Z(46), ['#4a6a1e', '#6a8a2a', '#8aa83a', '#b0c85a']), A.acacia(R, Z(50), Z(40), ['#566e22', '#768e2e', '#96ae40', '#bcd060'])], 0.46, 1.6);
+  set('tuftgold', [A.tuft(['#b89a3a', '#e0c85a']), A.tuft(['#a88a34', '#d0b850'], 12, 10)], 0.2, 0, true);
+  setZ('mesarock', [A.rock(R, Z(24), Z(18), MES), A.rock(R, Z(20), Z(24), MES)], 0.45, 2.6);
+  setZ('spire', [A.rock(R, Z(14), Z(40), MES), A.rock(R, Z(18), Z(52), MES)], 0.7, 3.4);
+  setZ('jungle', [A.oak(R, Z(60), Z(84), ['#0e3a1e', '#1a5a2a', '#2a7a34', '#4a9a44'], ['#3a2a1a', '#5a4428', '#7a5e38'], 13), A.oak(R, Z(52), Z(74), ['#123e22', '#1e6030', '#30843c', '#56a84c'], A.TRUNK, 11)], 0.48, 2.4);
+  setZ('fernbig', [A.bush(R, Z(26), Z(18), ['#0e4a22', '#1a6a30', '#2e8a3c', '#52b04c']), A.bush(R, Z(22), Z(16), ['#0e4a22', '#1a6a30', '#2e8a3c', '#52b04c'], '#ff7ab0')], 0.36);
+  setZ('cherry', [A.oak(R, Z(44), Z(52), PINK, DARKT, 10), A.oak(R, Z(40), Z(48), PINK2, DARKT, 9), A.oak(R, Z(48), Z(58), PINK, DARKT, 11)], 0.44, 2);
+  setZ('cherrywhite', [A.oak(R, Z(40), Z(50), ['#c0a8b8', '#e8d0dc', '#f8ecf2', '#ffffff'], DARKT)], 0.43, 2);
+  set('heather', [A.tuft(['#7a3a7a', '#b05aa8'], 12, 9), A.tuft(['#6a4a8a', '#9a6ac0'], 10, 8)], 0.2, 0, true);
+  setZ('tomb', [A.rock(R, Z(8), Z(13), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae']), A.rock(R, Z(10), Z(10), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae'])], 0.4, 1.5);
+  SG.town.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35];
+  // il vento muove alberi (poco) ed erba (di più); cristalli e lava brillano
+  for (const k of ['oak', 'oakbig', 'birch', 'pine', 'snowpine', 'palm', 'willow', 'deadtree', 'burnt', 'oakred', 'oakgold', 'birchgold', 'acacia', 'jungle', 'cherry', 'cherrywhite']) S[k].sway = 1;
+  for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
+  for (const k of ['crystal', 'icecrystal', 'lavarock']) S[k].lit = 1.15;
   setZ('ore', [A.rock(R, Z(22), Z(16), ['#3a3a44', '#5a5a66', '#7a7a88', '#9a9aa8'], ['#ff9a3a', '#ffd06a', '#e8eef6'])], 0.48, 3.5);
   // effetti
   const HD = (c, old) => { const r = atlas.add(c); r.f = old / c.width; return r; };
@@ -250,7 +296,11 @@ function* buildCharacters() {
   CHR.hero = null; heroRects = [];
   for (let p = 0; p < POSE_HERO.length; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(HS, HS))); heroRects.push(row); }
   yield 0.05;
-  const ids = Object.keys(NPC); let k = 0;
+  const LK = SG.city.LOOKS;
+  for (const id in W.FOLK) { const f = W.FOLK[id], L = LK[f.look], wk = !!(f.walk && L.walk); NPC[id] = { n: f.n, look: L, sc: L.sc, as: f.look + (wk ? '+' : ''), lines: f.lines, f, walk: wk }; }
+  const ids = Object.keys(NPC).filter(id => !NPC[id].as), made = {}; let k = 0;
+  for (const id in NPC) { const N = NPC[id]; if (!N.as) continue; if (!made[N.as]) made[N.as] = POSE_NPC.slice(0, N.walk ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); CHR[id] = made[N.as]; }
+  yield 0.2;
   for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
   CHR.biscotto = [{}, { leg: 0.5 }].map(p => dirs(() => A.beast({ c: '#f0a050', c2: '#ffe0b0', eye: '#4ade80', s: 0.45, tailUp: 1.3 }, p), 26, 20));
   CHR.slime = [0, 1].map(f => dirs(() => A.slime({ c: '#5ad070' }, f), 34, 26));
@@ -263,6 +313,12 @@ function* buildCharacters() {
   CHR.imp = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d84a2a', hand: '#d84a2a', horns: '#2a1a1a', shirt: '#8a1e1a', pants: '#5a1414', boots: '#2a1414', eyes: '#ffe14a', weapon: { kind: 'spear' } }, p), 44, 52, { sc: 0.85 }));
   yield 0.8;
   CHR.bat = [0, 1].map(f => dirs(() => A.bat(f), 40, 30));
+  CHR.jackal = [{}, { leg: 0.5 }, { leg: -0.5 }, { lunge: 2.6, leg: 0.4 }].map(p => dirs(() => A.beast({ c: '#c8a05a', c2: '#f0d8a0', eye: '#2a1a10' }, p), 44, 32));
+  CHR.tiger = [{}, { leg: 0.5 }, { leg: -0.5 }, { lunge: 2.6, leg: 0.4 }].map(p => dirs(() => A.beast({ c: '#e88a2a', c2: '#fff0d0', eye: '#4ade80' }, p), 44, 32));
+  CHR.slime2 = [0, 1].map(f => dirs(() => A.slime({ c: '#e8c83a' }, f), 34, 26));
+  CHR.bandit = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d8a07a', hood: '#5a2a2a', shirt: '#3a3a44', sleeve: '#5a2a2a', pants: '#2a2a32', boots: '#1a1a1e', cape: '#5a2a2a', weapon: { col: '#d8dce4', guard: '#5a3a20' } }, p), 44, 48));
+  CHR.mummy = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d8cca8', hand: '#d8cca8', shirt: '#c8bc98', sleeve: '#d8cca8', pants: '#c8bc98', boots: '#a89c78', eyes: '#ffe14a' }, p), 44, 48));
+  CHR.wraith = POSE_FOE.map(p => dirs(() => A.human({ skin: '#b8a8e8', hand: '#b8a8e8', hood: '#3a2a5a', robe: '#2a1e44', shirt: '#3a2a5a', pants: '#2a1e44', boots: '#1e1630', eyes: '#ff4ae0', weapon: { kind: 'staff', col: '#c8a0ff' } }, p), 44, 52));
   CHR.dragon = [0, 1].map(f => dirs(() => A.dragon(f), 128, 96, { pitch: -0.3, base: 60, raw: true }));
   CHR.chest = [0, 1, 2, 3].map(r => [0, 1].map(o => dirs(() => A.chest(r, o), 28, 26)));
   yield 1;
@@ -281,7 +337,7 @@ function* loader() {
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
   gl = G.gl;
-  atlas = A.Atlas(2048, 2048);
+  atlas = A.Atlas(2048, 2560);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -291,7 +347,7 @@ function* loader() {
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
   ATEX = G.texture(atlas.c);
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
-  TILES = G.texture(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)));
+  TILES = G.texture(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
   W.upload(G);
@@ -314,12 +370,13 @@ function setupWorld() {
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z }));
   doors = W.lights.filter(l => l.id);
-  for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) LAND[j * 64 + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
+  for (let j = 0; j < MG; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
 }
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
-  else { seen.fill(0); unb64(save.seen || '', seen); }
+  else loadSeen(save.seen || '');
+  { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0 };
   if (hero.hp <= 0) hero.hp = MAXHP();
   cam.yaw = hero.yaw; placeCam(1);
@@ -333,13 +390,18 @@ function startGame(fresh) {
 }
 
 // ---------- missioni ----------
-const QN = { main: "LE PIETRE DELL'ALBA", ferro: 'FERRO PER LA FORGIA', gatto: 'IL GATTO BISCOTTO', melme: 'MELME NEI CAMPI' };
+const QN = { main: "LE PIETRE DELL'ALBA", ferro: 'FERRO PER LA FORGIA', gatto: 'IL GATTO BISCOTTO', melme: 'MELME NEI CAMPI', viaggio: "L'ALLEANZA DELLE CITTÀ" };
+const QALL = ['main', 'viaggio', 'ferro', 'gatto', 'melme'];
+// i cinque signori del grande viaggio: [chiave, abitante, città]
+const LEAD = [['ambra', 'lead_ambra', 'CASTELROSSO'], ['nord', 'lead_nord', 'ALTABRINA'], ['sole', 'lead_sole', 'ZAFIRA'], ['porto', 'lead_porto', 'PORTO SERENO'], ['fiore', 'lead_fiore', 'FIORALBA']];
+const allies = () => LEAD.filter(l => save.flags['al_' + l[0]]).length;
 function questLine(q) {
   const s = save.q[q];
   if (q === 'main') { if (s === 4) return 'LIBERA IL ' + SANCT[nextSanct()] + ' (PIETRE ' + gemsN() + '/5).'; return ['PARLA CON L\'ANZIANA MIRTA, NEL BORGO.', "RAGGIUNGI L'ALBERO MADRE NEL BOSCO ANTICO (NORD-OVEST).", 'PARLA CON IL CAPITANO ARDEA ALLA ROCCA DI LUMEN (SUD-EST).', 'TORNA DAL CAPITANO ARDEA, ALLA ROCCA: PRESTO ARRIVERANNO NOTIZIE DAL RE.', '', "PORTA LE CINQUE PIETRE DELL'ALBA ALLO SPIRITO DEL BOSCO.", 'CAPITOLO 2 COMPLETATO. IL SEGUITO NEL CAPITOLO 3!'][s]; }
   if (q === 'ferro') return ['', 'TROVA 3 MINERALI DI FERRO A NORD-EST DEL BORGO (' + Math.min(3, save.ore) + '/3).', 'PORTA IL FERRO A BRUNO IL FABBRO.', 'COMPLETATA'][s];
   if (q === 'gatto') return ['', 'CERCA BISCOTTO LUNGO LA STRADA PER IL BOSCO.', 'TORNA DA LIA.', 'COMPLETATA'][s];
   if (q === 'melme') return ['', 'SCONFIGGI 6 MELME NEI CAMPI DORATI (' + Math.min(6, save.slimes) + '/6).', 'TORNA DA OTTO, LA GUARDIA.', 'COMPLETATA'][s];
+  if (q === 'viaggio') { const nx = LEAD.find(l => !save.flags['al_' + l[0]]); return ['', 'PORTA IL SIGILLO DEL RE AI CINQUE SIGNORI (' + allies() + '/5).' + (nx ? ' IL PROSSIMO: ' + nx[2] + '.' : ''), 'TORNA DAL RE ALDRIC, NEL CORTILE DEL MASTIO.', 'COMPLETATA'][s]; }
   return '';
 }
 const questDone = q => (q === 'main' ? save.q.main >= 6 : save.q[q] >= 3);
@@ -349,13 +411,14 @@ function questTarget(q) {
   if (q === 'ferro') { if (s === 1) { let best = null, bd = 1e9; for (const p of props) if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) { const d = Math.hypot(p.x - hero.x, p.z - hero.z); if (d < bd) { bd = d; best = [p.x, p.z]; } } return best; } return s === 2 ? np('bruno') : null; }
   if (q === 'gatto') return s === 1 ? np('biscotto') : s === 2 ? np('lia') : null;
   if (q === 'melme') return s === 1 ? [2420, 2840] : s === 2 ? np('otto') : null;
+  if (q === 'viaggio') { if (s === 2) return np('re'); if (s !== 1) return null; let best = null, bd = 1e9; for (const l of LEAD) if (!save.flags['al_' + l[0]]) { const p = np(l[1]); if (p) { const d = Math.hypot(p[0] - hero.x, p[1] - hero.z); if (d < bd) { bd = d; best = p; } } } return best; }
   return null;
 }
 function trackQuest(q) { save.track = q; }
 function curTrack() {
   const active = q => q === 'main' ? save.q.main < 6 : save.q[q] > 0 && save.q[q] < 3;
   if (save.track && active(save.track)) return save.track;
-  for (const q of ['main', 'ferro', 'gatto', 'melme']) if (active(q)) return q;
+  for (const q of QALL) if (active(q)) return q;
   return null;
 }
 
@@ -382,8 +445,44 @@ function toast(t, c = '#ffffff') { toasts.push({ t, c, life: 3 }); if (toasts.le
 
 // ---------- dialoghi ----------
 function say(id, lines, then) { dialog = { id, name: id && NPC[id] ? NPC[id].n : id === 'biscotto' ? 'BISCOTTO' : '', lines: lines.map(l => A.wrap(l, Math.max(120, dialogW() - 16))), i: 0, ch: 0, then }; }
+// una domanda con le risposte da scegliere (croce su/giù, A conferma, B = l'ultima)
+function ask(id, lines, opts, pick) { say(id, lines); dialog.opts = opts; dialog.sel = 0; dialog.pick = pick; }
+const npcHidden = n => n.id === 're' && (!save || save.q.main < 4);
+function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; cam.yaw = hero.yaw; placeCam(true); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
+function talkFolk(n, N) {
+  const f = N.f, id = n.id, q = save.q;
+  if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
+  if (f.role === 'inn') return ask(id, [f.lines[0], 'UN LETTO E UNA ZUPPA CALDA, E DOMATTINA SEI COME NUOVO. FANNO ' + f.cost + ' MONETE.'], ['RIPOSA (' + f.cost + ' MONETE)', 'NO, GRAZIE'], i => {
+    if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
+    save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); }); });
+  if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
+    return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
+      if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
+      save.coins -= cost; startFade(() => sail(W.DOCKS[to[i]])); }); }
+  if (id === 're') {
+    if (q.viaggio === 0) return say(id, ['EROE DI LUMEN! IL CAPITANO ARDEA MI HA RACCONTATO TUTTO DI TE.', 'IL DRAGO SI È SVEGLIATO, E LUMEN DA SOLA NON BASTERÀ. OLTRE IL PONTE DEI RE VIVONO POPOLI CHE UN TEMPO ERANO NOSTRI ALLEATI.', "PORTA IL MIO SIGILLO AI CINQUE SIGNORI: IL BORGOMASTRO DI CASTELROSSO, LA THANE DI ALTABRINA, L'EMIRA DI ZAFIRA, IL CAPITANO DI PORTO SERENO E LA DAMA DI FIORALBA.", 'IL PONTE È A EST, OLTRE IL DESERTO DI SOLIS. È UN VIAGGIO LUNGO: PRENDI QUESTE CENTO MONETE PER LOCANDE E TRAGHETTI.'], () => { q.viaggio = 1; save.coins += 100; trackQuest('viaggio'); toast("MISSIONE: L'ALLEANZA DELLE CITTÀ", '#ffd23f'); jingle(); });
+    if (q.viaggio === 1) return say(id, ['HAI PARLATO CON ' + allies() + ' SIGNORI SU CINQUE. LA MAPPA (SELECT) TI MOSTRA DOVE SI TROVA IL PROSSIMO.', 'NEI PORTI I TRAGHETTI TI RISPARMIANO GIORNI DI CAMMINO.']);
+    if (q.viaggio === 2) return say(id, ['CINQUE GIURAMENTI! NON ACCADEVA DAI TEMPI DI RE AURELIO.', "QUANDO IL DRAGO SCENDERÀ DAL PICCO, LUMEN NON SARÀ SOLA. PRENDI LA STELLA DELL'ALLEANZA: L'HAI MERITATA.", 'E TRECENTO MONETE DAL TESORO DELLA ROCCA.'], () => { q.viaggio = 3; save.coins += 300; openLoot('alleanza'); });
+    return say(id, ['LE CITTÀ SONO CON NOI. RIPOSA, EROE: IL GIORNO DEL DRAGO SI AVVICINA.']);
+  }
+  const L = LEAD.find(l => l[1] === id);
+  if (L) {
+    const T = { ambra: [['CASTELROSSO VI DÀ IL BENVENUTO. IO SONO ULDERICO, BORGOMASTRO DA TRENT\'ANNI.', "QUI SI TAGLIA LEGNA, SI FA IL PANE E SI SUONA LA CAMPANA AL TRAMONTO. DI DRAGHI NON NE VOGLIAMO SAPERE."], ['IL SIGILLO DI RE ALDRIC! ALLORA È VERO: IL DRAGO SI È SVEGLIATO.', "I NOSTRI ARCIERI SONO I MIGLIORI DEL CONTINENTE. CASTELROSSO GIURA: SAREMO AL FIANCO DI LUMEN.", 'PRENDI QUESTE POZIONI PER LA STRADA.'], ['I NOSTRI ARCIERI SI ALLENANO OGNI GIORNO. DITE AL RE CHE CASTELROSSO NON DIMENTICA.']],
+      nord: [['SONO BRUNILDE, THANE DI ALTABRINA. QUI COMANDANO LA NEVE E IL FERRO.', 'SE CERCHI UN LETTO CALDO, LA LOCANDA È IN PIAZZA.'], ['IL SIGILLO DEL RE DI LUMEN... MIO PADRE COMBATTÉ AL FIANCO DEL SUO.', 'I MONTI DI FERRO DARANNO LANCE E SCUDI. ALTABRINA GIURA.', "E TU PRENDI QUESTO: UN CUORE DI CRISTALLO DELLE NOSTRE MINIERE."], ['LE FUCINE LAVORANO GIORNO E NOTTE. IL DRAGO TROVERÀ FERRO AD ASPETTARLO.']],
+      sole: [["BENVENUTO A ZAFIRA, PERLA DELLE TERRE ROSSE. IO SONO L'EMIRA SAHAR.", "L'ACQUA DELLA NOSTRA SORGENTE È PER TUTTI. LE NOSTRE LAME, SOLO PER GLI AMICI."], ["IL SIGILLO DI LUMEN? QUEL DRAGO, CENTO ANNI FA, BRUCIÒ I NOSTRI PALMETI.", 'ZAFIRA NON HA DIMENTICATO. I LANCIERI DEL SOLE MARCERANNO CON VOI: LO GIURO.', "PRENDI QUEST'ORO: UN VIAGGIATORE NE HA SEMPRE BISOGNO."], ['I LANCIERI DEL SOLE SONO PRONTI. CHE LA SABBIA TI SIA LIEVE, EROE.']],
+      porto: [['CAPITANO NEREO, AL TUO SERVIZIO. QUESTO È PORTO SERENO, E QUELLE SONO LE MIE NAVI.', 'SE DEVI ANDARE LONTANO, PARLA COL NOSTROMO IN FONDO AL MOLO.'], ["IL SIGILLO DEL RE! SAPEVO CHE QUEL FUMO SUL PICCO NON PROMETTEVA BENE.", 'LA FLOTTA DELLA BAIA È CON LUMEN. GIURO SUL MARE.', 'E DA OGGI PER TE IL MIO ELISIR MIGLIORE.'], ['LE VELE SONO PRONTE. AL PRIMO SEGNALE DEL FARO, SALPIAMO.']],
+      fiore: [['BENVENUTO A FIORALBA, VIAGGIATORE. IO SONO SAKURA, CUSTODE DEI CILIEGI.', 'RIPOSA ALL\'OMBRA DEI NOSTRI ALBERI: QUI NESSUNO HA FRETTA.'], ["IL SIGILLO DI LUMEN... I PETALI ME L'AVEVANO DETTO, STAMATTINA.", "I NOSTRI SPADACCINI SONO POCHI, MA NESSUNO LI HA MAI VISTI INDIETREGGIARE. FIORALBA GIURA.", 'PORTA CON TE QUESTO CUORE DI CRISTALLO: È CRESCIUTO TRA LE RADICI DEL CILIEGIO PIÙ ANTICO.'], ['QUANDO VERRÀ IL GIORNO, I PETALI CADRANNO SULLE NOSTRE LAME.']] }[L[0]];
+    if (q.viaggio !== 1 || save.flags['al_' + L[0]]) return say(id, save.flags['al_' + L[0]] ? T[2] : T[0]);
+    return say(id, T[1], () => { save.flags['al_' + L[0]] = 1; const n2 = allies();
+      if (L[0] === 'ambra') { save.pot += 3; toast('+3 POZIONI', '#ff8aa0'); } else if (L[0] === 'sole') { save.coins += 150; toast('+150 MONETE', '#ffd23f'); } else if (L[0] === 'porto') { save.eli = (save.eli || 0) + 2; toast('+2 ELISIR', '#ff8aa0'); } else openLoot('cuore');
+      toast('ALLEANZA: ' + n2 + ' SU 5', '#9af0b0'); jingle(); if (n2 >= 5) { q.viaggio = 2; toast('TORNA DAL RE ALDRIC!', '#ffd23f'); } });
+  }
+  const LL = f.lines; if (!LL || !LL.length) return say(id, ['...']);
+  n.li = ((n.li === undefined ? -1 : n.li) + 1) % LL.length; return say(id, [LL[n.li]]);
+}
 function talk(n) {
   const q = save.q, id = n.id;
+  if (NPC[id] && NPC[id].f) return talkFolk(n, NPC[id]);
   if (id === 'mirta') {
     if (q.main === 0) return say(id, ['BENVENUTO A BORGO AURORA, VIAGGIATORE. IO SONO MIRTA, LA PIÙ ANZIANA DEL VILLAGGIO.', "DA QUANDO LE CINQUE PIETRE DELL'ALBA SONO SPARITE, LE CREATURE DI LUMEN SI SONO FATTE INQUIETE.", 'E SUL PICCO A NORD SI È SVEGLIATO IL DRAGO. DALLE RIVE DEL LAGO LO SI VEDE VOLARE.', "LO SPIRITO DEL BOSCO SA DOVE SONO NASCOSTE LE PIETRE. VIVE SOTTO L'ALBERO MADRE, NEL BOSCO ANTICO, A NORD-OVEST.", 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTA SPADA DI LEGNO E DUE POZIONI.'], () => { give('legno'); save.pot += 2; q.main = 1; trackQuest('main'); toast("MISSIONE: LE PIETRE DELL'ALBA", '#ffd23f'); jingle(); });
     if (q.main === 1) return say(id, ["L'ALBERO MADRE È NEL BOSCO ANTICO, A NORD-OVEST. SEGUI LA STRADA CHE PARTE DALLA PIAZZA.", 'SE TI PERDI, PREMI SELECT PER GUARDARE LA MAPPA. IL ROMBO GIALLO IN ALTO TI INDICA LA DIREZIONE.']);
@@ -445,6 +544,7 @@ function talk(n) {
     if (q.main === 2) return say(id, ['TI MANDA LO SPIRITO DEL BOSCO? ALLORA I SIGILLI SI STANNO INDEBOLENDO...', 'IL RE È PARTITO PER LE TERRE DEL NORD IN CERCA DEGLI ANTICHI SAPIENTI: SOLO LORO SANNO LEGGERE LE RUNE DEI SANTUARI.', 'FINCHÉ NON TORNA, ALLENATI. ESPLORA LUMEN, TROVA EQUIPAGGIAMENTO DEGNO DI UN EROE E AIUTA LA GENTE.', 'PRENDI QUESTE CENTO MONETE PER IL VIAGGIO. E STAI LONTANO DAL DRAGO... PER ORA.'], () => { q.main = 3; save.c1t = save.time; save.coins += 100; toast('+100 MONETE', '#ffd23f'); banner = { t: 'CAPITOLO 1 COMPLETATO', s: 'ESPLORA UN PO\', POI TORNA DA ARDEA', life: 5, c: '#ffd23f' }; fanfare(); writeSave(); });
     if (q.main === 3 && save.c1t !== undefined && save.time - save.c1t < 90) return say(id, ['IL RE NON È ANCORA TORNATO. ESPLORA UN PO\' LUMEN E TORNA PIÙ TARDI: I SUOI MESSAGGERI SONO GIÀ IN VIAGGIO.']);
     if (q.main === 3) return say(id, ['FINALMENTE SEI QUI! IL RE È TORNATO DALLE TERRE DEL NORD: I SAPIENTI HANNO DECIFRATO LE RUNE DEI SANTUARI.', "I SIGILLI SI SPEZZANO UNO ALLA VOLTA, NELL'ORDINE IN CUI FURONO POSTI: IL BOSCO, IL LAGO, IL SOLE, IL GHIACCIO E PER ULTIMO IL FUOCO.", 'IL RE TI AFFIDA IL SUO SIGILLO: NEL RUBINO SCORRE IL SANGUE DEI RE DI LUMEN. APPOGGIALO ALLA PORTA DI UN SANTUARIO E LE RUNE SI APRIRANNO.', "DENTRO TROVERAI PICCOLE CHIAVI, UNA GRANDE CHIAVE E UN GUARDIANO. SCONFIGGILO, E LA PIETRA DELL'ALBA SARÀ TUA.", "IL PRIMO È IL SANTUARIO DEL BOSCO, NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE. VA', EROE. LUMEN CONTA SU DI TE."], () => { q.main = 4; openLoot('sigillo'); trackQuest('main'); banner = { t: 'CAPITOLO 2', s: 'I CINQUE SANTUARI', life: 5, c: '#ffd23f' }; writeSave(); });
+    if (q.main >= 4 && q.viaggio === 0 && !save.flags.reHint) { save.flags.reHint = 1; return say(id, ['IL RE VUOLE VEDERTI: TI ASPETTA QUI NEL CORTILE, DAVANTI AL PORTONE DEL MASTIO.']); }
     if (q.main === 4) { const nx = nextSanct(), H = { bosco: "È NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE.", lago: "È SULL'ISOLA IN MEZZO AL LAGO DI CRISTALLO: LE PIETRE CHIARE NELL'ACQUA PORTANO FIN LÀ.", sole: 'È TRA LE ROVINE DI SOLIS, NEL DESERTO A EST.', ghiaccio: 'È IN FONDO ALLA VALLE GELATA, LONTANO A NORD-OVEST.', fuoco: 'È SUL MONTE BRACE, A SUD-EST: LA SUA PORTA GUARDA IL CRATERE.' }; return say(id, ['IL PROSSIMO È IL ' + SANCT[nx] + '. ' + H[nx], "PIETRE DELL'ALBA RECUPERATE: " + gemsN() + ' SU 5.']); }
     if (q.main === 5) return say(id, ['LE CINQUE PIETRE! CHE IL RE TI BENEDICA. ORA PORTALE ALLO SPIRITO DEL BOSCO: SOLO LUI SA COSA FARNE.']);
     return say(id, ['IL DRAGO... I SAPIENTI DICONO CHE SI PREPARA QUALCOSA. RESTA PRONTO, EROE.']);
@@ -455,13 +555,25 @@ function talk(n) {
 }
 const SIGNS = {
   '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO: IL SENTIERO GIRA A OVEST DEL LAGO',
-  '2655,2925': 'ROCCA DI LUMEN\n↗ DESERTO DI SOLIS   ↘ MONTE BRACE', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
+  '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ DESERTO DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
+  '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
+  '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
 const PROPTXT = { well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 const SHOPS = {
   nino: { title: 'NINO IL MERCANTE', list: [['pozione', 20], ['elisir', 110], ['cappuccio', 40], ['brocchiere', 35], ['giaco', 60], ['scudoLegno', 45], ['talismano', 90], ['trifoglio', 160], ['mappa', 150], ['cappello', 380, 4]] },
+  orafo: { title: "L'ORAFO DELLA ROCCA", list: [['talismano', 90], ['trifoglio', 160], ['anello2', 260], ['anelloForza', 420]] },
+  erbe: { title: "L'ERBORISTA", list: [['pozione', 20], ['elisir', 100]] },
+  ambra: { title: 'LA MERCIAIA DI CASTELROSSO', list: [['pozione', 22], ['lancia', 120], ['seta', 180], ['torre', 270], ['mantello', 380]] },
+  nord: { title: 'PELLI E FERRO DEL NORD', list: [['pozione', 24], ['elmoFerro', 150], ['scudoFerro', 160], ['pelliccia', 460], ['martello', 520]] },
+  sole: { title: 'LE LAME DI ZAFIRA', list: [['turbante', 200], ['scaglie', 350], ['scimitarra', 480], ['piuma', 520]] },
+  spezie: { title: 'LA SPEZIALE', list: [['pozione', 22], ['elisir', 110], ['talismano', 90]] },
+  pesce: { title: 'ZUPPE E RIMEDI DEL PORTO', list: [['pozione', 18], ['elisir', 95]] },
+  porto: { title: "L'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
+  fiore: { title: 'LA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
+  dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['katana', 1200]] },
   bruno: { title: 'LA FUCINA DI BRUNO', list: [['pugnale', 45], ['elmoCuoio', 70], ['lancia', 120], ['mazza', 190], ['torre', 270], ['scaglie', 350], ['martello', 520, 4]] },
 };
 const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= r[2]);
@@ -504,12 +616,14 @@ function openChest(c) {
 }
 
 // ---------- telecamera ----------
+let camFix = null;   // (solo per le prove) telecamera ferma in un punto
 const CAM_D = 25, CAM_H = 11, LOOK_F = 9, LOOK_H = 6.5, FOVY = 0.95;
 function placeCam(snap) {
+  if (camFix) { Object.assign(cam, camFix); return; }
   if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), ex = hero.x - fx2 * 20, ez = hero.z - fz2 * 20, ey = Math.max(hero.y, -2) + 16, k = snap ? 1 : 0.25; cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * 8; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * 8; return; }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
-  let d = CAM_D;
-  for (let t = 1; t > 0.25; t -= 0.08) { const ex = hero.x - fx * CAM_D * t, ez = hero.z - fz * CAM_D * t; if (!W.inBox(ex, ez, 1.5)) { d = CAM_D * t; break; } d = CAM_D * t; }
+  let d = CAM_D * 0.24;
+  for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CAM_D * t, hero.z - fz * CAM_D * t, 1.5)) break; d = CAM_D * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
   let ey = hero.y + CAM_H;
   ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2);
@@ -684,10 +798,12 @@ function npcsUpdate(dt) {
   for (const n of npcs) {
     n.t -= dt;
     const d = Math.hypot(hero.x - n.x, hero.z - n.z);
+    if (d > 420 && n.id !== 'biscotto') continue;
     if (n.id === 'biscotto' && save.q.gatto >= 2) { n.x = n.hx = 2032; n.z = n.hz = 2662; }
     if (d < 22 || (dialog && dialog.id === n.id)) { n.yaw += angDiff(Math.atan2(hero.z - n.z, hero.x - n.x), n.yaw) * Math.min(1, 5 * dt); n.moving = false; continue; }
-    if (n.id === 'contadino' || n.id === 'biscotto') {
-      if (n.t <= 0) { n.t = 3 + Math.random() * 4; const a = Math.random() * TAU; n.wx = n.hx + Math.cos(a) * 30; n.wz = n.hz + Math.sin(a) * 30; }
+    if (n.id === 'contadino' || n.id === 'biscotto' || (NPC[n.id] && NPC[n.id].walk)) {
+      const wr = NPC[n.id] && NPC[n.id].walk ? 16 : 30;
+      if (n.t <= 0) { n.t = 3 + Math.random() * 4; const a = Math.random() * TAU; n.wx = n.hx + Math.cos(a) * wr; n.wz = n.hz + Math.sin(a) * wr; }
       if (n.wx !== undefined && Math.hypot(n.wx - n.x, n.wz - n.z) > 2) { const a = Math.atan2(n.wz - n.z, n.wx - n.x); n.yaw += angDiff(a, n.yaw) * Math.min(1, 6 * dt); const m = (n.id === 'biscotto' ? 9 : 7) * dt; n.moving = move(n, Math.cos(n.yaw) * m, Math.sin(n.yaw) * m, 1.5); n.walk += m; }
       else n.moving = false;
     } else n.yaw += angDiff(n.base, n.yaw) * Math.min(1, 2 * dt);
@@ -725,10 +841,10 @@ function findTarget() {
     if (D.gem) consider(D.gem.x, D.gem.z, 'gem', D.gem, 11);
     return best;
   }
-  for (const n of npcs) consider(n.x, n.z, 'npc', n, n.id === 'nino' ? 14 : 11);
+  for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
@@ -750,7 +866,8 @@ function interact(t) {
   const p = t.obj;
   if (p.k === 'sign') { say(null, [SIGNS[p.x + ',' + p.z] || 'UN CARTELLO ROVINATO DALLA PIOGGIA.']); return; }
   if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); return; }
-  if (p.k === 'statue' && Math.hypot(p.x - 2760, p.z - 2960) < 120) { say(null, ['UNA GUARDIA DI PIETRA VEGLIA SULLA ROCCA DA CENTO ANNI.']); return; }
+  if (p.k === 'kingstatue') { say(null, ['RE AURELIO IL FONDATORE, CON LA SPADA LEVATA VERSO IL PICCO DEL DRAGO.', 'SUL BASAMENTO: «FINCHÉ LA LUCE DURA, LUMEN DURA».']); return; }
+  if (p.k === 'statue' && Math.hypot(p.x - 2760, p.z - 2960) < 300) { say(null, ['UNA GUARDIA DI PIETRA VEGLIA SULLA ROCCA DA CENTO ANNI.']); return; }
   say(null, [PROPTXT[p.k] || '...']);
 }
 
@@ -776,15 +893,16 @@ function playUpdate(dt) {
   if (placeT <= 0) {
     placeT = 0.35;
     const bw = W.atmo(hero.x, hero.z), tgt = { fog: [0, 0, 0], zen: [0, 0, 0], near: 0, far: 0, wat: [0, 0, 0] };
-    for (let b = 0; b < 8; b++) { const w = bw[b], a = ATMO[b]; for (let i = 0; i < 3; i++) { tgt.fog[i] += a[0][i] * w; tgt.zen[i] += a[1][i] * w; tgt.wat[i] += a[4][i] * w; } tgt.near += a[2] * w; tgt.far += a[3] * w; }
+    for (let b = 0; b < W.NB; b++) { const w = bw[b], a = ATMO[b]; for (let i = 0; i < 3; i++) { tgt.fog[i] += a[0][i] * w; tgt.zen[i] += a[1][i] * w; tgt.wat[i] += a[4][i] * w; } tgt.near += a[2] * w; tgt.far += a[3] * w; }
     atm.tgt = tgt;
     const name = W.placeName(hero.x, hero.z);
     if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; } } else { placeCand = name; placeHold = 0; } }
   }
   if (atm.tgt) { const k = Math.min(1, dt * 1.5), T = atm.tgt; for (let i = 0; i < 3; i++) { atm.fog[i] += (T.fog[i] - atm.fog[i]) * k; atm.zen[i] += (T.zen[i] - atm.zen[i]) * k; atm.wat[i] += (T.wat[i] - atm.wat[i]) * k; } atm.near += (T.near - atm.near) * k; atm.far += (T.far - atm.far) * k; }
+  if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
   // mappa esplorata
   seenT -= dt;
-  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64); for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < 64 && j < 64 && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * 64 + i] = 1; }
+  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64); for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MG && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
   }
   if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
   for (const t of toasts) t.life -= dt; toasts = toasts.filter(t => t.life > 0);
@@ -1379,7 +1497,7 @@ function renderDungeon() {
   const cut = hp ? [hp[0], hp[1], H3 * 0.21, Math.hypot(cam.x - hero.x, cam.y - hero.y, cam.z - hero.z) - 1] : [0, 0, 0, 0];
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.BLEND);
   let p = P.dmesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 8);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 16);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, D.def.amb + 0.05);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
@@ -1463,7 +1581,8 @@ function drawFoe(e) {
 }
 
 // ---------- disegno 3D ----------
-let VP = null, RX = 1, RZ = 0, planes = null;
+let VP = null, RX = 1, RZ = 0, planes = null, frameN = 0;
+const MESHL = [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]];
 function boxVisible(x0, y0, z0, x1, y1, z1) {
   for (const p of planes) { const x = p[0] > 0 ? x1 : x0, y = p[1] > 0 ? y1 : y0, z = p[2] > 0 ? z1 : z0; if (p[0] * x + p[1] * y + p[2] * z + p[3] < 0) return false; }
   return true;
@@ -1510,26 +1629,30 @@ function render3D() {
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 2);
   const far = fogF + 60, vis = [];
+  if (++frameN % 240 === 0) W.sweep(frameN);
   for (const c of W.chunks) {
     const d = Math.hypot(c.cx - cam.x, c.cz - cam.z);
     if (d > far + W.CS * 0.75) continue;
     if (!boxVisible(c.cx - W.CS / 2, c.lo - 2, c.cz - W.CS / 2, c.cx + W.CS / 2, c.hi + 30, c.cz + W.CS / 2)) continue;
-    vis.push([c, d]);
+    vis.push([c, d]); W.need(c, frameN);
     const L = W.lod[d < 520 ? 0 : d < 950 ? 1 : 2];
     gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light); gl.uniform2f(p.u.uTiles, 8, 8);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light); gl.uniform2f(p.u.uTiles, 8, 16);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
-  for (let q0 = 0; q0 < W.meshQuads; q0 += 16000) { G.attribs(p, [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]], q0 * 4 * 32); gl.drawElements(gl.TRIANGLES, Math.min(16000, W.meshQuads - q0) * 6, gl.UNSIGNED_SHORT, 0); }
+  for (const s of W.sites) {
+    if (Math.hypot(s.x - cam.x, s.z - cam.z) - s.r > far || !boxVisible(s.x0, s.y0, s.z0, s.x1, s.y1, s.z1)) continue;
+    for (let q0 = s.q0, q1 = s.q0 + s.n; q0 < q1; q0 += 16000) { G.attribs(p, MESHL, q0 * 128); gl.drawElements(gl.TRIANGLES, Math.min(16000, q1 - q0) * 6, gl.UNSIGNED_SHORT, 0); }
+  }
   // ombre
   shN = 0;
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
-  for (const n of npcs) if (near(n.x, n.z, 280)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
+  for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (shN) {
     p = P.shadow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP);
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-2, -4);
@@ -1581,7 +1704,7 @@ function buildDynamic() {
     if (!(h.inv > 0 && Math.floor(time * 16) % 2) || h.dead) pushBB(h.x, h.y - 0.5, h.z, heroRects[anim][dirOf(h.x, h.z, h.yaw)], R, 1, h.flash > 0 ? 0.7 : 0);
   }
   for (const n of npcs) {
-    if (!near(n.x, n.z, 520)) continue;
+    if (!near(n.x, n.z, 520) || npcHidden(n)) continue;
     const sh = CHR[n.id], a = n.moving ? 1 + (Math.floor(n.walk / 4) % (sh.length - 1)) : 0, sc = 0.2 / SR;
     const glow = n.id === 'spirito' ? 1.1 + Math.sin(time * 3) * 0.1 : 1;
     pushBB(n.x, gH(n.x, n.z) - 0.5 + (n.id === 'spirito' ? 1.5 + Math.sin(time * 2) : 0), n.z, sh[a][dirOf(n.x, n.z, n.yaw)], sc, glow);
@@ -1595,6 +1718,8 @@ function buildDynamic() {
   for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
+  // bandiere in cima a torri e alberi maestri
+  for (const f of W.flags) if (near(f[0], f[2], 620)) { const sp = SPR[f[3] === 2 ? 'flagblue' : 'flag']; pushBB(f[0] + RX * 3.2, f[1] - 3.4, f[2] + RZ * 3.2, sp.r[Math.floor(time * 5 + f[0] * 0.37) % 2], sp.s, 1.05); }
   // il drago
   if (near(dragon.x, dragon.z, 1600)) pushBB(dragon.x, dragon.y, dragon.z, CHR.dragon[Math.floor(time * 2.6) % 2][dirOf(dragon.x, dragon.z, dragon.yaw)], 0.8, 0.95);
 }
@@ -1672,7 +1797,11 @@ function drawDialog() {
   let left = Math.floor(dialog.ch);
   for (const l of lines) { const s = l.slice(0, Math.max(0, left)); left -= l.length + 1; T(s, x + 8, yy, '#ffffff'); yy += 9; }
   const tot = lines.join(' ').length;
-  if (dialog.ch >= tot && Math.floor(time * 3) % 2) { hg.fillStyle = '#ffd23f'; hg.fillRect(x + w - 10, y + h - 7, 5, 2); hg.fillRect(x + w - 9, y + h - 5, 3, 1); }
+  if (dialog.opts && dialog.i === dialog.lines.length - 1 && dialog.ch >= tot) {
+    let ow = 0; for (const o of dialog.opts) ow = Math.max(ow, A.textW(o)); ow += 22;
+    const oh = dialog.opts.length * 10 + 7, ox = x + w - ow - 4, oy = y - oh - 3; panel(ox, oy, ow, oh);
+    dialog.opts.forEach((o, i) => { if (i === dialog.sel) { hg.fillStyle = 'rgba(255,210,63,.18)'; hg.fillRect(ox + 2, oy + 3 + i * 10, ow - 4, 10); T('>', ox + 5, oy + 5 + i * 10, '#ffd23f'); } T(o, ox + 14, oy + 5 + i * 10, i === dialog.sel ? '#ffd23f' : '#e6e9f2'); });
+  } else if (dialog.ch >= tot && Math.floor(time * 3) % 2) { hg.fillStyle = '#ffd23f'; hg.fillRect(x + w - 10, y + h - 7, 5, 2); hg.fillRect(x + w - 9, y + h - 5, 3, 1); }
 }
 function drawLoot() {
   const w = Math.min(260, dialogW()), h = 66, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr / 2 - h / 2) - 6, it = IT[loot.id];
@@ -1708,32 +1837,45 @@ function drawShop() {
 }
 // riga con le statistiche di un oggetto
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
+// la mappa è una finestra sul mondo: una zona (4096 unità) oppure tutto. La croce la sposta, A cambia ingrandimento
+const mapV = { x: 2048, z: 2048, span: 4096 };
+function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(h, Math.min(W.WS - h, mapV.z)); }
+function openMap() { mapOpen = true; if (hero && !D) { mapV.span = 4096; mapV.x = hero.x; mapV.z = hero.z; clampMap(); } }
 function drawMap() {
   if (D) return drawDungeonMap();
-  const S = Math.min(Hr - 26, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, k = S / W.WS;
+  const S = Math.min(Hr - 26, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, span = mapV.span, k = S / span, wx0 = mapV.x - span / 2, wz0 = mapV.z - span / 2;
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
-  T('TERRE DI LUMEN', Wr / 2, 5, '#ffd23f', 1, 'center');
-  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, x0, y0, S, S);
-  const cs = S / 64;
-  for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) if (!seen[j * 64 + i]) { hg.fillStyle = (i + j) % 2 ? '#2a2638' : '#24202f'; hg.fillRect(Math.floor(x0 + i * cs), Math.floor(y0 + j * cs), Math.ceil(cs), Math.ceil(cs)); }
-  const dot = (x, z, c, s = 2) => { hg.fillStyle = '#0b0a12'; hg.fillRect(Math.round(x0 + x * k) - s, Math.round(y0 + z * k) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(Math.round(x0 + x * k) - s + 1, Math.round(y0 + z * k) - s + 1, s * 2 - 1, s * 2 - 1); };
-  const isSeen = (x, z) => seen[Math.min(63, Math.floor(z / 64)) * 64 + Math.min(63, Math.floor(x / 64))];
-  dot(2000, 2650, '#ffffff'); dot(2760, 2960, '#c9d3e6');
+  T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
+  const mk2 = W.mapImg.width / W.WS;
+  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, wz0 * mk2, span * mk2, span * mk2, x0, y0, S, S);
+  const i0 = Math.floor(wx0 / 64), j0 = Math.floor(wz0 / 64), nc = Math.ceil(span / 64);
+  for (let j = j0; j <= j0 + nc; j++) for (let i = i0; i <= i0 + nc; i++) {
+    if (i < 0 || j < 0 || i >= MG || j >= MG || seen[j * MG + i]) continue;
+    const ax = Math.max(x0, Math.floor(x0 + (i * 64 - wx0) * k)), ay = Math.max(y0, Math.floor(y0 + (j * 64 - wz0) * k)), bx = Math.min(x0 + S, Math.ceil(x0 + (i * 64 + 64 - wx0) * k)), by = Math.min(y0 + S, Math.ceil(y0 + (j * 64 + 64 - wz0) * k));
+    if (bx > ax && by > ay) { hg.fillStyle = (i + j) % 2 ? '#2a2638' : '#24202f'; hg.fillRect(ax, ay, bx - ax, by - ay); }
+  }
+  const PX = x => Math.round(x0 + (x - wx0) * k), PZ = z => Math.round(y0 + (z - wz0) * k), inV = (x, z) => x >= wx0 && z >= wz0 && x <= wx0 + span && z <= wz0 + span;
+  const dot = (x, z, c, s = 2, edge) => {
+    if (!inV(x, z)) { if (!edge) return; x = Math.max(wx0, Math.min(wx0 + span, x)); z = Math.max(wz0, Math.min(wz0 + span, z)); }
+    hg.fillStyle = '#0b0a12'; hg.fillRect(PX(x) - s, PZ(z) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(PX(x) - s + 1, PZ(z) - s + 1, s * 2 - 1, s * 2 - 1);
+  };
+  const isSeen = (x, z) => seen[Math.min(MG - 1, Math.floor(z / 64)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
+  for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r === 3 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
-  const q = curTrack(), tg = q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3);
+  const q = curTrack(), tg = q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3, true);
   // freccia dell'eroe
-  const hx = x0 + hero.x * k, hz = y0 + hero.z * k;
-  for (let i = -1; i <= 5; i++) { const px = hx + Math.cos(hero.yaw) * i, pz = hz + Math.sin(hero.yaw) * i; hg.fillStyle = i > 3 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(px) - 1, Math.round(pz) - 1, 3, 3); }
+  if (inV(hero.x, hero.z)) { const hx = x0 + (hero.x - wx0) * k, hz = y0 + (hero.z - wz0) * k; for (let i = -1; i <= 5; i++) { const px = hx + Math.cos(hero.yaw) * i, pz = hz + Math.sin(hero.yaw) * i; hg.fillStyle = i > 3 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(px) - 1, Math.round(pz) - 1, 3, 3); } }
+  else if (Math.floor(time * 4) % 2) dot(hero.x, hero.z, '#ff4a3a', 2, true);
   let n = 0, tot = 0; for (let i = 0; i < seen.length; i++) if (LAND[i]) { tot++; n += seen[i]; }
   T(curPlace || '', x0, y0 + S + 3, '#e6e9f2'); T('ESPLORATO ' + Math.min(100, Math.round(n / Math.max(1, tot) * 100)) + '%', x0 + S, y0 + S + 3, '#9af0b0', 1, 'right');
-  T('SELECT/B: CHIUDI', Wr / 2, Hr - 9 < y0 + S + 3 ? Hr - 1 : y0 + S + 3, '#5a6478', 1, 'center', null);
+  T('A: ' + (span < W.WS ? 'MONDO' : 'ZONA') + '   CROCE: SPOSTA   B: CHIUDI', Wr / 2, Hr - 8, '#5a6478', 1, 'center', null);
 }
 const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
-  if (menu.tab === 2) return ['main', 'ferro', 'gatto', 'melme'].filter(q => q === 'main' || save.q[q] > 0);
+  if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0);
   return ['vol', 'mus', 'vib', 'salva', 'esci'];
 }
 function drawMenu() {
@@ -1826,6 +1968,13 @@ function onKey(name) {
   if (st !== 'play') return;
   if (loot) { if ((name === 'a' || name === 'b') && loot.t > 0.5) { loot = null; tone(880, 0.04); } return; }
   if (dialog) {
+    const totA = dialog.lines[dialog.i].join(' ').length;
+    if (dialog.opts && dialog.i === dialog.lines.length - 1 && dialog.ch >= totA) {
+      const n = dialog.opts.length;
+      if (name === 'up') { dialog.sel = (dialog.sel + n - 1) % n; tone(700, 0.03); } else if (name === 'down') { dialog.sel = (dialog.sel + 1) % n; tone(700, 0.03); }
+      else if (name === 'a' || name === 'b') { const pk = dialog.pick, i = name === 'b' ? n - 1 : dialog.sel; dialog = null; tone(880, 0.04); pk(i); }
+      return;
+    }
     if (name === 'a' || name === 'b') {
       const tot = dialog.lines[dialog.i].join(' ').length;
       if (dialog.ch < tot) dialog.ch = tot;
@@ -1853,10 +2002,14 @@ function onKey(name) {
     }
     return;
   }
-  if (mapOpen) { if (name === 'select' || name === 'b' || name === 'start' || name === 'a') { mapOpen = false; tone(660, 0.04); } return; }
+  if (mapOpen) {
+    if (name === 'a' && !D) { mapV.span = mapV.span < W.WS ? W.WS : 4096; if (mapV.span < W.WS) { mapV.x = hero.x; mapV.z = hero.z; } clampMap(); tone(880, 0.04); }
+    else if (name === 'select' || name === 'b' || name === 'start' || name === 'a') { mapOpen = false; tone(660, 0.04); }
+    return;
+  }
   if (menu) { menuKey(name); return; }
   if (name === 'start') { menu = { tab: 0, sel: 0, pick: null }; tone(988, 0.05); return; }
-  if (name === 'select') { mapOpen = true; tone(988, 0.05); return; }
+  if (name === 'select') { openMap(); tone(988, 0.05); return; }
   if (name === 'a') {
     if (target) { interact(target); return; }
     if (hero.atk <= 0) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); }
@@ -1876,7 +2029,7 @@ function menuKey(name) {
   } else if (menu.tab === 1) {
     if (r === 'pozione') { if (save.pot > 0 && hero.hp < MAXHP()) { save.pot--; hero.hp = Math.min(MAXHP(), hero.hp + 6); seq([523, 659, 784], 0.07, 0.07); toast('+3 CUORI', '#ff8aa0'); } else tone(200, 0.1, 'square', 0.03); }
     else if (r === 'elisir') { if (save.eli > 0 && hero.hp < MAXHP()) { save.eli--; hero.hp = MAXHP(); seq([523, 659, 784, 1046], 0.07, 0.07); toast('CUORI PIENI!', '#9ac8ff'); if (!save.eli) menu.sel = 0; } else tone(200, 0.1, 'square', 0.03); }
-    else if (r === 'mappa') { menu = null; mapOpen = true; }
+    else if (r === 'mappa') { menu = null; openMap(); }
   } else if (menu.tab === 2) { trackQuest(r); tone(1046, 0.05); }
   else {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
@@ -1916,6 +2069,7 @@ function titleCam(dt) {
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
   get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
+  set camFix(v) { camFix = v; }, get atm() { return atm; },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
