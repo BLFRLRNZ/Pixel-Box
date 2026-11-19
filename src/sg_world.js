@@ -349,6 +349,9 @@ function* build(atlas, sprites) {
     const ty = t.y === null || t.y === undefined ? W_groundRaw(H, t.rx, t.rz) : t.y;
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * V + i; H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
   }
+  // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
+  const shore = W.shore = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const h = H[j * V + i]; shore[j * N + i] = h >= 0 ? 255 : Math.max(0, 255 + h * 36); }
   yield 0.35;
   // pendenza e luce per vertice; bioma dominante; rumore largo per i colori
   const SL = W.SL = new Float32Array(V * V), SH = W.SH = new Float32Array(V * V), BI = W.biome = new Uint8Array(V * V), N1 = new Float32Array(V * V);
@@ -390,6 +393,12 @@ function* build(atlas, sprites) {
       const k00 = cj * V + ci, h00 = H[k00], h10 = H[k00 + 1], h01 = H[k00 + V], h11 = H[k00 + V + 1];
       if (h00 < -15 && h10 < -15 && h01 < -15 && h11 < -15) {   // mare profondo
         for (let t = 0; t < 4; t++) { const o = ((cj * 2 + (t >> 1)) * TEX + ci * 2 + (t & 1)) * 4; col[o] = 70; col[o + 1] = 110; col[o + 2] = 120; mat[o + 1] = 102; mat[o + 3] = 153; }
+        continue;
+      }
+      if (h00 < -0.5 && h10 < -0.5 && h01 < -0.5 && h11 < -0.5) {   // fondale basso: il colore dipende solo dalla profondità
+        for (let t = 0; t < 4; t++) { const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), o = (ty * TEX + tx2) * 4;
+          const h = (h00 * (1 - u) + h10 * u) * (1 - v) + (h01 * (1 - u) + h11 * u) * v, dd = smooth(-0.4, -14, h), vv = 0.94 + vn((tx2 + 0.5) * TC / 23, (ty + 0.5) * TC / 23) * 0.12;
+          col[o] = lerp(196, 70, dd) * vv; col[o + 1] = lerp(180, 110, dd) * vv; col[o + 2] = lerp(128, 120, dd) * vv; mat[o + 1] = 102; mat[o + 3] = 153; }
         continue;
       }
       biomeW((ci + 0.5) * CELL, (cj + 0.5) * CELL, tmp);
@@ -515,7 +524,9 @@ function onWall(side, x0, z0, x1, z1, c, y0, w, h, tile, glow, e = 0.18) {
   if (side === 'e') quad([x1 + e, y0, b], [x1 + e, y0, a], [x1 + e, y0 + h, a], [x1 + e, y0 + h, b], tile, 1, 1);
   if (side === 'w') quad([x0 - e, y0, a], [x0 - e, y0, b], [x0 - e, y0 + h, b], [x0 - e, y0 + h, a], tile, 1, 1);
   // segno «decalcomania»: nello shader si stacca dal muro anche da lontano (niente sfarfallio con i mattoni dietro)
-  for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] += glow ? 4 : 2;
+  // glow: di notte la finestra si accende (non tutte: sette su dieci); glow 2: vetrata colorata
+  const lit = glow === 2 ? 6 : glow && ((Math.round(c * 13.7 + y0 * 7.3 + (x0 + z1) * 3.1) % 10) + 10) % 10 < 7 ? 4 : 2;
+  for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] += lit;
 }
 // poggio di roccia: quattro anelli di punti un po' storti e una cupola in cima; il lato della porta è una parete dritta
 function crag(b, g) {
@@ -793,6 +804,30 @@ W.sweep = frame => {
   const gl = W.G.gl; let n = 0;
   for (const c of W.live) { if (frame - c.used > 600) { gl.deleteBuffer(c.buf); if (c.big) gl.deleteBuffer(c.big); if (c.small) gl.deleteBuffer(c.small); c.buf = c.big = c.small = null; } else W.live[n++] = c; }
   W.live.length = n;
+};
+// ombre di alberi ed edifici dipinte sul terreno (il sole sta a sud-ovest: le ombre vanno a nord-est)
+W.bakeShadows = () => {
+  const m = new Uint8Array(TEX * TEX), col = W.col, dx = 0.674, dz = -0.738;
+  const put = (tx, tz, v) => { if (tx < 0 || tz < 0 || tx >= TEX || tz >= TEX) return; const k = tz * TEX + tx; if (m[k] < v) m[k] = v; };
+  for (const L of W.OB) {
+    if (!L) continue; const b = L.big;
+    for (let o = 0; o < b.length; o += 7) {
+      const r = RL[b[o + 4]], w = r.w * b[o + 3], h = r.h * b[o + 3]; if (h < 6 || b[o + 1] < 0.2) continue;
+      const cx = b[o] + dx * h * 0.42, cz = b[o + 2] + dz * h * 0.42, ra = Math.max(3.5, h * 0.5), rb = Math.max(3.5, w * 0.36), R = Math.max(ra, rb);
+      for (let tz = Math.floor((cz - R) / TC); tz <= (cz + R) / TC; tz++) for (let tx = Math.floor((cx - R) / TC); tx <= (cx + R) / TC; tx++) {
+        const px = (tx + 0.5) * TC - cx, pz = (tz + 0.5) * TC - cz, al = px * dx + pz * dz, ac = -px * dz + pz * dx; if ((al / ra) ** 2 + (ac / rb) ** 2 < 1) put(tx, tz, 62);
+      }
+    }
+  }
+  for (const b of W.boxes) {
+    const g = W.ground((b[0] + b[2]) / 2, (b[1] + b[3]) / 2), hh = Math.max(0, Math.min(46, b[4] - g)); if (hh < 3) continue;
+    const vx = dx * hh * 1.25, vz = dz * hh * 1.25;
+    for (let tz = Math.floor((b[1] + vz) / TC); tz <= b[3] / TC; tz++) for (let tx = Math.floor(b[0] / TC); tx <= (b[2] + vx) / TC; tx++) {
+      const px = (tx + 0.5) * TC, pz = (tz + 0.5) * TC, t0 = Math.max(0, (px - b[2]) / vx, (pz - b[1]) / vz), t1 = Math.min(1, (px - b[0]) / vx, (pz - b[3]) / vz);
+      if (t0 <= t1) put(tx, tz, 84);
+    }
+  }
+  for (let k = 0; k < TEX * TEX; k++) if (m[k]) { const o = k * 4; if (col[o + 3] > 8) continue; const f = 1 - m[k] / 255; col[o] *= f; col[o + 1] *= f; col[o + 2] *= f * 1.04 > 1 ? 1 : f * 1.04; }
 };
 W.build = build;
 W.coastDist = coastDist;

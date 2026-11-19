@@ -153,7 +153,7 @@ const ATMO = [
 
 // ---------- stato ----------
 let G = null, gl = null, st = 'boot', gen = null, prog = 0, progMsg = '', errMsg = '';
-let atlas = null, ATEX = null, TILES = null, DET = null, PANO = null, SPR = {}, CHR = {}, heroRects = null;
+let atlas = null, ATEX = null, TILES = null, DET = null, PANO = null, SHORE = null, glowBuf = null, SPR = {}, CHR = {}, heroRects = null;
 let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [];
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
@@ -163,12 +163,29 @@ let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 42
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
+const glowF = new Float32Array(160 * 44), WLP = new Float32Array(32), WLQ = new Float32Array(24);
+
+// ---------- il giorno e la notte ----------
+// Un giorno intero dura 12 minuti: l'alba alle 6, il tramonto verso le 19. Ogni ora ha la sua luce.
+// [ora, luce, quanto è notte, zenit, peso, orizzonte, peso, stelle, colore del panorama]
+const DAYLEN = 720, NIGHT = [[0.42, 0.5, 0.82], 1, [0.02, 0.04, 0.13], 1, [0.08, 0.11, 0.24], 0.92, 1, [0.26, 0.32, 0.52]], NOON = [[1, 1, 1], 0, [0, 0, 0], 0, [0, 0, 0], 0, 0, [1, 1, 1]];
+const DKEY = [[0, NIGHT], [4.7, NIGHT], [6, [[0.96, 0.74, 0.66], 0.5, [0.3, 0.36, 0.66], 0.75, [1, 0.66, 0.5], 0.72, 0.15, [0.9, 0.7, 0.66]]], [7.6, NOON], [17.2, NOON],
+  [18.8, [[1, 0.72, 0.52], 0.45, [0.34, 0.24, 0.52], 0.72, [1, 0.52, 0.3], 0.78, 0.1, [0.9, 0.6, 0.5]]], [20.3, NIGHT], [24, NIGHT]];
+const day = { tod: 9, lc: [1, 1, 1], night: 0, zen: [0, 0, 0], zenK: 0, hor: [0, 0, 0], horK: 0, stars: 0, pano: [1, 1, 1] };
+function setDay(tod) {
+  day.tod = tod; let k = 0; while (k < DKEY.length - 2 && tod >= DKEY[k + 1][0]) k++;
+  const a = DKEY[k], b = DKEY[k + 1], t = Math.max(0, Math.min(1, (tod - a[0]) / (b[0] - a[0]))), A2 = a[1], B2 = b[1], L = (x, y) => x + (y - x) * t;
+  for (let i = 0; i < 3; i++) { day.lc[i] = L(A2[0][i], B2[0][i]); day.pano[i] = L(A2[7][i], B2[7][i]);
+    // i colori del cielo si mescolano tenendo conto del peso (di giorno comanda la regione)
+    const wa = A2[3], wb = B2[3], w = L(wa, wb) || 1; day.zen[i] = (A2[2][i] * wa * (1 - t) + B2[2][i] * wb * t) / w; const ha = A2[5], hb = B2[5], h2 = L(ha, hb) || 1; day.hor[i] = (A2[4][i] * ha * (1 - t) + B2[4][i] * hb * t) / h2; }
+  day.night = L(A2[1], B2[1]); day.zenK = L(A2[3], B2[3]); day.horK = L(A2[5], B2[5]); day.stars = L(A2[6], B2[6]);
+}
 
 // ---------- salvataggio ----------
 function newSave() {
   return { v: 1, x: 2005, z: 2700, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
     eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0, viaggio: 0 }, track: 'main',
-    chests: {}, flags: {}, seen: '', time: 0, hint: 0, opt: { vib: true }, dun: {} };
+    chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {} };
 }
 function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) { const n = Object.assign(newSave(), s); n.q = Object.assign(newSave().q, s.q); return n; } } catch (e) {} return null; }
 function writeSave() {
@@ -279,6 +296,13 @@ function buildStatics() {
   SPR.spark = atlas.add(A.pix(['..a..', '..a..', 'aabaa', '..a..', '..a..'], { a: '#ffd23f', b: '#ffffff' }));
   SPR.glint = atlas.add(A.pix(['...a...', '...a...', '..aba..', 'aabbbaa', '..aba..', '...a...', '...a...'], { a: '#fff4b0', b: '#ffffff' }));
   SPR.drop = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#7ac8f0', b: '#e0f4ff' }));
+  SPR.leaf = [atlas.add(A.pix(['.aa', 'aab', 'ab.'], { a: '#e0702a', b: '#a8341c' })), atlas.add(A.pix(['aa.', 'baa', '.ba'], { a: '#f0c840', b: '#c8862a' })), atlas.add(A.pix(['.a.', 'aab', '.b.'], { a: '#c8342c', b: '#8a1e1a' }))];
+  SPR.petal = [atlas.add(A.pix(['aa', 'ab'], { a: '#ffd8e8', b: '#f8a8c8' })), atlas.add(A.pix(['.a', 'ab'], { a: '#ffffff', b: '#f8a8c8' }))];
+  SPR.snow = [atlas.add(A.pix(['aa', 'aa'], { a: '#ffffff' })), atlas.add(A.pix(['a'], { a: '#e8f4ff' }))];
+  SPR.dust = [atlas.add(A.pix(['aaaa.', '.bbbb'], { a: '#f0d8a0', b: '#e0c080' }))];
+  SPR.fly = [atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#c8ff5a', b: '#ffffff' }))];
+  SPR.mote = [atlas.add(A.pix(['a'], { a: '#d8c8ff' })), atlas.add(A.pix(['a'], { a: '#c8ffd0' }))];
+  { const pf = A.puff(), g2 = pf.getContext('2d'), d = g2.getImageData(0, 0, pf.width, pf.height); for (let i = 0; i < d.data.length; i += 4) { const v = (d.data[i] + d.data[i + 1] + d.data[i + 2]) / 3 * 0.72; d.data[i] = v; d.data[i + 1] = v; d.data[i + 2] = v * 1.06; } g2.putImageData(d, 0, 0); SPR.smoke = HD(pf, 7); }
   SPR.ember = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#ff6a1a', b: '#ffe14a' }));
   SPR.coin = HD(A.coin(), 5);
   SPR.heart = HD(A.heartBig(), 7);
@@ -349,6 +373,8 @@ function* loader() {
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
+  SHORE = G.texture({ w: W.N, h: W.N, data: W.shore }, { linear: true, lum: true }); W.shore = null;
+  glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
   W.upload(G);
   dynBuf = G.buffer(dynF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
@@ -369,6 +395,7 @@ function setupWorld() {
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z }));
+  for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
   doors = W.lights.filter(l => l.id);
   for (let j = 0; j < MG; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
 }
@@ -454,7 +481,7 @@ function talkFolk(n, N) {
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
   if (f.role === 'inn') return ask(id, [f.lines[0], 'UN LETTO E UNA ZUPPA CALDA, E DOMATTINA SEI COME NUOVO. FANNO ' + f.cost + ' MONETE.'], ['RIPOSA (' + f.cost + ' MONETE)', 'NO, GRAZIE'], i => {
     if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
-    save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); }); });
+    save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); }); });
   if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
     return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
@@ -586,7 +613,12 @@ const fanfare = () => { MU.duck(1.6); seq([523, 659, 784, 1047, 784, 1047, 1319,
 const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI DI LUMEN': 'prati', 'CAMPI DORATI': 'campi', 'BOSCO ANTICO': 'bosco', "L'ALBERO MADRE": 'bosco',
   'LAGO DI CRISTALLO': 'lago', 'ISOLA DEL LAGO': 'lago', 'MONTI DEL DRAGO': 'monti', 'PICCO DEL DRAGO': 'monti', 'VETTA DEL DRAGO': 'monti', 'RUPI DEL GRIFONE': 'rupi',
   'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'DESERTO DI SOLIS': 'deserto', 'ROVINE DI SOLIS': 'deserto', 'OASI DI SABBIA': 'deserto', "PALUDE D'OMBRA": 'palude',
-  'MONTE BRACE': 'brace', 'CRATERE DEL BRACE': 'brace', 'COSTA DELLE CONCHIGLIE': 'costa', 'FARO DEL SUD': 'costa' };
+  'MONTE BRACE': 'brace', 'CRATERE DEL BRACE': 'brace', 'COSTA DELLE CONCHIGLIE': 'costa', 'FARO DEL SUD': 'costa',
+  // le terre nuove
+  'CASTELROSSO': 'borgo:ambra', 'ALTABRINA': 'borgo:nord', 'LOCANDA DEL PONTE': 'campi', 'MEZZAVIA': 'campi', 'APPRODO DEL FARO': 'costa', 'APPRODO DEI PETALI': 'costa', 'PORTO SERENO': 'costa', 'ZAFIRA': 'deserto',
+  'FIORALBA': 'fiore', 'COLLINE DEI CILIEGI': 'fiore', 'PONTE DEI RE': 'title', 'PONTE DELLE LANTERNE': 'costa', 'PIANA DEI VENTI': 'rupi', 'MONTI DI FERRO': 'monti', 'ALTOPIANO BIANCO': 'gelo', "BOSCO D'AMBRA": 'bosco',
+  'TERRE ROSSE': 'deserto', 'DUNE DEL SOLE': 'deserto', 'PIANA DI MEZZO': 'prati', 'BAIA DI ZAFFIRO': 'costa', 'SELVA SMERALDO': 'selva', 'TEMPIO DELLA LAGUNA': 'selva', 'DELTA DELLE NEBBIE': 'palude', 'CAPO DELLE LANTERNE': 'prati',
+  'BRUGHIERA NERA': 'palude', "TORRE DELL'ECLISSE": 'grotta:gelo', 'DENTI DEL SUD': 'monti' };
 const MUS_DUN = { bosco: 'santuario:bosco', lago: 'santuario:lago', sole: 'tempio:sole', ghiaccio: 'santuario:ghiaccio', fuoco: 'tempio:fuoco' };
 let musQuiet = 0;
 try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
@@ -819,8 +851,33 @@ function dropsUpdate(dt) {
   }
   drops = drops.filter(p => p.t > 0);
 }
+// ---------- vita dell'aria: foglie, petali, neve, polvere, lucciole; fumo dei camini; spruzzi delle fontane ----------
+let amb = [], ambT = 0;
+const AMB = { leaf: [34, -6, 9, 7], petal: [34, -4.5, 8, 8], snow: [46, -9, 5, 6], dust: [14, -0.5, 26, 2.2], fly: [20, 0, 3, 7], mote: [14, 1.2, 2, 6] };
+function ambUpdate(dt) {
+  if (D) { amb.length = 0; return; }
+  const bw = W.atmo(hero.x, hero.z), B = W.B, n = day.night;
+  const want = { leaf: bw[B.AUTUMN] * 34 + bw[B.FOREST] * 4, petal: bw[B.BLOSSOM] * 34, snow: bw[B.SNOW] * 46 + (hero.y > 175 ? 22 : 0), dust: (bw[B.DESERT] + bw[B.MESA]) * 14,
+    fly: n * (bw[B.FOREST] + bw[B.SWAMP] + bw[B.JUNGLE] + bw[B.MEADOW] * 0.5 + bw[B.BLOSSOM] * 0.6 + bw[B.AUTUMN] * 0.5) * 20, mote: bw[B.MOOR] * 14 + bw[B.JUNGLE] * 8 + bw[B.SWAMP] * 8 };
+  const cnt = {}; for (const p of amb) cnt[p.k] = (cnt[p.k] || 0) + 1;
+  ambT -= dt;
+  if (ambT <= 0) { ambT = 0.06;
+    for (const k in want) if ((cnt[k] || 0) < Math.round(want[k])) { const A2 = AMB[k], a = hero.yaw + (Math.random() - 0.5) * 2.6, r = 8 + Math.random() * 62, x = hero.x + Math.cos(a) * r, z = hero.z + Math.sin(a) * r, g = Math.max(0, gH(x, z));
+      amb.push({ k, x, z, y: g + (k === 'dust' ? 0.6 + Math.random() * 3 : k === 'fly' || k === 'mote' ? 1.5 + Math.random() * 7 : 6 + Math.random() * 26), g, t: A2[3] * (0.6 + Math.random() * 0.6), ph: Math.random() * 6.28, v: Math.random() }); } }
+  const wx = 0.8, wz = 0.6;
+  for (const p of amb) { const A2 = AMB[p.k]; p.t -= dt; p.ph += dt;
+    if (p.k === 'fly') { p.x += Math.sin(p.ph * 0.9 + p.v * 9) * 3 * dt; p.z += Math.cos(p.ph * 0.7 + p.v * 5) * 3 * dt; p.y += Math.sin(p.ph * 1.3) * 1.5 * dt; }
+    else { const sw = p.k === 'dust' ? 0 : Math.sin(p.ph * 2.1 + p.v * 6) * 5; p.x += (wx * A2[2] + sw) * dt; p.z += wz * A2[2] * dt; p.y += A2[1] * dt; if (p.y < p.g + 0.2 && A2[1] < 0) p.t = Math.min(p.t, 0.6), p.y = p.g + 0.2, p.x -= wx * A2[2] * dt, p.z -= wz * A2[2] * dt; }
+    if ((p.x - hero.x) ** 2 + (p.z - hero.z) ** 2 > 90 * 90) p.t = 0; }
+  amb = amb.filter(p => p.t > 0);
+  // fumo dei camini e zampilli delle fontane vicine
+  for (const s of W.smokes) if (Math.abs(s[0] - hero.x) < 240 && Math.abs(s[2] - hero.z) < 240 && Math.random() < dt * 1.1) fx.push({ k: 'smoke', x: s[0], y: s[1], z: s[2], vx: 1.6 + Math.random(), vz: 1.2, vy: 4 + Math.random() * 2, t: 2.4, s: 0.36 });
+  for (const s of W.sprays) if (Math.abs(s[0] - hero.x) < 160 && Math.abs(s[2] - hero.z) < 160 && Math.random() < dt * 26) { const a = Math.random() * TAU, v = 2.5 + Math.random() * 2.5; fx.push({ k: 'drop', x: s[0], y: s[1], z: s[2], vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 9 + Math.random() * 3, t: 0.95, s: 0.3 }); }
+  // polvere sotto i piedi quando si corre, schizzi nell'acqua bassa
+  if (hero.moving && !D) { hero.dustT = (hero.dustT || 0) - dt; if (hero.dustT <= 0) { hero.dustT = BTN.b ? 0.16 : 0.34; if (hero.wade) fx.push({ k: 'drop', x: hero.x + (Math.random() - 0.5) * 2, y: 0.3, z: hero.z + (Math.random() - 0.5) * 2, vy: 7, t: 0.45, s: 0.3 }); else if (BTN.b) fx.push({ k: 'puff', x: hero.x - Math.cos(hero.yaw) * 1.5, y: hero.y + 0.4, z: hero.z - Math.sin(hero.yaw) * 1.5, vy: 2.5, t: 0.45, s: 0.3 }); } }
+}
 function fxUpdate(dt) {
-  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; p.vy -= (p.k === 'puff' || p.k === 'glint' ? 4 : 30) * dt; }
+  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; if (p.vx) { p.x += p.vx * dt; p.z += (p.vz || 0) * dt; } p.vy -= (p.k === 'smoke' ? -0.6 : p.k === 'puff' || p.k === 'glint' ? 4 : 30) * dt; }
   fx = fx.filter(p => p.t > 0);
   if (fx.length > 300) fx.splice(0, fx.length - 300);
 }
@@ -886,6 +943,9 @@ function playUpdate(dt) {
   // il drago gira intorno al picco
   dragon.a += dt * 0.07; dragon.x = 2250 + Math.cos(dragon.a) * 430; dragon.z = 760 + Math.sin(dragon.a) * 360; dragon.y += (Math.max(125, gH(dragon.x, dragon.z) + 85) + Math.sin(dragon.a * 3) * 15 - dragon.y) * Math.min(1, dt * 0.8); dragon.yaw = dragon.a + Math.PI / 2;
   if (Math.random() < dt * 0.05 && Math.hypot(hero.x - dragon.x, hero.z - dragon.z) < 900) { tone(90, 0.9, 'sawtooth', 0.05, 45); tone(70, 1.1, 'square', 0.03, 40, 0.1); }
+  if (save.opt.day !== false) save.tod = ((save.tod || 0) + dt * 24 / DAYLEN) % 24; else save.tod = 11;
+  setDay(save.tod);
+  ambUpdate(dt);
   // luci del vulcano
   if (Math.hypot(hero.x - 3350, hero.z - 3150) < 500 && Math.random() < 0.5) { const a = Math.random() * TAU, r = Math.random() * 90; fx.push({ k: 'ember', x: 3350 + Math.cos(a) * r, z: 3150 + Math.sin(a) * r, y: gH(3350 + Math.cos(a) * r, 3150 + Math.sin(a) * r) + 2, vy: 18 + Math.random() * 20, t: 1.4, s: 0.6 }); }
   // aria della regione
@@ -1532,7 +1592,7 @@ function renderDungeon() {
   if (pushBB.n) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0); }
   if (pushBB2.n) { gl.bindTexture(gl.TEXTURE_2D, DTEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf2); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF2.subarray(0, pushBB2.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB2.n * 6, gl.UNSIGNED_SHORT, 0); }
   // acqua e lava
-  p = P.water; gl.useProgram(p.p);
+  p = P.dwater; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
@@ -1599,32 +1659,56 @@ function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
 pushBB.n = 0;
 let shN = 0;
 function pushShadow(x, z, r, y) { if (shN >= 400) return; const gy = (y !== undefined ? y : gH(x, z)) + 0.25; let p = shN * 20; for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { shF[p++] = x + a * r; shF[p++] = gy; shF[p++] = z + b * r * 0.8; shF[p++] = a; shF[p++] = b; } shN++; }
+const FOGC = [0, 0, 0], ZENC = [0, 0, 0];
+let nearGlows = null;
+// le otto luci più vicine (la prima è la lanterna dell'eroe) illuminano terreno, case e personaggi quando fa buio
+function pickLights() {
+  const ng = day.night, L = [], cx = hero && st !== 'title' ? hero.x : cam.tx, cz = hero && st !== 'title' ? hero.z : cam.tz;
+  nearGlows = [];
+  for (const g of W.glows) { const d = (g[0] - cx) ** 2 + (g[2] - cz) ** 2; if (d < 520 * 520) { nearGlows.push(g); if (d < 240 * 240) L.push([d, g]); } }
+  WLQ.fill(0); let n = 0;
+  if (ng < 0.02) return;
+  if (hero && st !== 'title') { WLP[0] = hero.x; WLP[1] = hero.y + 5; WLP[2] = hero.z; WLP[3] = 30; WLQ[0] = 0.6 * ng; WLQ[1] = 0.48 * ng; WLQ[2] = 0.3 * ng; n = 1; }
+  L.sort((a, b) => a[0] - b[0]);
+  for (let k = 0; k < L.length && n < 8; k++, n++) { const g = L[k][1]; WLP[n * 4] = g[0]; WLP[n * 4 + 1] = g[1]; WLP[n * 4 + 2] = g[2]; WLP[n * 4 + 3] = g[3] * 5.5; WLQ[n * 3] = g[4] * 0.9 * ng; WLQ[n * 3 + 1] = g[5] * 0.9 * ng; WLQ[n * 3 + 2] = g[6] * 0.9 * ng; }
+}
+function setWL(p) {
+  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, day.night > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
+}
 const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.x), yaw) / (TAU / 8)) % 8) + 8) % 8;
 function render3D() {
   if (D) return renderDungeon();
   const P = G.P;
   gl.viewport(0, 0, W3, H3);
-  gl.clearColor(atm.fog[0], atm.fog[1], atm.fog[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  const fogC = FOGC, zenC = ZENC; for (let i = 0; i < 3; i++) { fogC[i] = atm.fog[i] + (day.hor[i] - atm.fog[i]) * day.horK; zenC[i] = atm.zen[i] + (day.zen[i] - atm.zen[i]) * day.zenK; }
+  gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const proj = SG.M4.persp(FOVY, W3 / H3, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const m = VP, row = i => [m[i], m[4 + i], m[8 + i], m[12 + i]], r0 = row(0), r1 = row(1), r2 = row(2), r3 = row(3);
   planes = [[1, r0], [-1, r0], [1, r1], [-1, r1], [-1, r2]].map(([s, r]) => [r3[0] + s * r[0], r3[1] + s * r[1], r3[2] + s * r[2], r3[3] + s * r[3]]);
   const yaw = Math.atan2(cam.tz - cam.z, cam.tx - cam.x), pitch = Math.atan2(cam.ty - cam.y, Math.hypot(cam.tx - cam.x, cam.tz - cam.z));
   RX = -Math.sin(yaw); RZ = Math.cos(yaw);
-  const light = 1, fogN = atm.near, fogF = atm.far, fogC = atm.fog;
+  const fogN = atm.near, fogF = atm.far;
+  if (frameN % 10 === 0 || !nearGlows) pickLights();
   // cielo
   gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
   let p = P.sky; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
   const foc = (H3 / 2) / Math.tan(FOVY / 2);
   gl.uniform2f(p.u.uRes, W3, H3); gl.uniform1f(p.u.uHor, H3 / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOVY / 2) * W3 / H3));
-  gl.uniform1f(p.u.uPanoH, H3 * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, atm.zen); gl.uniform3fv(p.u.uHorC, fogC);
+  gl.uniform1f(p.u.uPanoH, H3 * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, zenC); gl.uniform3fv(p.u.uHorC, fogC);
+  { // sole e luna: nascono a est, tramontano a ovest; si vedono solo quando sono bassi sull'orizzonte
+    const hor = H3 / 2 - foc * Math.tan(pitch), td = day.tod, put = (u, az, el, r) => { const d = angDiff(az, yaw); if (el < -0.03 || Math.abs(d) > 1.35) gl.uniform3f(u, 0, 0, 0); else gl.uniform3f(u, W3 / 2 + foc * Math.tan(d), hor + foc * Math.tan(el) + r * 0.4, r); };
+    const sa = (td - 6) / 13 * Math.PI, se = Math.sin(sa) * 1.05, tm = (td + 5) % 24, ma = tm / 11 * Math.PI, me = Math.sin(ma) * 0.5;
+    put(p.u.uSun, sa, td > 5.5 && td < 19.5 ? se : -1, Math.max(6, H3 * 0.045)); put(p.u.uMoon, ma, tm < 11 ? me : -1, Math.max(5, H3 * 0.034));
+    const low = Math.max(0, Math.min(1, se / 0.5)); gl.uniform3f(p.u.uSunC, 1, 0.72 + 0.26 * low, 0.36 + 0.5 * low); gl.uniform1f(p.u.uStars, day.stars); gl.uniform3fv(p.u.uPanoC, day.pano);
+  }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PANO); gl.uniform1i(p.u.uPano, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
   // terreno
   p = P.terrain; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform1f(p.u.uInvWS, 1 / W.WS);
-  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light); gl.uniform1f(p.u.uTime, time);
+  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 2);
@@ -1641,7 +1725,7 @@ function render3D() {
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light); gl.uniform2f(p.u.uTiles, 8, 16);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 16); gl.uniform1f(p.u.uNight, day.night); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
@@ -1662,7 +1746,7 @@ function render3D() {
   }
   // oggetti fissi (alberi, rocce, fiori)
   p = P.bb; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   const ghostOn = !!hero && (st === 'play' || st === 'dead');
@@ -1682,10 +1766,18 @@ function render3D() {
   // acqua
   p = P.water; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform1f(p.u.uY, W.WL); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform3fv(p.u.uWat, atm.wat);
-  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uLight, light); gl.uniform1f(p.u.uTime, time);
+  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uInvWS, 1 / W.WS); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, SHORE); gl.uniform1i(p.u.uShore, 1);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.waterBuf); G.attribs(p, [['aP', 2]]); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  // aloni di lampioni, fuochi e fari: si sommano al colore (di notte forti, di giorno appena accennati)
+  { let n = 0; const ng = day.night;
+    for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;
+      for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = g[0]; glowF[q++] = g[1]; glowF[q++] = g[2]; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = g[4]; glowF[q++] = g[5]; glowF[q++] = g[6]; glowF[q++] = it; } n++; }
+    if (n) { p = P.glow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF);
+      gl.blendFunc(gl.ONE, gl.ONE); gl.bindBuffer(gl.ARRAY_BUFFER, glowBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, glowF.subarray(0, n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, n * 6, gl.UNSIGNED_SHORT, 0); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); } }
   // alberi e rocce che coprono l'eroe: trasparenti e puliti (seconda passata)
   if (ghostOn) {
     p = P.bb; gl.useProgram(p.p); gl.uniform1f(p.u.uGhost, 0.34); gl.uniform1f(p.u.uNear, 6);
@@ -1717,7 +1809,8 @@ function buildDynamic() {
   for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
   for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
-  for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
+  for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : p.k === 'smoke' ? 2.3 - p.t * 0.55 : 1), p.k === 'smoke' ? 0.98 : 1.1);
+  for (const p of amb) { const L = SPR[p.k]; if (p.k === 'fly' && Math.sin(p.ph * 3 + p.v * 20) < -0.1) continue; pushBB(p.x, p.y, p.z, L[Math.floor(p.v * L.length) % L.length], p.k === 'dust' ? 0.4 : 0.3, p.k === 'fly' ? 1.4 : 1.02); }
   // bandiere in cima a torri e alberi maestri
   for (const f of W.flags) if (near(f[0], f[2], 620)) { const sp = SPR[f[3] === 2 ? 'flagblue' : 'flag']; pushBB(f[0] + RX * 3.2, f[1] - 3.4, f[2] + RZ * 3.2, sp.r[Math.floor(time * 5 + f[0] * 0.37) % 2], sp.s, 1.05); }
   // il drago
@@ -1843,7 +1936,7 @@ function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.W
 function openMap() { mapOpen = true; if (hero && !D) { mapV.span = 4096; mapV.x = hero.x; mapV.z = hero.z; clampMap(); } }
 function drawMap() {
   if (D) return drawDungeonMap();
-  const S = Math.min(Hr - 26, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, span = mapV.span, k = S / span, wx0 = mapV.x - span / 2, wz0 = mapV.z - span / 2;
+  const S = Math.min(Hr - 37, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, span = mapV.span, k = S / span, wx0 = mapV.x - span / 2, wz0 = mapV.z - span / 2;
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
   T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
   const mk2 = W.mapImg.width / W.WS;
@@ -1869,14 +1962,14 @@ function drawMap() {
   else if (Math.floor(time * 4) % 2) dot(hero.x, hero.z, '#ff4a3a', 2, true);
   let n = 0, tot = 0; for (let i = 0; i < seen.length; i++) if (LAND[i]) { tot++; n += seen[i]; }
   T(curPlace || '', x0, y0 + S + 3, '#e6e9f2'); T('ESPLORATO ' + Math.min(100, Math.round(n / Math.max(1, tot) * 100)) + '%', x0 + S, y0 + S + 3, '#9af0b0', 1, 'right');
-  T('A: ' + (span < W.WS ? 'MONDO' : 'ZONA') + '   CROCE: SPOSTA   B: CHIUDI', Wr / 2, Hr - 8, '#5a6478', 1, 'center', null);
+  T('A: ' + (span < W.WS ? 'MONDO' : 'ZONA') + '   CROCE: SPOSTA   B: CHIUDI', Wr / 2, Hr - 9, '#5a6478', 1, 'center', null);
 }
 const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0);
-  return ['vol', 'mus', 'vib', 'salva', 'esci'];
+  return ['vol', 'mus', 'giorno', 'vib', 'salva', 'esci'];
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -1910,7 +2003,7 @@ function drawMenu() {
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
@@ -2033,6 +2126,7 @@ function menuKey(name) {
   } else if (menu.tab === 2) { trackQuest(r); tone(1046, 0.05); }
   else {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
+    else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
@@ -2060,7 +2154,7 @@ function measure(w, h) {
 }
 function toTitle() { st = 'title'; title.t = 0; title.sel = 0; title.confirm = false; title.opts = loadSave() ? ['CONTINUA L\'AVVENTURA', 'NUOVA AVVENTURA'] : ['NUOVA AVVENTURA']; }
 function titleCam(dt) {
-  title.t += dt;
+  title.t += dt; setDay(18.15);
   const a = -0.6 + title.t * 0.035, cx = 2000, cz = 2660;
   cam.x = cx + Math.cos(a) * 150; cam.z = cz + Math.sin(a) * 150; cam.y = gH(cx, cz) + 46;
   cam.tx = cx + Math.cos(a + Math.PI) * 120; cam.tz = cz + Math.sin(a + Math.PI) * 120; cam.ty = gH(cx, cz) + 10;
@@ -2069,7 +2163,7 @@ function titleCam(dt) {
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
   get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
-  set camFix(v) { camFix = v; }, get atm() { return atm; },
+  set camFix(v) { camFix = v; }, get atm() { return atm; }, NPC, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta

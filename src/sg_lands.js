@@ -35,8 +35,8 @@ W.ROADS.push(
   { w: 9, pts: [[4480, 2000], [4700, 2010], [5000, 2150], [5200, 2500], [5330, 2600]] }, { w: 9, pts: [[5450, 2600], [5490, 2900], [5505, 3200], [5530, 3320], [5552, 3320]] },
   { w: 8, pts: [[5000, 2150], [5300, 1950], [5500, 1830], [5600, 1800]] }, { w: 8, pts: [[5720, 1800], [5850, 1760], [6050, 1720], [6150, 1700], [6150, 1652]] },
   { w: 9, pts: [[5968, 3320], [6200, 3300], [6500, 3150], [6800, 3090], [6952, 3080]] },
-  { w: 9, pts: [[5760, 3508], [5800, 3800], [5900, 4100], [5900, 4250]] }, { w: 9, pts: [[5900, 4410], [5850, 4800], [5700, 5100], [5600, 5222]] },
-  { w: 9, pts: [[5600, 5578], [5500, 5850], [5200, 6150], [4900, 6380], [4620, 6400]] },
+  { w: 9, pts: [[5760, 3508], [5800, 3800], [5900, 4100], [5900, 4250]] }, { w: 9, pts: [[5900, 4410], [5850, 4800], [5680, 5080], [5565, 5180], [5560, 5222]] },
+  { w: 9, pts: [[5560, 5578], [5540, 5700], [5480, 5860], [5200, 6150], [4900, 6380], [4620, 6400]] },
   { w: 8, pts: [[5788, 5400], [6100, 5420], [6500, 5480], [6740, 5500]] },
   { w: 8, pts: [[7150, 3258], [7200, 3600], [7250, 4100], [7100, 4600], [6900, 5000], [6800, 5380]] },
   { w: 9, pts: [[4120, 6400], [3900, 6300], [3600, 6000], [3200, 5700], [2800, 5480], [2500, 5350]] },
@@ -48,8 +48,8 @@ W.ROADS.push(
 // ---------- ponti ----------
 TN.addBridge({ axis: 'x', a0: 3900, a1: 4472, c: 2000, y: 10, flag: 1, name: 'PONTE DEI RE' });
 TN.addBridge({ axis: 'x', a0: 4130, a1: 4610, c: 6400, y: 10, flag: 2, roof: TL.ROOF_ORANGE, name: 'PONTE DELLE LANTERNE' });
-TN.addBridge({ axis: 'x', a0: 5330, a1: 5450, c: 2600, y: 7, towers: false, ramps: false });
-TN.addBridge({ axis: 'x', a0: 5600, a1: 5720, c: 1800, y: 7, towers: false, ramps: false });
+TN.addBridge({ axis: 'x', a0: 5330, a1: 5450, c: 2600, y: 7, towers: false });
+TN.addBridge({ axis: 'x', a0: 5600, a1: 5720, c: 1800, y: 7, towers: false });
 // il vecchio guado tra il Borgo e la Rocca diventa un ponticello di pietra
 TN.addBridge({ axis: 'x', a0: 2262, a1: 2374, c: 2704, y: 5.5, towers: false, ramps: false, lamp: false });
 W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE LANTERNE']);
@@ -58,7 +58,7 @@ W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE 
 const RX = 2760, RZ = 2960;
 C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
   specials: [['big', -125, -51, 34, 22, 's', { h: 17, wall: 1, roof: 4, aw: 13, chim: true }], ['big', -66, -50, 26, 20, 's', { h: 11, wall: 2, roof: 5, chim: true }], ['church', -128, 60, 30, 22, 'e', { m: 15 }]],
-  stalls: [[-26, -24, 13], [26, -24, TL.AWN_BLUE], [-26, 26, TL.AWN_GREEN]],
+  stalls: [[-27, -8, 13], [27, -22, TL.AWN_BLUE], [-27, 28, TL.AWN_GREEN]],
   people: [
     ['guardia', 'GUARDIA DELLA PORTA', ['BENVENUTO ALLA ROCCA DI LUMEN, LA CITTÀ DEL RE.', 'IL MASTIO È IN FONDO AL VIALE, SULLA TERRAZZA. NON SI PUÒ SBAGLIARE: È LA TORRE PIÙ ALTA DI TUTTA LUMEN.'], [-186, 16, 0]],
     ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.', 'DALLA TORRE GRANDE, NELLE GIORNATE LIMPIDE, SI VEDE FINO AL PONTE DEI RE.'], [6, -16, Math.PI]],
@@ -165,7 +165,7 @@ C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, st
     ['marinaio', 'IL MARINAIO', ['HO NAVIGATO FINO ALLE COLLINE DEI CILIEGI: LÀ I PETALI CADONO TUTTO L\'ANNO, COME LA NEVE.', "IL FARO DEL PORTO SI VEDE DA TRENTA MIGLIA. QUELLO VECCHIO, SULL'ISOLA DI LUMEN, DA DIECI."], 'p', { walk: 1 }],
     ['marinaio', 'IL PESCATORE DELLA BAIA', ['NELLA SELVA A EST DELLA CITTÀ, IN MEZZO A UNA LAGUNA, C\'È UN TEMPIO A GRADONI. NESSUNO SA CHI L\'HA COSTRUITO.'], 'd'],
     ['bimbo', 'IL MOZZO', ['UN GIORNO AVRÒ UNA NAVE TUTTA MIA, CON LE VELE ROSSE!'], 'p', { walk: 1 }],
-    ['guardia', 'GUARDIA DEL PORTO', ['PORTO SERENO: DA QUI PARTONO LE NAVI PER TUTTO IL MONDO CONOSCIUTO.', "A SUD, OLTRE IL PONTE DELLE LANTERNE, COMINCIANO LE TERRE DEL SUD."], [0, -168, Math.PI / 2]],
+    ['guardia', 'GUARDIA DEL PORTO', ['PORTO SERENO: DA QUI PARTONO LE NAVI PER TUTTO IL MONDO CONOSCIUTO.', "A SUD, OLTRE IL PONTE DELLE LANTERNE, COMINCIANO LE TERRE DEL SUD."], [-24, -166, Math.PI / 2]],
   ],
   pre(P) {
     // il bacino del porto scavato davanti alla banchina, tre moli, il molo del faro

@@ -34,15 +34,31 @@ precision highp float;
 precision mediump float;
 #endif
 `;
+// luci del mondo aperto: il colore del giorno (uLc), l'ombra delle nuvole che corrono, lampioni e finestre di notte
+// PTL: lampioni e lanterne (si calcolano solo quando è buio). CLD: colore dell'ora e ombra delle nuvole.
+const PTL = `
+uniform vec4 uLp[8]; uniform vec3 uLq[8]; uniform float uNt;
+vec3 ptLights(vec3 p) { vec3 l = vec3(0.0); if (uNt > 0.5) { for (int i = 0; i < 8; i++) { vec3 d = uLp[i].xyz - p; float k = max(0.0, 1.0 - dot(d, d) / (uLp[i].w * uLp[i].w + 0.001)); l += uLq[i] * k * k; } } return l; }
+`;
+const CLD = `
+uniform vec3 uCl;
+float cloudSh(vec2 w) { vec2 q = w * 0.0052 + uCl.xy; float f = sin(q.x + 1.7 * sin(q.y * 0.61)) + sin(q.y * 1.31 - 0.9 * sin(q.x * 0.47 + 2.0)) + 0.6 * sin((q.x + q.y) * 0.73 + 4.0);
+  return 1.0 - uCl.z * (0.45 * step(0.95, f) + 0.55 * step(1.15, f)); }
+`;
+const WLIGHT = PTL + CLD + `
+uniform vec3 uLc;
+vec3 worldLight(vec3 p) { return uLc * cloudSh(p.xz) + band(ptLights(p), 5.0); }
+`;
 const SRC = {
   terrain: [`
 attribute vec3 aPos; attribute float aSh; attribute vec2 aG;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog; uniform float uWS;
-varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH;
-void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y;
-  vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
-uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC; uniform float uLight, uTime, uInvWS;
-varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH;
+varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
+` + PTL + `
+void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y; vPL = ptLights(aPos + vec3(0.0, 1.5, 0.0));
+  vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + CLD + `
+uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime, uInvWS;
+varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 void main() {
   // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
   vec2 uv = (floor(vW * 4.0) + 0.5) * 0.25 * uInvWS;
@@ -51,43 +67,96 @@ void main() {
   float sl = length(vG);
   if (sl > 0.8) { vec2 dir = vG / sl; vec4 d2 = texture2D(uDet, vec2(dot(vW, vec2(-dir.y, dir.x)), vH) * 0.0625); d = mix(d, d2, smoothstep(0.8, 1.5, sl)); }
   // luce a gradini netti, come sui personaggi
-  vec3 c = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), clamp(1.7 - vD / 75.0, 0.0, 1.0))) * (floor(vSh * 12.0 + 0.5) / 12.0) * uLight;
+  vec3 c = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), clamp(1.7 - vD / 75.0, 0.0, 1.0))) * ((floor(vSh * 12.0 + 0.5) / 12.0) * uLc * cloudSh(vW) + band(vPL, 5.0));
   if (b.a > 0.04) { float g = texture2D(uDet, vW * 0.031 + vec2(uTime * 0.013, uTime * 0.005)).g; c = mix(c, b.rgb * (0.85 + 0.6 * g), b.a); }
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
   bb: [`
 attribute vec3 aC; attribute vec2 aO; attribute vec2 aUV; attribute vec4 aK;
-uniform mat4 uVP; uniform vec3 uCam, uR, uHero; uniform vec2 uFog; uniform float uNear;
-varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc;
-void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0);
-  vUV = aUV; vK = vec4(aK.rgb, max(aK.a, 0.0)); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
-  // copre l'eroe? (tra la telecamera e l'eroe, abbastanza alto da nasconderlo; l'altezza arriva in aK.a, negativa)
+uniform mat4 uVP; uniform vec3 uCam, uR, uHero; uniform vec2 uFog; uniform float uNear, uTime;
+varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc, vCs; varying vec3 vPL;
+` + PTL + CLD + `
+void main() {
+  // il vento: negli oggetti fissi l'altezza arriva in aK.a (negativa), più 1000 per gli alberi e 2000 per erba e cespugli
+  float raw = max(-aK.a, 0.0), sw = floor(raw / 1000.0 + 0.01), hh = raw - 1000.0 * sw;
+  float bend = sin(uTime * 1.7 + aC.x * 0.23 + aC.z * 0.19) + 0.5 * sin(uTime * 3.1 + aC.x * 0.11);
+  vec3 p = aC + uR * (aO.x + bend * aO.y * (sw > 1.5 ? 0.075 : 0.016) * step(0.5, sw)) + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0);
+  vUV = aUV; vK = vec4(aK.rgb, max(aK.a, 0.0)); vCs = cloudSh(aC.xz); vPL = ptLights(aC + vec3(0.0, 3.0, 0.0)); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
+  // copre l'eroe? (tra la telecamera e l'eroe, abbastanza alto da nasconderlo)
   float occ = 0.0;
   if (uNear > 0.0) {
     vec2 rel = aC.xz - uCam.xz, ch = uHero.xz - uCam.xz; float L = max(length(ch), 0.001); vec2 dir = ch / L;
-    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), hh = mod(max(-aK.a, 0.0), 1000.0), top = aC.y + hh, line = mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0));
+    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), top = aC.y + hh, line = mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0));
     float wd = abs(aO.x) * ((line - aC.y) / max(hh, 0.1) < 0.4 ? 0.14 : 1.0);
     if (along > 0.0 && along < L - 1.0 && perp - wd < 3.0 * along / L + 0.4 && top > line - 0.5) occ = 1.0;
     if (length(rel) < uNear) occ = 1.0;
+    if (length(rel) < 3.2) occ = 2.0;   // addosso alla telecamera: non si disegna (niente pixel giganti)
   }
   vOcc = occ; }`, PREC + DITHER + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform float uLight, uGhost;
-varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc;
+uniform sampler2D uTex; uniform vec3 uFogC, uLc; uniform float uGhost;
+varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc, vCs; varying vec3 vPL;
 void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
-  if ((uGhost > 0.0) != (vOcc > 0.5)) discard;
-  vec3 c = mix(t.rgb * vK.rgb * uLight, vec3(1.0), vK.a);
+  if (vOcc > 1.5 || (uGhost > 0.0) != (vOcc > 0.5)) discard;
+  vec3 L = vK.r > 1.05 ? vec3(1.0) : uLc * vCs + band(vPL, 5.0);
+  vec3 c = mix(t.rgb * vK.rgb * L, vec3(1.0), vK.a);
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), uGhost > 0.0 ? uGhost : 1.0); }`],
   mesh: [`
 attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
-varying vec2 vT, vL; varying float vSh, vFog;
-void main() { float dec = step(1.5, aSh); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * dec;
-  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform float uLight; uniform vec2 uTiles;
-varying vec2 vT, vL; varying float vSh, vFog;
+varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
+void main() { float f = floor(aSh / 2.0 + 0.01), dec = min(f, 1.0); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * f; vGl = f - 1.0; vP = aPos;
+  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + `
+uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform float uNight;
+varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
-  vec3 c = t.rgb * vSh * mix(uLight, 1.0, step(0.99, vSh));
+  vec3 c = vSh > 0.99 ? t.rgb : t.rgb * vSh * worldLight(vP);
+  // di notte le finestre si accendono: il vetro azzurro diventa luce calda, le vetrate colorate brillano
+  if (vGl > 0.5 && uNight > 0.0) { float mx = max(t.r, max(t.g, t.b)), mn = min(t.r, min(t.g, t.b));
+    if (vGl > 1.5) { if (mx - mn > 0.3) c = mix(c, t.rgb * 1.45, uNight); } else if (t.b > t.r + 0.06) c = mix(c, t.bgr * vec3(1.55, 1.35, 0.9) + vec3(0.14, 0.07, 0.0), uNight); }
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
   water: [`
+attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
+void main() { vP = vec3(aP.x, uY, aP.y); gl_Position = uVP * vec4(vP, 1.0); }`, PREC + DITHER + WLIGHT + `
+uniform sampler2D uDet, uShore; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog; uniform float uTime, uA, uInvWS;
+varying vec3 vP;
+void main() { vec2 w = vP.xz; float dist = distance(vP, uCam);
+  float a = texture2D(uDet, w * 0.041 + vec2(uTime * 0.011, uTime * 0.006)).g, b = texture2D(uDet, w * 0.027 - vec2(uTime * 0.008, -uTime * 0.004)).g, k = mix(0.26, a * b, clamp(1.8 - dist / 110.0, 0.0, 1.0));
+  vec3 L = uLc * (0.5 + 0.5 * cloudSh(w)) + band(ptLights(vP), 5.0);
+  vec3 c = uWat * (0.78 + 0.6 * k) * L; if (k > 0.6) c = mix(c, uHi * L, 0.5);
+  // schiuma: una fascia bianca che respira lungo la riva e un'onda che corre verso terra
+  float s = texture2D(uShore, w * uInvWS).r, al = uA;
+  if (s > 0.42 && dist < 420.0) { float n = texture2D(uDet, floor(w * 2.0) * 0.5 * 0.057).r, wv = fract(s * 2.2 + uTime * 0.11 + n * 0.25);
+    float foam = step(0.8 - 0.06 * sin(uTime * 1.3 + n * 6.0), s) + step(0.88, wv) * step(0.5, s) * step(0.3, n);
+    if (foam > 0.5) { c = mix(c, vec3(0.96, 0.98, 1.0) * L, 0.82); al = max(al, 0.9); } else { c = mix(c, uHi * L, 0.25 * smoothstep(0.42, 0.9, s)); } }
+  float f = fogk(clamp((dist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0));
+  gl_FragColor = vec4(dith(mix(c, uFogC, f)), mix(al, 1.0, f)); }`],
+  sky: [`
+attribute vec2 aP; void main() { gl_Position = vec4(aP, 0.9999, 1.0); }`, PREC + DITHER + `
+uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime, uStars; uniform vec3 uZen, uHorC, uSun, uSunC, uMoon, uPanoC; uniform sampler2D uPano;
+void main() { vec2 f = gl_FragCoord.xy;
+  float t = clamp((f.y - uHor) / (uRes.y * 0.75), 0.0, 1.0);
+  vec3 c = mix(uHorC, uZen, sqrt(t));
+  float u = uYaw / 6.2831853 + (f.x / uRes.x - 0.5) * uFovX / 6.2831853, v = (f.y - uHor) / uPanoH;
+  // stelle: un punto ogni tanto, che tremola
+  if (uStars > 0.0 && f.y > uHor) { vec2 sp = floor(vec2(u * 1100.0, (f.y - uHor) * 0.5)); float h = fract(sin(dot(sp, vec2(12.9898, 78.233))) * 43758.5453);
+    if (h > 0.9935) c += uStars * (0.55 + 0.45 * sin(uTime * 2.2 + h * 900.0)) * vec3(0.85, 0.9, 1.0) * (h > 0.998 ? 1.0 : 0.6); }
+  // sole e luna: un disco netto con due aloni a gradini
+  float ds = length(floor(f) + 0.5 - uSun.xy);
+  if (uSun.z > 0.0) { if (ds < uSun.z) c = uSunC; else if (ds < uSun.z * 1.7) c = mix(c, uSunC, 0.42); else if (ds < uSun.z * 2.8) c = mix(c, uSunC, 0.16); }
+  float dm = length(floor(f) + 0.5 - uMoon.xy);
+  if (uMoon.z > 0.0) { if (dm < uMoon.z) { c = vec3(0.93, 0.95, 1.0); if (length(floor(f) + 0.5 - uMoon.xy - vec2(uMoon.z * 0.3, uMoon.z * 0.25)) < uMoon.z * 0.3 || length(floor(f) + 0.5 - uMoon.xy + vec2(uMoon.z * 0.35, uMoon.z * 0.3)) < uMoon.z * 0.2) c = vec3(0.76, 0.8, 0.9); } else if (dm < uMoon.z * 1.8) c = mix(c, vec3(0.7, 0.8, 1.0), 0.2); }
+  if (v > 0.0 && v < 1.0) { vec4 p = texture2D(uPano, vec2(u + (v > 0.45 ? uTime * 0.002 : 0.0), 1.0 - v)); c = mix(c, mix(p.rgb * uPanoC, uHorC, 0.3 * (1.0 - v)), p.a); }
+  gl_FragColor = vec4(dith(c), 1.0); }`],
+  // aloni di luce (lampioni, fuochi, finestre grandi): dischi a gradini che si sommano al colore
+  glow: [`
+attribute vec3 aC; attribute vec2 aO; attribute vec2 aUV; attribute vec4 aK;
+uniform mat4 uVP; uniform vec3 uCam, uR; uniform vec2 uFog;
+varying vec2 vUV; varying vec4 vK;
+void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0); vUV = aUV;
+  vK = vec4(aK.rgb, aK.a * (1.0 - clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0))); }`, PREC + `
+varying vec2 vUV; varying vec4 vK;
+void main() { float r = length(vUV); if (r > 1.0) discard; float a = 1.0 - r; a = floor(a * a * 4.0 + 0.7) / 4.0; gl_FragColor = vec4(vK.rgb * a * vK.a, 1.0); }`],
+  // acqua e lava dei santuari (luce fissa, niente schiuma)
+  dwater: [`
 attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
 void main() { vP = vec3(aP.x, uY, aP.y); gl_Position = uVP * vec4(vP, 1.0); }`, PREC + DITHER + `
 uniform sampler2D uDet; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog; uniform float uLight, uTime, uA;
@@ -97,15 +166,6 @@ void main() { vec2 w = vP.xz;
   vec3 c = uWat * (0.78 + 0.6 * k) * uLight; if (k > 0.6) c = mix(c, uHi * uLight, 0.5);
   float f = fogk(clamp((distance(vP, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0));
   gl_FragColor = vec4(dith(mix(c, uFogC, f)), mix(uA, 1.0, f)); }`],
-  sky: [`
-attribute vec2 aP; void main() { gl_Position = vec4(aP, 0.9999, 1.0); }`, PREC + DITHER + `
-uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime; uniform vec3 uZen, uHorC; uniform sampler2D uPano;
-void main() { vec2 f = gl_FragCoord.xy;
-  float t = clamp((f.y - uHor) / (uRes.y * 0.75), 0.0, 1.0);
-  vec3 c = mix(uHorC, uZen, sqrt(t));
-  float u = uYaw / 6.2831853 + (f.x / uRes.x - 0.5) * uFovX / 6.2831853, v = (f.y - uHor) / uPanoH;
-  if (v > 0.0 && v < 1.0) { vec4 p = texture2D(uPano, vec2(u + (v > 0.45 ? uTime * 0.002 : 0.0), 1.0 - v)); c = mix(c, mix(p.rgb, uHorC, 0.3 * (1.0 - v)), p.a); }
-  gl_FragColor = vec4(dith(c), 1.0); }`],
   shadow: [`
 attribute vec3 aPos; attribute vec2 aUV; uniform mat4 uVP; varying vec2 vUV;
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aUV; }`, PREC + `
@@ -167,10 +227,11 @@ function create() {
   const G = {
     canvas, gl, P, M4,
     buffer(data, kind = gl.ARRAY_BUFFER, usage = gl.STATIC_DRAW) { const b = gl.createBuffer(); gl.bindBuffer(kind, b); gl.bufferData(kind, data, usage); return b; },
-    texture(src, { linear = false, repeat = false } = {}) {
+    texture(src, { linear = false, repeat = false, lum = false } = {}) {
       const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-      if (src.data) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, src.w, src.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, src.data);
+      if (lum) { gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, src.w, src.h, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, src.data); }
+      else if (src.data) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, src.w, src.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, src.data);
       else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
       const f = linear ? gl.LINEAR : gl.NEAREST, w = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);

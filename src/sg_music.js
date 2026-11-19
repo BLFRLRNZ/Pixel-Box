@@ -537,6 +537,45 @@ TRACKS.grotta = { bpm: 70, g: 0.63, div: 2, rev: .55, echo: [3, .4],
     o: ['A', 'B', 'A2', 'B'] };
 }
 
+// Fioralba e le Colline dei Ciliegi: scala a cinque note, arpa pizzicata come un koto, flauto e campanelli
+{
+  const A = { c: 'D | Bm | G | A | D | Bm | Em | A',
+    mel: 'f#5*2 a5*2 b5*2 a5*2 | f#5*4 d5*2 b4*2 | b4*2 d5*2 e5*2 d5*2 | e5*4 -*2 a4*2 | f#5*2 a5*2 d6*2 b5*2 | a5*2 f#5*2 d5*4 | b4*2 e5*2 f#5*2 e5*2 | e5*6 -*2' };
+  const B = { c: 'G | D | Em | Bm | G | D | A | D', dr: { j: 'o...o...' },
+    mel: 'b5*2 d6*2 b5*2 a5*2 | f#5*4 a5*4 | e5*2 f#5*2 b5*4 | f#5*4 d5*4 | b5*2 a5*2 b5*2 d6*2 | a5*4 f#5*4 | e5*2 a5*2 b5*2 a5*2 | f#5*2 e5*2 d5*4' };
+  TRACKS.fiore = { bpm: 76, g: 0.72, div: 2, rev: .4, echo: [3, .34],
+    v: {
+      mel: { i: 'arpa', vol: .55, e: .3 },
+      alt: { i: 'flauto', vol: .3, pan: .25, e: .3 },
+      arp: { i: 'celesta', a: '0.2.1.2.', o: 62, vol: .2, pan: -.3 },
+      pad: { i: 'vetro', pad: 1, o: 64, vol: .16, pan: .3 },
+      bass: { i: 'pizz', b: 'r...5...', o: 42, vol: .38 },
+      dr: { p: { w: '....o...', j: 'o.......' }, vol: .34 },
+    },
+    S: { A, B, A2: { ...A, alt: A.mel }, B2: { ...B, alt: B.mel } },
+    o: ['A', 'B', 'A2', 'B2'] };
+}
+
+// Selva Smeraldo: tamburi, marimba e un flauto di canna
+{
+  const A = { c: 'Em | Em | D | Em | C | D | Em | Em',
+    mel: 'e5*4 g5*2 a5*2 b5*6 -*2 | b5*2 a5*2 g5*2 e5*2 g5*6 -*2 | f#5*4 a5*2 d6*2 a5*6 -*2 | b5*4 g5*4 e5*6 -*2 | e5*4 g5*2 c6*2 g5*6 -*2 | f#5*2 a5*2 d6*4 c6*2 a5*2 f#5*4 | g5*4 b5*4 e6*8 | -*8 b5*2 g5*2 e5*4' };
+  const B = { c: 'C | D | Em | Em | C | D | B | B', fill: { o: 'x.x.x.x.xxxxxxxx' },
+    mel: 'c6*4 b5*2 g5*2 e5*8 | d6*4 c6*2 a5*2 f#5*8 | e5*2 g5*2 b5*4 e6*8 | d6*2 b5*2 g5*4 e5*8 | g5*4 e5*4 c5*8 | a5*4 f#5*4 d5*8 | b4*4 d#5*4 f#5*8 | b5*8 f#5*4 d#5*4' };
+  TRACKS.selva = { bpm: 100, g: 0.62, div: 4, rev: .3, echo: [3, .25],
+    v: {
+      mel: { i: 'ney', vol: .46, e: .28 },
+      mar: { i: 'marimba', a: '0.1.2.1.0.2.1.2.', o: 52, vol: .3, pan: -.25 },
+      pad: { i: 'coro', pad: 1, o: 60, vol: .13, pan: .25 },
+      bass: { i: 'basso', b: 'r..r..r.r..r..5.', o: 40, vol: .4 },
+      dr: { p: { o: 'x..x..x...x.x...', O: '......x.......x.', z: 'o.o.o.o.o.o.o.o.', w: '....o.......o...' }, vol: .42 },
+    },
+    S: { A, B, A2: { ...A, x: { mel: { i: 'flauto' } } } },
+    o: ['A', 'B', 'A2', 'B'] };
+}
+// le città sorelle del Borgo: stessa danza, altri strumenti e altra tonalità
+TRACKS.borgo.var = { ambra: { t: -2, bpm: 74, i: { mel: 'violino', alt: 'dolce' } }, nord: { t: -5, bpm: 62, i: { mel: 'corno', lute: 'arpa' }, g: 1.1 } };
+
 // ---------- suono ----------
 let G = null;              // il grafo audio in uso: contesto, uscita, riverbero, rumore, forme d'onda
 const BASE = 0.5;
