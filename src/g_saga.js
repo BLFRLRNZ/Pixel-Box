@@ -119,7 +119,7 @@ let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', p
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
 const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
-let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70;
+let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 427, H3 = 240, K3 = 1, OX3 = 0, OY3 = 0;
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
@@ -162,72 +162,75 @@ function heroLook() {
 const POSE_HERO = [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 3.1, leg: 0.15 }, { armR: 1.45, leg: -0.25, armL: -0.4 }];
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
-function dirs(make, w, h, o) { const out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, w, h, o))); return out; }
+function dirs(make, w, h, o = {}) { const k = o.raw ? 1 : SR, oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); return out; }
+const SR = A.SR, HS = Math.round(48 * SR);
 function buildStatics() {
   const R = rng(99), S = SPR, SH = {};
   const set = (k, list, s, col, small) => { S[k] = { r: list.map(c => atlas.add(c)), s, col, small }; };
+  const SE = A.SR, Z = v => Math.round(v * SE), setZ = (k, list, s, col, small) => set(k, list, s / SE, col, small);
   const LEAF = ['#2a5a24', '#3e8a34', '#5aa844', '#8ac85a'], LEAF2 = ['#2e5a2e', '#3a7a3a', '#56a050', '#7ac06a'], BIR = ['#4a7a2a', '#6a9a3a', '#8aba4a', '#b8d86a'];
-  set('oak', [A.oak(R, 40, 52, LEAF), A.oak(R, 40, 52, LEAF2), A.oak(R, 36, 48, LEAF)], 0.42, 2);
-  set('oakbig', [A.oak(R, 56, 72, LEAF, A.TRUNK, 12), A.oak(R, 56, 72, LEAF2, A.TRUNK, 12)], 0.46, 2.6);
-  set('birch', [A.oak(R, 32, 54, BIR, A.BIRCH, 7), A.oak(R, 30, 50, BIR, A.BIRCH, 6)], 0.42, 1.4);
-  set('bush', [A.bush(R, 24, 18, LEAF), A.bush(R, 24, 18, LEAF2, '#e8304a')], 0.34);
-  set('flower', ['#ff6a8a', '#ffe14a', '#ffffff', '#8a7aff', '#ff9a3a'].map(c => A.flower(c)), 0.32, 0, true);
-  set('tuft', [A.tuft(['#3e8a34', '#6ac04a']), A.tuft(['#4a9a3a', '#86c858'])], 0.38, 0, true);
-  set('fern', [A.tuft(['#2a6a2a', '#4a9a3a'])], 0.55, 0, true);
-  set('rock', [A.rock(R, 20, 14, ['#4a4a52', '#6a6a74', '#8a8a94', '#acacb4']), A.rock(R, 26, 18, ['#4a4844', '#6a6660', '#8a8680', '#aca8a0'])], 0.42, 2.6);
-  set('rocksnow', [A.rock(R, 22, 16, ['#5a6a7a', '#8a9aaa', '#c8d6e4', '#f4f8ff'])], 0.42, 2.6);
-  set('sandrock', [A.rock(R, 24, 16, ['#8a5a30', '#b07a44', '#d09a5a', '#e8bc7a']), A.rock(R, 18, 22, ['#8a5a30', '#b07a44', '#d09a5a', '#e8bc7a'])], 0.45, 2.6);
-  set('lavarock', [A.rock(R, 22, 16, ['#1a1416', '#2e2628', '#46383a', '#5e4a4a'], ['#ff6a1a', '#ffc145'])], 0.45, 2.6);
-  set('pine', [A.pine(R, 30, 56, ['#1e4a34', '#2e6a44', '#4a8a5a']), A.pine(R, 26, 50, ['#1e4a34', '#2e6a44', '#4a8a5a'])], 0.46, 1.8);
-  set('snowpine', [A.pine(R, 30, 56, ['#1e4a3a', '#2e6a4a', '#4a8a5a'], true), A.pine(R, 26, 48, ['#1e4a3a', '#2e6a4a', '#4a8a5a'], true)], 0.46, 1.8);
-  set('palm', [A.palm(R, 40, 58), A.palm(R, 40, 52)], 0.42, 1.2);
-  set('cactus', [A.cactus(R, 22, 32), A.cactus(R, 20, 26)], 0.42, 1.4);
-  set('drybush', [A.bush(R, 22, 14, ['#6a5a2a', '#8a7a3a', '#a89a4a', '#c8b86a'])], 0.34);
-  set('deadtree', [A.deadTree(R, 36, 50), A.deadTree(R, 30, 44)], 0.46, 1.4);
-  set('burnt', [A.deadTree(R, 34, 46, '#1e1818', '#3a2a2a')], 0.46, 1.4);
-  set('willow', [A.willow(R, 46, 54), A.willow(R, 40, 50)], 0.46, 2);
-  set('reeds', [A.reeds()], 0.5, 0, true);
-  set('mushroom', [A.mushroom(R, 10, 10, '#e8304a'), A.mushroom(R, 9, 9, '#c8642a')], 0.32, 0, true);
-  set('crystal', [A.crystal(R, 18, 28, ['#2a8aa8', '#4ac8e8', '#a8f0ff', '#ffffff']), A.crystal(R, 16, 24, ['#6a3aa8', '#9a6ae8', '#d0b0ff', '#ffffff'])], 0.42, 1.4);
-  set('icecrystal', [A.crystal(R, 18, 26, ['#5a8ac8', '#8ab8f0', '#d0e8ff', '#ffffff'])], 0.42, 1.4);
-  set('bones', [A.bones()], 0.4, 0, true);
-  set('giant', [A.giantTree(rng(7), 220, 200)], 0.62, 17);
-  set('stepstone', [A.rock(R, 16, 7, ['#6a7a80', '#9aa8b0', '#c8d4d8', '#eef4f6'])], 0.5);
-  set('well', [A.well()], 0.62, 6);
-  set('torch', [A.torch(R, 0)], 0.36, 1);
-  set('anvil', [A.pix(['..........', 'aaaaaaaaa.', '.abbbbbbaa', '..abbbba..', '...abba...', '...abba...', '..aaaaaa..'], { a: '#1a1a22', b: '#5a5a66' })], 0.42, 2);
-  set('sign', [A.sign()], 0.48, 1.2);
-  set('statue', [A.figure([{ t: 'b', b: [-5, 5, -5, 5, -6, 0], c: '#7a7a82' }, ...A.human({ skin: '#a8a8b0', helm: { c: '#9a9aa2', plume: '#8a8a92' }, shirt: '#9a9aa2', plate: '#b0b0b8', pants: '#8a8a92', boots: '#7a7a82', cape: '#8a8a92', weapon: { col: '#b8b8c0', guard: '#8a8a92' }, shield: '#9a9aa2', emblem: '#b8b8c0' }, { armR: 1.0 })], Math.PI, 48, 52, { base: 46 })], 0.42, 4);
-  set('menhir', [A.rock(R, 12, 34, ['#4a4a56', '#66667a', '#86869a', '#a8a8ba']), A.rock(R, 14, 30, ['#4a4a56', '#66667a', '#86869a', '#a8a8ba'])], 0.62, 3);
-  set('tent', [A.tent('#c8642a')], 0.48, 9);
-  set('campfire', [A.pix(['...ab...', '..abba..', '..abca..', '.abccba.', '.dbccbd.', 'deedeedd', '.dd..dd.'], { a: '#ff6a2a', b: '#ffc145', c: '#fff4b8', d: '#5a3a1e', e: '#3a2414' })], 0.4, 2);
-  set('snowman', [A.snowman()], 0.48, 3.5);
-  set('banner', [A.banner('#c8342c', '#ffd23f')], 0.5, 1);
-  set('ore', [A.rock(R, 22, 16, ['#3a3a44', '#5a5a66', '#7a7a88', '#9a9aa8'], ['#ff9a3a', '#ffd06a', '#e8eef6'])], 0.48, 3.5);
+  setZ('oak', [A.oak(R, Z(40), Z(52), LEAF), A.oak(R, Z(40), Z(52), LEAF2), A.oak(R, Z(36), Z(48), LEAF)], 0.42, 2);
+  setZ('oakbig', [A.oak(R, Z(56), Z(72), LEAF, A.TRUNK, 12), A.oak(R, Z(56), Z(72), LEAF2, A.TRUNK, 12)], 0.46, 2.6);
+  setZ('birch', [A.oak(R, Z(32), Z(54), BIR, A.BIRCH, 7), A.oak(R, Z(30), Z(50), BIR, A.BIRCH, 6)], 0.42, 1.4);
+  setZ('bush', [A.bush(R, Z(24), Z(18), LEAF), A.bush(R, Z(24), Z(18), LEAF2, '#e8304a')], 0.34);
+  set('flower', ['#ff6a8a', '#ffe14a', '#ffffff', '#8a7aff', '#ff9a3a'].map(c => A.flower(c)), 0.2, 0, true);
+  set('tuft', [A.tuft(['#3e8a34', '#6ac04a']), A.tuft(['#4a9a3a', '#86c858'])], 0.2, 0, true);
+  set('fern', [A.tuft(['#2a6a2a', '#4a9a3a'], 14, 11)], 0.2, 0, true);
+  setZ('rock', [A.rock(R, Z(20), Z(14), ['#4a4a52', '#6a6a74', '#8a8a94', '#acacb4']), A.rock(R, Z(26), Z(18), ['#4a4844', '#6a6660', '#8a8680', '#aca8a0'])], 0.42, 2.6);
+  setZ('rocksnow', [A.rock(R, Z(22), Z(16), ['#5a6a7a', '#8a9aaa', '#c8d6e4', '#f4f8ff'])], 0.42, 2.6);
+  setZ('sandrock', [A.rock(R, Z(24), Z(16), ['#8a5a30', '#b07a44', '#d09a5a', '#e8bc7a']), A.rock(R, Z(18), Z(22), ['#8a5a30', '#b07a44', '#d09a5a', '#e8bc7a'])], 0.45, 2.6);
+  setZ('lavarock', [A.rock(R, Z(22), Z(16), ['#1a1416', '#2e2628', '#46383a', '#5e4a4a'], ['#ff6a1a', '#ffc145'])], 0.45, 2.6);
+  setZ('pine', [A.pine(R, Z(30), Z(56), ['#1e4a34', '#2e6a44', '#4a8a5a']), A.pine(R, Z(26), Z(50), ['#1e4a34', '#2e6a44', '#4a8a5a'])], 0.46, 1.8);
+  setZ('snowpine', [A.pine(R, Z(30), Z(56), ['#1e4a3a', '#2e6a4a', '#4a8a5a'], true), A.pine(R, Z(26), Z(48), ['#1e4a3a', '#2e6a4a', '#4a8a5a'], true)], 0.46, 1.8);
+  setZ('palm', [A.palm(R, Z(40), Z(58)), A.palm(R, Z(40), Z(52))], 0.42, 1.2);
+  setZ('cactus', [A.cactus(R, Z(22), Z(32)), A.cactus(R, Z(20), Z(26))], 0.42, 1.4);
+  setZ('drybush', [A.bush(R, Z(22), Z(14), ['#6a5a2a', '#8a7a3a', '#a89a4a', '#c8b86a'])], 0.34);
+  setZ('deadtree', [A.deadTree(R, Z(36), Z(50)), A.deadTree(R, Z(30), Z(44))], 0.46, 1.4);
+  setZ('burnt', [A.deadTree(R, Z(34), Z(46), '#1e1818', '#3a2a2a')], 0.46, 1.4);
+  setZ('willow', [A.willow(R, Z(46), Z(54)), A.willow(R, Z(40), Z(50))], 0.46, 2);
+  set('reeds', [A.reeds()], 0.2, 0, true);
+  setZ('mushroom', [A.mushroom(R, Z(10), Z(10), '#e8304a'), A.mushroom(R, Z(9), Z(9), '#c8642a')], 0.32, 0, true);
+  setZ('crystal', [A.crystal(R, Z(18), Z(28), ['#2a8aa8', '#4ac8e8', '#a8f0ff', '#ffffff']), A.crystal(R, Z(16), Z(24), ['#6a3aa8', '#9a6ae8', '#d0b0ff', '#ffffff'])], 0.42, 1.4);
+  setZ('icecrystal', [A.crystal(R, Z(18), Z(26), ['#5a8ac8', '#8ab8f0', '#d0e8ff', '#ffffff'])], 0.42, 1.4);
+  set('bones', [A.bones()], 0.2, 0, true);
+  setZ('giant', [A.giantTree(rng(7), Z(220), Z(200))], 0.62, 17);
+  setZ('stepstone', [A.rock(R, Z(16), Z(7), ['#6a7a80', '#9aa8b0', '#c8d4d8', '#eef4f6'])], 0.5);
+  set('well', [A.well()], 0.2, 6);
+  set('torch', [A.torch()], 0.2, 1);
+  set('anvil', [A.anvil()], 0.2, 2);
+  set('sign', [A.sign()], 0.2, 1.2);
+  set('statue', [A.figure([{ t: 'b', b: [-5, 5, -5, 5, -6, 0], c: '#7a7a82' }, ...A.human({ skin: '#a8a8b0', helm: { c: '#9a9aa2', plume: '#8a8a92' }, shirt: '#9a9aa2', plate: '#b0b0b8', pants: '#8a8a92', boots: '#7a7a82', cape: '#8a8a92', weapon: { col: '#b8b8c0', guard: '#8a8a92' }, shield: '#9a9aa2', emblem: '#b8b8c0' }, { armR: 1.0 })], Math.PI, Z(48), Z(52), { base: Z(46), sc: SE })], 0.42 / SE, 4);
+  setZ('menhir', [A.rock(R, Z(12), Z(34), ['#4a4a56', '#66667a', '#86869a', '#a8a8ba']), A.rock(R, Z(14), Z(30), ['#4a4a56', '#66667a', '#86869a', '#a8a8ba'])], 0.62, 3);
+  set('tent', [A.tent('#c8642a')], 0.2, 9);
+  set('campfire', [A.campfire()], 0.2, 2);
+  set('snowman', [A.snowman()], 0.2, 3.5);
+  set('banner', [A.banner('#c8342c', '#ffd23f')], 0.2, 1);
+  setZ('ore', [A.rock(R, Z(22), Z(16), ['#3a3a44', '#5a5a66', '#7a7a88', '#9a9aa8'], ['#ff9a3a', '#ffd06a', '#e8eef6'])], 0.48, 3.5);
   // effetti
-  SPR.puff = atlas.add(A.pix(['..aaa..', '.abbba.', 'abbbbba', 'abbbbba', 'abbbbba', '.abbba.', '..aaa..'], { a: '#c8c8d4', b: '#f4f4fa' }));
+  const HD = (c, old) => { const r = atlas.add(c); r.f = old / c.width; return r; };
+  SPR.puff = HD(A.puff(), 7);
   SPR.spark = atlas.add(A.pix(['..a..', '..a..', 'aabaa', '..a..', '..a..'], { a: '#ffd23f', b: '#ffffff' }));
   SPR.glint = atlas.add(A.pix(['...a...', '...a...', '..aba..', 'aabbbaa', '..aba..', '...a...', '...a...'], { a: '#fff4b0', b: '#ffffff' }));
   SPR.drop = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#7ac8f0', b: '#e0f4ff' }));
   SPR.ember = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#ff6a1a', b: '#ffe14a' }));
-  SPR.coin = atlas.add(A.pix(['.aaa.', 'abbba', 'abcba', 'abbba', '.aaa.'], { a: '#8a5a10', b: '#ffc83a', c: '#fff4b0' }));
-  SPR.heart = atlas.add(HEARTS[0]);
+  SPR.coin = HD(A.coin(), 5);
+  SPR.heart = HD(A.heartBig(), 7);
   SPR.flame = [atlas.add(A.flame(R, 0)), atlas.add(A.flame(R, 1))];
-  SH.seed = atlas.add(A.pix(['.aaa.', 'abbba', 'abcba', 'abbba', '.aaa.'], { a: '#1a3a10', b: '#6ac83a', c: '#d8ff9a' }));
-  SH.fire = atlas.add(A.pix(['..aa..', '.abba.', 'abccba', 'abccba', '.abba.', '..aa..'], { a: '#c8301a', b: '#ff8a2a', c: '#fff0a0' }));
-  SH.ice = atlas.add(A.pix(['...a...', '..aba..', '.abcba.', 'abcccba', '.abcba.', '..aba..', '...a...'], { a: '#2a5a9a', b: '#8ac8f0', c: '#ffffff' }));
-  SH.bubble = atlas.add(A.pix(['.aaaa.', 'abbcba', 'abbbba', 'abbbba', 'abbbba', '.aaaa.'], { a: '#2a6ab0', b: '#8ad0ff', c: '#ffffff' }));
+  SH.seed = HD(A.orb(9, '#5ab83a', '#d8ff9a', { spot: 1, oc: '#1a3a10' }), 5);
+  SH.fire = HD(A.orb(11, '#ff8a2a', '#fff0a0', { oc: '#8a1a0a' }), 6);
+  SH.ice = HD(A.shard(13, '#5aa8e8', '#bfe6ff'), 7);
+  SH.bubble = HD(A.orb(11, '#5ab0f0', '#ffffff', { ring: 0.42, spot: 1, oc: '#1a4a8a' }), 6);
   SH.light = atlas.add(A.pix(['....aa....', '..abbbba..', '.abccccba.', 'abcc..ccba', 'abc....cba', 'ab......ba'], { a: '#ffb02e', b: '#ffe07a', c: '#ffffff' }));
-  SH.rock = atlas.add(A.finish(A.pix(['.aaa.', 'abbba', 'abbba', '.aba.'], { a: '#4a4a52', b: '#8a8a94' })));
+  SH.rock = HD(A.orb(9, '#7a7a84', '#b8b8c4'), 5);
   SPR.shot = SH; SPR.rockfx = SH.rock; SPR.icefx = SH.ice;
   SPR.rune = atlas.add(A.pix(['..aaa..', '.a...a.', 'a..b..a', 'a.bbb.a', 'a..b..a', '.a...a.', '..aaa..'], { a: '#4ae0e8', b: '#b8f8ff' }));
 }
 function* buildCharacters() {
   CHR.hero = null; heroRects = [];
-  for (let p = 0; p < POSE_HERO.length; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(48, 48))); heroRects.push(row); }
+  for (let p = 0; p < POSE_HERO.length; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(HS, HS))); heroRects.push(row); }
   yield 0.05;
   const ids = Object.keys(NPC); let k = 0;
-  for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 2).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
+  for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
   CHR.biscotto = [{}, { leg: 0.5 }].map(p => dirs(() => A.beast({ c: '#f0a050', c2: '#ffe0b0', eye: '#4ade80', s: 0.45, tailUp: 1.3 }, p), 26, 20));
   CHR.slime = [0, 1].map(f => dirs(() => A.slime({ c: '#5ad070' }, f), 34, 26));
   CHR.wolf = [{}, { leg: 0.5 }, { leg: -0.5 }, { lunge: 2.6, leg: 0.4 }].map(p => dirs(() => A.beast({ c: '#7a7a86', c2: '#b8b8c4' }, p), 44, 32));
@@ -239,14 +242,16 @@ function* buildCharacters() {
   CHR.imp = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d84a2a', hand: '#d84a2a', horns: '#2a1a1a', shirt: '#8a1e1a', pants: '#5a1414', boots: '#2a1414', eyes: '#ffe14a', weapon: { kind: 'spear' } }, p), 44, 52, { sc: 0.85 }));
   yield 0.8;
   CHR.bat = [0, 1].map(f => dirs(() => A.bat(f), 40, 30));
-  CHR.dragon = [0, 1].map(f => dirs(() => A.dragon(f), 128, 96, { pitch: -0.3, base: 60 }));
+  CHR.dragon = [0, 1].map(f => dirs(() => A.dragon(f), 128, 96, { pitch: -0.3, base: 60, raw: true }));
   CHR.chest = [0, 1, 2, 3].map(r => [0, 1].map(o => dirs(() => A.chest(r, o), 28, 26)));
   yield 1;
 }
 function drawHeroSprites() {
   const L = heroLook();
-  for (let p = 0; p < POSE_HERO.length; p++) for (let d = 0; d < 8; d++) atlas.put(A.figure(A.human(L, POSE_HERO[p]), d / 8 * TAU, 48, 48), heroRects[p][d]);
-  if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.c); }
+  for (let p = 0; p < POSE_HERO.length; p++) for (let d = 0; d < 8; d++) {
+    const c = A.figure(A.human(L, POSE_HERO[p]), d / 8 * TAU, HS, HS, { sc: SR }), r = heroRects[p][d];
+    if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); }
+  }
 }
 
 // ---------- caricamento ----------
@@ -264,6 +269,7 @@ function* loader() {
   for (const p of buildCharacters()) yield 0.66 + p * 0.24;
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
   ATEX = G.texture(atlas.c);
+  atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
@@ -838,8 +844,8 @@ function enterDungeon(id) {
   D = makeDungeon(id);
   D.outX = door ? door.x : hero.x; D.outZ = door ? door.z + out * 8 : hero.z; D.outYaw = out > 0 ? Math.PI / 2 : -Math.PI / 2;
   if (DID !== id) {
-    DAT = A.Atlas(1024, 1024); const r = DS.art(id, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
-    if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DID = id;
+    DAT = A.Atlas(2048, 1024); const r = DS.art(id, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
+    if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DAT.c.width = DAT.c.height = 1; DID = id;
   }
   if (!dynBuf2) { dynBuf2 = G.buffer(dynF2, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); dmBuf = G.buffer(dmF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); }
   dUpload();
@@ -1244,7 +1250,7 @@ function shotsUpdate(dt) {
 // ---------- disegno ----------
 function pushBB2(x, y, z, r, s, k = 1, fl = 0) {
   if (!r) return; const n = pushBB2.n; if (n >= 1500) return;
-  const w = r.w * s, h = r.h * s; let p = n * 44;
+  const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF2[p++] = x; dynF2[p++] = y; dynF2[p++] = z; dynF2[p++] = C[i]; dynF2[p++] = C[i + 1]; dynF2[p++] = C[i + 2]; dynF2[p++] = C[i + 3]; dynF2[p++] = k; dynF2[p++] = k; dynF2[p++] = k; dynF2[p++] = fl; }
   pushBB2.n = n + 1;
@@ -1281,7 +1287,7 @@ function buildDynMesh() {
 }
 const RK = { k: 0, q: 0, c: 1, Q: 1, K: 2, C: 3 };
 function buildDynamicD() {
-  const ds = dsave(D.id), R = 0.2, h = hero;
+  const ds = dsave(D.id), R = 0.2 / SR, h = hero;
   if (h && (st === 'play' || st === 'dead')) {
     const anim = h.atk > 0.27 ? 3 : h.atk > 0 ? 4 : h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
     if (!(h.inv > 0 && Math.floor(time * 16) % 2) || h.dead) pushBB(h.x, h.y - 0.5, h.z, heroRects[anim][dirOf(h.x, h.z, h.yaw)], R, 1, h.flash > 0 ? 0.7 : 0);
@@ -1290,17 +1296,17 @@ function buildDynamicD() {
   const b = boss;
   if (b && !b.hide && DCH.boss) {
     const blink = b.st === 'die' && Math.floor(time * 14) % 2;
-    pushBB2(b.x, b.y - 0.6, b.z, DCH.boss[Math.min(b.pose, DCH.boss.length - 1)][dirOf(b.x, b.z, b.yaw)], b.B.bs, 1, b.flash > 0 || blink ? 0.85 : 0);
+    pushBB2(b.x, b.y - 0.6, b.z, DCH.boss[Math.min(b.pose, DCH.boss.length - 1)][dirOf(b.x, b.z, b.yaw)], b.B.bs / SR, 1, b.flash > 0 || blink ? 0.85 : 0);
     if (b.vuln) for (let k = 0; k < 3; k++) { const a = time * 4 + k * TAU / 3; pushBB(b.x + Math.cos(a) * 6, b.y + (b.B.h * b.B.bs) * 0.75, b.z + Math.sin(a) * 6, SPR.spark, 0.28, 1.2); }
   }
-  for (const t of D.torches) { pushBB2(t.x, 0, t.z, DSP.brazier, 0.5); pushBB(t.x, 5.4, t.z, SPR.flame[Math.floor(time * 8 + t.x) % 2], 0.34, 1.2); }
-  for (const p of D.pots) if (p.alive) pushBB2(p.x, 0, p.z, DSP.pot, 0.55);
-  for (const t of D.turrets) pushBB2(t.x, 0, t.z, DSP.turret[dirOf(t.x, t.z, t.yaw)], 0.4, t.fl > 0 ? 1.3 : 1);
-  for (const x of D.xtals) pushBB2(x.x, 0, x.z, DSP.xtal[ds.xs], 0.6, 1.12, x.cd > 0.3 ? 0.6 : 0);
-  for (const s of D.signs) pushBB2(s.x, 0, s.z, DSP.lapide, 0.7);
-  for (const c of D.chests) if (!c.hidden) { pushBB(c.x, -0.3, c.z, CHR.chest[RK[c.kind]][ds.ch[c.key] ? 1 : 0][dirOf(c.x, c.z, c.yaw)], c.kind === 'C' ? 0.32 : 0.25); if (!ds.ch[c.key] && (c.kind === 'C' || c.kind === 'K') && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, 7, c.z, SPR.glint, 0.3, 1.2); }
-  if (D.gem) { pushBB2(D.gem.x, 3 + Math.sin(time * 2.5) * 1.2, D.gem.z, DSP.gem, 0.7, 1.3); if (Math.floor(time * 4) % 2) pushBB(D.gem.x + Math.sin(time * 3) * 3, 9, D.gem.z, SPR.glint, 0.3, 1.2); }
-  if (D.portal) pushBB2(D.portal.x, 0, D.portal.z, DSP.portal[Math.floor(time * 6) % 2], 0.5, 1.3);
+  for (const t of D.torches) { pushBB2(t.x, 0, t.z, DSP.brazier, 0.2); pushBB(t.x, 5.4, t.z, SPR.flame[Math.floor(time * 8 + t.x) % 2], 0.23, 1.2); }
+  for (const p of D.pots) if (p.alive) pushBB2(p.x, 0, p.z, DSP.pot, 0.2);
+  for (const t of D.turrets) pushBB2(t.x, 0, t.z, DSP.turret[dirOf(t.x, t.z, t.yaw)], 0.4 / SR, t.fl > 0 ? 1.3 : 1);
+  for (const x of D.xtals) pushBB2(x.x, 0, x.z, DSP.xtal[ds.xs], 0.2, 1.12, x.cd > 0.3 ? 0.6 : 0);
+  for (const s of D.signs) pushBB2(s.x, 0, s.z, DSP.lapide, 0.2);
+  for (const c of D.chests) if (!c.hidden) { pushBB(c.x, -0.3, c.z, CHR.chest[RK[c.kind]][ds.ch[c.key] ? 1 : 0][dirOf(c.x, c.z, c.yaw)], (c.kind === 'C' ? 0.32 : 0.25) / SR); if (!ds.ch[c.key] && (c.kind === 'C' || c.kind === 'K') && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, 7, c.z, SPR.glint, 0.3, 1.2); }
+  if (D.gem) { pushBB2(D.gem.x, 3 + Math.sin(time * 2.5) * 1.2, D.gem.z, DSP.gem, 0.2, 1.3); if (Math.floor(time * 4) % 2) pushBB(D.gem.x + Math.sin(time * 3) * 3, 9, D.gem.z, SPR.glint, 0.3, 1.2); }
+  if (D.portal) pushBB2(D.portal.x, 0, D.portal.z, DSP.portal[Math.floor(time * 6) % 2], 0.2, 1.3);
   if (D.heartP) pushBB(D.heartP.x, 3 + Math.sin(time * 3), D.heartP.z, SPR.heart, 1, 1.25);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
@@ -1308,25 +1314,27 @@ function buildDynamicD() {
 }
 function projectPt(x, y, z) {
   const m = VP, w = m[3] * x + m[7] * y + m[11] * z + m[15]; if (w <= 0.1) return null;
-  return [((m[0] * x + m[4] * y + m[8] * z + m[12]) / w * 0.5 + 0.5) * Wr, ((m[1] * x + m[5] * y + m[9] * z + m[13]) / w * 0.5 + 0.5) * Hr];
+  return [((m[0] * x + m[4] * y + m[8] * z + m[12]) / w * 0.5 + 0.5) * W3, ((m[1] * x + m[5] * y + m[9] * z + m[13]) / w * 0.5 + 0.5) * H3];
 }
 function renderDungeon() {
   const P = G.P, fogC = D.fogC, fogN = 95, fogF = 270;
-  gl.viewport(0, 0, Wr, Hr);
+  gl.viewport(0, 0, W3, H3);
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const q = quake, qx = q ? (Math.random() - 0.5) * q * 2.4 : 0, qy = q ? (Math.random() - 0.5) * q * 2.4 : 0;
-  const proj = SG.M4.persp(FOVY, Wr / Hr, 1.2, 420), view = SG.M4.look([cam.x + qx, cam.y + qy, cam.z], [cam.tx + qx, cam.ty + qy, cam.tz], [0, 1, 0]);
+  const proj = SG.M4.persp(FOVY, W3 / H3, 1.2, 420), view = SG.M4.look([cam.x + qx, cam.y + qy, cam.z], [cam.tx + qx, cam.ty + qy, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const yaw = Math.atan2(cam.tz - cam.z, cam.tx - cam.x); RX = -Math.sin(yaw); RZ = Math.cos(yaw);
   dLights();
-  const hp = st === 'play' || st === 'dead' ? projectPt(hero.x, hero.y + 4.5, hero.z) : null;
-  const cut = hp ? [hp[0], hp[1], Hr * 0.2, Math.hypot(cam.x - hero.x, cam.y - hero.y - 4.5, cam.z - hero.z) - 3] : [0, 0, 0, 0];
+  const hp = st === 'play' || st === 'dead' ? projectPt(hero.x, hero.y + 3, hero.z) : null;
+  // finestra pulita nelle pareti davanti all'eroe: tutto ciò che è più vicino dei suoi piedi, dentro il cerchio
+  const cut = hp ? [hp[0], hp[1], H3 * 0.21, Math.hypot(cam.x - hero.x, cam.y - hero.y, cam.z - hero.z) - 1] : [0, 0, 0, 0];
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.BLEND);
   let p = P.dmesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 8);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, D.def.amb + 0.05);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
+  gl.uniform1f(p.u.uGhost, 0);
   const drawMesh = (buf, n, cutOn) => { if (!n) return; gl.uniform4f(p.u.uCut, cut[0], cut[1], cutOn ? cut[2] : 0, cut[3]); gl.bindBuffer(gl.ARRAY_BUFFER, buf); for (let q0 = 0; q0 < n; q0 += 16000) { G.attribs(p, [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]], q0 * 4 * 32); gl.drawElements(gl.TRIANGLES, Math.min(16000, n - q0) * 6, gl.UNSIGNED_SHORT, 0); } };
   drawMesh(D.gl.floor, D.gl.nf, false);
   drawMesh(D.gl.wall, D.gl.nw, true);
@@ -1363,6 +1371,12 @@ function renderDungeon() {
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   if (D.gl.nwa) { gl.uniform1f(p.u.uY, -1); gl.uniform3fv(p.u.uWat, hexf(D.def.water)); gl.uniform3f(p.u.uHi, 0.85, 0.95, 1); gl.uniform1f(p.u.uA, 0.7); gl.uniform1f(p.u.uLight, 0.75); gl.bindBuffer(gl.ARRAY_BUFFER, D.gl.water); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, D.gl.nwa * 6, gl.UNSIGNED_SHORT, 0); }
   if (D.gl.nl) { gl.uniform1f(p.u.uY, -0.6); gl.uniform3f(p.u.uWat, 1, 0.38, 0.08); gl.uniform3f(p.u.uHi, 1, 0.92, 0.45); gl.uniform1f(p.u.uA, 1); gl.uniform1f(p.u.uLight, 1.2); gl.bindBuffer(gl.ARRAY_BUFFER, D.gl.lava); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, D.gl.nl * 6, gl.UNSIGNED_SHORT, 0); }
+  // pareti tra la telecamera e l'eroe: trasparenti e pulite (seconda passata)
+  p = P.dmesh; gl.useProgram(p.p); gl.uniform1f(p.u.uGhost, 1);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
+  drawMesh(D.gl.wall, D.gl.nw, true); if (dmN) { gl.bindBuffer(gl.ARRAY_BUFFER, dmBuf); drawMesh(dmBuf, dmN, true); }
+  gl.uniform1f(p.u.uGhost, 0);
   gl.depthMask(true); gl.disable(gl.BLEND);
 }
 function drawDungeonMap() {
@@ -1396,7 +1410,7 @@ function drawFoe(e) {
   const two = !!DCH[e.type] && !!D, set = two ? DCH[e.type] : CHR[e.type]; if (!set) return;
   if (e.st === 'dead' && Math.floor(time * 20) % 2) return;
   const T2 = FOE[e.type], k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? 0.25 : 0;
-  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], T2.sc || 0.2, k, fl);
+  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], (T2.sc || 0.2) / SR, k, fl);
 }
 
 // ---------- disegno 3D ----------
@@ -1408,7 +1422,7 @@ function boxVisible(x0, y0, z0, x1, y1, z1) {
 function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   if (!r) return;
   const n = pushBB.n; if (n >= 3000) return;
-  const w = r.w * s, h = r.h * s; let p = n * 44;
+  const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
   const tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
@@ -1421,9 +1435,9 @@ const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.
 function render3D() {
   if (D) return renderDungeon();
   const P = G.P;
-  gl.viewport(0, 0, Wr, Hr);
+  gl.viewport(0, 0, W3, H3);
   gl.clearColor(atm.fog[0], atm.fog[1], atm.fog[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  const proj = SG.M4.persp(FOVY, Wr / Hr, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
+  const proj = SG.M4.persp(FOVY, W3 / H3, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const m = VP, row = i => [m[i], m[4 + i], m[8 + i], m[12 + i]], r0 = row(0), r1 = row(1), r2 = row(2), r3 = row(3);
   planes = [[1, r0], [-1, r0], [1, r1], [-1, r1], [-1, r2]].map(([s, r]) => [r3[0] + s * r[0], r3[1] + s * r[1], r3[2] + s * r[2], r3[3] + s * r[3]]);
@@ -1433,15 +1447,15 @@ function render3D() {
   // cielo
   gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
   let p = P.sky; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
-  const foc = (Hr / 2) / Math.tan(FOVY / 2);
-  gl.uniform2f(p.u.uRes, Wr, Hr); gl.uniform1f(p.u.uHor, Hr / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOVY / 2) * Wr / Hr));
-  gl.uniform1f(p.u.uPanoH, Hr * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, atm.zen); gl.uniform3fv(p.u.uHorC, fogC);
+  const foc = (H3 / 2) / Math.tan(FOVY / 2);
+  gl.uniform2f(p.u.uRes, W3, H3); gl.uniform1f(p.u.uHor, H3 / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOVY / 2) * W3 / H3));
+  gl.uniform1f(p.u.uPanoH, H3 * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, atm.zen); gl.uniform3fv(p.u.uHorC, fogC);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PANO); gl.uniform1i(p.u.uPano, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
   // terreno
   p = P.terrain; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform1f(p.u.uInvWS, 1 / W.WS);
   gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light); gl.uniform1f(p.u.uTime, time);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
@@ -1453,7 +1467,7 @@ function render3D() {
     if (!boxVisible(c.cx - W.CS / 2, c.lo - 2, c.cz - W.CS / 2, c.cx + W.CS / 2, c.hi + 30, c.cz + W.CS / 2)) continue;
     vis.push([c, d]);
     const L = W.lod[d < 520 ? 0 : d < 950 ? 1 : 2];
-    gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1]]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
   // edifici
@@ -1479,7 +1493,8 @@ function render3D() {
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uLight, light);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
-  gl.uniform1f(p.u.uNear, 17);
+  const ghostOn = !!hero && (st === 'play' || st === 'dead');
+  gl.uniform1f(p.u.uNear, ghostOn ? 6 : 0); if (ghostOn) gl.uniform3f(p.u.uHero, hero.x, hero.y + 4.5, hero.z); gl.uniform1f(p.u.uGhost, 0);
   for (const [c, d] of vis) {
     if (c.big) { gl.bindBuffer(gl.ARRAY_BUFFER, c.big); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.nb * 6, gl.UNSIGNED_SHORT, 0); }
     if (c.small && d < 300) { gl.bindBuffer(gl.ARRAY_BUFFER, c.small); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.ns * 6, gl.UNSIGNED_SHORT, 0); }
@@ -1499,11 +1514,18 @@ function render3D() {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.waterBuf); G.attribs(p, [['aP', 2]]); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  // alberi e rocce che coprono l'eroe: trasparenti e puliti (seconda passata)
+  if (ghostOn) {
+    p = P.bb; gl.useProgram(p.p); gl.uniform1f(p.u.uGhost, 0.34); gl.uniform1f(p.u.uNear, 6);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
+    for (const [c, d] of vis) if (c.big && d < W.CS + 40) { gl.bindBuffer(gl.ARRAY_BUFFER, c.big); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.nb * 6, gl.UNSIGNED_SHORT, 0); }
+    gl.uniform1f(p.u.uGhost, 0);
+  }
   gl.depthMask(true); gl.disable(gl.BLEND);
 }
 const near = (x, z, r) => (x - cam.x) ** 2 + (z - cam.z) ** 2 < r * r;
 function buildDynamic() {
-  const R = 0.2;
+  const R = 0.2 / SR;
   // eroe
   if (hero && (st === 'play' || st === 'dead')) {
     const h = hero, anim = h.atk > 0.27 ? 3 : h.atk > 0 ? 4 : h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
@@ -1511,15 +1533,15 @@ function buildDynamic() {
   }
   for (const n of npcs) {
     if (!near(n.x, n.z, 520)) continue;
-    const sh = CHR[n.id], a = n.moving ? 1 + (Math.floor(n.walk / 4) % (sh.length - 1)) : 0, sc = n.id === 'biscotto' ? 0.2 : 0.2;
+    const sh = CHR[n.id], a = n.moving ? 1 + (Math.floor(n.walk / 4) % (sh.length - 1)) : 0, sc = 0.2 / SR;
     const glow = n.id === 'spirito' ? 1.1 + Math.sin(time * 3) * 0.1 : 1;
     pushBB(n.x, gH(n.x, n.z) - 0.5 + (n.id === 'spirito' ? 1.5 + Math.sin(time * 2) : 0), n.z, sh[a][dirOf(n.x, n.z, n.yaw)], sc, glow);
   }
   const opened = id => save && save.chests[id], taken = p => save && save.oreTaken[p.x + ',' + p.z];
-  for (const c of chests) { if (!near(c.x, c.z, 420)) continue; pushBB(c.x, gH(c.x, c.z) - 0.3, c.z, CHR.chest[c.r][opened(c.id) ? 1 : 0][dirOf(c.x, c.z, c.yaw)], 0.24); if (!opened(c.id) && c.r >= 2 && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, gH(c.x, c.z) + 6, c.z, SPR.glint, 0.3); }
+  for (const c of chests) { if (!near(c.x, c.z, 420)) continue; pushBB(c.x, gH(c.x, c.z) - 0.3, c.z, CHR.chest[c.r][opened(c.id) ? 1 : 0][dirOf(c.x, c.z, c.yaw)], 0.24 / SR); if (!opened(c.id) && c.r >= 2 && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, gH(c.x, c.z) + 6, c.z, SPR.glint, 0.3); }
   for (const e of foes) if (near(e.x, e.z, 520)) drawFoe(e);
   for (const p of props) if (p.k === 'ore' && !taken(p) && near(p.x, p.z, 420)) { pushBB(p.x, gH(p.x, p.z) - 0.4, p.z, SPR.ore.r[0], SPR.ore.s); if (near(p.x, p.z, 200) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, gH(p.x, p.z) + 4, p.z, SPR.glint, 0.3); }
-  for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 300)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 9.2 : 1.2), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.32 : 0.36, 1.2);
+  for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 900)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 7.45 : 0.3), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.25 : 0.27, 1.2);
   for (const d of doors) if (near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
   for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
@@ -1810,6 +1832,9 @@ function measure(w, h) {
   // pixel quadrati: l'immagine 3D si ingrandisce di un numero intero di volte
   K = Math.max(1, Math.round(h / 182)); Hr = Math.floor(h / K); Wr = Math.floor(w / K);
   OX = Math.floor((w - Wr * K) / 2); OY = Math.floor((h - Hr * K) / 2);
+  // il mondo 3D ha pixel più piccoli dell'interfaccia: più dettaglio, scritte sempre leggibili
+  K3 = Math.max(1, Math.round(h / 240)); H3 = Math.floor(h / K3); W3 = Math.floor(w / K3);
+  OX3 = Math.floor((w - W3 * K3) / 2); OY3 = Math.floor((h - H3 * K3) / 2);
   if (hud.width !== Wr || hud.height !== Hr) { hud.width = Wr; hud.height = Hr; }
   try {
     const cr = $('scr').getBoundingClientRect(), sx = Wr / Math.max(1, cr.width);
@@ -1827,7 +1852,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
+  get dialog() { return dialog; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
@@ -1872,8 +1897,8 @@ return {
     measure(w, h);
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro')) {
-      G.resize(Wr, Hr);
-      if (st !== 'intro') { render3D(); c.drawImage(G.canvas, OX, OY, Wr * K, Hr * K); }
+      G.resize(W3, H3);
+      if (st !== 'intro') { render3D(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
     }
     drawHUD();
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);

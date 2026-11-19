@@ -18,7 +18,7 @@ const M4 = {
 const DITHER = `
 float bay(vec2 p) { vec2 q = mod(floor(p), 4.0), h = floor(q / 2.0), l = q - 2.0 * h;
   return (4.0 * mod(2.0 * l.x + 3.0 * l.y, 4.0) + mod(2.0 * h.x + 3.0 * h.y, 4.0) + 0.5) / 16.0; }
-vec3 dith(vec3 c) { return floor(c * 30.0 + bay(gl_FragCoord.xy)) / 30.0; }
+vec3 dith(vec3 c) { return floor(c * 40.0 + 0.5) / 40.0; }
 float fogk(float f) { return f * f * (3.0 - 2.0 * f); }
 `;
 const DLIGHT = `
@@ -33,30 +33,45 @@ precision mediump float;
 `;
 const SRC = {
   terrain: [`
-attribute vec3 aPos; attribute float aSh;
+attribute vec3 aPos; attribute float aSh; attribute vec2 aG;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog; uniform float uWS;
-varying vec2 vUV, vW; varying float vSh, vFog;
-void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh;
-  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
-uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC; uniform float uLight, uTime;
-varying vec2 vUV, vW; varying float vSh, vFog;
+varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH;
+void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y;
+  vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
+uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC; uniform float uLight, uTime, uInvWS;
+varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH;
 void main() {
-  vec4 b = texture2D(uCol, vUV), w = texture2D(uMat, vUV), d = texture2D(uDet, vW * 0.0625);
-  vec3 c = b.rgb * (0.74 + 0.52 * dot(d, w)) * vSh * uLight;
+  // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
+  vec2 uv = (floor(vW * 4.0) + 0.5) * 0.25 * uInvWS;
+  vec4 b = texture2D(uCol, uv), w = texture2D(uMat, uv), d = texture2D(uDet, vW * 0.0625);
+  // sulle pareti ripide la grana si proietta di lato (lungo la parete e in altezza): niente strisce stirate
+  float sl = length(vG);
+  if (sl > 0.8) { vec2 dir = vG / sl; vec4 d2 = texture2D(uDet, vec2(dot(vW, vec2(-dir.y, dir.x)), vH) * 0.0625); d = mix(d, d2, smoothstep(0.8, 1.5, sl)); }
+  // luce a gradini netti, come sui personaggi
+  vec3 c = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), clamp(1.7 - vD / 75.0, 0.0, 1.0))) * (floor(vSh * 12.0 + 0.5) / 12.0) * uLight;
   if (b.a > 0.04) { float g = texture2D(uDet, vW * 0.031 + vec2(uTime * 0.013, uTime * 0.005)).g; c = mix(c, b.rgb * (0.85 + 0.6 * g), b.a); }
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
   bb: [`
 attribute vec3 aC; attribute vec2 aO; attribute vec2 aUV; attribute vec4 aK;
-uniform mat4 uVP; uniform vec3 uCam, uR; uniform vec2 uFog;
-varying vec2 vUV; varying vec4 vK; varying float vFog, vD;
+uniform mat4 uVP; uniform vec3 uCam, uR, uHero; uniform vec2 uFog; uniform float uNear;
+varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc;
 void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0);
-  vUV = aUV; vK = aK; vD = distance(aC.xz, uCam.xz); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform float uLight, uNear;
-varying vec2 vUV; varying vec4 vK; varying float vFog, vD;
+  vUV = aUV; vK = vec4(aK.rgb, max(aK.a, 0.0)); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
+  // copre l'eroe? (tra la telecamera e l'eroe, abbastanza alto da nasconderlo; l'altezza arriva in aK.a, negativa)
+  float occ = 0.0;
+  if (uNear > 0.0) {
+    vec2 rel = aC.xz - uCam.xz, ch = uHero.xz - uCam.xz; float L = max(length(ch), 0.001); vec2 dir = ch / L;
+    float along = dot(rel, dir), perp = abs(rel.x * dir.y - rel.y * dir.x), top = aC.y + max(-aK.a, 0.0);
+    if (along > 0.0 && along < L - 1.0 && perp < abs(aO.x) + 1.0 && top > mix(uCam.y, uHero.y, clamp(along / L, 0.0, 1.0)) - 0.5) occ = 1.0;
+    if (length(rel) < uNear) occ = 1.0;
+  }
+  vOcc = occ; }`, PREC + DITHER + `
+uniform sampler2D uTex; uniform vec3 uFogC; uniform float uLight, uGhost;
+varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc;
 void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
-  if (vD < uNear && bay(gl_FragCoord.xy) > (vD - uNear * 0.55) / (uNear * 0.45)) discard;
+  if ((uGhost > 0.0) != (vOcc > 0.5)) discard;
   vec3 c = mix(t.rgb * vK.rgb * uLight, vec3(1.0), vK.a);
-  gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
+  gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), uGhost > 0.0 ? uGhost : 1.0); }`],
   mesh: [`
 attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
@@ -74,7 +89,7 @@ void main() { vP = vec3(aP.x, uY, aP.y); gl_Position = uVP * vec4(vP, 1.0); }`, 
 uniform sampler2D uDet; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog; uniform float uLight, uTime, uA;
 varying vec3 vP;
 void main() { vec2 w = vP.xz;
-  float a = texture2D(uDet, w * 0.041 + vec2(uTime * 0.011, uTime * 0.006)).g, b = texture2D(uDet, w * 0.027 - vec2(uTime * 0.008, -uTime * 0.004)).g, k = a * b;
+  float a = texture2D(uDet, w * 0.041 + vec2(uTime * 0.011, uTime * 0.006)).g, b = texture2D(uDet, w * 0.027 - vec2(uTime * 0.008, -uTime * 0.004)).g, k = mix(0.26, a * b, clamp(1.8 - distance(vP, uCam) / 110.0, 0.0, 1.0));
   vec3 c = uWat * (0.78 + 0.6 * k) * uLight; if (k > 0.6) c = mix(c, uHi * uLight, 0.5);
   float f = fogk(clamp((distance(vP, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0));
   gl_FragColor = vec4(dith(mix(c, uFogC, f)), mix(uA, 1.0, f)); }`],
@@ -99,13 +114,19 @@ uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vT = aT; vL = aL; vSh = aSh; vP = aPos; vDist = distance(aPos, uCam);
   vFog = clamp((vDist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + DLIGHT + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform vec4 uCut;
+uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform vec4 uCut; uniform float uGhost;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
 void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
-  if (uCut.z > 0.0 && ((vDist < uCut.w && length(gl_FragCoord.xy - uCut.xy) < uCut.z && bay(gl_FragCoord.xy) > 0.22) || bay(gl_FragCoord.xy) > (vDist - 15.0) / 11.0)) discard;
-  vec3 L = floor(lightAt(vP) * 5.0 + bay(gl_FragCoord.xy)) / 5.0;
+  float a = 1.0;
+  if (uCut.z > 0.0) {
+    float e = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
+    if (vDist < uCut.w && e < 1.0) a = e < 0.72 ? 0.0 : 0.35;
+    a = min(a, vDist < 14.0 ? 0.0 : vDist < 18.0 ? 0.35 : 1.0);
+  }
+  if (a < 0.01 || (uGhost > 0.0 ? a > 0.99 : a < 0.99)) discard;
+  vec3 L = floor(lightAt(vP) * 6.0 + 0.5) / 6.0;
   vec3 c = vSh > 0.995 ? t.rgb : t.rgb * vSh * L;
-  gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
+  gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), a); }`],
   dbb: [`
 attribute vec3 aC; attribute vec2 aO; attribute vec2 aUV; attribute vec4 aK;
 uniform mat4 uVP; uniform vec3 uCam, uR; uniform vec2 uFog;
@@ -116,7 +137,7 @@ void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP 
 uniform sampler2D uTex; uniform vec3 uFogC;
 varying vec2 vUV; varying vec4 vK; varying float vFog; varying vec3 vLi;
 void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
-  vec3 L = (vK.r > 1.05 || vK.g > 1.05) ? vec3(1.0) : floor(vLi * 5.0 + bay(gl_FragCoord.xy)) / 5.0;
+  vec3 L = (vK.r > 1.05 || vK.g > 1.05) ? vec3(1.0) : min(floor(vLi * 6.0 + 0.5) / 6.0, vec3(1.25));
   vec3 c = mix(t.rgb * vK.rgb * L, vec3(1.0), vK.a);
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
 };

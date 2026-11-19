@@ -79,13 +79,27 @@ dpadEl.addEventListener('pointermove', e => { if (dptr.has(e.pointerId)) { dptr.
 const dpUp = e => { if (dptr.delete(e.pointerId)) syncDpad(); };
 dpadEl.addEventListener('pointerup', dpUp); dpadEl.addEventListener('pointercancel', dpUp); dpadEl.addEventListener('lostpointercapture', dpUp);
 
-function bindBtn(id, name) {
-  const el = $(id), ids = new Set();
+const btnIds = {};
+function bindBtn(id, name, wide) {
+  const el = wide ? $(id).parentNode : $(id), ids = btnIds[name] = new Set();
   el.addEventListener('pointerdown', e => { e.preventDefault(); audioUnlock(); try { el.setPointerCapture(e.pointerId); } catch (_) {} ids.add(e.pointerId); setT(name, true); });
   const up = e => { if (ids.delete(e.pointerId) && !ids.size) setT(name, false); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
 }
-bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bSta', 'start'); bindBtn('bSel', 'select');
+bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bSta', 'start', true); bindBtn('bSel', 'select', true);
+// rete di sicurezza: un tasto non può restare premuto se il dito non c'è più
+function releaseTouch() {
+  dptr.clear(); syncDpad();
+  for (const n in btnIds) { btnIds[n].clear(); setT(n, false); }
+}
+function releaseAll() { for (const n in BTN) kbB[n] = false; releaseTouch(); for (const n in BTN) syncBtn(n); }
+const dropPtr = e => { if (dptr.delete(e.pointerId)) syncDpad(); for (const n in btnIds) if (btnIds[n].delete(e.pointerId) && !btnIds[n].size) setT(n, false); };
+document.addEventListener('pointerup', dropPtr, { capture: true, passive: true });
+document.addEventListener('pointercancel', dropPtr, { capture: true, passive: true });
+for (const ev of ['touchend', 'touchcancel']) document.addEventListener(ev, e => { if (!e.touches || e.touches.length === 0) releaseTouch(); }, { capture: true, passive: true });
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
+for (const ev of ['pagehide', 'fullscreenchange', 'webkitfullscreenchange', 'orientationchange']) addEventListener(ev, releaseAll);
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', releaseAll);
 
 const KEYS = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
@@ -207,7 +221,7 @@ function onButton(name, down) {
 }
 function launch(i) {
   msel = i; try { localStorage.setItem('px_sel', i); } catch (e) {}
-  cur = GAMES[i]; mode = 'game'; quitAsk = false;
+  cur = GAMES[i]; mode = 'game'; quitAsk = false; releaseAll();
   seq([1046, 1568], 0.06, 0.07);
   cur.enter();
   layoutFor(cur);
@@ -216,7 +230,7 @@ function launch(i) {
 function leave() {
   if (cur && cur.full) exitFull();
   if (cur) cur.leave();
-  cur = null; mode = 'menu';
+  cur = null; mode = 'menu'; releaseAll();
   layoutFor(null);
   tone(523, 0.06);
 }

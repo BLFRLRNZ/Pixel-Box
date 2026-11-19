@@ -374,16 +374,26 @@ function tilesOn(c, R) {
   return c;
 }
 
-// ---------- disegni: oggetti, nuovi mostri e guardiani ----------
+// ---------- disegni: oggetti, nuovi mostri e guardiani (forme tonde) ----------
 const sh = A.shade, Y = (s, a, b) => s > 0 ? [a, b] : [-b, -a];
-const brazier = () => A.pix(['.aaaaaaaa.', 'abbbbbbbba', '.abbbbbba.', '..aaaaaa..', '...acca...', '...acca...', '...acca...', '...acca...', '...acca...', '..accca...', '.aaaaaaaa.', 'adddddddda'], { a: '#1a1418', b: '#5a4a3a', c: '#8a7a6a', d: '#4a3e34' });
-const pot = (c1, c2) => A.pix(['..aaaa..', '.abbbba.', '..abba..', '.abbbba.', 'abbccbba', 'abbbbbba', 'abcbbbba', '.abbbba.', '..aaaa..'], { a: '#1a1418', b: c1, c: c2 });
-const xtal = (c1, c2) => A.pix(['....a....', '...aba...', '..abcba..', '.abccdba.', 'abccddcba', '.abcddba.', '..abdba..', '...aba...', '....a....', '...eee...', '..effffe.', '.effffffe', 'eeeeeeeee'], { a: '#141018', b: c1, c: c2, d: '#ffffff', e: '#3a3440', f: '#6a6070' });
-const gem = c => A.pix(['....a....', '...aba...', '..abcba..', '.abccdba.', 'abccdddba', 'abcccddba', 'abbcccdba', '.abbccba.', '..abbba..', '...aba...', '....a....'], { a: '#141018', b: sh(c, 0.7), c, d: '#ffffff' });
+const Cy = (a, b, r, c, k, rot) => ({ t: 'y', a, b, r, c, k, rot }), Ca = (a, b, r, c, k, rot) => ({ t: 'c', a, b, r, c, k, rot });
+const El = (o, r, c, k, z, rot) => ({ t: 'e', o, r, c, k, z, rot }), Kc = (a, b, r, r2, c, k, rot) => ({ t: 'k', a, b, r, r2, c, k, rot });
+// oggetti del santuario: modellini alla stessa grana dei personaggi (0,2 unità per pixel)
+const brazier = () => A.fit([Cy([0, 0, 0], [0, 0, 0.5], 1.7, '#3a3038'), Cy([0, 0, 0.5], [0, 0, 4.4], 0.5, '#4a3e34'), Cy([0, 0, 2.2], [0, 0, 2.6], 0.75, '#5a4a3a'),
+  Cy([0, 0, 4.2], [0, 0, 4.7], 1.5, '#4a3e34'), Cy([0, 0, 4.7], [0, 0, 5.2], 2.1, '#6a5a48'), Cy([0, 0, 5.1], [0, 0, 5.35], 2.3, '#3a3038'), Cy([0, 0, 5.34], [0, 0, 5.4], 1.9, '#ff7a2a', 1.35)], Math.PI - 0.4);
+const pot = (c1, c2) => A.fit([Cy([0, 0, 0], [0, 0, 0.5], 1.2, sh(c1, 0.8)), El([0, 0, 2.1], [2.0, 2.0, 1.95], c1), El([0, 0, 2.5], [2.06, 2.06, 0.36], c2),
+  Cy([0, 0, 3.4], [0, 0, 4.4], 1.0, c1), Cy([0, 0, 4.3], [0, 0, 4.75], 1.35, sh(c1, 1.1)), Cy([0, 0, 4.74], [0, 0, 4.8], 0.95, '#1a1418')], Math.PI - 0.4);
+// cristallo interruttore: un cubo in piedi su una punta, sopra un piedistallo
+const GEMR = [['x', 0.7854, 0, 0, 0], ['y', 0.6155, 0, 0, 0]];
+const xtal = (c1, c2) => A.fit([Cy([0, 0, 0], [0, 0, 0.6], 2.6, '#3a3440'), Cy([0, 0, 0.6], [0, 0, 1.6], 1.8, '#6a6070'), Cy([0, 0, 1.55], [0, 0, 1.75], 2.0, '#4a4452'),
+  { t: 'b', b: [-1.5, 1.5, -1.5, 1.5, -1.5, 1.5], c: c1, k: 1.05, rot: [...GEMR, ['t', 0, 0, 4.2]] }, El([0.9, -0.5, 5.1], [0.3, 0.3, 0.45], c2, 1.3, 1)], Math.PI - 0.3);
+const gem = c => A.fit([{ t: 'b', b: [-2.1, 2.1, -2.1, 2.1, -2.1, 2.1], c, k: 1.08, rot: [...GEMR, ['t', 0, 0, 3.8]] }, El([1.3, -0.7, 5.0], [0.4, 0.4, 0.6], '#ffffff', 1.2, 1)], Math.PI - 0.3);
+const lapide = () => A.fit([{ t: 'b', b: [-0.6, 0.6, -2.6, 2.6, 0, 3.6], c: '#8a8a94' }, Cy([-0.6, 0, 3.6], [0.6, 0, 3.6], 2.6, '#8a8a94'), { t: 'b', b: [-0.9, 0.9, -3.0, 3.0, 0, 0.45], c: '#6a6a74' },
+  ...[4.6, 3.5, 2.4].map(z => ({ t: 'b', b: [0.6, 0.68, -1.6, 1.6, z, z + 0.32], c: '#4a4a54' }))], Math.PI - 0.3);
 function portal(f) {
-  const c = A.mk(16, 46), g = c.getContext('2d');
-  for (let y = 0; y < 46; y++) { const w = 3 + Math.round(4 * (1 - y / 46)) + (f && y % 6 < 3 ? 1 : 0); g.fillStyle = y % 4 < 2 ? '#fff8d0' : '#bfe8ff'; g.fillRect(8 - w, y, w * 2, 1); g.fillStyle = '#ffffff'; g.fillRect(7, y, 2, 1); }
-  for (let k = 0; k < 8; k++) { g.fillStyle = '#ffffff'; g.fillRect((k * 5 + f * 3) % 14 + 1, (k * 11 + f * 7) % 44, 1, 2); }
+  const W = 40, H = 115, c = A.mk(W, H), g = c.getContext('2d');
+  for (let y = 0; y < H; y++) { const w = 7 + Math.round(10 * (1 - y / H)) + (f && y % 15 < 7 ? 2 : 0); g.fillStyle = y % 10 < 5 ? '#fff8d0' : '#bfe8ff'; g.fillRect(W / 2 - w, y, w * 2, 1); g.fillStyle = '#ffffff'; g.fillRect(W / 2 - 3, y, 6, 1); }
+  for (let k = 0; k < 16; k++) { g.fillStyle = '#ffffff'; g.fillRect((k * 13 + f * 7) % (W - 4) + 2, (k * 29 + f * 17) % (H - 6), 2, 4); }
   return c;
 }
 function turret(c, eye) {
@@ -391,93 +401,102 @@ function turret(c, eye) {
     { t: 'b', b: [4.4, 4.8, 1.2, 3, 14.5, 16.2], c: eye, k: 1.3 }, { t: 'b', b: [4.4, 4.8, -3, -1.2, 14.5, 16.2], c: eye, k: 1.3 },
     { t: 'b', b: [4.4, 4.9, -2.2, 2.2, 10.5, 13], c: '#140c0c' }, { t: 'b', b: [-2, 2, 3.4, 5.4, 17, 20.5], c }, { t: 'b', b: [-2, 2, -5.4, -3.4, 17, 20.5], c }];
 }
+// pianta carnivora: stelo curvo, foglie, due mascelle tonde che si aprono
 function plant(f) {
-  const P = [], B = (b, c, rot) => P.push({ t: 'b', b, c, rot });
-  B([-0.9, 0.9, -0.9, 0.9, 0, 10.5], '#3a7a2a');
-  for (const a of [0, 1.6, 3.2, 4.8]) B([-0.8, 0.8, 0.6, 6, 0, 1.4], '#4a9a3a', [['z', a, 0, 0, 0]]);
-  const o = f ? 0.55 : 0.1;
-  B([-3, 4, -3.4, 3.4, 9.5, 12.5], '#b8302a');
-  B([-3, 4, -3.4, 3.4, 12.8, 16.4], '#e04a3a', [['y', -o, -3, 0, 12.8]]);
-  B([3.6, 4.3, -2.6, 2.6, 12.2, 13.2], '#ffffff', [['y', -o * 0.5, -3, 0, 12.8]]);
-  for (const [x, y] of [[0, 1.5], [1.6, -1.6], [-1.4, -0.8]]) B([x - 0.6, x + 0.6, y - 0.6, y + 0.6, 16.3, 16.7], '#fff4d0', [['y', -o, -3, 0, 12.8]]);
+  const P = [], o = f ? 0.55 : 0.1, J = [['y', -o, -3, 0, 12.8]];
+  P.push(Kc([0, 0, 0], [0.7, 0, 5.5], 1.1, 0.9, '#3a7a2a'), Kc([0.7, 0, 5.5], [0, 0, 10.5], 0.9, 0.8, '#3a7a2a'));
+  for (const a of [0, 1.6, 3.2, 4.8]) P.push(El([0, 3.4, 0.8], [1.3, 3.0, 0.45], '#4a9a3a', 1, 0, [['x', 0.25, 0, 0, 0], ['z', a, 0, 0, 0]]));
+  P.push(El([0.6, 0, 11.2], [3.8, 3.5, 1.8], '#b8302a'), El([0.8, 0, 12.7], [2.9, 2.8, 0.8], '#5a0a14', 1, 0, J), El([0.6, 0, 14.3], [3.8, 3.5, 1.9], '#e04a3a', 1, 0, J));
+  P.push(El([3.6, 0, 12.8], [0.6, 2.6, 0.5], '#ffffff', 1, 0, [['y', -o * 0.5, -3, 0, 12.8]]));
+  for (const [x, y] of [[0, 1.5], [1.6, -1.6], [-1.4, -0.8]]) P.push(El([x, y, 16.0], [0.65, 0.65, 0.4], '#fff4d0', 1, 0, J));
   return P;
 }
 function crab(f) {
-  const P = [], c = '#e0603a', c2 = '#ffb070', B = (b, col, rot) => P.push({ t: 'b', b, c: col, rot });
-  B([-4.5, 4.5, -6, 6, 3, 7], c); B([-4, 4, -5.5, 5.5, 2.4, 3.2], c2);
-  for (const s of [1, -1]) { B([2, 3, ...Y(s, 1, 2), 7, 9.5], c); B([2, 3.2, ...Y(s, 0.8, 2.2), 9.5, 10.7], '#1a1420'); }
-  for (const s of [1, -1]) { const a = f ? 0.45 : -0.15; B([3, 9, ...Y(s, 4.5, 7.5), 4, 6.5], c, [['z', s * 0.3, 3, s * 6, 5]]); B([8, 11.5, ...Y(s, 4.5, 8.5), 3.5, 7.5], c2, [['z', s * (0.3 + a), 8, s * 6.5, 5]]); }
-  for (const s of [1, -1]) for (const x of [-3, 0, 3]) B([x - 0.6, x + 0.6, ...Y(s, 6, 9.5), 0, 4], c, [['x', s * (f ? 0.35 : -0.25) * (x === 0 ? -1 : 1), x, s * 6, 4]]);
+  const P = [], c = '#e0603a', c2 = '#ffb070', a = f ? 0.45 : -0.15;
+  P.push(El([0, 0, 5.1], [4.8, 6.4, 2.5], c), El([0.4, 0, 3.8], [4.3, 5.8, 1.4], c2));
+  for (const s of [1, -1]) P.push(Ca([2.4, s * 1.5, 6.5], [2.7, s * 1.7, 9.1], 0.45, c), El([2.8, s * 1.75, 9.8], [0.75, 0.75, 0.8], '#1a1420'), El([3.35, s * 1.95, 10.1], [0.25, 0.25, 0.25], '#ffffff', 1.2, 1));
+  for (const s of [1, -1]) {
+    const arm = [['z', s * 0.3, 3, s * 6, 5]], claw = [['z', s * (0.3 + a), 8, s * 6.5, 5]];
+    P.push(Ca([3, s * 5.6, 5.2], [8.2, s * 6.2, 5.4], 1.0, c, 1, arm), El([9.8, s * 6.6, 5.4], [2.6, 1.9, 1.9], c2, 1, 0, claw), Kc([11, s * 7.6, 6.0], [12.8, s * 8.2, 6.4], 0.85, 0.35, c2, 1, claw));
+  }
+  for (const s of [1, -1]) for (const x of [-3, 0, 3]) { const rot = [['x', s * (f ? 0.35 : -0.25) * (x === 0 ? -1 : 1), x, s * 6, 4]]; P.push(Ca([x, s * 5.6, 4.4], [x, s * 8.6, 4.8], 0.55, c, 1, rot), Ca([x, s * 8.6, 4.8], [x, s * 9.8, 0.4], 0.5, c, 1, rot)); }
   return P;
 }
 // guardiani (X avanti, Y sinistra, Z su)
 function golem(p) {
-  const P = [], B = (b, c, rot, k) => P.push({ t: 'b', b, c, rot, k }), stone = '#7e7e72', dark = '#5a5a50', moss = '#4a8a3a', moss2 = '#6aaa4a';
+  const P = [], stone = '#7e7e72', dark = '#5a5a50', moss = '#4a8a3a', moss2 = '#6aaa4a';
   const st = p === 3, tz = st ? 6 : 11, arm = p === 1 ? -2.6 : p === 2 ? 1.25 : st ? 1.05 : 0.12;
-  for (const s of [1, -1]) B([-3.5, 3.5, ...Y(s, 2, 8), 0, tz + 1], dark);
-  B([-7, 7, -10, 10, tz, tz + 18], stone); B([-7.3, 7.3, -10.3, 10.3, tz + 14, tz + 19], moss); B([-5, 5, -8, 8, tz + 18.5, tz + 20], moss2);
-  B([6.9, 7.7, -2.6, 2.6, tz + 6, tz + 12], st ? '#b8ffb8' : '#2e5a2e', null, st ? 1.45 : 1);
-  B([-3, 5, -4.5, 4.5, tz + 18, tz + 25], stone); B([-3.3, 5.3, -4.8, 4.8, tz + 23, tz + 25.6], moss);
-  for (const s of [1, -1]) B([4.9, 5.4, ...Y(s, 1.4, 3.4), tz + 20.5, tz + 22.2], st ? '#2a2a2a' : '#7aff8a', null, 1.3);
-  for (const s of [1, -1]) { const rot = [['y', arm, 0, s * 12.5, tz + 16]]; B([-3, 3, ...Y(s, 10, 15), tz + 2, tz + 18], dark, rot); B([-4, 4, ...Y(s, 9.5, 15.5), tz - 5, tz + 3], stone, rot); B([-3.2, 3.2, ...Y(s, 10, 15.2), tz + 13, tz + 17], moss, rot); }
+  for (const s of [1, -1]) P.push(Kc([0, s * 5, 1.8], [0, s * 5, tz + 1], 3.2, 3.6, dark), El([1.2, s * 5, 1.3], [4.0, 3.2, 1.6], stone));
+  P.push(El([0, 0, tz + 9.5], [7.4, 10.6, 9.6], stone), El([-0.6, 0, tz + 15], [7.5, 10.9, 5.0], moss), El([-0.8, 0, tz + 18.8], [5.2, 8.2, 2.0], moss2));
+  P.push(El([6.6, 0, tz + 9], [1.2, 2.7, 3.2], st ? '#b8ffb8' : '#2e5a2e', st ? 1.45 : 1));
+  P.push(El([1, 0, tz + 21.8], [4.4, 4.8, 3.9], stone), El([0.6, 0, tz + 24.2], [4.4, 5.0, 2.0], moss));
+  for (const s of [1, -1]) P.push(El([4.6, s * 2.3, tz + 21.6], [0.7, 1.05, 0.9], st ? '#2a2a2a' : '#7aff8a', st ? 1 : 1.3, 1));
+  for (const s of [1, -1]) {
+    const rot = [['y', arm, 0, s * 12.5, tz + 16]];
+    P.push(Kc([0, s * 12.5, tz + 16], [0, s * 12.5, tz + 3], 3.3, 2.9, dark, 1, rot), El([0, s * 12.6, tz - 1], [4.3, 3.4, 4.2], stone, 1, 0, rot), El([0, s * 12.6, tz + 15.6], [3.8, 3.3, 2.8], moss, 1, 0, rot));
+  }
   return P;
 }
 function serpent(p) {
-  const P = [], c = '#2a8a9a', c2 = '#1e6a7a', belly = '#bfe8c8', fin = '#e8f48a', B = (b, col, rot, k) => P.push({ t: 'b', b, c: col, rot, k }), O = (o, r, col, z) => P.push({ t: 'o', o, r, c: col, z });
+  const P = [], c = '#2a8a9a', c2 = '#1e6a7a', belly = '#bfe8c8', fin = '#e8f48a', O = (o, r, col, z) => P.push({ t: 'o', o, r, c: col, z });
   const low = p === 3, H = low ? 9 : 18, lean = p === 1 ? 9 : 5, side = p === 2 ? 8 : 0, drop = p === 2 ? 5 : 0;
   let hx = 0, hy = 0, hz = 0;
   for (let i = 0; i < 9; i++) {
     const t = i / 8, x = -4 + lean * t * t + Math.sin(t * 3) * 2, y = side * t * t, z = t * H - drop * t * t, r = 5.6 - t * 1.6;
     O([x, y, z], r, i % 2 ? c : c2); O([x + r * 0.55, y, z], r * 0.62, belly, 1);
-    if (i % 2 === 0 && i < 8) B([x - r - 1.6, x - r + 0.2, y - 0.4, y + 0.4, z - 1, z + 3.5], fin);
+    if (i % 2 === 0 && i < 8) P.push(El([x - r - 0.5, y, z + 1.3], [1.1, 0.42, 2.4], fin));
     hx = x; hy = y; hz = z;
   }
   const mo = p === 1 ? 0.65 : 0.05, tilt = p === 2 ? 0.6 : 0, R = extra => [...(extra || []), ['x', tilt, hx, hy, hz]];
-  B([hx - 4, hx + 8, hy - 4.6, hy + 4.6, hz + 0.5, hz + 6.5], c, R());
-  B([hx + 6, hx + 11, hy - 3.2, hy + 3.2, hz + 1.5, hz + 5.5], c, R());
-  B([hx - 3, hx + 10.5, hy - 3.8, hy + 3.8, hz - 1.5, hz + 0.8], belly, R([['y', mo, hx - 3, hy, hz + 0.5]]));
-  if (p === 1) B([hx + 2, hx + 9, hy - 2.6, hy + 2.6, hz + 0.6, hz + 1.4], '#e83a4a', R());
+  P.push(El([hx + 2, hy, hz + 3.6], [6.4, 4.7, 3.1], c, 1, 0, R()), El([hx + 8.4, hy, hz + 3.3], [3.4, 3.4, 2.2], c, 1, 0, R()));
+  P.push(El([hx + 3.8, hy, hz - 0.1], [6.8, 3.7, 1.4], belly, 1, 0, R([['y', mo, hx - 3, hy, hz + 0.5]])));
+  if (p === 1) P.push(Kc([hx + 3, hy, hz + 1.1], [hx + 10, hy, hz + 1.1], 0.7, 0.35, '#e83a4a', 1, R()));
   for (const s2 of [1, -1]) {
-    B([hx + 4, hx + 6.6, ...Y(s2, 3, 4.9), hz + 4.2, hz + 6.4], p === 2 ? '#1a1420' : '#ffe14a', R(), 1.35);
-    B([hx - 3, hx + 1, ...Y(s2, 4.4, 8.5), hz + 3, hz + 7.5], fin, R([['x', s2 * -0.5, hx, hy + s2 * 4.5, hz + 4]]));
+    P.push(El([hx + 5.2, hy + s2 * 3.7, hz + 5.2], [1.25, 1.0, 1.1], p === 2 ? '#1a1420' : '#ffe14a', 1.35, 1, R()));
+    P.push(El([hx - 1, hy + s2 * 6.3, hz + 5.4], [0.5, 2.3, 2.5], fin, 1, 0, R([['x', s2 * -0.5, hx, hy + s2 * 4.5, hz + 4]])));
   }
-  B([hx - 5, hx - 1, hy - 0.6, hy + 0.6, hz + 5, hz + 11], fin, R());
+  P.push(El([hx - 3, hy, hz + 8], [2.3, 0.55, 3.3], fin, 1, 0, R()));
   return P;
 }
 function scarab(p) {
-  const P = [], g1 = '#d8a82a', g2 = '#ffe07a', d = '#6a4a0e', B = (b, c, rot, k) => P.push({ t: 'b', b, c, rot, k }), O = (o, r, c, rz) => P.push({ t: 'o', o, r, c, rz });
+  const P = [], g1 = '#d8a82a', g2 = '#ffe07a', d = '#6a4a0e', O = (o, r, c, rz) => P.push({ t: 'o', o, r, c, rz });
   if (p === 3) {
     O([0, 0, 6], 12, d, 6); O([0, 0, 8.5], 9, '#4a3410', 4); O([11, 0, 5], 4.5, d);
-    for (const s of [1, -1]) for (const x of [-6, 0, 6]) B([x - 0.9, x + 0.9, ...Y(s, 3, 5), 10, 19], d, [['x', s * 0.5, x, s * 4, 10]]);
+    for (const s of [1, -1]) for (const x of [-6, 0, 6]) P.push(Kc([x, s * 4, 10], [x, s * 4, 18.5], 0.9, 0.6, d, 1, [['x', s * 0.5, x, s * 4, 10]]));
     return P;
   }
   const L = p === 1 ? 0.5 : p === 0 ? -0.5 : 0, dip = p === 2 ? -2.5 : 0;
-  O([-2, 0, 10 + dip * 0.2], 12.5, g1, 8.5); B([-14, 9, -0.5, 0.5, 9, 18.3], d); O([-1, 3.5, 15], 3, g2, 2); O([-1, -3.5, 15], 3, g2, 2);
+  O([-2, 0, 10 + dip * 0.2], 12.5, g1, 8.5); P.push(El([-2, 0, 10 + dip * 0.2], [12.6, 0.55, 8.62], d));
+  P.push(El([-1, 4, 16.8], [3, 2.4, 1.8], g2), El([-1, -4, 16.8], [3, 2.4, 1.8], g2));
   O([11, 0, 8 + dip], 5.5, d, 4.5);
-  B([13, 22, -1.3, 1.3, 7 + dip, 10 + dip], g2, [['y', p === 2 ? 0.15 : -0.55, 13, 0, 8 + dip]]);
-  for (const s of [1, -1]) B([14, 15, ...Y(s, 1.8, 3.4), 9 + dip, 10.6 + dip], '#ff3a2a', null, 1.3);
-  for (const s of [1, -1]) for (const [x, a] of [[-6, L], [0, -L], [6, L]]) B([x - 1, x + 1, ...Y(s, 8, 15), 0, 6.5], d, [['y', a * s, x, s * 8, 6.5]]);
+  P.push(Kc([13, 0, 8.5 + dip], [22, 0, 9.2 + dip], 1.7, 0.5, g2, 1, [['y', p === 2 ? 0.15 : -0.55, 13, 0, 8 + dip]]));
+  for (const s of [1, -1]) P.push(El([14.4, s * 2.6, 9.8 + dip], [0.8, 0.9, 0.9], '#ff3a2a', 1.3, 1));
+  for (const s of [1, -1]) for (const [x, a] of [[-6, L], [0, -L], [6, L]]) {
+    const rot = [['y', a * s, x, s * 8, 6.5]];
+    P.push(Kc([x, s * 8, 6.5], [x, s * 12.5, 5], 1.1, 0.9, d, 1, rot), Kc([x, s * 12.5, 5], [x, s * 14.5, 0.5], 0.9, 0.6, d, 1, rot));
+  }
   return P;
 }
 function queen(p) {
   const P = A.human({ skin: '#d8ecff', hairStyle: 'long', hair: '#ffffff', robe: '#4a7ac8', shirt: '#8ab8f0', sleeve: '#c8e4ff', pants: '#4a7ac8', boots: '#4a7ac8', cape: '#e8f4ff', staff: '#bfe6ff', orb: '#ffffff', eyes: '#4ae0ff', helm: { c: '#cfeaff', crown: true, gem: '#4ae0ff' } },
     p === 1 ? { armR: 2.7, armL: 2.3 } : p === 2 ? { armR: 0.9, armL: 0.9, bob: -1 } : { armR: 0.35, armL: -0.2 });
-  if (p === 2) for (const q of P) { if (q.t === 'b') { q.b = q.b.slice(); q.b[4] -= 5; q.b[5] -= 5; } else { q.o = q.o.slice(); q.o[2] -= 5; } q.rot = (q.rot || []).concat([['y', -0.45, 0, 0, 4]]); }
+  // in ginocchio: tutta la figura scende e si piega all'indietro
+  if (p === 2) for (const q of P) q.rot = (q.rot || []).concat([['t', 0, 0, -5], ['y', -0.45, 0, 0, 4]]);
   return P;
 }
 function salamander(p) {
-  const P = [], cool = p === 3, c = cool ? '#4e4a4a' : '#d8401a', c2 = cool ? '#6e6a6a' : '#ffb040', d = cool ? '#2a2828' : '#8a1e10', fr = cool ? '#5a5656' : '#ff8a2a', B = (b, col, rot, k) => P.push({ t: 'b', b, c: col, rot, k });
+  const P = [], cool = p === 3, c = cool ? '#4e4a4a' : '#d8401a', c2 = cool ? '#6e6a6a' : '#ffb040', d = cool ? '#2a2828' : '#8a1e10', fr = cool ? '#5a5656' : '#ff8a2a';
   const L = p === 0 ? 0.45 : p === 1 ? -0.45 : 0, hr = p === 2 ? -0.4 : 0, H = [['y', hr, 8, 0, 8]];
-  B([-11, 10, -6.5, 6.5, 4, 12], c); B([-10, 9, -5.5, 5.5, 3.2, 4.2], c2);
+  P.push(El([-0.5, 0, 8], [11.2, 6.6, 4.3], c), El([-0.5, 0, 6.4], [10.2, 5.7, 2.6], c2));
   // collare di fuoco dietro la testa: si vede bene di fronte
-  B([7, 8.6, -9.5, 9.5, 5, 16], fr, H, cool ? 1 : 1.2); B([7.2, 8.4, -7, 7, 15.5, 18.5], cool ? fr : '#ffe14a', H, cool ? 1 : 1.3);
-  B([8, 19, -4.8, 4.8, 6, 12.5], c, H);
-  B([16, 21.5, -3.6, 3.6, 4.4, 7], p === 2 ? '#ffe14a' : d, [['y', hr + (p === 2 ? 0.45 : 0), 16, 0, 7]], p === 2 ? 1.4 : 1);
-  if (p === 2) B([18, 21.6, -2.8, 2.8, 7, 8], '#fff4b0', H, 1.4);
-  for (const s2 of [1, -1]) { B([16.5, 18.5, ...Y(s2, 2.6, 4.9), 10, 12.2], cool ? '#2a2a2a' : '#ffe14a', H, 1.35); B([19, 20, ...Y(s2, 1, 2), 7.2, 8], '#1a0a08', H); }
-  B([-23, -10, -3.4, 3.4, 5, 10], c, [['z', 0.22, -10, 0, 6]]); B([-35, -21, -2.2, 2.2, 5.4, 8.6], d, [['z', 0.5, -10, 0, 6]]);
-  for (const [fx2, fy, a] of [[6, 1, L], [6, -1, -L], [-7, 1, -L], [-7, -1, L]]) B([fx2 - 2, fx2 + 2, ...Y(fy, 5, 10), 0, 6.5], d, [['y', a, fx2, fy * 6, 6.5]]);
-  if (!cool) for (const x of [-8, -4, 0, 4]) B([x - 1.2, x + 1.2, -0.8, 0.8, 12, 15.5 + (x % 8 ? 1.5 : 0)], '#ffe14a', null, 1.35);
+  P.push(El([7.8, 0, 10.8], [0.8, 9.8, 6.4], fr, cool ? 1 : 1.2, 0, H), El([8.3, 0, 11.4], [0.6, 7.2, 4.6], cool ? fr : '#ffe14a', cool ? 1 : 1.3, 0, H));
+  P.push(El([13.6, 0, 9.3], [6.4, 5.0, 3.4], c, 1, 0, H));
+  P.push(El([18.4, 0, 6.0], [3.8, 3.6, 1.5], p === 2 ? '#ffe14a' : d, p === 2 ? 1.4 : 1, 0, [['y', hr + (p === 2 ? 0.45 : 0), 16, 0, 7]]));
+  if (p === 2) P.push(El([19.8, 0, 7.5], [2.2, 2.6, 0.8], '#fff4b0', 1.4, 0, H));
+  for (const s2 of [1, -1]) P.push(El([17.3, s2 * 3.5, 11.2], [1.15, 1.05, 1.1], cool ? '#2a2a2a' : '#ffe14a', 1.35, 1, H), El([19.6, s2 * 1.4, 10.0], [0.5, 0.45, 0.4], '#1a0a08', 1, 1, H));
+  P.push(Kc([-9, 0, 7.8], [-21.5, -2.6, 7.1], 3.8, 2.4, c), Kc([-21.5, -2.6, 7.1], [-32, -7.5, 6.6], 2.4, 0.8, d));
+  for (const [fx2, fy, a] of [[6, 1, L], [6, -1, -L], [-7, 1, -L], [-7, -1, L]]) { const rot = [['y', a, fx2, fy * 6, 6.5]]; P.push(Kc([fx2, fy * 5.6, 6.2], [fx2 + 0.5, fy * 8.8, 1.4], 2.1, 1.6, d, 1, rot), El([fx2 + 1.3, fy * 9.1, 0.9], [2.3, 1.7, 0.9], d, 1, 0, rot)); }
+  if (!cool) for (const x of [-8, -4, 0, 4]) P.push(Kc([x, 0, 11.6], [x - 0.6, 0, 15.5 + (x % 8 ? 1.5 : 0)], 1.25, 0.3, '#ffe14a', 1.35));
   return P;
 }
 const BOSS = {
@@ -490,7 +509,7 @@ const BOSS = {
 // costruisce nell'atlante del santuario i disegni che servono lì: guardiano, nemici nuovi, oggetti
 function art(id, atlas) {
   const P = parse(id), D = P.def, CH = {}, SP = {};
-  const dirs = (make, w, h, o) => { const out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, w, h, o))); return out; };
+  const k = A.SR, dirs = (make, w, h, o = {}) => { const oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); return out; };
   const B = BOSS[D.boss];
   CH.boss = []; for (let p = 0; p < B.poses; p++) CH.boss.push(dirs(() => B.make(p), B.w, B.h, { sc: B.sc, base: B.h - 4 }));
   const need = new Set(Object.values(D.foes));
@@ -503,12 +522,12 @@ function art(id, atlas) {
   if (need.has('icebat')) CH.icebat = [0, 1].map(f => dirs(() => A.bat(f, '#8ab8e0', '#5a7aa8', '#ffffff'), 40, 30));
   if (need.has('firebat')) CH.firebat = [0, 1].map(f => dirs(() => A.bat(f, '#c8342c', '#7a1a14', '#ffe14a'), 40, 30));
   SP.turret = dirs(() => turret(sh(D.pot[0], 0.9), '#ff6a3a'), 30, 30);
-  SP.brazier = atlas.add(A.finish(brazier()));
-  SP.pot = atlas.add(A.finish(pot(D.pot[0], D.pot[1])));
+  SP.brazier = atlas.add(brazier());
+  SP.pot = atlas.add(pot(D.pot[0], D.pot[1]));
   SP.xtal = [atlas.add(xtal('#e83a3a', '#ff9a9a')), atlas.add(xtal('#3a7ae8', '#9ac8ff'))];
   SP.gem = atlas.add(gem(D.glow));
   SP.portal = [atlas.add(portal(0)), atlas.add(portal(1))];
-  SP.lapide = atlas.add(A.pix(['.aaaaaa.', 'abbbbbba', 'abccccba', 'abbbbbba', 'abccccba', 'abbbbbba', 'abccccba', 'abbbbbba', 'aaaaaaaa'], { a: '#1a1418', b: '#8a8a94', c: '#4a4a54' }));
+  SP.lapide = atlas.add(lapide());
   return { CH, SP, boss: B };
 }
 

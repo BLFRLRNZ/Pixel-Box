@@ -533,10 +533,12 @@ W.upload = (G) => {
   W.lod = [1, 2, 4].map(st => ({ buf: lod(st), n: ((CV - 1) / st) ** 2 * 6 }));
   W.chunks = [];
   for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
-    const data = new Float32Array(CV * CV * 4); let lo = 1e9, hi = -1e9;
+    const data = new Float32Array(CV * CV * 6); let lo = 1e9, hi = -1e9;
     for (let j = 0; j < CV; j++) for (let i = 0; i < CV; i++) {
-      const gi = ci * (CV - 1) + i, gj = cj * (CV - 1) + j, k = gj * V + gi, o = (j * CV + i) * 4;
+      const gi = ci * (CV - 1) + i, gj = cj * (CV - 1) + j, k = gj * V + gi, o = (j * CV + i) * 6;
       data[o] = gi * CELL; data[o + 1] = W.H[k]; data[o + 2] = gj * CELL; data[o + 3] = W.SH[k];
+      // pendenza (per disegnare le pareti di roccia senza stirare la grana)
+      const HH = W.H; data[o + 4] = (HH[gj * V + Math.min(N, gi + 1)] - HH[gj * V + Math.max(0, gi - 1)]) / (2 * CELL); data[o + 5] = (HH[Math.min(N, gj + 1) * V + gi] - HH[Math.max(0, gj - 1) * V + gi]) / (2 * CELL);
       lo = Math.min(lo, W.H[k]); hi = Math.max(hi, W.H[k]);
     }
     W.chunks.push({ ci, cj, cx: (ci + 0.5) * CS, cz: (cj + 0.5) * CS, lo, hi, buf: G.buffer(data), big: null, small: null, nb: 0, ns: 0 });
@@ -544,7 +546,7 @@ W.upload = (G) => {
   // oggetti per pezzo (grandi e piccoli)
   const per = W.chunks.map(() => ({ big: [], small: [] }));
   for (const o of W.objs) { const ci = Math.max(0, Math.min(CH - 1, Math.floor(o.x / CS))), cj = Math.max(0, Math.min(CH - 1, Math.floor(o.z / CS))); per[cj * CH + ci][o.small ? 'small' : 'big'].push(o); }
-  const quadsOf = list => { const f = new Float32Array(list.length * 4 * 11); let p = 0; for (const o of list) { const r = o.sp, w = r.w * o.s, h = r.h * o.s, sh = o.k === 'crystal' || o.k === 'icecrystal' || o.k === 'lavarock' ? 1.15 : 1; for (const [cx, cy, u, v] of [[-w / 2, 0, r.u0, r.v1], [w / 2, 0, r.u1, r.v1], [w / 2, h, r.u1, r.v0], [-w / 2, h, r.u0, r.v0]]) { f[p++] = o.x; f[p++] = o.y; f[p++] = o.z; f[p++] = cx; f[p++] = cy; f[p++] = u; f[p++] = v; f[p++] = sh; f[p++] = sh; f[p++] = sh; f[p++] = 0; } } return f; };
+  const quadsOf = list => { const f = new Float32Array(list.length * 4 * 11); let p = 0; for (const o of list) { const r = o.sp, w = r.w * o.s, h = r.h * o.s, sh = o.k === 'crystal' || o.k === 'icecrystal' || o.k === 'lavarock' ? 1.15 : 1; for (const [cx, cy, u, v] of [[-w / 2, 0, r.u0, r.v1], [w / 2, 0, r.u1, r.v1], [w / 2, h, r.u1, r.v0], [-w / 2, h, r.u0, r.v0]]) { f[p++] = o.x; f[p++] = o.y; f[p++] = o.z; f[p++] = cx; f[p++] = cy; f[p++] = u; f[p++] = v; f[p++] = sh; f[p++] = sh; f[p++] = sh; f[p++] = -h; } } return f; };
   W.chunks.forEach((c, k) => { const L = per[k]; if (L.big.length) { c.big = G.buffer(quadsOf(L.big)); c.nb = L.big.length; } if (L.small.length) { c.small = G.buffer(quadsOf(L.small)); c.ns = L.small.length; } });
   // edifici
   const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32;
