@@ -1,7 +1,7 @@
 // ===================== PIXEL SAGA · il gioco =====================
 // Avventura fantasy in un mondo aperto: si esplora a schermo intero, in orizzontale.
 GAMES.push((() => {
-const A = SG.art, W = SG.world, TAU = Math.PI * 2;
+const A = SG.art, W = SG.world, MU = SG.music, TAU = Math.PI * 2;
 const angDiff = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 const hexf = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RARO', 'EPICO', 'LEGGENDARIO'];
@@ -468,8 +468,22 @@ const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= 
 const shopOwned = id => id !== 'pozione' && id !== 'elisir' && id !== 'esci' && (id === 'mappa' ? !!save.flags.mappa : save.inv.includes(id));
 
 // ---------- suoni ----------
-const jingle = () => seq([784, 988, 1175, 1568], 0.09, 0.08, 0.04);
-const fanfare = () => seq([523, 659, 784, 1047, 784, 1047, 1319, 1568], 0.12, 0.11, 0.045);
+const jingle = () => { MU.duck(0.8); seq([784, 988, 1175, 1568], 0.09, 0.08, 0.04); };
+const fanfare = () => { MU.duck(1.6); seq([523, 659, 784, 1047, 784, 1047, 1319, 1568], 0.12, 0.11, 0.045); };
+// ---------- musica: un brano per ogni luogo ----------
+const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI DI LUMEN': 'prati', 'CAMPI DORATI': 'campi', 'BOSCO ANTICO': 'bosco', "L'ALBERO MADRE": 'bosco',
+  'LAGO DI CRISTALLO': 'lago', 'ISOLA DEL LAGO': 'lago', 'MONTI DEL DRAGO': 'monti', 'PICCO DEL DRAGO': 'monti', 'VETTA DEL DRAGO': 'monti', 'RUPI DEL GRIFONE': 'rupi',
+  'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'DESERTO DI SOLIS': 'deserto', 'ROVINE DI SOLIS': 'deserto', 'OASI DI SABBIA': 'deserto', "PALUDE D'OMBRA": 'palude',
+  'MONTE BRACE': 'brace', 'CRATERE DEL BRACE': 'brace', 'COSTA DELLE CONCHIGLIE': 'costa', 'FARO DEL SUD': 'costa' };
+const MUS_DUN = { bosco: 'santuario:bosco', lago: 'santuario:lago', sole: 'tempio:sole', ghiaccio: 'santuario:ghiaccio', fuoco: 'tempio:fuoco' };
+let musQuiet = 0;
+try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
+function musicPick() {
+  if (st === 'title' || st === 'intro') return 'title';
+  if (st !== 'play' || musQuiet > 0) return null;
+  if (D) { if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; return D.def.cave ? 'grotta:' + D.id : MUS_DUN[D.id] || 'santuario:bosco'; }
+  return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
+}
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
 
 // ---------- forzieri e bottino ----------
@@ -1085,7 +1099,7 @@ function bossHit(dmg = 1) {
 }
 function bossDefeated() {
   const b = boss, ds = dsave(D.id); b.dead = true; ds.boss = 1;
-  ringFx(b.x, b.z, 12); fanfare(); boss = null;
+  ringFx(b.x, b.z, 12); fanfare(); boss = null; musQuiet = 4.5;
   D.gem = { x: D.rewardAt.x, z: D.rewardAt.z }; if (!ds.heart) D.heartP = { x: D.rewardAt.x + 16, z: D.rewardAt.z };
   banner = { t: b.B.n + ' SCONFITTO!', s: "PRENDI LA PIETRA DELL'ALBA", life: 4, c: '#ffd23f' }; writeSave();
 }
@@ -1720,7 +1734,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return ['main', 'ferro', 'gatto', 'melme'].filter(q => q === 'main' || save.q[q] > 0);
-  return ['vol', 'vib', 'salva', 'esci'];
+  return ['vol', 'mus', 'vib', 'salva', 'esci'];
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -1754,7 +1768,7 @@ function drawMenu() {
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
@@ -1866,6 +1880,7 @@ function menuKey(name) {
   } else if (menu.tab === 2) { trackQuest(r); tone(1046, 0.05); }
   else {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
+    else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
     else if (r === 'esci') { writeSave(); menu = null; leave(); }
@@ -1917,10 +1932,12 @@ return {
     if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); }
     else if (st === 'play') { menu = null; }
   },
-  leave() { if (st === 'play' || st === 'dead') writeSave(); },
+  leave() { MU.stop(); if (st === 'play' || st === 'dead') writeSave(); },
   hidden() { if (st === 'play') { writeSave(); if (!dialog && !loot && !shop && !mapOpen) menu = menu || { tab: 0, sel: 0, pick: null }; } },
   update(dt) {
     time += dt;
+    musQuiet = Math.max(0, musQuiet - dt);
+    MU.want(musicPick()); MU.tick(menu || mapOpen ? 0.55 : 1);
     if (st === 'loading') {
       const t0 = performance.now();
       try { while (performance.now() - t0 < 40) { const r = gen.next(); if (r.done) { toTitle(); break; } prog = r.value; } }
