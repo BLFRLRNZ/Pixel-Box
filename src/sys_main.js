@@ -13,6 +13,8 @@ function legendHTML(g) {
 function layoutFor(g) {
   const con = $('console'), box = $('screenbox'), bz = $('bezel'), lg = $('legend');
   con.classList.remove('fit'); lg.className = ''; box.style.height = ''; bz.style.width = '';
+  document.body.classList.toggle('full', !!(g && g.full));
+  if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
     if (asp) {
@@ -169,6 +171,26 @@ cv.addEventListener('pointerup', e => {
 });
 cv.addEventListener('pointercancel', e => { menuTap = null; if (mode === 'game' && cur && cur.pointer) cur.pointer('cancel', 0, 0, e.pointerId); });
 
+// ---------- schermo intero per i giochi che lo chiedono ----------
+let fsTries = 0;
+function goFull() {
+  if (!(mode === 'game' && cur && cur.full) || fsTries <= 0) return;
+  const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (document.fullscreenElement || document.webkitFullscreenElement || !rq) { fsTries = 0; return; }
+  fsTries--;
+  try {
+    const p = rq.call(el, { navigationUI: 'hide' });
+    const lock = () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} };
+    if (p && p.then) p.then(() => { fsTries = 0; lock(); }).catch(() => {}); else lock();
+  } catch (e) {}
+}
+function exitFull() {
+  fsTries = 0;
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+  try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (document.webkitFullscreenElement) document.webkitExitFullscreen(); } catch (e) {}
+}
+for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(ev, () => goFull(), { capture: true, passive: true });
+
 // ---------- smistamento dei tasti ----------
 function onButton(name, down) {
   if (down) audioUnlock();
@@ -180,7 +202,7 @@ function onButton(name, down) {
     return;
   }
   if (mode === 'menu') { if (down) menuButton(name); return; }
-  if (name === 'select') { if (down) { quitAsk = true; tone(880, 0.05); } return; }
+  if (name === 'select' && !(cur && cur.ownSelect)) { if (down) { quitAsk = true; tone(880, 0.05); } return; }
   if (cur) cur.button(name, down);
 }
 function launch(i) {
@@ -189,8 +211,10 @@ function launch(i) {
   seq([1046, 1568], 0.06, 0.07);
   cur.enter();
   layoutFor(cur);
+  if (cur.full) { fsTries = 3; goFull(); }
 }
 function leave() {
+  if (cur && cur.full) exitFull();
   if (cur) cur.leave();
   cur = null; mode = 'menu';
   layoutFor(null);
@@ -308,11 +332,14 @@ function frameDraw() {
   else if (mode === 'menu') drawMenu();
   else if (cur) { cur.draw(ctx, W, H); if (quitAsk) drawQuit(); }
 }
+let loopErr = 0;
 function loop(t) {
-  acc += Math.min(0.1, (t - last) / 1000); last = t;
-  while (acc >= DT) { tick(DT); acc -= DT; }
-  frameDraw();
   requestAnimationFrame(loop);
+  acc += Math.min(0.1, (t - last) / 1000); last = t;
+  try {
+    while (acc >= DT) { tick(DT); acc -= DT; }
+    frameDraw();
+  } catch (e) { acc = 0; if (loopErr++ < 3) console.error(e); }
 }
 layoutFor(null);
 requestAnimationFrame(loop);

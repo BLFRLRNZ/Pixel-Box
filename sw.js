@@ -1,6 +1,6 @@
 // Pixel Box · service worker: fa funzionare l'app anche senza connessione.
 // Cambia VERSIONE quando aggiorni le icone o il manifest.
-const VERSIONE = 'pixelbox-v2';
+const VERSIONE = 'pixelbox-v3';
 const BASE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
   './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 

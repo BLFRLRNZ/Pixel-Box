@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'src'
 # l'ordine conta: prima il nucleo, poi i giochi (si registrano in GAMES), infine menu e ciclo
 PARTS = ['sys_core.js', 'g_palline.js', 'g_rimbalzo.js', 'g_astro.js', 'g_snake.js',
-         'g_roll.js', 'g_ovetto.js', 'g_kart.js', 'sys_main.js']
+         'g_roll.js', 'g_ovetto.js', 'g_kart.js',
+         'sg_gl.js', 'sg_art.js', 'sg_world.js', 'g_saga.js', 'sys_main.js']
 
 PWA_HEAD = '''<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1b1f24">

@@ -82,6 +82,24 @@
     #grille{grid-area:gr;position:static;justify-self:center;align-self:center;transform:rotate(-28deg) scale(.6)}
     #hint{display:none!important}
   }
+  /* giochi a schermo intero: l'immagine riempie tutto e i tasti stanno sopra, semitrasparenti */
+  body.full{--dp:min(38vh,150px);--bs:min(19vh,66px)}
+  body.full #wrap{display:block}
+  body.full #console{position:fixed;inset:0;width:auto;height:auto;padding:0;border-radius:0;background:#000;box-shadow:none;display:block}
+  body.full #bezel{position:fixed;inset:0;width:auto!important;padding:0;border-radius:0;background:#000;box-shadow:none}
+  body.full #bzl,body.full #led,body.full #ledl,body.full #brand,body.full #legend,body.full #grille,body.full #hint,body.full #vol{display:none!important}
+  body.full #screenbox{position:absolute;inset:0;height:auto!important;border-radius:0;box-shadow:none}
+  body.full #screenbox::after{display:none}
+  body.full #controls,body.full #ctrlin{display:contents}
+  body.full #cl{position:fixed;left:max(16px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));top:auto;opacity:.5;z-index:5}
+  body.full #cr{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));top:auto;left:auto;opacity:.55;z-index:5}
+  body.full #cm{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));left:auto;bottom:auto;transform:none;gap:12px;opacity:.6;z-index:5}
+  body.full .pw{transform:none;gap:4px}
+  body.full .pill{width:46px;height:14px}
+  body.full .pw span{color:#e8ecf4;font-size:6px}
+  body.full .bt span{color:#f4e8ee;top:50%;transform:translate(-50%,-50%);font-size:13px}
+  body.full #cr{bottom:max(12px,env(safe-area-inset-bottom))}
+  body.full #dpin .ar{color:#9aa0ab}
 </style>
 </head>
 <body>
