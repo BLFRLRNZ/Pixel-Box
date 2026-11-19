@@ -14,7 +14,7 @@ Sette giochi in una console tascabile in stile Game Boy: un'unica pagina web che
 | Snake | Il serpente affamato |
 | Roll Down | Scendi di piattaforma in piattaforma senza cadere |
 | Ovetto | Il cucciolo virtuale da accudire: vive anche quando l'app è chiusa |
-| Pixel Kart | Corse sui kart in prospettiva: 4 piloti, 4 piste, oggetti e derapate |
+| Pixel Kart | Corse sui kart in prospettiva: Gran Premio a punti, gara singola e prova a tempo col fantasma, 6 piste, 6 piloti (2 da sbloccare) |
 
 ## Installarla sul telefono
 
@@ -27,6 +27,18 @@ Dopo la prima apertura funziona anche offline. I salvataggi restano sul telefono
 
 All'avvio l'app controlla da sola se su GitHub c'è una versione nuova: nel menu compare «NUOVA VERSIONE! PREMI SELECT».
 Premendo SELECT nel menu vedi la versione installata e puoi cercare gli aggiornamenti a mano; «A: AGGIORNA ORA» scarica la versione nuova. I salvataggi restano.
+
+## Pixel Kart
+
+- **Gran Premio:** due coppe (Sole e Luna) da tre piste. Punti 9, 6, 3, 1 a ogni gara, poi il podio. Vincere la Coppa Sole sblocca il Gatto, la Coppa Luna il Robot.
+- **Prova a tempo:** da solo con un turbo. Il giro migliore resta salvato e la volta dopo corre accanto a te come fantasma.
+- **Piste:** Prato, Spiaggia, Ghiaccio, Vulcano, Città (di notte) e Deserto. Ognuna ha una rampa con un fossato da saltare, tre strisce turbo e una scorciatoia sterrata.
+- **Partenza a razzo:** premi A durante l'«1» del via. Se lo premi prima, il kart si pianta.
+- **Derapata:** tieni sterzato a fondo in velocità; le scintille passano da bianche ad azzurre ad arancioni e quando lasci parte il turbo.
+- **Oggetti:** turbo, razzo, olio, scudo, calamita (ti tira verso chi ti precede), inchiostro (sporca la vista a chi ti segue) e molla (salta).
+- **Avversari:** ognuno ha un carattere: chi prende le scorciatoie, chi spinge, chi usa gli oggetti con giudizio.
+- **Opzioni:** gas automatico (A e B usano l'oggetto), musica, vibrazione. Ogni pista ha il suo motivetto, che accelera all'ultimo giro.
+- In basso le frecce colorate del radar mostrano chi ti arriva dietro; un «!» rosso avvisa di un razzo in arrivo.
 
 ## Comandi
 
