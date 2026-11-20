@@ -58,6 +58,9 @@
   .bt.on{transform:translateY(4px);box-shadow:0 1px 0 #4f0d2b}
   .bt span{position:absolute;left:50%;top:calc(100% + 11px);transform:translateX(-50%);font-size:11px;color:#2c3a7a}
   #bB{left:0;bottom:0} #bA{right:0;top:0}
+  #bC{display:none;left:calc(var(--bs)*.08);top:calc(var(--bs)*-.5);width:calc(var(--bs)*.84);height:calc(var(--bs)*.84);background:radial-gradient(circle at 35% 30%,#5a8fd8,#2459a8 58%,#173f7a);box-shadow:0 5px 0 #0d2b4f,inset 0 2px 0 rgba(255,255,255,.25)}
+  #bC.on{box-shadow:0 1px 0 #0d2b4f}
+  body.tre #bC{display:block}
   #cm{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);display:flex;gap:20px}
   .pw{display:flex;flex-direction:column;align-items:center;gap:8px;transform:rotate(-24deg)}
   .pw{touch-action:none;cursor:pointer}
@@ -118,7 +121,7 @@
       <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div>
         <span class="ar" style="left:50%;top:16%">▲</span><span class="ar" style="left:50%;top:84%">▼</span>
         <span class="ar" style="left:16%;top:50%">◀</span><span class="ar" style="left:84%;top:50%">▶</span></div></div></div>
-      <div id="cr"><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
+      <div id="cr"><div class="bt" id="bC"><span>C</span></div><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
       <div id="cm"><div class="pw"><div class="pill" id="bSel"></div><span>SELECT</span></div><div class="pw"><div class="pill" id="bSta"></div><span>START</span></div></div>
       <div id="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </div></div>

@@ -41,6 +41,7 @@ const LOOKS = {
   saggio: { skin: '#e8c8a8', hairStyle: 'bun', hair: '#e8e8f0', beard: '#e8e8f0', robe: '#6a4a8a', shirt: '#8a6ab0', pants: '#4a3a6a', boots: '#3a2a3a', staff: '#7a5230' },
   spadaccino: { skin: '#f0d0b0', helm: { c: '#3a2a3a', spike: true }, shirt: '#8a2a4a', plate: '#3a2a3a', pauldron: '#c8342c', pants: '#2a2a3a', boots: B0, weapon: { col: '#f0f6ff', guard: '#c8a040', len: 1 } },
   dama2: { sc: 1.04, skin: '#f0d0b0', crown: '#f8a8c8', hairStyle: 'bun', hair: '#2a1a2a', robe: '#f8ecf2', shirt: '#f0a8c8', cape: '#c85a7a', pants: '#e07aa8', boots: '#6a3a4a' },
+  maestro: { skin: '#e0b088', hairStyle: 'short', hair: '#d8d8e0', beard: '#d8d8e0', shirt: '#8a2a2a', plate: '#c8a040', pauldron: '#c8a040', cape: '#2a3a6a', belt: '#3a2a1a', pants: '#3a3a4a', boots: B0, weapon: { col: '#e8eef6', guard: '#c8a040', len: 1 } },
   ostessa: { skin: '#f0c49a', hairStyle: 'bun', hair: '#8a4a2a', shirt: '#e8e0d0', apron: '#3a7a4a', pants: '#5a3a2a', boots: '#3a2a1a' },
   fabbro: { skin: '#d8a07a', beard: '#3a2a1a', shirt: '#7a6a5a', apron: '#4a3428', pants: '#3a3a44', boots: B0, wide: 0.6, weapon: { kind: 'hammer', col: '#6a6e78' } },
   traghettatore: { skin: '#d89a70', hood: '#3a5a6a', beard: '#c8c8d0', robe: '#4a6a7a', shirt: '#5a7a8a', pants: '#3a4a52', boots: B0, staff: '#7a5230' },
@@ -153,6 +154,8 @@ function city(o) {
     else { const b = plan.houses[(hk++ * 7 + 3) % plan.houses.length], v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b.door]; x = b.x + v[0] * (b.w / 2 + 5.5) + (v[0] ? 0 : 5); z = b.z + v[1] * (b.d / 2 + 5.5) + (v[1] ? 0 : 5); yaw = Math.atan2(v[1], v[0]); }
     folk(look, n, x, z, yaw, lines, extra);
   }
+  // il maestro della gilda degli eroi riceve in piazza, accanto alla bacheca: cambia la classe e insegna le abilità
+  if (o.guild && plan.board) { const b = plan.board, P0 = primo([[b.x + 12, b.z], [b.x - 12, b.z], [b.x, b.z + 9], [b.x, b.z - 9]], 3) || [b.x + 12, b.z]; folk('maestro', 'MAESTRO DELLA GILDA', P0[0], P0[1], Math.atan2(pz - P0[1], px - P0[0]), ['BENVENUTO ALLA GILDA DEGLI EROI DI ' + o.name + '. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_' + o.id }); }
   if (o.center === 'statue') W.PROPS.push(['kingstatue', px, pz]);
   W.BUILD.push({ k: 'city', x: o.x, z: o.z, plan });
   return plan;

@@ -56,7 +56,7 @@ W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE 
 
 // ---------- la Rocca di Lumen: una città murata con il mastio del Re su una terrazza ----------
 const RX = 2760, RZ = 2960;
-C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
+C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
   specials: [['church', -128, 60, 30, 22, 'e', { m: 15 }]], board: [22, 20],
   shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
     ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]],
@@ -119,7 +119,7 @@ C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, styl
   } });
 
 // ---------- le città del continente e del sud ----------
-C.city({ id: 'castelrosso', name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',
+C.city({ id: 'castelrosso', guild: true, name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',
   specials: [['hall', -30, -62, 34, 24, 's', { h: 17, wall: TL.TIMBER2, roof: 4 }], ['church', 34, -66, 22, 32, 's', { m: 15, wall: 2, roof: TL.ROOF_ORANGE }]], board: [22, -20],
   shops: [['ghianda', 'locanda', "LOCANDA DELLA GHIANDA D'ORO", 's1', { fw: 36, fd: 22, h: 17, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }], ['ambra_erbe', 'erboristeria', "L'ERBORISTERIA DELLE FOGLIE", 's2', { wall: 2, roof: TL.ROOF_DARK }],
     ['ambra_armi', 'armeria', "L'ARMERIA DI CASTELROSSO", 'w1', { fw: 22, wall: 3, roof: 4 }], ['ambra', 'sartoria', 'LA SARTORIA DELLA MERCIAIA', 'e1', { fw: 22, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }]],
@@ -142,7 +142,7 @@ C.city({ id: 'castelrosso', name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 38
     ['borghese', 'IL BANDITORE', ['UDITE, UDITE! ALLA BACHECA DELLA PIAZZA IL BORGOMASTRO CERCA BRACCIA FORTI. SI PAGA IN MONETE SONANTI!'], 'p', { walk: 1 }],
   ] });
 W.BUILD.push({ k: 'special', sk: 'mill', x: 5470, z: 3210, w: 20, d: 20, style: 'ambra' });
-C.city({ id: 'altabrina', name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, style: 'nord', gates: 's', plaza: { w: 70, d: 64 },
+C.city({ id: 'altabrina', guild: true, name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, style: 'nord', gates: 's', plaza: { w: 70, d: 64 },
   specials: [['big', 0, -84, 60, 34, 's', { h: 20, wall: TL.LOGS, roof: TL.ROOF_SNOW, steep: 0.8, dw: 9, dh: 12, dr: TL.DOOR_BIG, chim: true }]], board: [20, 16],
   shops: [['orso', 'locanda', "LOCANDA DELL'ORSO BIANCO", 's1', { fw: 32, fd: 21, h: 16, wall: TL.LOGS, roof: 5 }], ['nord_armi', 'fucina', 'LA FUCINA DEL NORD', 's2', { wall: 2, roof: TL.ROOF_SNOW }],
     ['nord', 'sartoria', 'PELLI E PELLICCE', 'w1', { fw: 22, wall: TL.LOGS, roof: TL.ROOF_SNOW }]],
@@ -160,7 +160,7 @@ C.city({ id: 'altabrina', name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, s
     ['minatore', 'IL CAPO DEI MINATORI', ["ALLA BACHECA C'È UNA TAGLIA SUL VECCHIO BIANCO. CI HO MESSO ANCH'IO DIECI MONETE: QUEL LUPO SI È MANGIATO IL MIO MULO."], 'p'],
     ['montanaro', 'NONNA GERDA', ["ALL'ORSO BIANCO FANNO UNA ZUPPA D'ORZO CHE RISVEGLIA I MORTI. E UN LETTO COSTA MENO DI UN PAIO DI GUANTI."], 'd'],
   ] });
-C.city({ id: 'zafira', name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 'sole', gates: 'ws', plaza: { w: 90, d: 80 },
+C.city({ id: 'zafira', guild: true, name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 'sole', gates: 'ws', plaza: { w: 90, d: 80 },
   specials: [['palace', 138, 0, 64, 84, 'w'], ['pool', 68, 0, 30, 44], ['bazaar', -76, -72, 52, 44, 's']], board: [-22, 20],
   shops: [['bazar', 'emporio', 'IL GRAN BAZAR', 2], ['carovana', 'locanda', 'IL CARAVANSERRAGLIO', 's2', { fw: 36, fd: 24, h: 15, rt: 'flat', wall: TL.ADOBE, roof: TL.ADOBE, chim: false }],
     ['sole', 'armeria', 'LE LAME DI ZAFIRA', 'n2', { rt: 'flat', wall: TL.WHITE, roof: 10, chim: false }], ['spezie', 'erboristeria', 'LA SPEZIERIA', 'n1', { rt: 'dome', wall: TL.ADOBE, roof: TL.ADOBE, h: 12, chim: false }]],
@@ -182,7 +182,7 @@ C.city({ id: 'zafira', name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 
   ] });
 // Porto Sereno: affacciato sulla Baia di Zaffiro, con la banchina, i moli, le navi e il faro
 const PX0 = 5410;
-C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, style: 'porto', gates: 'nes', noWall: 'w', y: 4.5, plaza: { dx: -40, w: 90, d: 80 },
+C.city({ id: 'porto', guild: true, name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, style: 'porto', gates: 'nes', noWall: 'w', y: 4.5, plaza: { dx: -40, w: 90, d: 80 },
   specials: [['big', -150, -92, 44, 26, 's', { h: 13, wall: 3, roof: TL.ROOF_ORANGE }], ['big', -150, 92, 44, 26, 'n', { h: 13, wall: 3, roof: 4 }], ['church', 30, -66, 22, 32, 's', { m: 15, wall: TL.WHITE, roof: TL.ROOF_ORANGE }]], board: [22, 20],
   shops: [['ancora', 'locanda', "LOCANDA DELL'ANCORA D'ORO", [-110, -55, 34, 22, 's'], { h: 17, wall: TL.WHITE, roof: TL.ROOF_ORANGE }], ['porto', 'emporio', "L'EMPORIO DELL'ARMATORE", 'n1', { wall: TL.OCHRE, roof: 4 }],
     ['pesce', 'pescheria', 'ZUPPE E RIMEDI DEL PORTO', 'n2', { wall: TL.WHITE, roof: TL.ROOF_ORANGE }]],
@@ -216,7 +216,7 @@ C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, st
   post(P, g, y, b) { ship(5364, 5326, 'w', { b, flag: 2 }); ship(5362, 5474, 'w', { b, L: 40, B: 12, mh: 30, flag: 1 }); ship(5290, 5560, 'n', { b, L: 52, B: 14, mh: 38, flag: 2 }); } });
 W.CLEAR.push([5150, 5190, 5420, 5610]);
 W.PROPS.push(['boat', 5300, 5372], ['boat', 5262, 5440]);
-C.city({ id: 'fioralba', name: 'FIORALBA', x: 2300, z: 5350, w: 360, d: 320, style: 'fiore', open: true, plaza: { w: 80, d: 70 },
+C.city({ id: 'fioralba', guild: true, name: 'FIORALBA', x: 2300, z: 5350, w: 360, d: 320, style: 'fiore', open: true, plaza: { w: 80, d: 70 },
   board: [20, 16],
   shops: [['te', 'locanda', 'LA CASA DEL TÈ', 'n2', { fw: 34, fd: 22, rt: 'hip', wall: TL.WHITE, roof: TL.ROOF_PINK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }], ['dojo', 'dojo', 'IL DOJO DI FIORALBA', 's1', { fw: 36, fd: 24, rt: 'hip', wall: 3, roof: TL.ROOF_DARK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }],
     ['fiore', 'erboristeria', 'LA SERRA DELLA FIORAIA', 'n1', { rt: 'hip', wall: TL.PINK, roof: TL.ROOF_PURPLE, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }]],
@@ -265,6 +265,7 @@ C.folk('ostessa', 'OSTESSA GEMMA', 0, 0, 0, ['BENVENUTO AL GALLO, CARO! QUI SI D
 C.folk('borghese', 'IL VECCHIO TOBIA', 0, 0, 0, ["DA GIOVANE HO NASCOSTO UN GRUZZOLO TRA I CESPUGLI, SULLA STRADA PER LA ROCCA, POCO PRIMA DELLE DUE STATUE. POI ME NE SONO SCORDATO PER QUARANT'ANNI.", 'SE LO TROVI È TUO. IO ORMAI HO LA ZUPPA DI GEMMA.'], { in: 'gallo', spot: 'ospite1' });
 C.folk('boscaiolo', 'IL CACCIATORE', 0, 0, 0, ['I LUPI DEL BOSCO ANTICO GIRANO IN BRANCO: COLPISCI E ARRETRA, NON FARTI CHIUDERE IN MEZZO.', 'E DAI UN OCCHIO ALLA BACHECA IN PIAZZA: PER OGNI LAVORO FATTO, IL BORGO PAGA IN MONETE SONANTI.'], { in: 'gallo', spot: 'ospite2' });
 W.BOARDS.push({ id: 'borgo', city: 'BORGO AURORA', x: 2021, z: 2633 });
+C.folk('maestro', 'MAESTRO DELLA GILDA', 2034, 2636, 2.6, ['BENVENUTO, VIAGGIATORE. LA GILDA DEGLI EROI HA UN MAESTRO IN OGNI CITTÀ, E UNO ANCHE QUI AL BORGO. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_borgo' });
 W.builders.board = (b, g) => SG.shop.bacheca(b.x, b.z, g(b.x, b.z), b, 4);
 // il Borgo cresce: cinque case nuove attorno alla piazza, e chi ci abita
 W.BUILD.push({ k: 'house', x: 1868, z: 2602, w: 20, d: 16, h: 11, wall: 2, roof: 4, door: 's', chim: true }, { k: 'house', x: 2142, z: 2592, w: 20, d: 16, h: 12, wall: 0, roof: 6, door: 's', chim: true },

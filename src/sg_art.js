@@ -251,8 +251,28 @@ function figure(parts, yaw, W, H, o = {}) {
 
 // ---------- persone: tonde e tozze ----------
 const EYE = '#1a1420';
-function weapon(B, C, E, w, rot, y) {
+function weapon(B, C, E, w, rot, y, pose = {}) {
   if (!w) return;
+  // l'arco sta di traverso alla mano: col braccio teso in avanti è verticale. Le punte tornano verso chi tira, e tra loro c'è la corda
+  if (w.kind === 'bow') {
+    const P0 = [[-7.8, 12.4], [-5.8, 10.4], [-3, 9.4], [0, 9.1], [3, 9.4], [5.8, 10.4], [7.8, 12.4]], st = w.str || '#e8e0d0', pull = pose.nock ? 2.8 : 0;
+    for (let i = 0; i < 6; i++) { const g = i === 2 || i === 3; C([P0[i][0], y, P0[i][1]], [P0[i + 1][0], y, P0[i + 1][1]], g ? 0.66 : 0.5, g ? (w.grip || '#5a3a20') : w.col, rot, g ? 1 : 1.08); }
+    if (w.glow) for (const i of [0, 6]) E([P0[i][0], y, P0[i][1]], [0.85, 0.85, 0.85], w.glow, rot, 1.3);
+    C([-7.8, y, 12.4], [0, y, 12.4 + pull], 0.17, st, rot, 1.2); C([0, y, 12.4 + pull], [7.8, y, 12.4], 0.17, st, rot, 1.2);
+    if (pose.nock) { C([0, y, 12.4 + pull], [0, y, 2.2], 0.3, '#c8a878', rot); C.k([0, y, 2.2], [0, y, 0.2], 0.8, 0.1, w.tip || '#d8dce4', rot, 1.15); }
+    return;
+  }
+  if (w.kind === 'dagger') {
+    C([0, y, 9.3], [0, y, 11], 0.5, '#3a2a20', rot); B([-1.35, 1.35, y - 0.62, y + 0.62, 8.5, 9.2], w.guard || '#c8a040', rot);
+    B([-0.66, 0.66, y - 0.46, y + 0.46, 2.4 - (w.len || 0), 8.5], w.col, rot, 1.12); if (w.glow) B([-0.23, 0.23, y - 0.52, y + 0.52, 3 - (w.len || 0), 8], w.glow, rot, 1.3);
+    return;
+  }
+  // la bacchetta del mago: un'asta con la sfera in punta (in alto quando la alza, in avanti quando la punta)
+  if (w.kind === 'wand') {
+    C([0, y, 12.2], [0, y, 2.4 - (w.len || 0)], 0.46, w.wood || '#7a5a3a', rot); if (w.ring) E([0, y, 2.9 - (w.len || 0)], [0.95, 0.95, 0.55], w.ring, rot, 1.15);
+    E([0, y, 0.9 - (w.len || 0)], [1.65, 1.65, 1.65], w.col, rot, 1.3); if (w.glow) E([0.5, y, 0.4 - (w.len || 0)], [0.6, 0.6, 0.6], w.glow, rot, 1.4, 0.3);
+    return;
+  }
   if (w.kind === 'axe') { C([0, y, -4], [0, y, 11], 0.55, '#7a5230', rot); E([2.2, y, -2.6], [2.6, 0.55, 2.6], w.col, rot, 1.1); return; }
   if (w.kind === 'spear') { C([0, y, -8], [0, y, 17], 0.48, '#7a5a3a', rot); P2(C, E, [0, y, 17], [0, y, 21.5], 1.1, 0.25, '#c8d0dc', rot); return; }
   if (w.kind === 'club') { P2(C, E, [0, y, 10], [0, y, -2], 0.7, 1.6, '#7a5230', rot); return; }
@@ -286,15 +306,18 @@ function human(o, pose = {}) {
   if (o.apron) E([1.7, 0, 11.6], [1.55, 3.3, 5], o.apron);
   if (o.cape) E([-2.75 - wide * 0.3, 0, 12.6], [0.8, 4.5 + wide, 6.9], o.cape, [['y', -0.12 - (pose.cape || 0), -2.4, 0, sh]]);
   if (o.pack) E([-3.4, 0, 14.2], [1.9, 3.1, 3.5], o.pack);
+  if (o.quiver) { C([-3.5, -2.2, 10.2], [-3.7, 2.4, 19.4], 1.3, o.quiver); E([-3.8, 2.9, 21.2], [0.55, 0.8, 1.2], '#f0e8d8'); E([-3.4, 2.0, 21.6], [0.55, 0.8, 1.2], '#c8342c'); E([-4.1, 2.2, 20.6], [0.5, 0.7, 1.1], '#f0e8d8'); }
   // braccia
   for (const s of [1, -1]) {
     const rot = [['y', s > 0 ? AL : AR, 0, s * 5.3, sh]], y = s * (5.25 + wide);
     C([0, y, sh - 0.3], [0, y, 11.6], 1.38, o.sleeve || o.shirt, rot);
     E([0, y, 10.5], [1.4, 1.35, 1.4], o.hand || o.skin, rot);
     if (o.pauldron) E([0, s * (5.1 + wide), sh - 0.1], [2.25, 2.05, 1.75], o.pauldron, rot, 1.08);
-    if (s < 0) weapon(B, C, E, o.weapon, rot, y);
+    if (s < 0) weapon(B, C, E, o.weapon, rot, y, pose);
+    if (s > 0 && o.weapon2) weapon(B, C, E, o.weapon2, rot, y, pose);
     if (s < 0 && o.staff) { C([1.4, y, -1.5], [1.4, y, 25], 0.6, o.staff, rot); if (o.orb) E([1.4, y, 26.4], [1.75, 1.75, 1.75], o.orb, rot, 1.15); }
-    if (s > 0 && o.shield) { E([0, y + 2.1, 14], [3.4, 0.75, 3.8], o.shield, rot); if (o.emblem) E([0, y + 2.75, 14], [1.4, 0.35, 1.6], o.emblem, rot, 1.2); }
+    if (s > 0 && o.shield && pose.guard) { E([4.9, 1.6, 13.4], [0.8, 3.8, 4.4], o.shield, null, 1.05); if (o.emblem) E([5.6, 1.6, 13.4], [0.35, 1.6, 1.8], o.emblem, null, 1.2); }     // in guardia: lo scudo davanti al petto
+    else if (s > 0 && o.shield) { E([0, y + 2.1, 14], [3.4, 0.75, 3.8], o.shield, rot); if (o.emblem) E([0, y + 2.75, 14], [1.4, 0.35, 1.6], o.emblem, rot, 1.2); }
   }
   // testa
   const hs = (o.head || 3.6) * 1.08, hc = sh + 0.6 + bob + hs * 0.93, fx = 0.25;
@@ -324,6 +347,11 @@ function human(o, pose = {}) {
     if (m.crown) { E([fx, 0, hc + hs * 0.7], [hs * 0.98, hs * 0.98, 0.85], m.c, null, 1.12); for (const [a, b] of [[1, 0], [0, 1], [0, -1], [-1, 0]]) C([fx + a * hs * 0.8, b * hs * 0.8, hc + hs * 0.75], [fx + a * hs * 0.85, b * hs * 0.85, hc + hs + 1.7], 0.6, m.c, null, 1.15); E([fx + hs * 0.95, 0, hc + hs * 0.7], [0.65, 0.65, 0.65], m.gem || '#e8304a', null, 1.25, 0.2); }
   }
   if (o.hat) { E([fx, 0, hc + hs * 0.6], [hs + 2, hs + 2, 0.5], o.hat); E([fx - 0.2, 0, hc + hs * 0.95], [hs * 0.82, hs * 0.82, 1.9], o.hat, null, 0.92); }
+  // il cappello a punta del mago (la punta piega all'indietro) e il berretto dell'arciere con la piuma
+  if (o.hat && o.hatPoint) { C.k([fx - 0.2, 0, hc + hs * 0.95], [fx - 1.6, 0, hc + hs * 0.95 + 4], hs * 0.74, 1.5, o.hat); C.k([fx - 1.6, 0, hc + hs * 0.95 + 4], [fx - 4.2, 0, hc + hs * 0.95 + 6.6], 1.5, 0.3, o.hat); if (o.hatBand) E([fx - 0.2, 0, hc + hs * 0.95 + 0.5], [hs * 0.86, hs * 0.86, 0.6], o.hatBand, null, 1.15); }
+  if (o.cap) { E([fx - 0.5, 0, hc + hs * 0.6], [hs * 1.06, hs * 1.08, hs * 0.66], o.cap); C.k([fx + hs * 0.4, 0, hc + hs * 0.82], [fx + hs * 1.6, 0, hc + hs * 0.42], 1.7, 0.3, o.cap, null, 0.94); C.k([fx - hs * 0.5, 0, hc + hs * 1.1], [fx - hs * 1.5, 0, hc + hs * 1.0], 1.5, 0.3, o.cap);
+    if (o.feather) E([fx - 1.6, hs * 0.72, hc + hs * 1.3], [1.9, 0.45, 0.8], o.feather, [['y', -0.75, fx - 0.4, hs * 0.72, hc + hs]], 1.1); }
+  if (o.mask) E([fx + hs * 0.42, 0, hc - hs * 0.42], [hs * 0.72, hs * 0.9, hs * 0.4], o.mask);
   // corona (una fascia d'oro con le punte) e turbante (una palla schiacciata con la gemma)
   if (o.crown) { E([fx, 0, hc + hs * 0.72], [hs * 0.9, hs * 0.9, 0.9], o.crown, null, 1.15); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; E([fx + Math.cos(a) * hs * 0.74, Math.sin(a) * hs * 0.74, hc + hs * 0.72 + 1.3], [0.5, 0.5, 0.9], o.crown, null, 1.2); } }
   if (o.turban) { E([fx - 0.2, 0, hc + hs * 0.55], [hs * 1.12, hs * 1.14, hs * 0.7], o.turban); E([fx - 0.3, 0, hc + hs * 1.0], [hs * 0.7, hs * 0.72, hs * 0.5], o.turban, null, 1.08); E([fx + hs * 0.95, 0, hc + hs * 0.6], [0.5, 0.6, 0.6], o.gem || '#e8364e', null, 1.2); }
@@ -825,6 +853,20 @@ const ICO = {
   hat: ['......a.....', '.....aba....', '.....abba...', '....abbba...', '....abcbba..', '...abbbbba..', '...abbbbbba.', '..abbbbbbba.', 'aaaaaaaaaaaa', 'abbbbbbbbbba', 'aaaaaaaaaaaa', '............'],
   clover: ['............', '..aa....aa..', '.abba..abba.', '.abbbaabbba.', '..abbbbbba..', '...abccba...', '..abbccbba..', '.abbbaabbba.', '.abba.aabba.', '..aa..ada...', '.......ad...', '............'],
   feather: ['.........aa.', '........abba', '.......abbca', '......abbca.', '.....abbca..', '....abbca...', '...abbca....', '..abbca.....', '..abca......', '.adaa.......', '.da.........', 'a...........'],
+  bow: ['....aaaaaa..', '..aabbbbbca.', '.abbaaaaca..', '.aba...ca...', 'aba...ca....', 'aba..ca.....', 'aba.ca......', 'abaca.......', 'abca........', 'aca.........', '.a..........', '............'],
+  dagger: ['............', '........aa..', '.......abba.', '......abba..', '.....abba...', '..c.abba....', '...cdba.....', '...dcd......', '..dd.cc.....', '.dd.........', '............', '............'],
+  // abilità delle classi (b: colore, c: luce)
+  s_carica: ['............', '.a....a.....', '.ba...ba....', '.bba..bba...', '.bbba.bbba..', '.bbbbabbbba.', '.bbbbabbbba.', '.bbba.bbba..', '.bba..bba...', '.ba...ba....', '.a....a.....', '............'],
+  s_grido: ['............', '.....a...c..', '....ab.c..c.', 'aaaabb..c.c.', 'abbbbb.c.c.c', 'abbbbb.c.c.c', 'abbbbb.c.c.c', 'aaaabb..c.c.', '....ab.c..c.', '.....a...c..', '............', '............'],
+  s_balzo: ['............', '...aaaaa....', '..abbbbba...', '.abbaaabba..', '.aba...aba..', '.aa....aba..', '.......aba..', '..a...abba..', '.aba.abba...', 'abbbabba....', '.abbbba.....', '..aaaa......'],
+  s_fgelo: ['.........aaa', '........accc', '.......aacca', '..c...abaaca', '.c.c.aba....', '..c.aba.....', '...aba..c...', '..aba..c.c..', '.aba....c...', 'aba.........', 'aa..........', '............'],
+  s_pioggia: ['.a...a...a..', '.b...b...b..', '.b...b...b..', '.b...b...b..', 'abbbabbbabbb', '.bbb.bbb.bbb', '..b...b...b.', '............', '...c...c....', '..c.c.c.c...', '............', '............'],
+  s_bomba: ['.......c.c..', '........c...', '.......a.c..', '......a.....', '...aaaa.....', '..abbbba....', '.abbcbbba...', '.abcbbbba...', '.abbbbbba...', '.abbbbbba...', '..abbbba....', '...aaaa.....'],
+  s_fumo: ['............', '....aaa.....', '...abbba.aa.', '..abbbbbabba', '.aabbbbbbbba', 'abbbbbbbbbba', 'abbbbbbbbba.', '.abbbbbbbba.', '..aabbbbaa..', '....aaaa....', '............', '............'],
+  s_trappola: ['............', '............', '.a.a.a.a.a..', '.babababab..', '.bbbbbbbbb..', '..bcccccb...', '..bcccccb...', '.bbbbbbbbb..', '.babababab..', '.a.a.a.a.a..', '............', '............'],
+  s_fuoco: ['.....a......', '....aba.....', '....abba....', '...abbba.a..', '..abbbbbaba.', '.abbbcbbbba.', '.abbccbbbba.', 'abbcccbbbbba', 'abbccccbbbba', '.abbcccbbba.', '..abbbbbba..', '...aaaaaa...'],
+  s_gelo: ['.....b......', '...b.b.b....', '....bbb.....', '.b...b...b..', '..b..b..b...', 'bbbbbcbbbbb.', '..b..b..b...', '.b...b...b..', '....bbb.....', '...b.b.b....', '.....b......', '............'],
+  s_cura: ['............', '....aaaa....', '....abba....', '....abba....', 'aaaaabbaaaaa', 'abbbbccbbbba', 'abbbbccbbbba', 'aaaaabbaaaaa', '....abba....', '....abba....', '....aaaa....', '............'],
   fish: ['............', '............', '..aaaa....a.', '.abbbba..aa.', 'abcbbbbaaba.', 'abbbbbbbbba.', '.abbbba..aa.', '..aaaa....a.', '............', '............', '............', '............'],
 };
 function icon(name, c1, c2 = '#fff4b0') {

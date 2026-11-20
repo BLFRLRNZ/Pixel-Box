@@ -14,6 +14,7 @@ function layoutFor(g) {
   const con = $('console'), box = $('screenbox'), bz = $('bezel'), lg = $('legend');
   con.classList.remove('fit'); lg.className = ''; box.style.height = ''; bz.style.width = '';
   document.body.classList.toggle('full', !!(g && g.full));
+  document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -50,9 +51,9 @@ function syncBtn(name) {
   const v = !!(kbB[name] || tB[name]);
   if (v === BTN[name]) return;
   BTN[name] = v;
-  const el = { a: 'bA', b: 'bB', start: 'bSta', select: 'bSel' }[name];
+  const el = { a: 'bA', b: 'bB', c: 'bC', start: 'bSta', select: 'bSel' }[name];
   if (el) $(el).classList.toggle('on', v);
-  else {
+  else if (name !== 'v') {
     const rx = (BTN.up ? 13 : 0) - (BTN.down ? 13 : 0), ry = (BTN.right ? 13 : 0) - (BTN.left ? 13 : 0);
     $('dpin').style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
   }
@@ -86,7 +87,7 @@ function bindBtn(id, name, wide) {
   const up = e => { if (ids.delete(e.pointerId) && !ids.size) setT(name, false); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
 }
-bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bSta', 'start', true); bindBtn('bSel', 'select', true);
+bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bC', 'c'); bindBtn('bSta', 'start', true); bindBtn('bSel', 'select', true);
 // rete di sicurezza: un tasto non può restare premuto se il dito non c'è più
 function releaseTouch() {
   dptr.clear(); syncDpad();
@@ -104,7 +105,7 @@ if (screen.orientation && screen.orientation.addEventListener) screen.orientatio
 const KEYS = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
   Digit2: 'up', Numpad2: 'up', Digit8: 'down', Numpad8: 'down', Digit4: 'left', Numpad4: 'left', Digit6: 'right', Numpad6: 'right',
-  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b',
+  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v',
   Enter: 'start', KeyP: 'start', Escape: 'select', Backspace: 'select', ShiftRight: 'select'
 };
 addEventListener('keydown', e => { const n = KEYS[e.code]; if (!n) return; e.preventDefault(); audioUnlock(); if (!e.repeat) setKb(n, true); });

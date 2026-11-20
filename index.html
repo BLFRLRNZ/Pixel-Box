@@ -66,6 +66,9 @@
   .bt.on{transform:translateY(4px);box-shadow:0 1px 0 #4f0d2b}
   .bt span{position:absolute;left:50%;top:calc(100% + 11px);transform:translateX(-50%);font-size:11px;color:#2c3a7a}
   #bB{left:0;bottom:0} #bA{right:0;top:0}
+  #bC{display:none;left:calc(var(--bs)*.08);top:calc(var(--bs)*-.5);width:calc(var(--bs)*.84);height:calc(var(--bs)*.84);background:radial-gradient(circle at 35% 30%,#5a8fd8,#2459a8 58%,#173f7a);box-shadow:0 5px 0 #0d2b4f,inset 0 2px 0 rgba(255,255,255,.25)}
+  #bC.on{box-shadow:0 1px 0 #0d2b4f}
+  body.tre #bC{display:block}
   #cm{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);display:flex;gap:20px}
   .pw{display:flex;flex-direction:column;align-items:center;gap:8px;transform:rotate(-24deg)}
   .pw{touch-action:none;cursor:pointer}
@@ -126,7 +129,7 @@
       <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div>
         <span class="ar" style="left:50%;top:16%">▲</span><span class="ar" style="left:50%;top:84%">▼</span>
         <span class="ar" style="left:16%;top:50%">◀</span><span class="ar" style="left:84%;top:50%">▶</span></div></div></div>
-      <div id="cr"><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
+      <div id="cr"><div class="bt" id="bC"><span>C</span></div><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
       <div id="cm"><div class="pw"><div class="pill" id="bSel"></div><span>SELECT</span></div><div class="pw"><div class="pill" id="bSta"></div><span>START</span></div></div>
       <div id="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </div></div>
@@ -136,7 +139,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.3", "id": "2.3-ec514322", "date": "20/11/2026", "pwa": true};
+const APP = {"v": "2.4", "id": "2.4-077d8a61", "date": "20/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -278,7 +281,7 @@ function drawIcon(c, rows, pal, x, y, s, bg) {
 // ---------- schermo e tasti della console ----------
 const cv = $('scr'), ctx = cv.getContext('2d');
 let W = 320, H = 288, dpr = 1;
-const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, start: false, select: false };
+const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, start: false, select: false };
 const kbB = {}, tB = {};
 const PF = s => Math.max(6, Math.round(s)) + 'px "Press Start 2P", monospace';
 
@@ -4785,8 +4788,28 @@ function figure(parts, yaw, W, H, o = {}) {
 
 // ---------- persone: tonde e tozze ----------
 const EYE = '#1a1420';
-function weapon(B, C, E, w, rot, y) {
+function weapon(B, C, E, w, rot, y, pose = {}) {
   if (!w) return;
+  // l'arco sta di traverso alla mano: col braccio teso in avanti è verticale. Le punte tornano verso chi tira, e tra loro c'è la corda
+  if (w.kind === 'bow') {
+    const P0 = [[-7.8, 12.4], [-5.8, 10.4], [-3, 9.4], [0, 9.1], [3, 9.4], [5.8, 10.4], [7.8, 12.4]], st = w.str || '#e8e0d0', pull = pose.nock ? 2.8 : 0;
+    for (let i = 0; i < 6; i++) { const g = i === 2 || i === 3; C([P0[i][0], y, P0[i][1]], [P0[i + 1][0], y, P0[i + 1][1]], g ? 0.66 : 0.5, g ? (w.grip || '#5a3a20') : w.col, rot, g ? 1 : 1.08); }
+    if (w.glow) for (const i of [0, 6]) E([P0[i][0], y, P0[i][1]], [0.85, 0.85, 0.85], w.glow, rot, 1.3);
+    C([-7.8, y, 12.4], [0, y, 12.4 + pull], 0.17, st, rot, 1.2); C([0, y, 12.4 + pull], [7.8, y, 12.4], 0.17, st, rot, 1.2);
+    if (pose.nock) { C([0, y, 12.4 + pull], [0, y, 2.2], 0.3, '#c8a878', rot); C.k([0, y, 2.2], [0, y, 0.2], 0.8, 0.1, w.tip || '#d8dce4', rot, 1.15); }
+    return;
+  }
+  if (w.kind === 'dagger') {
+    C([0, y, 9.3], [0, y, 11], 0.5, '#3a2a20', rot); B([-1.35, 1.35, y - 0.62, y + 0.62, 8.5, 9.2], w.guard || '#c8a040', rot);
+    B([-0.66, 0.66, y - 0.46, y + 0.46, 2.4 - (w.len || 0), 8.5], w.col, rot, 1.12); if (w.glow) B([-0.23, 0.23, y - 0.52, y + 0.52, 3 - (w.len || 0), 8], w.glow, rot, 1.3);
+    return;
+  }
+  // la bacchetta del mago: un'asta con la sfera in punta (in alto quando la alza, in avanti quando la punta)
+  if (w.kind === 'wand') {
+    C([0, y, 12.2], [0, y, 2.4 - (w.len || 0)], 0.46, w.wood || '#7a5a3a', rot); if (w.ring) E([0, y, 2.9 - (w.len || 0)], [0.95, 0.95, 0.55], w.ring, rot, 1.15);
+    E([0, y, 0.9 - (w.len || 0)], [1.65, 1.65, 1.65], w.col, rot, 1.3); if (w.glow) E([0.5, y, 0.4 - (w.len || 0)], [0.6, 0.6, 0.6], w.glow, rot, 1.4, 0.3);
+    return;
+  }
   if (w.kind === 'axe') { C([0, y, -4], [0, y, 11], 0.55, '#7a5230', rot); E([2.2, y, -2.6], [2.6, 0.55, 2.6], w.col, rot, 1.1); return; }
   if (w.kind === 'spear') { C([0, y, -8], [0, y, 17], 0.48, '#7a5a3a', rot); P2(C, E, [0, y, 17], [0, y, 21.5], 1.1, 0.25, '#c8d0dc', rot); return; }
   if (w.kind === 'club') { P2(C, E, [0, y, 10], [0, y, -2], 0.7, 1.6, '#7a5230', rot); return; }
@@ -4820,15 +4843,18 @@ function human(o, pose = {}) {
   if (o.apron) E([1.7, 0, 11.6], [1.55, 3.3, 5], o.apron);
   if (o.cape) E([-2.75 - wide * 0.3, 0, 12.6], [0.8, 4.5 + wide, 6.9], o.cape, [['y', -0.12 - (pose.cape || 0), -2.4, 0, sh]]);
   if (o.pack) E([-3.4, 0, 14.2], [1.9, 3.1, 3.5], o.pack);
+  if (o.quiver) { C([-3.5, -2.2, 10.2], [-3.7, 2.4, 19.4], 1.3, o.quiver); E([-3.8, 2.9, 21.2], [0.55, 0.8, 1.2], '#f0e8d8'); E([-3.4, 2.0, 21.6], [0.55, 0.8, 1.2], '#c8342c'); E([-4.1, 2.2, 20.6], [0.5, 0.7, 1.1], '#f0e8d8'); }
   // braccia
   for (const s of [1, -1]) {
     const rot = [['y', s > 0 ? AL : AR, 0, s * 5.3, sh]], y = s * (5.25 + wide);
     C([0, y, sh - 0.3], [0, y, 11.6], 1.38, o.sleeve || o.shirt, rot);
     E([0, y, 10.5], [1.4, 1.35, 1.4], o.hand || o.skin, rot);
     if (o.pauldron) E([0, s * (5.1 + wide), sh - 0.1], [2.25, 2.05, 1.75], o.pauldron, rot, 1.08);
-    if (s < 0) weapon(B, C, E, o.weapon, rot, y);
+    if (s < 0) weapon(B, C, E, o.weapon, rot, y, pose);
+    if (s > 0 && o.weapon2) weapon(B, C, E, o.weapon2, rot, y, pose);
     if (s < 0 && o.staff) { C([1.4, y, -1.5], [1.4, y, 25], 0.6, o.staff, rot); if (o.orb) E([1.4, y, 26.4], [1.75, 1.75, 1.75], o.orb, rot, 1.15); }
-    if (s > 0 && o.shield) { E([0, y + 2.1, 14], [3.4, 0.75, 3.8], o.shield, rot); if (o.emblem) E([0, y + 2.75, 14], [1.4, 0.35, 1.6], o.emblem, rot, 1.2); }
+    if (s > 0 && o.shield && pose.guard) { E([4.9, 1.6, 13.4], [0.8, 3.8, 4.4], o.shield, null, 1.05); if (o.emblem) E([5.6, 1.6, 13.4], [0.35, 1.6, 1.8], o.emblem, null, 1.2); }     // in guardia: lo scudo davanti al petto
+    else if (s > 0 && o.shield) { E([0, y + 2.1, 14], [3.4, 0.75, 3.8], o.shield, rot); if (o.emblem) E([0, y + 2.75, 14], [1.4, 0.35, 1.6], o.emblem, rot, 1.2); }
   }
   // testa
   const hs = (o.head || 3.6) * 1.08, hc = sh + 0.6 + bob + hs * 0.93, fx = 0.25;
@@ -4858,6 +4884,11 @@ function human(o, pose = {}) {
     if (m.crown) { E([fx, 0, hc + hs * 0.7], [hs * 0.98, hs * 0.98, 0.85], m.c, null, 1.12); for (const [a, b] of [[1, 0], [0, 1], [0, -1], [-1, 0]]) C([fx + a * hs * 0.8, b * hs * 0.8, hc + hs * 0.75], [fx + a * hs * 0.85, b * hs * 0.85, hc + hs + 1.7], 0.6, m.c, null, 1.15); E([fx + hs * 0.95, 0, hc + hs * 0.7], [0.65, 0.65, 0.65], m.gem || '#e8304a', null, 1.25, 0.2); }
   }
   if (o.hat) { E([fx, 0, hc + hs * 0.6], [hs + 2, hs + 2, 0.5], o.hat); E([fx - 0.2, 0, hc + hs * 0.95], [hs * 0.82, hs * 0.82, 1.9], o.hat, null, 0.92); }
+  // il cappello a punta del mago (la punta piega all'indietro) e il berretto dell'arciere con la piuma
+  if (o.hat && o.hatPoint) { C.k([fx - 0.2, 0, hc + hs * 0.95], [fx - 1.6, 0, hc + hs * 0.95 + 4], hs * 0.74, 1.5, o.hat); C.k([fx - 1.6, 0, hc + hs * 0.95 + 4], [fx - 4.2, 0, hc + hs * 0.95 + 6.6], 1.5, 0.3, o.hat); if (o.hatBand) E([fx - 0.2, 0, hc + hs * 0.95 + 0.5], [hs * 0.86, hs * 0.86, 0.6], o.hatBand, null, 1.15); }
+  if (o.cap) { E([fx - 0.5, 0, hc + hs * 0.6], [hs * 1.06, hs * 1.08, hs * 0.66], o.cap); C.k([fx + hs * 0.4, 0, hc + hs * 0.82], [fx + hs * 1.6, 0, hc + hs * 0.42], 1.7, 0.3, o.cap, null, 0.94); C.k([fx - hs * 0.5, 0, hc + hs * 1.1], [fx - hs * 1.5, 0, hc + hs * 1.0], 1.5, 0.3, o.cap);
+    if (o.feather) E([fx - 1.6, hs * 0.72, hc + hs * 1.3], [1.9, 0.45, 0.8], o.feather, [['y', -0.75, fx - 0.4, hs * 0.72, hc + hs]], 1.1); }
+  if (o.mask) E([fx + hs * 0.42, 0, hc - hs * 0.42], [hs * 0.72, hs * 0.9, hs * 0.4], o.mask);
   // corona (una fascia d'oro con le punte) e turbante (una palla schiacciata con la gemma)
   if (o.crown) { E([fx, 0, hc + hs * 0.72], [hs * 0.9, hs * 0.9, 0.9], o.crown, null, 1.15); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; E([fx + Math.cos(a) * hs * 0.74, Math.sin(a) * hs * 0.74, hc + hs * 0.72 + 1.3], [0.5, 0.5, 0.9], o.crown, null, 1.2); } }
   if (o.turban) { E([fx - 0.2, 0, hc + hs * 0.55], [hs * 1.12, hs * 1.14, hs * 0.7], o.turban); E([fx - 0.3, 0, hc + hs * 1.0], [hs * 0.7, hs * 0.72, hs * 0.5], o.turban, null, 1.08); E([fx + hs * 0.95, 0, hc + hs * 0.6], [0.5, 0.6, 0.6], o.gem || '#e8364e', null, 1.2); }
@@ -5359,6 +5390,20 @@ const ICO = {
   hat: ['......a.....', '.....aba....', '.....abba...', '....abbba...', '....abcbba..', '...abbbbba..', '...abbbbbba.', '..abbbbbbba.', 'aaaaaaaaaaaa', 'abbbbbbbbbba', 'aaaaaaaaaaaa', '............'],
   clover: ['............', '..aa....aa..', '.abba..abba.', '.abbbaabbba.', '..abbbbbba..', '...abccba...', '..abbccbba..', '.abbbaabbba.', '.abba.aabba.', '..aa..ada...', '.......ad...', '............'],
   feather: ['.........aa.', '........abba', '.......abbca', '......abbca.', '.....abbca..', '....abbca...', '...abbca....', '..abbca.....', '..abca......', '.adaa.......', '.da.........', 'a...........'],
+  bow: ['....aaaaaa..', '..aabbbbbca.', '.abbaaaaca..', '.aba...ca...', 'aba...ca....', 'aba..ca.....', 'aba.ca......', 'abaca.......', 'abca........', 'aca.........', '.a..........', '............'],
+  dagger: ['............', '........aa..', '.......abba.', '......abba..', '.....abba...', '..c.abba....', '...cdba.....', '...dcd......', '..dd.cc.....', '.dd.........', '............', '............'],
+  // abilità delle classi (b: colore, c: luce)
+  s_carica: ['............', '.a....a.....', '.ba...ba....', '.bba..bba...', '.bbba.bbba..', '.bbbbabbbba.', '.bbbbabbbba.', '.bbba.bbba..', '.bba..bba...', '.ba...ba....', '.a....a.....', '............'],
+  s_grido: ['............', '.....a...c..', '....ab.c..c.', 'aaaabb..c.c.', 'abbbbb.c.c.c', 'abbbbb.c.c.c', 'abbbbb.c.c.c', 'aaaabb..c.c.', '....ab.c..c.', '.....a...c..', '............', '............'],
+  s_balzo: ['............', '...aaaaa....', '..abbbbba...', '.abbaaabba..', '.aba...aba..', '.aa....aba..', '.......aba..', '..a...abba..', '.aba.abba...', 'abbbabba....', '.abbbba.....', '..aaaa......'],
+  s_fgelo: ['.........aaa', '........accc', '.......aacca', '..c...abaaca', '.c.c.aba....', '..c.aba.....', '...aba..c...', '..aba..c.c..', '.aba....c...', 'aba.........', 'aa..........', '............'],
+  s_pioggia: ['.a...a...a..', '.b...b...b..', '.b...b...b..', '.b...b...b..', 'abbbabbbabbb', '.bbb.bbb.bbb', '..b...b...b.', '............', '...c...c....', '..c.c.c.c...', '............', '............'],
+  s_bomba: ['.......c.c..', '........c...', '.......a.c..', '......a.....', '...aaaa.....', '..abbbba....', '.abbcbbba...', '.abcbbbba...', '.abbbbbba...', '.abbbbbba...', '..abbbba....', '...aaaa.....'],
+  s_fumo: ['............', '....aaa.....', '...abbba.aa.', '..abbbbbabba', '.aabbbbbbbba', 'abbbbbbbbbba', 'abbbbbbbbba.', '.abbbbbbbba.', '..aabbbbaa..', '....aaaa....', '............', '............'],
+  s_trappola: ['............', '............', '.a.a.a.a.a..', '.babababab..', '.bbbbbbbbb..', '..bcccccb...', '..bcccccb...', '.bbbbbbbbb..', '.babababab..', '.a.a.a.a.a..', '............', '............'],
+  s_fuoco: ['.....a......', '....aba.....', '....abba....', '...abbba.a..', '..abbbbbaba.', '.abbbcbbbba.', '.abbccbbbba.', 'abbcccbbbbba', 'abbccccbbbba', '.abbcccbbba.', '..abbbbbba..', '...aaaaaa...'],
+  s_gelo: ['.....b......', '...b.b.b....', '....bbb.....', '.b...b...b..', '..b..b..b...', 'bbbbbcbbbbb.', '..b..b..b...', '.b...b...b..', '....bbb.....', '...b.b.b....', '.....b......', '............'],
+  s_cura: ['............', '....aaaa....', '....abba....', '....abba....', 'aaaaabbaaaaa', 'abbbbccbbbba', 'abbbbccbbbba', 'aaaaabbaaaaa', '....abba....', '....abba....', '....aaaa....', '............'],
   fish: ['............', '............', '..aaaa....a.', '.abbbba..aa.', 'abcbbbbaaba.', 'abbbbbbbbba.', '.abbbba..aa.', '..aaaa....a.', '............', '............', '............', '............'],
 };
 function icon(name, c1, c2 = '#fff4b0') {
@@ -6552,6 +6597,7 @@ const LOOKS = {
   saggio: { skin: '#e8c8a8', hairStyle: 'bun', hair: '#e8e8f0', beard: '#e8e8f0', robe: '#6a4a8a', shirt: '#8a6ab0', pants: '#4a3a6a', boots: '#3a2a3a', staff: '#7a5230' },
   spadaccino: { skin: '#f0d0b0', helm: { c: '#3a2a3a', spike: true }, shirt: '#8a2a4a', plate: '#3a2a3a', pauldron: '#c8342c', pants: '#2a2a3a', boots: B0, weapon: { col: '#f0f6ff', guard: '#c8a040', len: 1 } },
   dama2: { sc: 1.04, skin: '#f0d0b0', crown: '#f8a8c8', hairStyle: 'bun', hair: '#2a1a2a', robe: '#f8ecf2', shirt: '#f0a8c8', cape: '#c85a7a', pants: '#e07aa8', boots: '#6a3a4a' },
+  maestro: { skin: '#e0b088', hairStyle: 'short', hair: '#d8d8e0', beard: '#d8d8e0', shirt: '#8a2a2a', plate: '#c8a040', pauldron: '#c8a040', cape: '#2a3a6a', belt: '#3a2a1a', pants: '#3a3a4a', boots: B0, weapon: { col: '#e8eef6', guard: '#c8a040', len: 1 } },
   ostessa: { skin: '#f0c49a', hairStyle: 'bun', hair: '#8a4a2a', shirt: '#e8e0d0', apron: '#3a7a4a', pants: '#5a3a2a', boots: '#3a2a1a' },
   fabbro: { skin: '#d8a07a', beard: '#3a2a1a', shirt: '#7a6a5a', apron: '#4a3428', pants: '#3a3a44', boots: B0, wide: 0.6, weapon: { kind: 'hammer', col: '#6a6e78' } },
   traghettatore: { skin: '#d89a70', hood: '#3a5a6a', beard: '#c8c8d0', robe: '#4a6a7a', shirt: '#5a7a8a', pants: '#3a4a52', boots: B0, staff: '#7a5230' },
@@ -6664,6 +6710,8 @@ function city(o) {
     else { const b = plan.houses[(hk++ * 7 + 3) % plan.houses.length], v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b.door]; x = b.x + v[0] * (b.w / 2 + 5.5) + (v[0] ? 0 : 5); z = b.z + v[1] * (b.d / 2 + 5.5) + (v[1] ? 0 : 5); yaw = Math.atan2(v[1], v[0]); }
     folk(look, n, x, z, yaw, lines, extra);
   }
+  // il maestro della gilda degli eroi riceve in piazza, accanto alla bacheca: cambia la classe e insegna le abilità
+  if (o.guild && plan.board) { const b = plan.board, P0 = primo([[b.x + 12, b.z], [b.x - 12, b.z], [b.x, b.z + 9], [b.x, b.z - 9]], 3) || [b.x + 12, b.z]; folk('maestro', 'MAESTRO DELLA GILDA', P0[0], P0[1], Math.atan2(pz - P0[1], px - P0[0]), ['BENVENUTO ALLA GILDA DEGLI EROI DI ' + o.name + '. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_' + o.id }); }
   if (o.center === 'statue') W.PROPS.push(['kingstatue', px, pz]);
   W.BUILD.push({ k: 'city', x: o.x, z: o.z, plan });
   return plan;
@@ -6862,7 +6910,7 @@ W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE 
 
 // ---------- la Rocca di Lumen: una città murata con il mastio del Re su una terrazza ----------
 const RX = 2760, RZ = 2960;
-C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
+C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
   specials: [['church', -128, 60, 30, 22, 'e', { m: 15 }]], board: [22, 20],
   shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
     ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]],
@@ -6925,7 +6973,7 @@ C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, styl
   } });
 
 // ---------- le città del continente e del sud ----------
-C.city({ id: 'castelrosso', name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',
+C.city({ id: 'castelrosso', guild: true, name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',
   specials: [['hall', -30, -62, 34, 24, 's', { h: 17, wall: TL.TIMBER2, roof: 4 }], ['church', 34, -66, 22, 32, 's', { m: 15, wall: 2, roof: TL.ROOF_ORANGE }]], board: [22, -20],
   shops: [['ghianda', 'locanda', "LOCANDA DELLA GHIANDA D'ORO", 's1', { fw: 36, fd: 22, h: 17, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }], ['ambra_erbe', 'erboristeria', "L'ERBORISTERIA DELLE FOGLIE", 's2', { wall: 2, roof: TL.ROOF_DARK }],
     ['ambra_armi', 'armeria', "L'ARMERIA DI CASTELROSSO", 'w1', { fw: 22, wall: 3, roof: 4 }], ['ambra', 'sartoria', 'LA SARTORIA DELLA MERCIAIA', 'e1', { fw: 22, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }]],
@@ -6948,7 +6996,7 @@ C.city({ id: 'castelrosso', name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 38
     ['borghese', 'IL BANDITORE', ['UDITE, UDITE! ALLA BACHECA DELLA PIAZZA IL BORGOMASTRO CERCA BRACCIA FORTI. SI PAGA IN MONETE SONANTI!'], 'p', { walk: 1 }],
   ] });
 W.BUILD.push({ k: 'special', sk: 'mill', x: 5470, z: 3210, w: 20, d: 20, style: 'ambra' });
-C.city({ id: 'altabrina', name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, style: 'nord', gates: 's', plaza: { w: 70, d: 64 },
+C.city({ id: 'altabrina', guild: true, name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, style: 'nord', gates: 's', plaza: { w: 70, d: 64 },
   specials: [['big', 0, -84, 60, 34, 's', { h: 20, wall: TL.LOGS, roof: TL.ROOF_SNOW, steep: 0.8, dw: 9, dh: 12, dr: TL.DOOR_BIG, chim: true }]], board: [20, 16],
   shops: [['orso', 'locanda', "LOCANDA DELL'ORSO BIANCO", 's1', { fw: 32, fd: 21, h: 16, wall: TL.LOGS, roof: 5 }], ['nord_armi', 'fucina', 'LA FUCINA DEL NORD', 's2', { wall: 2, roof: TL.ROOF_SNOW }],
     ['nord', 'sartoria', 'PELLI E PELLICCE', 'w1', { fw: 22, wall: TL.LOGS, roof: TL.ROOF_SNOW }]],
@@ -6966,7 +7014,7 @@ C.city({ id: 'altabrina', name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, s
     ['minatore', 'IL CAPO DEI MINATORI', ["ALLA BACHECA C'È UNA TAGLIA SUL VECCHIO BIANCO. CI HO MESSO ANCH'IO DIECI MONETE: QUEL LUPO SI È MANGIATO IL MIO MULO."], 'p'],
     ['montanaro', 'NONNA GERDA', ["ALL'ORSO BIANCO FANNO UNA ZUPPA D'ORZO CHE RISVEGLIA I MORTI. E UN LETTO COSTA MENO DI UN PAIO DI GUANTI."], 'd'],
   ] });
-C.city({ id: 'zafira', name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 'sole', gates: 'ws', plaza: { w: 90, d: 80 },
+C.city({ id: 'zafira', guild: true, name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 'sole', gates: 'ws', plaza: { w: 90, d: 80 },
   specials: [['palace', 138, 0, 64, 84, 'w'], ['pool', 68, 0, 30, 44], ['bazaar', -76, -72, 52, 44, 's']], board: [-22, 20],
   shops: [['bazar', 'emporio', 'IL GRAN BAZAR', 2], ['carovana', 'locanda', 'IL CARAVANSERRAGLIO', 's2', { fw: 36, fd: 24, h: 15, rt: 'flat', wall: TL.ADOBE, roof: TL.ADOBE, chim: false }],
     ['sole', 'armeria', 'LE LAME DI ZAFIRA', 'n2', { rt: 'flat', wall: TL.WHITE, roof: 10, chim: false }], ['spezie', 'erboristeria', 'LA SPEZIERIA', 'n1', { rt: 'dome', wall: TL.ADOBE, roof: TL.ADOBE, h: 12, chim: false }]],
@@ -6988,7 +7036,7 @@ C.city({ id: 'zafira', name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 
   ] });
 // Porto Sereno: affacciato sulla Baia di Zaffiro, con la banchina, i moli, le navi e il faro
 const PX0 = 5410;
-C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, style: 'porto', gates: 'nes', noWall: 'w', y: 4.5, plaza: { dx: -40, w: 90, d: 80 },
+C.city({ id: 'porto', guild: true, name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, style: 'porto', gates: 'nes', noWall: 'w', y: 4.5, plaza: { dx: -40, w: 90, d: 80 },
   specials: [['big', -150, -92, 44, 26, 's', { h: 13, wall: 3, roof: TL.ROOF_ORANGE }], ['big', -150, 92, 44, 26, 'n', { h: 13, wall: 3, roof: 4 }], ['church', 30, -66, 22, 32, 's', { m: 15, wall: TL.WHITE, roof: TL.ROOF_ORANGE }]], board: [22, 20],
   shops: [['ancora', 'locanda', "LOCANDA DELL'ANCORA D'ORO", [-110, -55, 34, 22, 's'], { h: 17, wall: TL.WHITE, roof: TL.ROOF_ORANGE }], ['porto', 'emporio', "L'EMPORIO DELL'ARMATORE", 'n1', { wall: TL.OCHRE, roof: 4 }],
     ['pesce', 'pescheria', 'ZUPPE E RIMEDI DEL PORTO', 'n2', { wall: TL.WHITE, roof: TL.ROOF_ORANGE }]],
@@ -7022,7 +7070,7 @@ C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, st
   post(P, g, y, b) { ship(5364, 5326, 'w', { b, flag: 2 }); ship(5362, 5474, 'w', { b, L: 40, B: 12, mh: 30, flag: 1 }); ship(5290, 5560, 'n', { b, L: 52, B: 14, mh: 38, flag: 2 }); } });
 W.CLEAR.push([5150, 5190, 5420, 5610]);
 W.PROPS.push(['boat', 5300, 5372], ['boat', 5262, 5440]);
-C.city({ id: 'fioralba', name: 'FIORALBA', x: 2300, z: 5350, w: 360, d: 320, style: 'fiore', open: true, plaza: { w: 80, d: 70 },
+C.city({ id: 'fioralba', guild: true, name: 'FIORALBA', x: 2300, z: 5350, w: 360, d: 320, style: 'fiore', open: true, plaza: { w: 80, d: 70 },
   board: [20, 16],
   shops: [['te', 'locanda', 'LA CASA DEL TÈ', 'n2', { fw: 34, fd: 22, rt: 'hip', wall: TL.WHITE, roof: TL.ROOF_PINK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }], ['dojo', 'dojo', 'IL DOJO DI FIORALBA', 's1', { fw: 36, fd: 24, rt: 'hip', wall: 3, roof: TL.ROOF_DARK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }],
     ['fiore', 'erboristeria', 'LA SERRA DELLA FIORAIA', 'n1', { rt: 'hip', wall: TL.PINK, roof: TL.ROOF_PURPLE, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }]],
@@ -7071,6 +7119,7 @@ C.folk('ostessa', 'OSTESSA GEMMA', 0, 0, 0, ['BENVENUTO AL GALLO, CARO! QUI SI D
 C.folk('borghese', 'IL VECCHIO TOBIA', 0, 0, 0, ["DA GIOVANE HO NASCOSTO UN GRUZZOLO TRA I CESPUGLI, SULLA STRADA PER LA ROCCA, POCO PRIMA DELLE DUE STATUE. POI ME NE SONO SCORDATO PER QUARANT'ANNI.", 'SE LO TROVI È TUO. IO ORMAI HO LA ZUPPA DI GEMMA.'], { in: 'gallo', spot: 'ospite1' });
 C.folk('boscaiolo', 'IL CACCIATORE', 0, 0, 0, ['I LUPI DEL BOSCO ANTICO GIRANO IN BRANCO: COLPISCI E ARRETRA, NON FARTI CHIUDERE IN MEZZO.', 'E DAI UN OCCHIO ALLA BACHECA IN PIAZZA: PER OGNI LAVORO FATTO, IL BORGO PAGA IN MONETE SONANTI.'], { in: 'gallo', spot: 'ospite2' });
 W.BOARDS.push({ id: 'borgo', city: 'BORGO AURORA', x: 2021, z: 2633 });
+C.folk('maestro', 'MAESTRO DELLA GILDA', 2034, 2636, 2.6, ['BENVENUTO, VIAGGIATORE. LA GILDA DEGLI EROI HA UN MAESTRO IN OGNI CITTÀ, E UNO ANCHE QUI AL BORGO. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_borgo' });
 W.builders.board = (b, g) => SG.shop.bacheca(b.x, b.z, g(b.x, b.z), b, 4);
 // il Borgo cresce: cinque case nuove attorno alla piazza, e chi ci abita
 W.BUILD.push({ k: 'house', x: 1868, z: 2602, w: 20, d: 16, h: 11, wall: 2, roof: 4, door: 's', chim: true }, { k: 'house', x: 2142, z: 2592, w: 20, d: 16, h: 12, wall: 0, roof: 6, door: 's', chim: true },
@@ -10186,6 +10235,142 @@ SG.music = {
 };
 })();
 
+// ===================== PIXEL SAGA · le classi dell'eroe =====================
+// Quattro mestieri: ognuno ha il suo modo di colpire (A), un colpo caricato (A tenuto premuto e poi lasciato)
+// e tre abilità (C): la prima la sa da subito, le altre due le insegna il maestro della gilda.
+// Le armi sono le stesse per tutti, ma ogni classe le impugna a modo suo: la spada di ferro del cavaliere
+// è l'arco ferrato dell'arciere, i pugnali di ferro del furfante, il bastone ferrato del mago.
+SG.cls = (() => {
+const ORD = ['cavaliere', 'arciere', 'furfante', 'mago'];
+// pose dell'eroe: ferma, due passi, colpo (prima e dopo), carica o guardia, mossa speciale
+const CL = {
+  cavaliere: { n: 'CAVALIERE', d: 'SPADA E SCUDO. È IL PIÙ ROBUSTO: PARA I COLPI E TRAVOLGE I NEMICI.',
+    tr: ['+1 CUORE E DIFESA +1', "È L'UNICO A PORTARE LO SCUDO", 'A TENUTO: COLPO ROTANTE', 'C: PARATA CON LO SCUDO'],
+    hp: 2, dif: 1, vel: 0, en: 10, regen: 1.4, shield: true, enC: '#ffc83a', bar: [3, 3, 1, 1], col: '#ffd23f',
+    look: {}, demo: { shield: '#8a5e34' }, skills: ['parata', 'carica', 'grido'],
+    poses: [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 3.1, leg: 0.15 }, { armR: 1.45, leg: -0.25, armL: -0.4 }, { armL: 1.2, armR: 0.5, leg: 0.14, guard: 1 }, { armR: -1.1, armL: 0.6, leg: 0.32 }],
+    help: ['A: PARLA, APRI, COLPISCI', 'A TENUTO E LASCIATO: COLPO ROTANTE', 'C TENUTO: PARI CON LO SCUDO'] },
+  arciere: { n: 'ARCIERE', d: 'ARCO E FRECCE. COLPISCE DA LONTANO E NON SI FA RAGGIUNGERE.',
+    tr: ['LE FRECCE CERCANO IL NEMICO DA SOLE', '+10% VELOCITÀ', 'A TENUTO: FRECCIA CHE TRAPASSA', "C: BALZO ALL'INDIETRO"],
+    hp: 0, dif: 0, vel: 0.1, en: 10, regen: 1.4, enC: '#8ae06a', bar: [2, 1, 2, 3], col: '#8ae06a',
+    look: { shirt: '#5a7a34', sleeve: '#4a6a2a', pants: '#6a5438', belt: '#3a2a1a', cap: '#3a6a2a', feather: '#e8304a', quiver: '#7a4a24' }, skills: ['balzo', 'fgelo', 'pioggia'],
+    poses: [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 1.55, armL: 1.3, nock: 1 }, { armR: 1.55, armL: 0.6, leg: -0.15 }, { armR: 1.55, armL: 1.3, nock: 1, leg: 0.28 }, { armR: 1.9, armL: 1.5, leg: 0.75, nock: 1 }],
+    help: ['A: PARLA, APRI, SCOCCA UNA FRECCIA', 'A TENUTO E LASCIATO: FRECCIA CHE TRAPASSA', "C: BALZO ALL'INDIETRO"] },
+  furfante: { n: 'FURFANTE', d: 'PUGNALI, BOMBE E TRAPPOLE. SVELTO E ASTUTO, COLPISCE ALLE SPALLE.',
+    tr: ['COLPI RAPIDI: ALLE SPALLE VALGONO DOPPIO', '+20% VELOCITÀ, PIÙ MONETE DAI NEMICI', 'A TENUTO: LANCIO DEI PUGNALI', 'C: BOMBA'],
+    hp: 0, dif: 0, vel: 0.2, en: 10, regen: 1.4, dual: true, coins: 1.3, enC: '#c8a0ff', bar: [2, 1, 3, 2], col: '#c8a0ff',
+    look: { shirt: '#4a4458', sleeve: '#3a3448', pants: '#2e2a38', belt: '#8a2a2a', hood: '#3a3448', mask: '#26222e', boots: '#2a2630' }, skills: ['bomba', 'fumo', 'trappola'],
+    poses: [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: -0.7, armL: 1.0, leg: 0.22 }, { armR: 1.6, armL: -0.5, leg: -0.3 }, { armR: 2.7, armL: 2.5, leg: 0.16 }, { armR: 1.35, armL: 1.5, leg: -0.28 }],
+    help: ['A: PARLA, APRI, PUGNALA', 'A TENUTO E LASCIATO: LANCIO DEI PUGNALI', 'C: LANCIA UNA BOMBA'] },
+  mago: { n: 'MAGO', d: 'BASTONE E INCANTESIMI: FUOCO, GELO E CURA. IL MANA TORNA DA SOLO.',
+    tr: ['I DARDI MAGICI INSEGUONO IL NEMICO', 'PIÙ MANA PER GLI INCANTESIMI', 'A TENUTO: SFERA CHE ESPLODE', 'C: PALLA DI FUOCO'],
+    hp: 0, dif: 0, vel: 0, en: 16, regen: 1.0, enC: '#5ab8ff', bar: [3, 1, 1, 3], col: '#7ac8ff',
+    look: { shirt: '#3a4aaa', sleeve: '#3444a0', pants: '#2a3270', belt: '#e0b040', hat: '#3a4aaa', hatPoint: true, hatBand: '#e0b040', robe: '#2e3c96' }, skills: ['fuoco', 'gelo', 'cura'],
+    poses: [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 2.8, leg: 0.1 }, { armR: 1.5, armL: -0.3, leg: -0.2 }, { armR: 2.9, armL: 2.5, leg: 0.1 }, { armR: 1.5, armL: 1.5, leg: -0.16 }],
+    help: ['A: PARLA, APRI, LANCIA UN DARDO', 'A TENUTO E LASCIATO: SFERA CHE ESPLODE', 'C: PALLA DI FUOCO'] },
+};
+for (const k of ORD) CL[k].id = k;
+// le quattro barre della scheda: forza, difesa, velocità, distanza
+const BAR = ['FORZA', 'DIFESA', 'VELOCITÀ', 'DISTANZA'];
+
+// abilità: nome, costo in energia, prezzo dal maestro (0: la sa da subito), icona e colori
+const SK = {
+  parata: { n: 'PARATA', cost: 0, price: 0, ico: 'shield', c: ['#9aa4b2', '#ffd23f'], d: 'TIENI PREMUTO C: LO SCUDO FERMA I COLPI CHE ARRIVANO DI FRONTE.' },
+  carica: { n: 'CARICA', cost: 4, price: 150, ico: 's_carica', c: ['#ffc83a', '#ffffff'], d: 'UNO SCATTO IN AVANTI CHE TRAVOLGE E STORDISCE CHI INCONTRA.' },
+  grido: { n: 'GRIDO DI GUERRA', cost: 6, price: 400, ico: 's_grido', c: ['#e8a03a', '#ffe8a0'], d: 'UN URLO CHE LASCIA STORDITI TUTTI I NEMICI VICINI.' },
+  balzo: { n: 'BALZO', cost: 3, price: 0, ico: 's_balzo', c: ['#8ae06a', '#ffffff'], d: "UN SALTO ALL'INDIETRO, SCOCCANDO UNA FRECCIA AL VOLO." },
+  fgelo: { n: 'FRECCIA DI GHIACCIO', cost: 4, price: 150, ico: 's_fgelo', c: ['#9ad8ff', '#ffffff'], d: 'CONGELA PER QUALCHE ISTANTE IL NEMICO CHE COLPISCE.' },
+  pioggia: { n: 'PIOGGIA DI FRECCE', cost: 7, price: 400, ico: 's_pioggia', c: ['#c8d0dc', '#8ae06a'], d: 'UNA SALVA CHE CADE DAL CIELO SUI NEMICI DAVANTI A TE.' },
+  bomba: { n: 'BOMBA', cost: 4, price: 0, ico: 's_bomba', c: ['#4a4a5a', '#ffb02e'], d: 'ESPLODE DOPO UN ATTIMO: FERISCE TUTTI E APRE I MURI CREPATI.' },
+  fumo: { n: 'FUMOGENO', cost: 5, price: 150, ico: 's_fumo', c: ['#b8b8c8', '#ffffff'], d: 'I NEMICI TI PERDONO DI VISTA: IL PRIMO COLPO È ALLE SPALLE.' },
+  trappola: { n: 'TAGLIOLA', cost: 4, price: 400, ico: 's_trappola', c: ['#9aa4b2', '#5a3a20'], d: 'LA POSI A TERRA: CHI CI METTE IL PIEDE RESTA BLOCCATO.' },
+  fuoco: { n: 'PALLA DI FUOCO', cost: 4, price: 0, ico: 's_fuoco', c: ['#ff7a2a', '#ffe14a'], d: 'ESPLODE DOVE ARRIVA E LASCIA I NEMICI IN FIAMME.' },
+  gelo: { n: 'NOVA DI GELO', cost: 5, price: 150, ico: 's_gelo', c: ['#9ad8ff', '#ffffff'], d: 'CONGELA PER QUALCHE ISTANTE TUTTI I NEMICI INTORNO A TE.' },
+  cura: { n: 'CURA', cost: 8, price: 400, ico: 's_cura', c: ['#5af07a', '#ffffff'], d: 'LA MAGIA RICUCE LE FERITE: RIDÀ DUE CUORI.' },
+};
+for (const k in SK) SK[k].id = k;
+
+// le armi come le impugna ogni classe (il cavaliere usa quelle di sempre)
+const bow = (n, d, col, grip, glow) => ({ n, d, look: { kind: 'bow', col, grip: grip || '#5a3a20', glow } });
+const dag = (n, d, col, guard, glow, len) => ({ n, d, look: { kind: 'dagger', col, guard, glow, len: len || 0 } });
+const wand = (n, d, col, wood, ring, glow, len) => ({ n, d, look: { kind: 'wand', col, wood, ring, glow, len: len || 0 } });
+const ARMI = {
+  arciere: {
+    legno: bow('ARCO DI LEGNO', 'UN RAMO PIEGATO E UNO SPAGO: PER COMINCIARE BASTA.', '#b8885a', '#6a4424'),
+    pugnale: bow('ARCO DEL LADRO', 'PICCOLO E SILENZIOSO: STA SOTTO IL MANTELLO.', '#6a5a4a', '#3a2a20'),
+    ferro: bow('ARCO FERRATO', 'BRUNO NE HA RINFORZATO I FLETTENTI COL FERRO.', '#9aa4b2'),
+    argento: bow("ARCO D'ARGENTO", 'LEGGERO E LUCENTE COME LA LUNA.', '#e8eef6', '#c8a040'),
+    lancia: bow('ARCO DEL CACCIATORE', 'LO USAVANO I CACCIATORI DI LUPI DEL BOSCO.', '#7a5230', '#3e6a3a'),
+    mazza: bow('ARCO PESANTE', 'DURO DA TENDERE, MA LE SUE FRECCE FANNO MALE.', '#6a6e78', '#3a3a44'),
+    bastone: bow('ARCO DEL SAGGIO', 'IL SUO LEGNO ANTICO RICUCE LE FERITE A POCO A POCO.', '#7a5a3a', '#4a3a2a', '#7ae0ff'),
+    runica: bow('ARCO RUNICO', 'LE RUNE SUI FLETTENTI VIBRANO NEL BUIO.', '#9a7af0', '#4a3a7a', '#e8dcff'),
+    ascia: bow('ARCO DEL GIGANTE', 'ALTO QUANTO TE: CI VUOLE UN BRACCIO DI FERRO.', '#8a6a4a', '#c8d0dc'),
+    tridente: bow('ARCO DEL NOSTROMO', 'LEGNO DI NAVE E CORDA DI CANAPA. +10% VELOCITÀ.', '#5ad0e8', '#3a6a8a'),
+    scimitarra: bow('ARCO DI ZAFIRA', 'CORNO E NERVO, CURVO COME LE DUNE.', '#e8b42a', '#8a2a2a'),
+    martello: bow('ARCO DI BRUNO', "IL CAPOLAVORO DELLA FUCINA: FLETTENTI D'ACCIAIO.", '#c8d0dc'),
+    aurora: bow("ARCO DELL'AURORA", 'TESO CON LA PRIMA LUCE DEL MONDO, E SEPOLTO DOVE LA LUCE NON ARRIVA.', '#ffe8a0', '#ffb02e', '#ffffff'),
+    katana: bow('ARCO DEI PETALI', 'LA SUA FRECCIA COGLIE UN PETALO CHE CADE. +12% VELOCITÀ.', '#f8f8ff', '#c85a7a', '#ffd8e8'),
+    solare: bow('ARCO DEL SOLE', 'LE SUE FRECCE SONO RAGGI DI LUCE: TRAPASSANO OGNI NEMICO.', '#fff0a0', '#ffb02e', '#ffffff'),
+    zanna: bow("ARCO DELL'INVERNO", 'LE SUE FRECCE DI GHIACCIO TRAPASSANO OGNI NEMICO.', '#cfeaff', '#5a8ac0', '#ffffff'),
+  },
+  furfante: {
+    legno: dag('PUGNALI DI LEGNO', 'DUE PALETTI APPUNTITI. MEGLIO DI NIENTE.', '#b8885a', '#6a4424'),
+    pugnale: dag('PUGNALI DEL LADRO', 'CORTI E AFFILATI: I FERRI DEL MESTIERE.', '#d8dce4', '#5a3a20'),
+    ferro: dag('PUGNALI DI FERRO', 'FORGIATI DA BRUNO, IL FABBRO DEL BORGO.', '#c8d0dc', '#8a8a92'),
+    argento: dag("PUGNALI D'ARGENTO", 'LEGGERI E LUCENTI COME LA LUNA.', '#f0f6ff', '#c8a040'),
+    lancia: dag('COLTELLI DEL CACCIATORE', 'LI USAVANO I CACCIATORI DI LUPI DEL BOSCO.', '#c8d0dc', '#3e6a3a'),
+    mazza: dag('MANNAIE', 'NON SONO ELEGANTI, MA FANNO IL LORO LAVORO.', '#6a6e78', '#3a3a44'),
+    bastone: dag('PUGNALI DEL SAGGIO', 'LA PIETRA SUL POMOLO RICUCE LE FERITE A POCO A POCO.', '#7ae0ff', '#7a5a3a'),
+    runica: dag('PUGNALI RUNICI', 'LE RUNE SULLE LAME VIBRANO NEL BUIO.', '#9a7af0', '#4a3a7a', '#e8dcff'),
+    ascia: dag('ZANNE DEL GIGANTE', 'DUE DENTI DI GIGANTE, AFFILATI COME RASOI.', '#f0e8d0', '#7a5230', null, 1),
+    tridente: dag('UNCINI DEL NOSTROMO', 'BUONI PER I PESCI E PER I PREDONI. +10% VELOCITÀ.', '#5ad0e8', '#3a6a8a'),
+    scimitarra: dag('PUGNALI DI ZAFIRA', 'LAME CURVE TEMPRATE NELLA SABBIA ROVENTE.', '#e8eef6', '#e8b42a', null, 1),
+    martello: dag('LAME DI BRUNO', 'IL CAPOLAVORO DELLA FUCINA: TAGLIANO IL FERRO.', '#c8d0dc', '#5a3a20', null, 1),
+    aurora: dag("PUGNALI DELL'AURORA", 'FORGIATI CON LA PRIMA LUCE DEL MONDO, E SEPOLTI DOVE LA LUCE NON ARRIVA.', '#ffe8a0', '#ffb02e', '#ffffff', 1.5),
+    katana: dag('LAME DEI PETALI', 'TAGLIANO UN PETALO CHE CADE SENZA FERMARLO. +12% VELOCITÀ.', '#f8f8ff', '#c85a7a', '#ffd8e8', 1.5),
+    solare: dag('PUGNALI DEL SOLE', 'A OGNI COLPO LANCIANO UN RAGGIO DI LUCE CHE ARRIVA LONTANO.', '#fff0a0', '#ffb02e', '#ffffff', 1.5),
+    zanna: dag("ZANNE DELL'INVERNO", 'GHIACCIO CHE NON SI SCIOGLIE. A OGNI COLPO LANCIANO UN RAGGIO GELIDO.', '#cfeaff', '#5a8ac0', '#ffffff', 1.5),
+  },
+  mago: {
+    legno: wand('BACCHETTA DI LEGNO', 'UN RAMETTO CHE SA FARE UNA SOLA SCINTILLA. PER ORA.', '#ffd86a', '#b8885a'),
+    pugnale: wand('BACCHETTA DEL LADRO', 'RUBATA A UN MAGO CHE DORMIVA.', '#d8dce4', '#5a3a20'),
+    ferro: wand('BASTONE FERRATO', 'BRUNO CI HA MESSO UNA GHIERA DI FERRO: REGGE MAGIE PIÙ FORTI.', '#ff9a3a', '#6a4a30', '#9aa4b2'),
+    argento: wand("BASTONE D'ARGENTO", 'LEGGERO E LUCENTE COME LA LUNA.', '#f0f6ff', '#c8d0dc', '#c8a040'),
+    lancia: wand('BASTONE DEL CACCIATORE', 'INTAGLIATO DAI CACCIATORI DI LUPI DEL BOSCO.', '#8ae06a', '#7a5230'),
+    mazza: wand('VERGA FERRATA', 'NON È ELEGANTE, MA FA IL SUO LAVORO.', '#b8b8c4', '#3a3a44', '#6a6e78'),
+    bastone: wand('BASTONE DEL SAGGIO', 'LA SFERA IN CIMA RICUCE LE FERITE A POCO A POCO.', '#7ae0ff', '#7a5a3a'),
+    runica: wand('BASTONE RUNICO', "LE RUNE SULL'ASTA VIBRANO NEL BUIO.", '#9a7af0', '#4a3a7a', null, '#e8dcff'),
+    ascia: wand('BASTONE DEL GIGANTE', 'UN TRONCO CON UN MACIGNO IN CIMA.', '#c8d0dc', '#7a5230', null, null, 1.5),
+    tridente: wand('BASTONE DEL NOSTROMO', 'LEGNO DI NAVE CON UNA PERLA IN PUNTA. +10% VELOCITÀ.', '#5ad0e8', '#3a6a8a'),
+    scimitarra: wand('SCETTRO DI ZAFIRA', 'UN RUBINO GRANDE COME UN DATTERO, SU ORO DEL DESERTO.', '#e8364e', '#e8b42a', '#ffe8a0'),
+    martello: wand('SCETTRO DI BRUNO', 'IL CAPOLAVORO DELLA FUCINA: ACCIAIO E UN CUORE DI BRACE.', '#ff6a2a', '#c8d0dc', '#5a3a20'),
+    aurora: wand("SCETTRO DELL'AURORA", 'ACCESO CON LA PRIMA LUCE DEL MONDO, E SEPOLTO DOVE LA LUCE NON ARRIVA.', '#ffe8a0', '#ffb02e', '#ffffff', '#ffffff', 1),
+    katana: wand('BASTONE DEI PETALI', 'UN RAMO DI CILIEGIO SEMPRE IN FIORE. +12% VELOCITÀ.', '#ffb8d8', '#7a4a5a', null, '#ffffff'),
+    solare: wand('SCETTRO DEL SOLE', 'I SUOI DARDI SONO RAGGI DI LUCE: TRAPASSANO OGNI NEMICO.', '#fff0a0', '#ffb02e', '#ffffff', '#ffffff', 1),
+    zanna: wand("SCETTRO DELL'INVERNO", 'I SUOI DARDI DI GHIACCIO TRAPASSANO OGNI NEMICO.', '#cfeaff', '#5a8ac0', '#ffffff', '#ffffff', 1),
+  },
+};
+
+// le frasi della storia che nominano un'arma cambiano con la classe
+const TXT = {
+  mirta: { cavaliere: 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTA SPADA DI LEGNO E DUE POZIONI.', arciere: "NON PUOI ANDARCI A MANI NUDE: PRENDI QUEST'ARCO DI LEGNO E DUE POZIONI.",
+    furfante: 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTI PUGNALI DI LEGNO E DUE POZIONI.', mago: 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTA BACCHETTA DI LEGNO E DUE POZIONI.' },
+  bruno1: { cavaliere: 'PORTAMENE TRE E TI FORGIO UNA SPADA VERA.', arciere: 'PORTAMENE TRE E TI FACCIO UN ARCO COME SI DEVE.', furfante: 'PORTAMENE TRE E TI FORGIO DUE PUGNALI VERI.', mago: 'PORTAMENE TRE E TI FACCIO UN BASTONE COME SI DEVE.' },
+  bruno2: { cavaliere: 'ECCO: UNA SPADA DI FERRO, TEMPRATA A DOVERE. MOLTO MEGLIO DI QUEL BASTONE!', arciere: 'ECCO: UN ARCO FERRATO, TESO A DOVERE. MOLTO MEGLIO DI QUEL RAMETTO!',
+    furfante: 'ECCO: DUE PUGNALI DI FERRO, TEMPRATI A DOVERE. MOLTO MEGLIO DI QUEI PALETTI!', mago: 'ECCO: UN BASTONE FERRATO, FATTO A DOVERE. MOLTO MEGLIO DI QUEL RAMETTO!' },
+  bruno3: { cavaliere: "QUELLA... È LA LAMA DELL'AURORA?! NON CREDEVO DI VEDERLA CON I MIEI OCCHI!", arciere: "QUELLO... È L'ARCO DELL'AURORA?! NON CREDEVO DI VEDERLO CON I MIEI OCCHI!",
+    furfante: "QUELLI... SONO I PUGNALI DELL'AURORA?! NON CREDEVO DI VEDERLI CON I MIEI OCCHI!", mago: "QUELLO... È LO SCETTRO DELL'AURORA?! NON CREDEVO DI VEDERLO CON I MIEI OCCHI!" },
+  eremita: { cavaliere: "DICONO CHE SOLO LA LAMA DELL'AURORA POSSA FERIRLO. MA QUELLA LAMA È PERDUTA DA SECOLI... O FORSE DORME NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO.",
+    arciere: "DICONO CHE SOLO L'ARCO DELL'AURORA POSSA FERIRLO. MA QUELL'ARCO È PERDUTO DA SECOLI... O FORSE DORME NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO.",
+    furfante: "DICONO CHE SOLO I PUGNALI DELL'AURORA POSSANO FERIRLO. MA SONO PERDUTI DA SECOLI... O FORSE DORMONO NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO.",
+    mago: "DICONO CHE SOLO LO SCETTRO DELL'AURORA POSSA FERIRLO. MA È PERDUTO DA SECOLI... O FORSE DORME NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO." },
+  // i guardiani: come si interrompe il serpente (e chi non ha lo scudo che respinge)
+  serpe: { cavaliere: '', arciere: 'MENTRE SPUTA LE BOLLE, COLPISCILO CON UNA FRECCIA CARICATA (A TENUTO)!', furfante: 'MENTRE SPUTA LE BOLLE, COLPISCILO CON I PUGNALI LANCIATI (A TENUTO) O CON UNA BOMBA!', mago: 'MENTRE SPUTA LE BOLLE, COLPISCILO CON LA SFERA (A TENUTO) O CON UNA PALLA DI FUOCO!' },
+  regina: { cavaliere: 'QUANDO È STANCA, COLPISCILA. IL RAGGIO LA INTERROMPE MENTRE LANCIA.', arciere: 'QUANDO È STANCA, COLPISCILA. UNA FRECCIA CARICATA LA INTERROMPE MENTRE LANCIA.', furfante: 'QUANDO È STANCA, COLPISCILA. I PUGNALI LANCIATI LA INTERROMPONO MENTRE LANCIA.', mago: 'QUANDO È STANCA, COLPISCILA. LA SFERA CARICATA LA INTERROMPE MENTRE LANCIA.' },
+};
+return { ORD, CL, BAR, SK, ARMI, TXT };
+})();
+
 // ===================== PIXEL SAGA · il gioco =====================
 // Avventura fantasy in un mondo aperto: si esplora a schermo intero, in orizzontale.
 GAMES.push((() => {
@@ -10277,7 +10462,7 @@ function itemIcon(id) {
   const it = IT[id]; if (!it) return null;
   if (iconCache[id]) return iconCache[id];
   let c;
-  if (it.t === 'arma') { const k = it.look.kind; c = k === 'axe' ? A.icon('axe', it.look.col, '#a07040') : k === 'spear' ? A.icon('spear', it.look.col, '#a07040') : k === 'hammer' ? A.icon('hammer', it.look.col, '#a07040') : k === 'staff' ? A.icon('staff', it.look.col, '#a07040') : A.icon('sword', it.look.col, it.look.guard || '#c8a040'); }
+  if (it.t === 'arma') { const k = it.look.kind; c = k === 'axe' ? A.icon('axe', it.look.col, '#a07040') : k === 'spear' ? A.icon('spear', it.look.col, '#a07040') : k === 'hammer' ? A.icon('hammer', it.look.col, '#a07040') : k === 'staff' ? A.icon('staff', it.look.col, '#a07040') : k === 'bow' ? A.icon('bow', it.look.col, it.look.str || '#f0e8d8') : k === 'dagger' ? A.icon('dagger', it.look.col, it.look.guard || '#c8a040') : k === 'wand' ? A.icon('staff', it.look.col, it.look.wood || '#a07040') : A.icon('sword', it.look.col, it.look.guard || '#c8a040'); }
   else if (it.t === 'armatura') c = A.icon('armor', it.look.shirt, it.look.plate || '#fff4b0');
   else if (it.t === 'elmo') c = it.look.hood ? A.icon('hood', it.look.hood) : it.look.hat ? A.icon('hat', it.look.hat, '#ffe14a') : A.icon('helm', it.look.helm ? it.look.helm.c : '#3e6a3a', '#ffe14a');
   else if (it.t === 'scudo') c = A.icon('shield', it.look.shield, it.look.emblem || '#e8d0a0');
@@ -10389,7 +10574,7 @@ function setDay(tod) {
 function newSave() {
   return { v: 1, x: 2005, z: 2700, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
     eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0, viaggio: 0 }, track: 'main',
-    chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {}, jobs: {} };
+    chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {}, jobs: {}, cls: null, sk: {}, skSel: {} };
 }
 function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) { const n = Object.assign(newSave(), s); n.q = Object.assign(newSave().q, s.q); return n; } } catch (e) {} return null; }
 function writeSave() {
@@ -10406,24 +10591,39 @@ function b64(u) { let s = ''; for (let i = 0; i < u.length; i += 8) { let b = 0;
 function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length; i++) { const b = s.charCodeAt(i); for (let k = 0; k < 8; k++) u[i * 8 + k] = (b >> k) & 1; } } catch (e) {} }
 
 // ---------- statistiche dell'eroe ----------
-const eqIt = s => save.eq[s] ? IT[save.eq[s]] : null;
+const CLS = SG.cls, CL = CLS.CL, SKL = CLS.SK;
+const cls = () => (save && CL[save.cls]) ? save.cls : 'cavaliere', CC = () => CL[cls()];
+const eqIt = s => (s === 'scudo' && !CC().shield) || !save.eq[s] ? null : IT[save.eq[s]];      // lo scudo lo porta solo il cavaliere
 const EQS = ['arma', 'armatura', 'elmo', 'scudo', 'acc'], eqSum = f => EQS.reduce((s, k) => s + ((eqIt(k) || {})[f] || 0), 0), eqHas = f => EQS.some(k => (eqIt(k) || {})[f]);
 const ATT = () => { const w = eqIt('arma'); return (w ? w.att : 1) + ((eqIt('acc') || {}).att || 0); };
-const DIF = () => eqSum('dif');
-const MAXHP = () => 6 + save.hearts * 2 + eqSum('hp');
-const VEL = () => 1 + eqSum('vel');
-function heroLook() {
-  const L = { skin: SKIN, hairStyle: 'short', hair: '#6a4024', boots: '#5a3a22' };
-  Object.assign(L, IT.tunica.look);
-  for (const s of ['armatura', 'elmo', 'scudo']) { const it = eqIt(s); if (it && it.look) Object.assign(L, it.look); }
-  if (L.helm || L.hood) L.hairStyle = 'none';
-  const w = eqIt('arma'); L.weapon = w ? w.look : null;
-  if (save.eq.acc === 'vento') L.boots = '#e8eef6';
+const DIF = () => eqSum('dif') + CC().dif;
+const MAXHP = () => 6 + save.hearts * 2 + eqSum('hp') + CC().hp;
+const VEL = () => 1 + eqSum('vel') + CC().vel;
+const MAXEN = () => CC().en;
+// le abilità (C): quelle che la classe sa già e quella scelta
+const skillsOf = c => CL[c].skills.filter(id => !SKL[id].price || (save.sk && save.sk[id]));
+const curSkill = () => { const L = skillsOf(cls()), s = save.skSel && save.skSel[cls()]; return L.includes(s) ? s : L[0]; };
+// ogni classe impugna le armi a modo suo: stesso oggetto, altro nome e altro aspetto
+const BASEW = {}; for (const id in IT) if (IT[id].t === 'arma') BASEW[id] = { n: IT[id].n, d: IT[id].d, look: IT[id].look };
+const weaponOf = (id, c) => (CLS.ARMI[c] && CLS.ARMI[c][id]) || BASEW[id];
+function applyClass() { const c = cls(); for (const id in BASEW) Object.assign(IT[id], weaponOf(id, c)); for (const k in iconCache) delete iconCache[k]; }
+// c: la classe (di solito quella dell'eroe); demo: il figurino della scheda, con l'arma e i panni di partenza
+function heroLook(c = cls(), demo) {
+  const K = CL[c], L = { skin: SKIN, hairStyle: 'short', hair: '#6a4024', boots: '#5a3a22' }, E = s => (demo || (s === 'scudo' && !K.shield) || !save.eq[s]) ? null : IT[save.eq[s]];
+  Object.assign(L, IT.tunica.look, K.look);                    // la tunica di partenza ha il colore della classe
+  const arm = E('armatura'); if (arm && arm.look && save.eq.armatura !== 'tunica') { delete L.sleeve; delete L.belt; Object.assign(L, arm.look); if (K.look.robe) L.robe = A.shade(arm.look.pants || arm.look.shirt, 0.92); }
+  const el = E('elmo'); if (el && el.look) { for (const k of ['cap', 'feather', 'hat', 'hatPoint', 'hatBand', 'hood', 'mask']) delete L[k]; Object.assign(L, el.look); }
+  const sc = E('scudo'); if (sc && sc.look) Object.assign(L, sc.look);
+  if (L.helm || L.hood || L.cap) L.hairStyle = 'none';
+  const wid = demo ? 'legno' : save.eq.arma; L.weapon = wid ? weaponOf(wid, c).look : null;
+  if (demo) Object.assign(L, K.demo || {});
+  if (K.dual && L.weapon) L.weapon2 = L.weapon;
+  if (!demo && save.eq.acc === 'vento') L.boots = '#e8eef6';
   return L;
 }
 
 // ---------- sprite ----------
-const POSE_HERO = [{}, { leg: 0.55 }, { leg: -0.55 }, { armR: 3.1, leg: 0.15 }, { armR: 1.45, leg: -0.25, armL: -0.4 }];
+const POSE_N = 7;      // pose dell'eroe: ogni classe ha le sue (sg_class.js)
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
 // otto direzioni: cinque disegnate, tre ottenute allo specchio (metà dello spazio nell'atlante)
@@ -10517,6 +10717,16 @@ function buildStatics() {
   SH.bubble = HD(A.orb(11, '#5ab0f0', '#ffffff', { ring: 0.42, spot: 1, oc: '#1a4a8a' }), 6);
   SH.light = atlas.add(A.pix(['....aa....', '..abbbba..', '.abccccba.', 'abcc..ccba', 'abc....cba', 'ab......ba'], { a: '#ffb02e', b: '#ffe07a', c: '#ffffff' }));
   SH.rock = HD(A.orb(9, '#7a7a84', '#b8b8c4'), 5);
+  // i colpi delle classi: frecce e pugnali hanno un verso (otto direzioni), dardi e sfere no
+  const ARROW = [{ t: 'c', a: [-5, 0, 3], b: [4.4, 0, 3], r: 0.34, c: '#c8a878' }, { t: 'k', a: [4.4, 0, 3], b: [7, 0, 3], r: 0.95, r2: 0.12, c: '#e8eef6', k: 1.15 }, { t: 'e', o: [-4.6, 0, 3], r: [1.4, 0.28, 1.15], c: '#e8304a' }, { t: 'e', o: [-4.6, 0, 3], r: [1.4, 1.15, 0.28], c: '#f0e8d8' }];
+  const KNIFE = [{ t: 'c', a: [-4, 0, 3], b: [-1.2, 0, 3], r: 0.5, c: '#3a2a20' }, { t: 'b', b: [-1.4, -0.9, -1.1, 1.1, 2.5, 3.5], c: '#c8a040' }, { t: 'k', a: [-0.8, 0, 3], b: [4.6, 0, 3], r: 0.85, r2: 0.15, c: '#e8eef6', k: 1.15 }];
+  SH.arrow = dirs(() => ARROW, 20, 12, { base: 9 }); SH.knife = dirs(() => KNIFE, 16, 12, { base: 9 });
+  SH.bolt = HD(A.orb(9, '#8a6af0', '#f0e8ff', { oc: '#2a1a5a' }), 5);
+  SH.orb = HD(A.orb(13, '#5ab8ff', '#ffffff', { ring: 0.42, oc: '#1a3a8a' }), 7);
+  SPR.bomb = atlas.add(A.pix(['......d..', '.....c.d.', '....c....', '...aaa...', '..abbba..', '.abbebba.', '.abbbbba.', '.abbbbba.', '..abbba..', '...aaa...'], { a: '#141018', b: '#3a3a4a', c: '#c8a878', d: '#ffb02e', e: '#8a8a9a' }));
+  SPR.trap = atlas.add(A.pix(['.a.a.a.a.a.', '.babababab.', 'abbbbbbbbba', 'ab.ccccc.ba', 'abbbbbbbbba', '.babababab.', '.a.a.a.a.a.'], { a: '#e8eef6', b: '#6a6e78', c: '#3a2a20' }));
+  SPR.star = atlas.add(A.pix(['..a..', '.aba.', 'abbba', '.aba.', '..a..'], { a: '#ffb02e', b: '#fff4b0' }));
+  SPR.arrowfx = atlas.add(A.pix(['a', 'a', 'b', 'b', 'b', 'c'], { a: '#e8304a', b: '#c8a878', c: '#e8eef6' }));
   SPR.shot = SH; SPR.rockfx = SH.rock; SPR.icefx = SH.ice;
   // quello che si raccoglie per gli incarichi, e il punto esclamativo sopra le bacheche (giallo: c'è lavoro; verde: c'è una paga)
   SPR.pick = { fungo: atlas.add(A.pix(['...aaaa...', '..abaaba..', '.aaaaaaba.', '.abaaaaaa.', '.aaaabaaa.', '...cccc...', '....cc....', '....cc....', '...cccc...'], { a: '#e8304a', b: '#ffffff', c: '#f0e0c0' })),
@@ -10529,7 +10739,7 @@ function buildStatics() {
 }
 function* buildCharacters() {
   CHR.hero = null; heroRects = [];
-  for (let p = 0; p < POSE_HERO.length; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(HS, HS))); heroRects.push(row); }
+  for (let p = 0; p < POSE_N; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(HS, HS))); heroRects.push(row); }
   yield 0.05;
   const LK = SG.city.LOOKS;
   for (const id in W.FOLK) { const f = W.FOLK[id], L = LK[f.look], wk = !!(f.walk && L.walk); NPC[id] = { n: f.n, look: L, sc: L.sc, as: f.look + (wk ? '+' : ''), lines: f.lines, f, walk: wk }; }
@@ -10564,9 +10774,9 @@ function* buildCharacters() {
   yield 1;
 }
 function drawHeroSprites() {
-  const L = heroLook();
-  for (let p = 0; p < POSE_HERO.length; p++) for (let d = 0; d < 8; d++) {
-    const c = A.figure(A.human(L, POSE_HERO[p]), d / 8 * TAU, HS, HS, { sc: SR }), r = heroRects[p][d];
+  const L = heroLook(), P = CC().poses;
+  for (let p = 0; p < POSE_N; p++) for (let d = 0; d < 8; d++) {
+    const c = A.figure(A.human(L, P[p]), d / 8 * TAU, HS, HS, { sc: SR }), r = heroRects[p][d];
     if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); }
   }
 }
@@ -10577,7 +10787,7 @@ function* loader() {
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
   gl = G.gl;
-  atlas = A.Atlas(2048, 3392);
+  atlas = A.Atlas(2048, 3520);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -10625,7 +10835,9 @@ function startGame(fresh) {
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
   else loadSeen(save.seen || '');
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
-  hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0 };
+  hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0,
+    act: 'slash', atkT: 0.42, en: MAXEN(), enT: 0, enFl: 0, chg: 0, aDown: false, aHold: 0, cdC: 0, dash: null, block: false, guard: 0, hid: 0, nextShot: null, castFn: null };
+  things = []; applyClass(); clsUI = null;
   if (hero.hp <= 0) hero.hp = MAXHP();
   orb.id = null; orb.pBack = false; orb.p = Math.max(-1, Math.min(1, +save.opt.cam || 0));
   camBehind();
@@ -10642,6 +10854,7 @@ function startGame(fresh) {
   save.flags.cityTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
+  else if (!save.cls) openClass('old');       // chi giocava già sceglie la classe la prima volta che riprende
   writeSave();
 }
 
@@ -10746,6 +10959,7 @@ function give(id, quiet) {
   if (it.t === 'chiave') { if (id === 'sigillo') save.flags.sigillo = 1; return null; }
   if (it.t === 'pietra') return "PIETRE DELL'ALBA: " + gemsN() + ' SU 5';
   if (!save.inv.includes(id)) save.inv.push(id);
+  if (it.t === 'scudo' && !CC().shield) return 'NELLA BORSA: LO SCUDO LO PORTA SOLO IL CAVALIERE.';
   const cur = eqIt(it.t), score = x => x ? (x.att || 0) * 3 + (x.dif || 0) * 3 + (x.hp || 0) * 2 + (x.vel || 0) * 10 + (x.regen || 0) * 6 + x.r : -1;
   if (score(it) > score(cur)) { equip(id); return 'EQUIPAGGIATO!'; }
   return 'MESSO NELLA BORSA (START).';
@@ -10766,6 +10980,8 @@ function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1];
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
+  // il maestro della gilda: cambia la classe e insegna le abilità
+  if (f.role === 'guild') return ask(id, [f.lines[0], 'SE CAMBI, LE ARMI CHE HAI PRENDONO LA FORMA DELLA NUOVA CLASSE. E POSSO INSEGNARTI ABILITÀ CHE ANCORA NON CONOSCI.'], ['CAMBIA CLASSE' + (gildaCost() ? ' (' + gildaCost() + ' MONETE)' : ' (GRATIS)'), "IMPARA UN'ABILITÀ", 'NIENTE, GRAZIE'], i => { if (i === 0) openClass('gilda'); else if (i === 1) { shop = { sk: true, sel: 0 }; tone(660, 0.05); } });
   if (f.role === 'inn') return ask(id, [f.lines[0], 'UN LETTO E UNA ZUPPA CALDA, E DOMATTINA SEI COME NUOVO. FANNO ' + f.cost + ' MONETE.'], ['RIPOSA (' + f.cost + ' MONETE)', 'NO, GRAZIE'], i => {
     if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
     save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; setDay(save.tod); if (inCasa() && D.letto) { hero.x = D.letto[0]; hero.z = D.letto[1]; hero.yaw = D.letto[2]; hero.vx = hero.vz = 0; camBehind(); } toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); writeSave(); }); });
@@ -10799,7 +11015,7 @@ function talk(n) {
   if (jobTalk(id)) return;
   if (NPC[id] && NPC[id].f) return talkFolk(n, NPC[id]);
   if (id === 'mirta') {
-    if (q.main === 0) return say(id, ['BENVENUTO A BORGO AURORA, VIAGGIATORE. IO SONO MIRTA, LA PIÙ ANZIANA DEL VILLAGGIO.', "DA QUANDO LE CINQUE PIETRE DELL'ALBA SONO SPARITE, LE CREATURE DI LUMEN SI SONO FATTE INQUIETE.", 'E SUL PICCO A NORD SI È SVEGLIATO IL DRAGO. DALLE RIVE DEL LAGO LO SI VEDE VOLARE.', "LO SPIRITO DEL BOSCO SA DOVE SONO NASCOSTE LE PIETRE. VIVE SOTTO L'ALBERO MADRE, NEL BOSCO ANTICO, A NORD-OVEST.", 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTA SPADA DI LEGNO E DUE POZIONI.'], () => { give('legno'); save.pot += 2; q.main = 1; trackQuest('main'); toast("MISSIONE: LE PIETRE DELL'ALBA", '#ffd23f'); jingle(); });
+    if (q.main === 0) return say(id, ['BENVENUTO A BORGO AURORA, VIAGGIATORE. IO SONO MIRTA, LA PIÙ ANZIANA DEL VILLAGGIO.', "DA QUANDO LE CINQUE PIETRE DELL'ALBA SONO SPARITE, LE CREATURE DI LUMEN SI SONO FATTE INQUIETE.", 'E SUL PICCO A NORD SI È SVEGLIATO IL DRAGO. DALLE RIVE DEL LAGO LO SI VEDE VOLARE.', "LO SPIRITO DEL BOSCO SA DOVE SONO NASCOSTE LE PIETRE. VIVE SOTTO L'ALBERO MADRE, NEL BOSCO ANTICO, A NORD-OVEST.", CLS.TXT.mirta[cls()]], () => { give('legno'); save.pot += 2; q.main = 1; trackQuest('main'); toast("MISSIONE: LE PIETRE DELL'ALBA", '#ffd23f'); jingle(); });
     if (q.main === 1) return say(id, ["L'ALBERO MADRE È NEL BOSCO ANTICO, A NORD-OVEST. SEGUI LA STRADA CHE PARTE DALLA PIAZZA.", 'SE TI PERDI, PREMI SELECT PER GUARDARE LA MAPPA. IL ROMBO GIALLO IN ALTO TI INDICA LA DIREZIONE.']);
     if (q.main === 2) return say(id, ['LO SPIRITO TI HA MANDATO ALLA ROCCA? ALLORA LA COSA È SERIA.', 'LA ROCCA DI LUMEN È A SUD-EST, OLTRE IL GUADO DEL FIUME.']);
     if (q.main === 3) return say(id, ['DICONO CHE IL RE STIA PER TORNARE DAL NORD. IL CAPITANO ARDEA AVRÀ PRESTO NOTIZIE PER TE.', 'E SE SEI FERITO, BEVI AL POZZO DELLA PIAZZA.']);
@@ -10808,11 +11024,11 @@ function talk(n) {
     return say(id, ["LA LUCE È TORNATA. MA IL DRAGO... STANOTTE L'HO SENTITO RUGGIRE FIN QUI."]);
   }
   if (id === 'bruno') {
-    if (q.ferro === 0) return say(id, ['BENVENUTO NELLA MIA FUCINA! PECCATO CHE IL FUOCO SIA QUASI SPENTO: MI MANCA IL FERRO.', 'SULLE COLLINE A NORD-EST DEL BORGO CI SONO ROCCE CON VENATURE DI FERRO. LUCCICANO TRA L\'ERBA.', 'PORTAMENE TRE E TI FORGIO UNA SPADA VERA.'], () => { q.ferro = 1; trackQuest('ferro'); toast('MISSIONE: FERRO PER LA FORGIA', '#ffd23f'); jingle(); });
+    if (q.ferro === 0) return say(id, ['BENVENUTO NELLA MIA FUCINA! PECCATO CHE IL FUOCO SIA QUASI SPENTO: MI MANCA IL FERRO.', 'SULLE COLLINE A NORD-EST DEL BORGO CI SONO ROCCE CON VENATURE DI FERRO. LUCCICANO TRA L\'ERBA.', CLS.TXT.bruno1[cls()]], () => { q.ferro = 1; trackQuest('ferro'); toast('MISSIONE: FERRO PER LA FORGIA', '#ffd23f'); jingle(); });
     if (q.ferro === 1 && save.ore < 3) return say(id, ['MINERALE DI FERRO: NE HAI ' + save.ore + ' SU 3.', 'LE ROCCE CON IL FERRO SONO A NORD-EST DEL BORGO, TRA LE COLLINE.']);
-    if (q.ferro <= 2) return say(id, ['CHE BEL FERRO! DAMMI UN MOMENTO...', 'ECCO: UNA SPADA DI FERRO, TEMPRATA A DOVERE. MOLTO MEGLIO DI QUEL BASTONE!'], () => { q.ferro = 3; openLoot('ferro'); });
+    if (q.ferro <= 2) return say(id, ['CHE BEL FERRO! DAMMI UN MOMENTO...', CLS.TXT.bruno2[cls()]], () => { q.ferro = 3; openLoot('ferro'); });
     const open = () => { shop = { sel: 0, top: 0, who: 'bruno' }; };
-    if (save.inv.includes('aurora') && !save.flags.brunoAurora) { save.flags.brunoAurora = 1; return say(id, ["QUELLA... È LA LAMA DELL'AURORA?! NON CREDEVO DI VEDERLA CON I MIEI OCCHI!", 'TIENILA CARA. INTANTO, DAI UN\'OCCHIATA A COSA HO FORGIATO COL TUO FERRO.'], open); }
+    if (save.inv.includes('aurora') && !save.flags.brunoAurora) { save.flags.brunoAurora = 1; return say(id, [CLS.TXT.bruno3[cls()], "CUSTODISCI BENE QUEL TESORO. INTANTO, DAI UN'OCCHIATA A COSA HO FORGIATO COL TUO FERRO."], open); }
     return say(id, [save.q.main >= 4 ? 'IL FUOCO È ALTO E IL FERRO CANTA! HO FINITO IL MIO CAPOLAVORO: VUOI VEDERLO?' : 'COL TUO FERRO LA FUCINA È RINATA. GUARDA COSA TI POSSO FORGIARE!'], open);
   }
   if (id === 'lia') {
@@ -10828,7 +11044,8 @@ function talk(n) {
   if (id === 'otto') {
     if (q.melme === 0) return say(id, ['ALT! AH, SEI UN VIAGGIATORE. SCUSA, SONO UN PO\' NERVOSO.', 'LE MELME HANNO INVASO I CAMPI DORATI, QUI A EST. IO NON POSSO LASCIARE IL POSTO DI GUARDIA...', 'NE SCONFIGGI SEI PER ME? TI RICOMPENSERÒ.'], () => { q.melme = 1; save.slimes = 0; trackQuest('melme'); toast('MISSIONE: MELME NEI CAMPI', '#ffd23f'); jingle(); });
     if (q.melme === 1) return say(id, ['MELME SCONFITTE: ' + save.slimes + ' SU 6. SONO NEI CAMPI A EST, OLTRE IL GUADO DEL FIUME.']);
-    if (q.melme === 2) return say(id, ['SEI MELME! I CONTADINI TI RINGRAZIANO.', 'PRENDI IL MIO VECCHIO SCUDO. E ANCHE QUESTE CINQUANTA MONETE.'], () => { q.melme = 3; save.coins += 50; openLoot('scudoLegno'); });
+    if (q.melme === 2) return CC().shield ? say(id, ['SEI MELME! I CONTADINI TI RINGRAZIANO.', 'PRENDI IL MIO VECCHIO SCUDO. E ANCHE QUESTE CINQUANTA MONETE.'], () => { q.melme = 3; save.coins += 50; openLoot('scudoLegno'); })
+      : say(id, ['SEI MELME! I CONTADINI TI RINGRAZIANO.', 'IL MIO VECCHIO SCUDO A TE NON SERVIREBBE: PRENDI QUESTO ELMO DI CUOIO. E ANCHE QUESTE CINQUANTA MONETE.'], () => { q.melme = 3; save.coins += 50; openLoot('elmoCuoio'); });
     return say(id, ['DA QUANDO I CAMPI SONO PULITI IL GRANO CRESCE DORATO COME NON MAI.']);
   }
   if (id === 'nino') return say(id, ['BENVENUTO! MERCI DA TUTTA LUMEN, PREZZI ONESTI... QUASI.'], () => { shop = { sel: 0, top: 0, who: 'nino' }; });
@@ -10871,7 +11088,7 @@ function talk(n) {
     return say(id, ['IL DRAGO... I SAPIENTI DICONO CHE SI PREPARA QUALCOSA. RESTA PRONTO, EROE.']);
   }
   if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE DUNE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
-  if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", "DICONO CHE SOLO LA LAMA DELL'AURORA POSSA FERIRLO. MA QUELLA LAMA È PERDUTA DA SECOLI... O FORSE DORME NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO.", 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
+  if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", CLS.TXT.eremita[cls()], 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
@@ -10928,7 +11145,7 @@ let musQuiet = 0;
 try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
 function musicPick() {
   if (st === 'title' || st === 'intro') return 'title';
-  if (st !== 'play' || musQuiet > 0) return null;
+  if ((st !== 'play' && st !== 'class') || musQuiet > 0) return null;
   if (D) { if (D.def.casa) return MUS_PLACE[D.town] || 'borgo'; if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
   return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
 }
@@ -11034,7 +11251,19 @@ function puffAt(x, z, n = 6, y) { const gy = y !== undefined ? y : gH(x, z) + 2;
 
 // ---------- eroe ----------
 function hurtHero(dmg, src, hard) {
-  if (hero.inv > 0 || hero.dead) return;
+  if (hero.inv > 0 || hero.dead || hero.dash) return;
+  // la guardia del cavaliere: ferma quello che arriva di fronte (i colpi più duri solo a metà); ogni parata costa energia
+  if (hero.block && src && Math.cos(Math.atan2(src.z - hero.z, src.x - hero.x) - hero.yaw) > 0.15) {
+    const cost = hard ? 2 : 1;
+    if (hero.en >= cost) {
+      hero.en -= cost; hero.enT = 0; tone(1400, 0.05, 'square', 0.05); tone(900, 0.08, 'square', 0.04, null, 0.04); vib(20);
+      for (let i = 0; i < 4; i++) fx.push({ k: 'spark', x: hero.x + Math.cos(hero.yaw) * 3, z: hero.z + Math.sin(hero.yaw) * 3, y: hero.y + 4 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
+      const a = Math.atan2(hero.z - src.z, hero.x - src.x); hero.kx = Math.cos(a) * 18; hero.kz = Math.sin(a) * 18; hero.kb = 0.1;
+      if (src.type && FOE[src.type] && src.st !== 'dead' && src.camp) { src.kb = 0.16; src.kx = -Math.cos(a) * 40; src.kz = -Math.sin(a) * 40; stun(src, 0.7); }
+      if (!hard) { hero.inv = 0.3; return; }
+      dmg = Math.max(1, Math.ceil(dmg / 2));
+    } else { hero.guard = 2.2; hero.block = false; hero.enFl = 0.6; toast('GUARDIA SPEZZATA!', '#ff8a8a'); tone(160, 0.2, 'square', 0.05, 80); }
+  }
   const red = Math.floor(DIF() / 3), d = Math.max(1, dmg - (hard ? Math.min(1, red) : red));
   hero.hp -= d; hero.inv = 0.9; hero.flash = 0.25;
   if (src) { const a = Math.atan2(hero.z - src.z, hero.x - src.x); hero.kx = Math.cos(a) * 46; hero.kz = Math.sin(a) * 46; hero.kb = 0.18; }
@@ -11055,14 +11284,18 @@ function heroUpdate(dt) {
   const busy = dialog || shop || loot || menu || mapOpen || fade;
   let f = 0, turn = 0;
   if (!busy) { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+  heroTick(dt);                                    // energia, colpo caricato, guardia
+  if (h.dash) { f = 0; turn = 0; }
   h.yaw += turn * 2.45 * dt;
   const cell = D ? dCellAt(h.x, h.z) : -1;
   h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.WL - 0.35;
-  let sp = 25 * VEL() * (BTN.b && f > 0 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1);
+  const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
+  let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
   const dx = Math.cos(h.yaw) * f * sp * dt, dz = Math.sin(h.yaw) * f * sp * dt;
-  if (D && cell === DT.ICE) {
+  if (h.dash) dashStep(dt);
+  else if (D && cell === DT.ICE) {
     // sul ghiaccio si scivola
     const k = Math.min(1, 1.6 * dt); h.vx += (dx / dt - h.vx) * k; h.vz += (dz / dt - h.vz) * k;
     if (Math.hypot(h.vx, h.vz) > 0.4) { if (move(h, h.vx * dt, h.vz * dt, 1.6)) { h.moving = f !== 0; h.walk += Math.hypot(h.vx, h.vz) * dt; } else { h.vx *= -0.25; h.vz *= -0.25; } }
@@ -11082,22 +11315,12 @@ function heroUpdate(dt) {
   // attacco
   if (h.atk > 0) {
     h.atk -= dt;
-    if (!h.hitDone && h.atk < 0.27) {
-      h.hitDone = true;
-      for (const e of foes) {
-        if (e.st === 'dead') continue;
-        const ex = e.x - h.x, ez = e.z - h.z, d = Math.hypot(ex, ez);
-        if (d < 10.5 + FOE[e.type].r && Math.cos(Math.atan2(ez, ex) - h.yaw) > 0.35) hitFoe(e, ATT(), Math.atan2(ez, ex));
-      }
-      if (D) dSwing();
-      const w = eqIt('arma');
-      if (w && w.beam) { const a = h.yaw; shots.push({ k: 'light', from: 'hero', x: h.x + Math.cos(a) * 5, z: h.z + Math.sin(a) * 5, y: h.y + 4.5, vx: Math.cos(a) * 125, vz: Math.sin(a) * 125, r: 3, dmg: Math.max(2, Math.round(ATT() * 0.6)), life: 0.62 }); tone(1046, 0.08, 'triangle', 0.03, 2093); }
-    }
+    if (!h.hitDone && h.atk < ACT[h.act][1]) { h.hitDone = true; heroHit(h.act); }
   }
   // pericoli del santuario: pozzi, punte, uscita
   if (D) {
     const c = dCellAt(h.x, h.z), i = Math.floor(h.x / DCS), j = Math.floor(h.z / DCS);
-    if (c === DT.PIT || (c === DT.PLAT && !D.platUp[j * D.w + i])) { h.fall = 0.7; h.atk = 0; tone(700, 0.6, 'triangle', 0.05, 90); return; }
+    if (c === DT.PIT || (c === DT.PLAT && !D.platUp[j * D.w + i])) { h.fall = 0.7; h.atk = 0; h.dash = null; h.chg = 0; tone(700, 0.6, 'triangle', 0.05, 90); return; }
     if (c === DT.SPIKE && h.inv <= 0) hurtHero(2, { x: h.x + Math.cos(h.yaw) * 4, z: h.z + Math.sin(h.yaw) * 4 });
     if (c === DT.EXIT && !fade) startFade(() => D.def.up ? gotoLevel(D.def.up, 'down') : exitDungeon());
     if (c === DT.STAIR && !fade && D.def.down) startFade(() => gotoLevel(D.def.down, 'up'));
@@ -11110,17 +11333,309 @@ function heroUpdate(dt) {
 }
 function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEX - 1, Math.floor(z / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
 
+// ---------- classi: colpi, colpo caricato, abilità ----------
+// ogni mossa: quanto dura e quanto manca alla fine quando va a segno
+const ACT = { slash: [0.42, 0.27], spin: [0.52, 0.38], shot: [0.4, 0.28], pshot: [0.5, 0.38], stab: [0.26, 0.18], knives: [0.42, 0.3], bolt: [0.45, 0.31], orb: [0.55, 0.39], cast: [0.4, 0.28] };
+const ICE_T = [0.62, 0.95, 1.6], LIGHT_T = [1.6, 1.5, 0.9];
+let things = [], clsUI = null, clsPics = null, chip = null, btnC = null;
+function startAct(a, fn) { const h = hero; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
+const tough = e => FOE[e.type].champ || FOE[e.type].elite;
+function stun(e, t) { if (e.st === 'dead') return; e.stun = Math.max(e.stun || 0, t * (tough(e) ? 0.4 : 1)); if (e.st === 'wind') { e.st = 'chase'; e.cd = Math.max(e.cd, 0.3); } }
+function freeze(e, t) { stun(e, t); e.frz = e.stun; }
+function burn(e, t, d) { if (e.st === 'dead') return; e.burn = t; e.burnD = d; if (!(e.burnT > 0)) e.burnT = 0.8; }
+// i guardiani si lasciano interrompere dai colpi forti delle classi, ma non di continuo
+const classStun = () => !!boss && time > (boss.stunT || 0) && stunBoss(boss) && ((boss.stunT = time + 6), true);
+// colpo alle spalle del furfante: il nemico non ti ha visto, è stordito o ti dà la schiena
+const sneak = e => e.stun > 0 || hero.hid > 0 || (e.st !== 'chase' && e.st !== 'wind') || Math.cos(e.yaw - Math.atan2(hero.z - e.z, hero.x - e.x)) < -0.2;
+function critFx(e) { for (let i = 0; i < 6; i++) fx.push({ k: 'glint', x: e.x + (Math.random() - 0.5) * 5, z: e.z + (Math.random() - 0.5) * 5, y: e.y + 3 + Math.random() * 4, vy: 7, t: 0.4, s: 0.34 }); tone(1760, 0.05, 'square', 0.05); tone(2349, 0.09, 'square', 0.04, null, 0.05); }
+function dSight(x0, z0, x1, z1) { const d = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(d / 4); for (let k = 1; k < n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; if (dBlocks(Math.floor(x / DCS), Math.floor(z / DCS), 'shot')) return false; } return true; }
+// il bersaglio di frecce e magie: il nemico più comodo davanti all'eroe (vicino e poco di lato), se non c'è un muro di mezzo
+function aimAt(range, cone = 0.72) {
+  const h = hero; let best = null, bs = -1e9;
+  const see = (x, z, r, obj) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); if (d > range + r || d < 0.5) return; const c = Math.cos(Math.atan2(dz, dx) - h.yaw); if (c < cone) return; if (D && !dSight(h.x, h.z, x, z)) return; const s = c * 60 - d; if (s > bs) { bs = s; best = { x, z, obj }; } };
+  for (const e of foes) if (e.st !== 'dead' && (!D || e.room === D.room)) see(e.x, e.z, FOE[e.type].r, e);
+  if (D && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die') see(boss.x, boss.z, boss.r, boss);
+  return best;
+}
+// colpi da vicino: davanti (o tutt'intorno), su nemici, guardiano, vasi, cristalli e crepe
+function meleeHit(reach, cosMin, dmg, o = {}) {
+  const h = hero;
+  for (const e of foes) {
+    if (e.st === 'dead') continue;
+    const ex = e.x - h.x, ez = e.z - h.z, d = Math.hypot(ex, ez);
+    if (d < reach + FOE[e.type].r && (o.all || Math.cos(Math.atan2(ez, ex) - h.yaw) > cosMin)) { const crit = o.back && sneak(e); hitFoe(e, crit ? Math.round(dmg * 2.5) : dmg, Math.atan2(ez, ex)); if (crit) critFx(e); }
+  }
+  if (D) dSwing(reach, cosMin, o);
+}
+function lightBeam(dmg) { const h = hero, a = h.yaw; shots.push({ k: 'light', from: 'hero', x: h.x + Math.cos(a) * 5, z: h.z + Math.sin(a) * 5, y: h.y + 4.5, vx: Math.cos(a) * 125, vz: Math.sin(a) * 125, r: 3, dmg: Math.max(2, Math.round(dmg * 0.6)), life: 0.62 }); tone(1046, 0.08, 'triangle', 0.03, 2093); }
+// frecce, pugnali lanciati, dardi: partono verso il bersaglio e lo inseguono un poco
+function heroShot(k, o = {}) {
+  const h = hero; let tg = null;
+  if (!o.noAim) { tg = aimAt(o.range || 125); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); }
+  const a = h.yaw + (o.da || 0), sp = o.sp || 170;
+  shots.push(Object.assign({ k, from: 'hero', cls: 1, x: h.x + Math.cos(a) * 4, z: h.z + Math.sin(a) * 4, y: h.y + 4.6, gy: D ? 0 : Math.max(W.ground(h.x, h.z), W.WL), vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, yaw: a, r: 2.2, dmg: 1, life: 0.75, tg: tg ? tg.obj : null, turn: 2.5 }, o));
+}
+// un'esplosione: ferisce chi è nel raggio; nei santuari rompe vasi, scuote cristalli e (le bombe) apre i muri crepati
+function boom(x, z, r, dmg, o = {}) {
+  const gy = gH(x, z);
+  ringFx(x, z, r * 0.55); puffAt(x, z, 10, gy + 3);
+  for (let i = 0; i < 10; i++) fx.push({ k: o.ice ? 'icefx' : 'ember', x: x + (Math.random() - 0.5) * r, z: z + (Math.random() - 0.5) * r, y: gy + 1 + Math.random() * 4, vy: 10 + Math.random() * 14, t: 0.4 + Math.random() * 0.3, s: 0.5 });
+  noise(0.32, 0.09); tone(90, 0.32, 'sawtooth', 0.06, 40); quake = Math.max(quake, 0.4); vib(40);
+  for (const e of foes) { if (e.st === 'dead' || e === o.skip) continue; if (Math.hypot(e.x - x, e.z - z) < r + FOE[e.type].r) { e.rage = 6; hitFoe(e, dmg, Math.atan2(e.z - z, e.x - x)); if (o.burn) burn(e, o.burn, Math.max(1, Math.round(dmg * 0.25))); if (o.frz) freeze(e, o.frz); } }
+  if (D) {
+    if (boss && boss !== o.skip && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && Math.hypot(boss.x - x, boss.z - z) < r + boss.r && !(o.pow && classStun())) bossHit(boss.vuln ? (o.boss || 1) : 0, true);
+    for (const p of D.pots) if (p.alive && Math.hypot(p.x - x, p.z - z) < r) breakPot(p);
+    for (const q of D.xtals) if (Math.hypot(q.x - x, q.z - z) < r * 0.7) hitXtal(q);
+    if (o.crack) for (let j = Math.floor((z - r) / DCS); j <= Math.floor((z + r) / DCS); j++) for (let i = Math.floor((x - r) / DCS); i <= Math.floor((x + r) / DCS); i++)
+      if (dAt(i, j) === DT.CRACK && Math.hypot((i + 0.5) * DCS - x, (j + 0.5) * DCS - z) < r + 3) for (let k = 0; k < 3 && dAt(i, j) === DT.CRACK; k++) hitCrack(i, j);
+  } else fauna.scare(x, z, r * 3);
+}
+// fine corsa di un proiettile dell'eroe: quelli che esplodono, esplodono
+function shotEnd(s, hit) { if (!s.boom || s.ended) return; s.ended = true; boom(s.x, s.z, s.boom.r, s.boom.dmg, { burn: s.boom.burn, frz: s.boom.frz, ice: s.boom.ice, pow: s.pow, boss: s.bossD, skip: s.boomOnly ? null : hit }); }
+function shotWall(s) { if (!D) return; const i = Math.floor(s.x / DCS), j = Math.floor(s.z / DCS); if (dAt(i, j) === DT.CRACK) hitCrack(i, j); const p = D.pots.find(q => q.alive && Math.hypot(q.x - s.x, q.z - s.z) < 4.6); if (p) breakPot(p); }
+
+// A: il colpo della classe (senz'arma si va a pugni, come sempre)
+function heroAttack() {
+  const h = hero; if (h.atk > 0 || inCasa() || h.dash || h.block || h.fall > 0) return;
+  const c = cls(), a = !eqIt('arma') || c === 'cavaliere' ? 'slash' : c === 'arciere' ? 'shot' : c === 'furfante' ? 'stab' : 'bolt';
+  startAct(a); h.aDown = true; h.aHold = 0; h.chg = 0;
+  if (a === 'slash') { noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); }
+  else if (a === 'shot') tone(300, 0.06, 'triangle', 0.035, 170);
+  else if (a === 'stab') { noise(0.05, 0.03); tone(620, 0.05, 'triangle', 0.03, 320); }
+  else tone(660, 0.1, 'sine', 0.04, 990);
+  if (!D) fauna.scare(h.x, h.z, 46);
+}
+// A tenuto premuto e poi lasciato: il colpo caricato
+function heroCharged() {
+  const c = cls(), a = c === 'arciere' ? 'pshot' : c === 'furfante' ? 'knives' : c === 'mago' ? 'orb' : 'spin';
+  startAct(a);
+  if (a === 'spin') { noise(0.2, 0.06); tone(300, 0.3, 'sawtooth', 0.04, 700); } else if (a === 'pshot') tone(220, 0.12, 'triangle', 0.05, 110); else if (a === 'knives') { noise(0.1, 0.04); tone(800, 0.1, 'triangle', 0.03, 400); } else tone(440, 0.25, 'sine', 0.05, 1320);
+  if (!D) fauna.scare(hero.x, hero.z, 60);
+}
+// il momento in cui il colpo va a segno
+function heroHit(a) {
+  const h = hero, w = eqIt('arma'), att = ATT(), beam = !!(w && w.beam);
+  if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
+  else if (a === 'spin') { meleeHit(15.5, 0, Math.round(att * 2), { all: true, boss: 2 }); ringFx(h.x, h.z, 12); if (beam) lightBeam(att); }
+  else if (a === 'stab') { meleeHit(9.5, 0.3, Math.max(1, Math.round(att * 0.75)), { back: true, boss: 0.65 }); if (beam) lightBeam(att * 0.75); }
+  else if (a === 'shot') { const o = h.nextShot || {}; h.nextShot = null; heroShot('arrow', Object.assign({ dmg: Math.max(1, Math.round(att * 0.8)), bossD: 0.8, pierce: beam, tint: beam ? LIGHT_T : null }, o)); }
+  else if (a === 'pshot') { heroShot('arrow', { dmg: Math.max(2, Math.round(att * 1.8)), sp: 230, life: 0.85, pierce: true, pow: true, bossD: 1.6, big: 1.4, turn: 1.2, tint: beam ? LIGHT_T : null }); noise(0.08, 0.04); }
+  else if (a === 'knives') { const tg = aimAt(95); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); for (const da of [-0.19, 0, 0.19]) heroShot('knife', { noAim: true, da, dmg: Math.max(1, Math.round(att * 0.6)), sp: 185, life: 0.5, pow: true, bossD: 0.6, turn: 0, tg: null }); }
+  else if (a === 'bolt') heroShot('bolt', { dmg: Math.max(1, Math.round(att * 0.85)), sp: 135, life: 0.8, turn: 5, bossD: 0.85, pierce: beam, tint: beam ? LIGHT_T : null });
+  else if (a === 'orb') heroShot('orb', { dmg: Math.max(2, Math.round(att * 1.6)), sp: 120, life: 0.9, turn: 3, r: 3.2, pow: true, bossD: 1.6, big: 1.5, boom: { r: 11, dmg: Math.max(1, Math.round(att * 0.8)) } });
+  else if (a === 'cast') { const fn = h.castFn; h.castFn = null; if (fn) fn(); }
+  if (a !== 'cast') h.hid = 0;      // chi colpisce esce dal fumo
+}
+// energia che torna, colpo caricato (A resta premuto), guardia del cavaliere (C premuto)
+function heroTick(dt) {
+  const h = hero, K = CC();
+  if (h.cdC > 0) h.cdC -= dt; if (h.guard > 0) h.guard -= dt; if (h.hid > 0) h.hid -= dt; if (h.enFl > 0) h.enFl -= dt;
+  h.enT += dt; if (h.enT >= K.regen) { h.enT = 0; if (h.en < K.en && !h.block) h.en++; }
+  if (h.en > K.en) h.en = K.en;
+  if (h.aDown) {
+    if (BTN.a) {
+      h.aHold += dt;
+      if (eqIt('arma') && h.atk <= 0 && !h.dash && !inCasa()) {
+        const was = h.chg; h.chg = Math.min(1, Math.max(0, (h.aHold - 0.4) / 0.5));
+        if (h.chg >= 1 && was < 1) { tone(1568, 0.06, 'square', 0.04); tone(2093, 0.1, 'square', 0.035, null, 0.06); vib(15); }
+        if (h.chg > 0 && Math.random() < 0.3 + h.chg * 0.45) { const a = Math.random() * TAU; fx.push({ k: 'glint', x: h.x + Math.cos(a) * 3, z: h.z + Math.sin(a) * 3, y: h.y + 2 + Math.random() * 6, vy: 5, t: 0.3, s: 0.2 + h.chg * 0.14 }); }
+      }
+    } else { const full = h.chg >= 1; h.aDown = false; h.chg = 0; if (full && h.atk <= 0 && !h.dash) heroCharged(); }
+  }
+  h.block = !!K.shield && curSkill() === 'parata' && !!BTN.c && h.atk <= 0 && !h.dash && h.guard <= 0 && !inCasa();
+}
+// uno scatto: la carica del cavaliere (in avanti, travolge) e il balzo dell'arciere (all'indietro). Non salta i pozzi
+function dashStep(dt) {
+  const h = hero, d = h.dash, sp = Math.hypot(d.vx, d.vz) || 1; d.t -= dt; h.inv = Math.max(h.inv, 0.1);
+  for (let k = 0; k < 3; k++) {
+    const mx = d.vx * dt / 3, mz = d.vz * dt / 3;
+    if (D) { const i = Math.floor((h.x + mx + d.vx / sp * 2.2) / DCS), j = Math.floor((h.z + mz + d.vz / sp * 2.2) / DCS), c = dAt(i, j); if (c === DT.PIT || (c === DT.PLAT && !D.platUp[j * D.w + i])) { d.t = 0; break; } }
+    if (!move(h, mx, mz, 1.6)) { d.t = 0; break; }
+  }
+  h.moving = true; h.walk += sp * dt; h.vx = h.vz = 0;
+  if (Math.random() < 0.7) fx.push({ k: 'puff', x: h.x, z: h.z, y: h.y + 0.6, vy: 2.5, t: 0.35, s: 0.3 });
+  if (d.k === 'carica') {
+    for (const e of foes) if (e.st !== 'dead' && !d.hit.has(e) && Math.hypot(e.x - h.x, e.z - h.z) < FOE[e.type].r + 5) { d.hit.add(e); hitFoe(e, Math.max(2, Math.round(ATT() * 1.5)), h.yaw); stun(e, 0.9); }
+    if (D) {
+      if (boss && !boss.hide && !boss.dead && boss.on && !d.hit.has(boss) && Math.hypot(boss.x - h.x, boss.z - h.z) < boss.r + 5) { d.hit.add(boss); bossHit(1.5); if (!boss.vuln) d.t = 0; }
+      for (const p of D.pots) if (p.alive && Math.hypot(p.x - h.x, p.z - h.z) < 6) breakPot(p);
+    }
+  }
+  if (d.t <= 0) h.dash = null;
+}
+// C: l'abilità scelta (la parata invece si tiene premuta)
+const SKILL = {
+  carica() { const h = hero; h.dash = { k: 'carica', t: 0.27, vx: Math.cos(h.yaw) * 135, vz: Math.sin(h.yaw) * 135, hit: new Set() }; noise(0.18, 0.05); tone(180, 0.25, 'sawtooth', 0.05, 420); },
+  grido() {
+    const h = hero; startAct('cast'); ringFx(h.x, h.z, 14); ringFx(h.x, h.z, 30); tone(140, 0.5, 'sawtooth', 0.07, 90); tone(210, 0.4, 'square', 0.04, 120, 0.05); quake = Math.max(quake, 0.35); vib(60);
+    for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 46 && (!D || e.room === D.room)) { stun(e, 2.6); const a = Math.atan2(e.z - h.z, e.x - h.x); e.kb = tough(e) ? 0.05 : 0.16; e.kx = Math.cos(a) * 50; e.kz = Math.sin(a) * 50; }
+    if (!D) fauna.scare(h.x, h.z, 90);
+  },
+  balzo() { const h = hero, tg = aimAt(125); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); h.dash = { k: 'balzo', t: 0.25, vx: -Math.cos(h.yaw) * 128, vz: -Math.sin(h.yaw) * 128 }; if (eqIt('arma')) heroShot('arrow', { noAim: true, tg: tg ? tg.obj : null, dmg: Math.max(1, Math.round(ATT() * 0.8)), bossD: 0.8 }); tone(600, 0.12, 'triangle', 0.04, 900); },
+  fgelo() { hero.nextShot = { frz: 3.2, tint: ICE_T, pow: true, big: 1.2 }; startAct('shot'); tone(1318, 0.12, 'triangle', 0.04, 1976); },
+  pioggia() {
+    const h = hero, tg = aimAt(110, 0.5), x = tg ? tg.x : h.x + Math.cos(h.yaw) * 45, z = tg ? tg.z : h.z + Math.sin(h.yaw) * 45; if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x);
+    startAct('cast'); things.push({ k: 'rain', x, z, t: 0.4, n: 5, r: 20, dmg: Math.max(1, Math.round(ATT() * 0.6)) }); tone(520, 0.3, 'triangle', 0.04, 260);
+  },
+  // la bomba cade sul nemico che hai davanti (se è a tiro), altrimenti poco più avanti
+  bomba() { startAct('cast', () => { const h = hero, tg = aimAt(38, 0.5); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); const a = h.yaw, v = (tg ? Math.max(8, Math.min(36, Math.hypot(tg.x - h.x, tg.z - h.z))) : 24) / 0.42;
+    things.push({ k: 'bomb', x: h.x + Math.cos(a) * 2, z: h.z + Math.sin(a) * 2, y: h.y + 5, y0: h.y + 5, vx: Math.cos(a) * v, vz: Math.sin(a) * v, fly: 0.42, t: 1.1, dmg: Math.max(3, Math.round(ATT() * 1.6)) }); tone(500, 0.1, 'triangle', 0.04, 250); }); },
+  fumo() {
+    const h = hero; h.hid = 4.5; noise(0.3, 0.05); tone(240, 0.2, 'sine', 0.04, 120);
+    for (let i = 0; i < 16; i++) fx.push({ k: 'smoke', x: h.x + (Math.random() - 0.5) * 16, y: h.y + 1 + Math.random() * 5, z: h.z + (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 6, vz: (Math.random() - 0.5) * 6, vy: 1.5 + Math.random() * 2, t: 2 + Math.random() * 1.4, s: 0.5 });
+    for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 70) { e.rage = 0; if (e.st === 'chase' || e.st === 'wind') e.st = 'home'; }
+  },
+  trappola() { const h = hero, mine = things.filter(t => t.k === 'trap'); if (mine.length >= 2) mine[0].dead = true; things.push({ k: 'trap', x: h.x + Math.cos(h.yaw) * 4, z: h.z + Math.sin(h.yaw) * 4, life: 60, dmg: Math.max(2, Math.round(ATT() * 1.2)) }); tone(300, 0.06, 'square', 0.04); tone(200, 0.08, 'square', 0.04, null, 0.07); },
+  fuoco() { startAct('cast', () => { const d = Math.max(3, Math.round(ATT() * 1.5)); heroShot('fire', { dmg: d, sp: 115, life: 0.95, turn: 2, r: 3, pow: true, bossD: 2, big: 1.3, boomOnly: true, boom: { r: 16, dmg: d, burn: 3.2 } }); }); tone(240, 0.25, 'sawtooth', 0.05, 520); },
+  gelo() {
+    startAct('cast', () => { const h = hero, d = Math.max(1, Math.round(ATT() * 0.5));
+      for (let k = 0; k < 20; k++) { const a = k / 20 * TAU, r = 8 + Math.random() * 22; fx.push({ k: 'icefx', x: h.x + Math.cos(a) * r, z: h.z + Math.sin(a) * r, y: h.y + 1, vy: 12 + Math.random() * 8, t: 0.5, s: 0.55 }); }
+      tone(1500, 0.14, 'square', 0.04, 700); tone(2093, 0.3, 'triangle', 0.03, 1046, 0.05);
+      for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 32 + FOE[e.type].r && (!D || e.room === D.room)) { e.rage = 6; hitFoe(e, d, Math.atan2(e.z - h.z, e.x - h.x)); freeze(e, 3.2); }
+      if (D && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && Math.hypot(boss.x - h.x, boss.z - h.z) < 32 + boss.r && !classStun()) bossHit(boss.vuln ? 1 : 0, true); });
+  },
+  cura() { const h = hero; h.hp = Math.min(MAXHP(), h.hp + 4); for (let i = 0; i < 10; i++) fx.push({ k: 'glint', x: h.x + (Math.random() - 0.5) * 6, z: h.z + (Math.random() - 0.5) * 6, y: h.y + 1 + Math.random() * 7, vy: 7, t: 0.6, s: 0.3 }); seq([523, 659, 784], 0.07, 0.07); toast('+2 CUORI', '#9af0b0'); },
+};
+function heroSkill() {
+  const h = hero; if (!h || st !== 'play' || inCasa() || h.atk > 0 || h.dash || h.cdC > 0 || h.fall > 0) return;
+  const id = curSkill(), S = SKL[id]; if (id === 'parata') return;
+  if (id === 'cura' && h.hp >= MAXHP()) { tone(200, 0.1, 'square', 0.03); return; }
+  if (h.en < S.cost) { h.enFl = 0.5; tone(200, 0.1, 'square', 0.03); return; }
+  h.en -= S.cost; h.enT = 0; h.cdC = 0.45; h.chg = 0; h.aDown = false; SKILL[id]();
+  if (!D) fauna.scare(h.x, h.z, 40);
+}
+function cycleSkill() {
+  if (st !== 'play' || !hero || hero.dead) return; const L = skillsOf(cls());
+  if (L.length < 2) { tone(200, 0.1, 'square', 0.03); if (time > (hero.tipT || 0)) { hero.tipT = time + 6; toast('IL MAESTRO DELLA GILDA, IN CITTÀ, INSEGNA ALTRE ABILITÀ', '#a9c6e3'); } return; }
+  save.skSel[cls()] = L[(L.indexOf(curSkill()) + 1) % L.length]; tone(1318, 0.04); toast('ABILITÀ: ' + SKL[curSkill()].n, CC().col);
+}
+// bombe con la miccia, tagliole, piogge di frecce
+function thingsUpdate(dt) {
+  for (const t of things) {
+    if (t.dead) continue;
+    if (t.k === 'bomb') {
+      t.t -= dt;
+      if (t.fly > 0) {
+        t.fly -= dt; const nx = t.x + t.vx * dt, nz = t.z + t.vz * dt;
+        const wall = D ? (dBlocks(Math.floor(nx / DCS), Math.floor(nz / DCS), 'shot') || D.blocks.some(b => !b.gone && Math.abs(nx - b.x) < 4.6 && Math.abs(nz - b.z) < 4.6)) : (!!W.inBox(nx, nz, 0) || W.ground(nx, nz) > t.y + 4);
+        if (wall) { t.vx = t.vz = 0; } else { t.x = nx; t.z = nz; }
+        const u = Math.max(0, 1 - t.fly / 0.42), g = Math.max(gH(t.x, t.z), D ? -2 : W.WL) + 0.5; t.y = t.y0 * (1 - u) + g * u + Math.sin(u * Math.PI) * 5;
+        if (t.fly <= 0) { t.y = g; tone(180, 0.04, 'square', 0.03); }
+      } else if (Math.random() < 0.5) fx.push({ k: 'spark', x: t.x, z: t.z, y: t.y + 2.4, vy: 6, t: 0.18, s: 0.22 });
+      if (t.t <= 0) { t.dead = true; boom(t.x, t.z, 17, t.dmg, { crack: true, pow: true, boss: 2 }); }
+    } else if (t.k === 'trap') {
+      t.life -= dt; if (t.life <= 0) { t.dead = true; continue; }
+      for (const e of foes) if (e.st !== 'dead' && !FOE[e.type].fly && Math.hypot(e.x - t.x, e.z - t.z) < FOE[e.type].r + 2.5) { t.dead = true; e.rage = 6; hitFoe(e, t.dmg, 0, true); stun(e, 3.6); e.st = e.st === 'dead' ? 'dead' : 'chase'; puffAt(t.x, t.z, 5, gH(t.x, t.z) + 1); tone(900, 0.04, 'square', 0.06); tone(300, 0.1, 'square', 0.05, null, 0.03); break; }
+    } else if (t.k === 'rain') {
+      t.t -= dt;
+      if (t.t <= 0) {
+        t.t = 0.28; t.n--; const gy = gH(t.x, t.z);
+        for (let i = 0; i < 7; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * t.r; fx.push({ k: 'arrowfx', x: t.x + Math.cos(a) * r, z: t.z + Math.sin(a) * r, y: gy + 20 + Math.random() * 6, vy: -74, t: 0.3, s: 0.34 }); }
+        noise(0.06, 0.03);
+        for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - t.x, e.z - t.z) < t.r + FOE[e.type].r) { e.rage = 6; hitFoe(e, t.dmg, 0, true); if (e.st === 'idle' || e.st === 'home') e.st = 'chase'; }
+        if (D && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && Math.hypot(boss.x - t.x, boss.z - t.z) < t.r + boss.r) bossHit(boss.vuln ? 0.5 : 0, true);
+        if (t.n <= 0) t.dead = true;
+      }
+    }
+  }
+  things = things.filter(t => !t.dead);
+}
+// ---------- la scelta della classe (all'inizio, per chi giocava già, e alla gilda) ----------
+const gildaCost = () => save.flags.clsCambi ? 100 : 0;      // la prima volta è gratis
+function openClass(mode) { clsUI = { mode, sel: Math.max(0, CLS.ORD.indexOf(cls())), t: 0, msg: '' }; clsPics = null; st = 'class'; }
+function setClass(id) {
+  const first = !save.cls; save.cls = id; applyClass();
+  const h = hero; h.en = MAXEN(); h.hp = first ? MAXHP() : Math.max(1, Math.min(h.hp, MAXHP())); h.atk = 0; h.dash = null; h.block = false; h.chg = 0; h.aDown = false; h.hid = 0; things = [];
+  drawHeroSprites(); writeSave();
+}
+function classKey(name) {
+  const U = clsUI, n = CLS.ORD.length; U.msg = '';
+  if (name === 'left' || name === 'up') { U.sel = (U.sel + n - 1) % n; tone(1318, 0.03); }
+  else if (name === 'right' || name === 'down') { U.sel = (U.sel + 1) % n; tone(1318, 0.03); }
+  else if (name === 'b' && U.mode === 'gilda') { clsUI = null; st = 'play'; tone(660, 0.04); }
+  else if (name === 'a' || name === 'start') {
+    if (U.t < 0.6) return;                                      // niente scelte fatte per sbaglio, premendo A di corsa
+    const id = CLS.ORD[U.sel];
+    if (U.mode === 'gilda') {
+      if (id === cls()) { tone(200, 0.1, 'square', 0.03); return; }
+      const cost = gildaCost(); if (save.coins < cost) { U.msg = 'TI SERVONO ' + cost + ' MONETE'; tone(160, 0.2, 'square', 0.04, 100); return; }
+      save.coins -= cost; save.flags.clsCambi = (save.flags.clsCambi || 0) + 1;
+    }
+    setClass(id); clsUI = null; st = 'play'; jingle(); banner = U.mode === 'gilda' ? { t: CL[id].n, s: 'LE TUE ARMI ORA SONO QUELLE DELLA NUOVA CLASSE', life: 3.4, c: CL[id].col } : null;
+    if (U.mode === 'new') toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f');
+    if (U.mode !== 'gilda') help = 11;
+  }
+}
+function clsPic(id) {
+  if (!clsPics) clsPics = {};
+  return clsPics[id] || (clsPics[id] = A.figure(A.human(heroLook(id, clsUI.mode === 'new'), CL[id].poses[0]), Math.PI * 0.8, 62, 58, { sc: 1.65 }));
+}
+function drawClass() {
+  const U = clsUI, n = CLS.ORD.length, sel = CLS.ORD[U.sel], K = CL[sel];
+  hg.fillStyle = 'rgba(7,8,14,.84)'; hg.fillRect(0, 0, Wr, Hr);
+  T(U.mode === 'new' ? 'CHE EROE SARAI? SCEGLI LA TUA CLASSE' : U.mode === 'old' ? "NOVITÀ: L'EROE HA UNA CLASSE. SCEGLI LA TUA" : 'GILDA DEGLI EROI: CAMBIA CLASSE', Wr / 2, 5, '#ffd23f', 1, 'center');
+  const cw = Math.min(92, Math.floor((Wr - 12) / n)), x0 = Math.round(Wr / 2 - cw * n / 2), cy = 17, chh = 72;
+  CLS.ORD.forEach((id, i) => {
+    const C2 = CL[id], x = x0 + i * cw, on = i === U.sel;
+    panel(x + 2, cy, cw - 4, chh, on ? C2.col : '#3a4458'); if (on) { hg.fillStyle = 'rgba(255,255,255,.08)'; hg.fillRect(x + 3, cy + 1, cw - 6, chh - 2); }
+    const pic = clsPic(id); hg.globalAlpha = on ? 1 : 0.6; hg.drawImage(pic, Math.round(x + cw / 2 - pic.width / 2), cy + 3); hg.globalAlpha = 1;
+    T(C2.n, x + cw / 2, cy + chh - 11, on ? C2.col : '#8a96aa', 1, 'center');
+    if (U.mode === 'gilda' && save.cls === id) T('LA TUA', x + cw / 2, cy + 3, '#9af0b0', 1, 'center');
+  });
+  // la scheda della classe scelta
+  const w = Math.max(190, Math.min(300, Wr - insetL - insetR - 4)), x = Math.round(Wr / 2 - w / 2), y = cy + chh + 3, h = Hr - y - 4, two = U.mode === 'gilda';
+  panel(x, y, w, h, K.col);
+  let yy = y + 5; for (const l of A.wrap(K.d, w - 14).slice(0, 2)) { T(l, x + 7, yy, '#ffffff'); yy += 9; }
+  yy += 2; for (const t of K.tr) { if (yy > y + h - (two ? 30 : 21)) break; hg.fillStyle = K.col; hg.fillRect(x + 8, yy + 2, 3, 3); T(t, x + 15, yy, '#c9d3e6'); yy += 9; }
+  if (!two && yy <= y + h - 21) T('IN CITTÀ, ALLA GILDA, POTRAI CAMBIARLA', x + 7, yy + 1, '#8a96aa', 1, 'left', null);
+  if (U.msg) T(U.msg, Wr / 2, y + h - 11, '#ff8f8f', 1, 'center');
+  else if (two) { const c = gildaCost(); T(sel === cls() ? 'È GIÀ LA TUA CLASSE' : 'A: DIVENTA ' + K.n + (c ? ' PER ' + c + ' MONETE' : ' (PER QUESTA VOLTA È GRATIS)'), Wr / 2, y + h - 20, sel === cls() ? '#8a96aa' : '#ffd23f', 1, 'center'); T('CROCE: CAMBIA   B: INDIETRO', Wr / 2, y + h - 11, '#8a96aa', 1, 'center'); }
+  else if (U.t > 0.6 && Math.floor(time * 2.5) % 2) T('CROCE: CAMBIA   A: SCEGLI ' + K.n, Wr / 2, y + h - 11, '#ffd23f', 1, 'center');
+}
+// ---------- il maestro della gilda insegna le abilità ----------
+const skIcons = {};
+const skIcon = id => skIcons[id] || (skIcons[id] = A.icon(SKL[id].ico, SKL[id].c[0], SKL[id].c[1]));
+const skKnown = id => !SKL[id].price || !!save.sk[id];
+function skillKey(name) {
+  const L = CL[cls()].skills, rows = L.length + 1;
+  if (name === 'up') { shop.sel = (shop.sel + rows - 1) % rows; tone(1318, 0.03); }
+  else if (name === 'down') { shop.sel = (shop.sel + 1) % rows; tone(1318, 0.03); }
+  else if (name === 'b' || name === 'start' || (name === 'a' && shop.sel === L.length)) shop = null;
+  else if (name === 'a') {
+    const id = L[shop.sel], S = SKL[id];
+    if (skKnown(id)) { save.skSel[cls()] = id; tone(1046, 0.05); toast('ABILITÀ SCELTA: ' + S.n, CC().col); }
+    else if (save.coins < S.price) { tone(160, 0.2, 'square', 0.04, 100); toast('MONETE INSUFFICIENTI', '#ff8f8f'); }
+    else { save.coins -= S.price; save.sk[id] = 1; save.skSel[cls()] = id; jingle(); toast('HAI IMPARATO: ' + S.n, '#9af0b0'); writeSave(); }
+  }
+}
+function drawSkills() {
+  const c = cls(), L = CL[c].skills, rows = L.concat(['esci']), w = Math.min(280, dialogW()), h = 22 + rows.length * 14 + 34, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr / 2 - h / 2);
+  panel(x, y, w, h, CL[c].col); T('LE ABILITÀ DEL ' + CL[c].n, x + 8, y + 5, CL[c].col); hg.drawImage(ICOIN, x + w - 50, y + 3); T(String(save.coins), x + w - 36, y + 6, '#ffd23f');
+  rows.forEach((id, i) => {
+    const yy = y + 22 + i * 14, on = i === shop.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); }
+    if (id === 'esci') { T('ESCI', x + 24, yy, on ? '#ffffff' : '#8a96aa'); return; }
+    const S = SKL[id], kn = skKnown(id); hg.drawImage(skIcon(id), x + 7, yy - 3);
+    T(S.n + (curSkill() === id ? '  (IN USO)' : ''), x + 24, yy, kn ? (on ? '#ffffff' : '#c9d3e6') : '#ffe8a0');
+    T(kn ? 'LA SAI GIÀ' : S.price + '', x + w - 10, yy, kn ? '#5a6478' : save.coins >= S.price ? '#ffd23f' : '#ff8f8f', 1, 'right');
+  });
+  const sel = rows[shop.sel];
+  if (sel !== 'esci') { const S = SKL[sel]; A.wrap(S.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); T(sel === 'parata' ? 'ENERGIA: 1 PER OGNI COLPO PARATO' : 'ENERGIA: ' + S.cost, x + 8, y + h - 11, CL[c].enC); T(skKnown(sel) ? 'A: USA QUESTA' : 'A: IMPARA', x + w - 8, y + h - 11, '#5a6478', 1, 'right', null); }
+}
+
 // ---------- nemici ----------
-function hitFoe(e, dmg, a) {
+// soft: un danno che non sposta e non sveglia (il fuoco che brucia, la pioggia di frecce)
+function hitFoe(e, dmg, a, soft) {
   const T = FOE[e.type];
-  e.hp -= dmg; e.flash = 0.16; e.kb = T.champ ? 0.05 : T.elite ? 0.08 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase';
-  for (let i = 0; i < 3; i++) fx.push({ k: 'spark', x: e.x, z: e.z, y: e.y + 3 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
-  tone(240, 0.07, 'square', 0.05, 120); vib(15);
+  e.hp -= dmg; e.flash = 0.16;
+  if (!soft) { e.kb = T.champ ? 0.05 : T.elite ? 0.08 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase'; }
+  for (let i = 0; i < (soft ? 1 : 3); i++) fx.push({ k: 'spark', x: e.x, z: e.z, y: e.y + 3 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
+  if (soft) tone(200, 0.04, 'square', 0.025, 120); else { tone(240, 0.07, 'square', 0.05, 120); vib(15); }
   if (e.hp <= 0) {
     e.st = 'dead'; e.fade = 0.5; puffAt(e.x, e.z, 8, e.y + 2); seq([523, 392, 262], 0.05, 0.05, 0.035);
     if (T.champ) { e.fade = 0.9; ringFx(e.x, e.z, 9); quake = 0.6; fanfare(); banner = { t: T.n + ' È CADUTO!', s: 'LA TESORERIA È APERTA', life: 3.6, c: '#ffd23f' }; }
     let n = T.coins[0] + Math.floor(Math.random() * (T.coins[1] - T.coins[0] + 1));
     if (eqHas('luck')) n *= 2;
+    if (CC().coins) n = Math.ceil(n * CC().coins);            // il furfante fruga meglio nelle tasche
     for (let i = 0; i < Math.min(5, Math.ceil(n / 2)); i++) drops.push({ k: 'coin', v: Math.ceil(n / Math.min(5, Math.ceil(n / 2))), x: e.x, z: e.z, y: e.y + 2, vx: (Math.random() - 0.5) * 18, vz: (Math.random() - 0.5) * 18, vy: 20, t: 20 });
     if (hero.hp < MAXHP() && Math.random() < 0.3) drops.push({ k: 'heart', x: e.x, z: e.z, y: e.y + 2, vx: 0, vz: 0, vy: 22, t: 20 });
     jobKill(T.as || e.type);
@@ -11153,6 +11668,10 @@ function foeUpdate(e, dt) {
   const T = FOE[e.type], dx = hero.x - e.x, dz = hero.z - e.z, d = Math.hypot(dx, dz), homeD = Math.hypot(e.camp.x - e.x, e.camp.z - e.z), leash = e.camp.r * 2.6;
   if (e.flash > 0) e.flash -= dt; if (e.cd > 0) e.cd -= dt; e.t -= dt;
   if (e.st === 'dead') { e.fade -= dt; if (e.fade <= 0 && !e.counted) { e.counted = true; e.camp.dead++; e.camp.alive = e.camp.alive.filter(x => x !== e); } return; }
+  // in fiamme, stordito o congelato (abilità delle classi)
+  if (e.rage > 0) e.rage -= dt;
+  if (e.burn > 0) { e.burn -= dt; e.burnT -= dt; if (Math.random() < 0.4) fx.push({ k: 'ember', x: e.x + (Math.random() - 0.5) * 3, z: e.z + (Math.random() - 0.5) * 3, y: e.y + 2 + Math.random() * 3, vy: 9, t: 0.4, s: 0.4 }); if (e.burnT <= 0) { e.burnT = 0.8; hitFoe(e, e.burnD || 1, 0, true); if (e.st === 'dead') return; } }
+  if (e.stun > 0) { e.stun -= dt; if (e.frz > 0) e.frz -= dt; e.y += (gH(e.x, e.z) + (T.fly ? 2 : 0) - e.y) * Math.min(1, 12 * dt); if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); } return; }
   // le piante carnivore non si muovono: sputano semi
   if (T.shoot) {
     e.y = gH(e.x, e.z); if (e.open > 0) e.open -= dt; e.kb = 0;
@@ -11163,9 +11682,10 @@ function foeUpdate(e, dt) {
   e.y += (gH(e.x, e.z) + fly - e.y) * Math.min(1, 12 * dt);
   if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); return; }
   if (e.st === 'wind') { e.yaw = Math.atan2(dz, dx); if (e.t <= 0) { if (d < T.range + 3 && st === 'play') hurtHero(T.dmg, e); e.st = 'chase'; e.cd = 1.1; } return; }
-  const calm = st !== 'play' || hero.dead || dialog || shop || loot || (D && D.room !== e.room);
-  if (!calm && d < T.aggro && homeD < leash) e.st = 'chase';
-  else if (e.st === 'chase' && (calm || d > T.aggro * 1.7 || homeD > leash)) e.st = 'home';
+  // chi è stato colpito da lontano insegue più a lungo; col fumogeno nessuno vede l'eroe
+  const calm = st !== 'play' || hero.dead || dialog || shop || loot || (D && D.room !== e.room) || hero.hid > 0, ag = T.aggro * (e.rage > 0 ? 2.4 : 1);
+  if (!calm && d < ag && homeD < leash) e.st = 'chase';
+  else if (e.st === 'chase' && (calm || d > ag * 1.7 || homeD > leash)) e.st = 'home';
   let tx = null, tz = null, sp = T.sp;
   if (e.st === 'chase') { if (d < T.range && e.cd <= 0) { e.st = 'wind'; e.t = T.k === 'slime' ? 0.35 : 0.45; return; } if (d > T.range * 0.7) { tx = hero.x; tz = hero.z; } else e.yaw = Math.atan2(dz, dx); }
   else if (e.st === 'home') { tx = e.camp.x; tz = e.camp.z; sp *= 0.7; if (homeD < e.camp.r * 0.5) e.st = 'idle'; }
@@ -11302,7 +11822,8 @@ function playUpdate(dt) {
   for (const e of foes) foeUpdate(e, dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
   if (!D) { npcsUpdate(dt); jobsUpdate(); }
-  dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt);
+  dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt); thingsUpdate(dt);
+  if (!D && quake > 0) quake = Math.max(0, quake - dt * 1.6);
   if (!D) {
   // il drago gira intorno al picco
   dragon.a += dt * 0.07; dragon.x = 2250 + Math.cos(dragon.a) * 430; dragon.z = 760 + Math.sin(dragon.a) * 360; dragon.y += (Math.max(125, gH(dragon.x, dragon.z) + 85) + Math.sin(dragon.a * 3) * 15 - dragon.y) * Math.min(1, dt * 0.8); dragon.yaw = dragon.a + Math.PI / 2;
@@ -11458,7 +11979,7 @@ function loadLevel(id, from, out) {
   const L = from === 'down' && D.P.stairs ? D.P.stairs : D.P.spawn;
   const h = hero; h.x = L.x; h.z = L.z; h.y = 0; h.yaw = L.yaw; h.vx = h.vz = 0; h.fall = 0; h.kb = 0; h.burnT = 0;
   D.entry = { x: h.x, z: h.z, yaw: h.yaw };
-  shots = []; drops = []; fx = []; hazards = []; foes = []; amb = [];
+  shots = []; drops = []; fx = []; hazards = []; foes = []; amb = []; things = []; h.dash = null; h.atk = 0; h.chg = 0; h.hid = 0;
   spawnDungeonFoes(); makeBoss();
   D.room = -1; dRoomCheck(); dungeonUpdate(0);
   camBehind();
@@ -11475,7 +11996,7 @@ function gotoLevel(id, from) { tone(from === 'up' ? 196 : 294, 0.25, 'triangle',
 function exitDungeon() {
   dsave(D.id).seen = b64(D.seen);
   const h = hero, town = D.def.casa ? D.town : ''; h.x = D.outX; h.z = D.outZ; h.yaw = D.outYaw; h.vx = h.vz = 0; h.fall = 0;
-  D = null; boss = null; shots = []; foes = []; drops = []; fx = []; hazards = []; quake = 0;
+  D = null; boss = null; shots = []; foes = []; drops = []; fx = []; hazards = []; quake = 0; things = []; h.dash = null; h.hid = 0;
   for (const c of camps) { c.alive = []; c.on = false; }
   h.y = W.ground(h.x, h.z); camBehind();
   curPlace = town || ''; placeCand = curPlace; target = null; if (town) setDay(save.tod); writeSave();
@@ -11653,7 +12174,7 @@ function bossUpdate(dt) {
     if (D.room !== D.P.bossRoom || !far || st !== 'play') return;
     b.on = true; b.st = 'start'; b.t = 1.4; banner = { t: b.B.n, s: b.B.s, life: 3.2, c: '#ff8a5a' };
     tone(98, 0.9, 'sawtooth', 0.06, 49); tone(147, 0.9, 'square', 0.03, 73, 0.15);
-    const H = { golem: 'QUANDO SI BLOCCA DOPO IL COLPO, COLPISCILO!', serpent: canReflect() ? 'RESPINGI LE BOLLE CON LO SCUDO DELLE RADICI!' : 'EQUIPAGGIA LO SCUDO DELLE RADICI (START) PER RESPINGERE LE BOLLE!', scarab: 'FALLO SCHIANTARE CONTRO MURI E PILASTRI!', queen: 'QUANDO È STANCA, COLPISCILA. IL RAGGIO LA INTERROMPE MENTRE LANCIA.', salamander: 'DOPO IL SOFFIO SI RAFFREDDA: È IL MOMENTO!' };
+    const H = { golem: 'QUANDO SI BLOCCA DOPO IL COLPO, COLPISCILO!', serpent: canReflect() ? 'RESPINGI LE BOLLE CON LO SCUDO DELLE RADICI!' : CLS.TXT.serpe[cls()] || 'EQUIPAGGIA LO SCUDO DELLE RADICI (START) PER RESPINGERE LE BOLLE!', scarab: 'FALLO SCHIANTARE CONTRO MURI E PILASTRI!', queen: CLS.TXT.regina[cls()], salamander: 'DOPO IL SOFFIO SI RAFFREDDA: È IL MOMENTO!' };
     toast(H[b.type], '#ffd23f');
   }
   const dx = hero.x - b.x, dz = hero.z - b.z, d = Math.hypot(dx, dz), aim = Math.atan2(dz, dx);
@@ -11661,10 +12182,10 @@ function bossUpdate(dt) {
   BOSSAI[b.type](b, dt, d, aim);
   if (!b.vuln && !b.hide && b.touch && b.st !== 'start' && d < b.r + 2.6 && st === 'play') hurtHero(b.touch, b, true);
 }
-function bossHit(dmg = 1) {
+function bossHit(dmg = 1, far) {
   const b = boss; if (!b || b.dead || b.hide || b.st === 'die' || !b.on) return;
   for (let i = 0; i < 4; i++) fx.push({ k: 'spark', x: b.x + (hero.x - b.x) * 0.4, z: b.z + (hero.z - b.z) * 0.4, y: b.y + 5 + Math.random() * 4, vy: 9, t: 0.25, s: 0.35 });
-  if (!b.vuln) { tone(1600, 0.05, 'square', 0.04); tone(1200, 0.06, 'square', 0.03, null, 0.04); const a = Math.atan2(hero.z - b.z, hero.x - b.x); hero.kx = Math.cos(a) * 34; hero.kz = Math.sin(a) * 34; hero.kb = 0.12; return; }
+  if (!b.vuln) { tone(1600, 0.05, 'square', 0.04); tone(1200, 0.06, 'square', 0.03, null, 0.04); if (!far) { const a = Math.atan2(hero.z - b.z, hero.x - b.x); hero.kx = Math.cos(a) * 34; hero.kz = Math.sin(a) * 34; hero.kb = 0.12; } return; }
   b.hp -= dmg; b.flash = 0.18; tone(200, 0.1, 'square', 0.06, 90); vib(25);
   if (b.hp <= 0) { b.st = 'die'; b.t = 2.4; b.vuln = false; b.solid = false; quake = 1; tone(150, 1.6, 'sawtooth', 0.06, 40); for (const e of foes) if (e.st !== 'dead') { e.st = 'dead'; e.fade = 0.5; puffAt(e.x, e.z, 5, e.y + 2); } }
 }
@@ -11739,13 +12260,15 @@ function hitCrack(i, j) {
   const k = j * D.w + i; D.crk[k] = (D.crk[k] || 0) + 1; puffAt((i + 0.5) * DCS, (j + 0.5) * DCS, 3, 6); tone(160, 0.08, 'square', 0.05, 80);
   if (D.crk[k] >= 3) { D.cell[k] = DT.FLOOR; dsave(D.id).br[k] = 1; dUpload(); puffAt((i + 0.5) * DCS, (j + 0.5) * DCS, 12, 5); noise(0.4, 0.07); jingle(); toast('UN PASSAGGIO SEGRETO!', '#ffd23f'); writeSave(); }
 }
-function dSwing() {
+function dSwing(reach = 10.5, cosMin = 0.35, o = {}) {
   const h = hero, fx2 = Math.cos(h.yaw), fz2 = Math.sin(h.yaw);
-  const front = (x, z, r) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); return d < r && (d < 3 || (dx * fx2 + dz * fz2) / d > 0.35); };
-  if (boss && !boss.hide && front(boss.x, boss.z, 10.5 + boss.r)) bossHit();
-  for (const p of D.pots) if (p.alive && front(p.x, p.z, 10)) breakPot(p);
-  for (const x of D.xtals) if (front(x.x, x.z, 10.5)) hitXtal(x);
-  for (const dd of [5, 9]) { const i = Math.floor((h.x + fx2 * dd) / DCS), j = Math.floor((h.z + fz2 * dd) / DCS); if (dAt(i, j) === DT.CRACK) { hitCrack(i, j); break; } }
+  const front = (x, z, r) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); return d < r && (o.all || d < 3 || (dx * fx2 + dz * fz2) / d > cosMin); };
+  if (boss && !boss.hide && front(boss.x, boss.z, reach + boss.r)) bossHit(o.boss || 1);
+  for (const p of D.pots) if (p.alive && front(p.x, p.z, reach - 0.5)) breakPot(p);
+  for (const x of D.xtals) if (front(x.x, x.z, reach)) hitXtal(x);
+  // le crepe: davanti (o tutt'intorno, col colpo rotante)
+  let done = false;
+  for (const a of o.all ? [0, 1, 2, 3, 4, 5, 6, 7].map(k => h.yaw + k * TAU / 8) : [h.yaw]) { if (done) break; for (const dd of [5, 9]) { const i = Math.floor((h.x + Math.cos(a) * dd) / DCS), j = Math.floor((h.z + Math.sin(a) * dd) / DCS); if (dAt(i, j) === DT.CRACK) { hitCrack(i, j); done = true; break; } } }
 }
 function openDChest(c) {
   const ds = dsave(D.id); ds.ch[c.key] = 1;
@@ -11845,13 +12368,16 @@ function poof(s) { s.dead = true; for (let i = 0; i < 3; i++) fx.push({ k: s.k =
 function shotsUpdate(dt) {
   for (const s of shots) {
     if (s.dead) continue;
+    // frecce e dardi dell'eroe piegano un poco verso il bersaglio
+    if (s.cls && s.turn && s.tg && s.tg.st !== 'dead' && !s.tg.dead && !s.tg.hide) { const sp = Math.hypot(s.vx, s.vz); s.yaw += Math.max(-s.turn * dt, Math.min(s.turn * dt, angDiff(Math.atan2(s.tg.z - s.z, s.tg.x - s.x), s.yaw))); s.vx = Math.cos(s.yaw) * sp; s.vz = Math.sin(s.yaw) * sp; }
     s.life -= dt; s.x += s.vx * dt; s.z += s.vz * dt;
-    if (s.life <= 0) { if (s.patch) hazards.push({ x: s.x, z: s.z, r: 6, warn: 0, life: 3.2, dmg: 2, k: 'fire' }); s.dead = true; continue; }
-    if (s.from === 'hero' && D) { let hitX = false; for (const x of D.xtals) if (Math.hypot(x.x - s.x, x.z - s.z) < 5) { hitXtal(x); poof(s); hitX = true; break; } if (hitX) continue; }
+    if (s.life <= 0) { if (s.patch) hazards.push({ x: s.x, z: s.z, r: 6, warn: 0, life: 3.2, dmg: 2, k: 'fire' }); if (s.cls) shotEnd(s); s.dead = true; continue; }
+    if (s.from === 'hero' && D) { let hitX = false; for (const x of D.xtals) if (Math.hypot(x.x - s.x, x.z - s.z) < 5) { hitXtal(x); if (s.cls) shotEnd(s); poof(s); hitX = true; break; } if (hitX) continue; }
     let wall;
     if (D) wall = dBlocks(Math.floor(s.x / DCS), Math.floor(s.z / DCS), 'shot') || D.blocks.some(b => !b.gone && Math.abs(s.x - b.x) < 4.6 && Math.abs(s.z - b.z) < 4.6) || D.solids.some(o => (!o.on || o.on()) && Math.hypot(s.x - o.x, s.z - o.z) < o.r * 0.85);
+    else if (s.cls) { const g = Math.max(W.ground(s.x, s.z), W.WL); wall = g - s.gy > 5.5 || !!W.inBox(s.x, s.z, 0); if (!wall) { s.gy = g; s.y = g + 4.6; } }      // seguono il terreno: le ferma solo una casa o una rupe
     else wall = W.ground(s.x, s.z) > s.y + 1 || !!W.inBox(s.x, s.z, 0);
-    if (wall) { poof(s); continue; }
+    if (wall) { if (s.cls) { shotWall(s); shotEnd(s); } poof(s); continue; }
     if (s.from === 'foe') {
       const d = Math.hypot(hero.x - s.x, hero.z - s.z);
       if (d < s.r + 2.2 && !hero.dead && !hero.fall) {
@@ -11860,6 +12386,18 @@ function shotsUpdate(dt) {
           s.vx = Math.cos(a) * sp; s.vz = Math.sin(a) * sp; s.from = 'hero'; s.life = 3; s.refl = true; s.dmg = Math.max(2, s.dmg); s.patch = false;
           tone(1568, 0.06, 'square', 0.05); for (let i = 0; i < 4; i++) fx.push({ k: 'spark', x: s.x, z: s.z, y: s.y, vy: 8, t: 0.25, s: 0.35 });
         } else { hurtHero(s.dmg, s, s.hard); poof(s); }
+      }
+    } else if (s.cls) {
+      // i colpi delle classi: possono trapassare, congelare, esplodere
+      for (const e of foes) {
+        if (e.st === 'dead' || (s.seen && s.seen.has(e)) || Math.hypot(e.x - s.x, e.z - s.z) >= FOE[e.type].r + s.r) continue;
+        e.rage = 6; if (!s.boomOnly) { hitFoe(e, s.dmg, Math.atan2(s.vz, s.vx)); if (s.frz) freeze(e, s.frz); }
+        if (s.pierce) { (s.seen || (s.seen = new Set())).add(e); continue; }
+        shotEnd(s, e); poof(s); break;
+      }
+      if (!s.dead && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && !(s.seen && s.seen.has(boss)) && Math.hypot(boss.x - s.x, boss.z - s.z) < boss.r + s.r + 2) {
+        if (!s.boomOnly && !(s.pow && classStun())) bossHit(boss.vuln ? (s.bossD || 1) : 0, true);
+        if (s.pierce) (s.seen || (s.seen = new Set())).add(boss); else { shotEnd(s, boss); poof(s); }
       }
     } else {
       for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - s.x, e.z - s.z) < FOE[e.type].r + s.r) { hitFoe(e, s.dmg, Math.atan2(s.vz, s.vx)); poof(s); break; }
@@ -11873,11 +12411,12 @@ function shotsUpdate(dt) {
 }
 
 // ---------- disegno ----------
-function pushBB2(x, y, z, r, s, k = 1, fl = 0) {
+function pushBB2(x, y, z, r, s, k = 1, fl = 0, tint) {
   if (!r) return; const n = pushBB2.n; if (n >= 1500) return;
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
+  const tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
-  for (let i = 0; i < 16; i += 4) { dynF2[p++] = x; dynF2[p++] = y; dynF2[p++] = z; dynF2[p++] = C[i]; dynF2[p++] = C[i + 1]; dynF2[p++] = C[i + 2]; dynF2[p++] = C[i + 3]; dynF2[p++] = k; dynF2[p++] = k; dynF2[p++] = k; dynF2[p++] = fl; }
+  for (let i = 0; i < 16; i += 4) { dynF2[p++] = x; dynF2[p++] = y; dynF2[p++] = z; dynF2[p++] = C[i]; dynF2[p++] = C[i + 1]; dynF2[p++] = C[i + 2]; dynF2[p++] = C[i + 3]; dynF2[p++] = tr; dynF2[p++] = tg; dynF2[p++] = tb; dynF2[p++] = fl; }
   pushBB2.n = n + 1;
 }
 pushBB2.n = 0;
@@ -11915,8 +12454,7 @@ const RK = { k: 0, q: 0, c: 1, Q: 1, K: 2, C: 3 };
 function buildDynamicD() {
   const ds = dsave(D.id), R = 0.2 / SR, h = hero;
   if (h && (st === 'play' || st === 'dead')) {
-    const anim = h.atk > 0.27 ? 3 : h.atk > 0 ? 4 : h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
-    if (!(h.inv > 0 && Math.floor(time * 16) % 2) || h.dead) pushBB(h.x, h.y - 0.5, h.z, heroRects[anim][dirOf(h.x, h.z, h.yaw)], R, 1, h.flash > 0 ? 0.7 : 0);
+    drawHero(R);
   }
   for (const e of foes) drawFoe(e);
   const b = boss;
@@ -11949,7 +12487,8 @@ function buildDynamicD() {
   if (D.heartP) pushBB(D.heartP.x, 3 + Math.sin(time * 3), D.heartP.z, SPR.heart, 1, 1.25);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
-  for (const s of shots) pushBB(s.x, s.y - 1.5, s.z, SPR.shot[s.k], s.k === 'light' ? 0.6 : 0.42, 1.2);
+  for (const s of shots) drawShot(s);
+  drawThings();
 }
 function projectPt(x, y, z) {
   const m = VP, w = m[3] * x + m[7] * y + m[11] * z + m[15]; if (w <= 0.1) return null;
@@ -12068,7 +12607,31 @@ function drawFoe(e) {
   const T2 = FOE[e.type], two = !!DCH[e.type] && !!D, set = two ? DCH[e.type] : CHR[T2.as || e.type]; if (!set) return;
   if (e.st === 'dead' && Math.floor(time * 20) % 2) return;
   const k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? 0.25 : 0;
-  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], (T2.sc || 0.2) / SR, k, fl, two ? undefined : T2.tint);
+  const r = set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], sc = (T2.sc || 0.2) / SR, ice = e.frz > 0 && e.st !== 'dead';
+  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, r, sc, k, ice ? 0.3 : fl, ice ? ICE_T : two ? undefined : T2.tint);
+  if (e.stun > 0 && e.st !== 'dead') { const top = e.y + r.h * sc * (r.f || 1) * 0.92; if (ice) pushBB(e.x, e.y - 0.3, e.z, SPR.icefx, 0.5, 1.15); else for (let i = 0; i < 2; i++) { const a = time * 6 + i * Math.PI; pushBB(e.x + Math.cos(a) * 2.4, top + Math.sin(time * 9 + i) * 0.3, e.z + Math.sin(a) * 2.4, SPR.star, 0.3, 1.25); } }
+}
+// l'eroe: la posa dipende dalla classe e da quello che sta facendo
+function heroAnim() {
+  const h = hero;
+  if (h.dash) return h.dash.k === 'balzo' ? 6 : 5;
+  if (h.atk > 0) { const pre = !h.hitDone; if (h.act === 'spin') return 4; if (h.act === 'knives' || h.act === 'orb') return pre ? 5 : 6; if (h.act === 'cast') return cls() === 'cavaliere' ? 5 : pre ? 5 : 6; return pre ? 3 : 4; }
+  if (h.block) return 5;
+  if (h.chg > 0) return cls() === 'cavaliere' ? 6 : 5;
+  return h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
+}
+function drawHero(R) {
+  const h = hero;
+  if (h.inv > 0 && Math.floor(time * 16) % 2 && !h.dead && !h.dash) return;
+  const spin = h.atk > 0 && h.act === 'spin' ? (1 - h.atk / h.atkT) * TAU * 1.5 : 0, hop = h.dash && h.dash.k === 'balzo' ? Math.sin(Math.max(0, h.dash.t) / 0.25 * Math.PI) * 2.6 : 0;
+  pushBB(h.x, h.y - 0.5 + hop, h.z, heroRects[heroAnim()][dirOf(h.x, h.z, h.yaw + spin)], R, 1, h.flash > 0 ? 0.7 : h.chg >= 1 ? (Math.floor(time * 12) % 2 ? 0.5 : 0.15) : h.chg > 0 ? h.chg * 0.2 : 0, h.hid > 0 ? [0.5, 0.52, 0.64] : null);
+}
+function drawShot(s) { const r = SPR.shot[s.k], dir = Array.isArray(r); pushBB(s.x, s.y - 1.5, s.z, dir ? r[dirOf(s.x, s.z, s.yaw)] : r, (dir ? 0.3 / SR : s.k === 'light' ? 0.6 : 0.42) * (s.big || 1), 1.2, 0, s.tint || undefined); }
+function drawThings() {
+  for (const t of things) {
+    if (t.k === 'bomb') pushBB(t.x, t.y, t.z, SPR.bomb, 0.3, 1, t.fly <= 0 && Math.floor(t.t * (t.t < 0.4 ? 20 : 9)) % 2 ? 0.7 : 0);
+    else if (t.k === 'trap') pushBB(t.x, gH(t.x, t.z) + 0.1, t.z, SPR.trap, 0.3, 1.05);
+  }
 }
 
 // ---------- disegno 3D ----------
@@ -12224,8 +12787,7 @@ function buildDynamic() {
   const R = 0.2 / SR;
   // eroe
   if (hero && (st === 'play' || st === 'dead')) {
-    const h = hero, anim = h.atk > 0.27 ? 3 : h.atk > 0 ? 4 : h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
-    if (!(h.inv > 0 && Math.floor(time * 16) % 2) || h.dead) pushBB(h.x, h.y - 0.5, h.z, heroRects[anim][dirOf(h.x, h.z, h.yaw)], R, 1, h.flash > 0 ? 0.7 : 0);
+    drawHero(R);
   }
   for (const n of npcs) {
     if (!near(n.x, n.z, 520) || npcHidden(n)) continue;
@@ -12242,7 +12804,8 @@ function buildDynamic() {
   if (save) for (const b of W.BOARDS) if (near(b.x, b.z, 340)) { const m = boardMark(b.id); if (m) pushBB(b.x, gH(b.x, b.z) + 12.6 + Math.sin(time * 3.2) * 0.6, b.z, SPR.bang[m - 1], 0.36, 1.2); }
   for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 900)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 7.45 : 0.3), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.25 : 0.27, 1.2);
   for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
-  for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
+  for (const s2 of shots) drawShot(s2);
+  drawThings();
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : p.k === 'smoke' ? 2.3 - p.t * 0.55 : 1), p.k === 'smoke' ? 0.98 : 1.1);
   for (const p of amb) { const L = SPR[p.k]; if (p.k === 'fly' && Math.sin(p.ph * 3 + p.v * 20) < -0.1) continue; pushBB(p.x, p.y, p.z, L[Math.floor(p.v * L.length) % L.length], p.k === 'dust' ? 0.4 : 0.3, p.k === 'fly' ? 1.4 : 1.02); }
@@ -12280,9 +12843,11 @@ function drawHUD() {
   if (st === 'error') { hg.fillStyle = '#0b0d12'; hg.fillRect(0, 0, Wr, Hr); A.wrap(errMsg, Wr - 40).forEach((l, i) => T(l, Wr / 2, Hr / 2 - 20 + i * 10, '#ff8f8f', 1, 'center')); return; }
   if (st === 'title') return drawTitle();
   if (st === 'intro') return drawIntro();
+  if (st === 'class') return drawClass();
   // indicatori
   drawHearts(6, 5);
-  const hy = 6 + Math.ceil(MAXHP() / 2 / 10) * 8;
+  const hy0 = 6 + Math.ceil(MAXHP() / 2 / 10) * 8, hy = hy0 + 8;
+  drawEnergy(6, hy0);
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
@@ -12305,19 +12870,43 @@ function drawHUD() {
     const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
+  drawChip();
   if (help > 0) {
-    const L = ['CROCE: CAMMINA E GIRA   B: CORRI', 'A: PARLA, APRI, COLPISCI', 'START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE'], w = 196;
-    panel(Wr / 2 - w / 2, Math.round(Hr * 0.3), w, 48, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, Math.round(Hr * 0.3) + 5 + i * 10, '#e6e9f2', 1, 'center'));
+    const L = ['CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
   if (hero.flash > 0) { hg.fillStyle = 'rgba(255,40,40,' + (hero.flash * 0.8).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr); }
   if (dialog) drawDialog();
-  if (shop) (shop.board ? drawBoard : drawShop)();
+  if (shop) (shop.board ? drawBoard : shop.sk ? drawSkills : drawShop)();
   if (loot) drawLoot();
   if (mapOpen) drawMap();
   if (menu) drawMenu();
   if (st === 'dead') drawDeath();
   if (fade) { hg.fillStyle = 'rgba(0,0,0,' + Math.max(0, Math.min(1, fade.ph === 0 ? fade.t / 0.35 : 1 - fade.t / 0.35)).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr); }
+}
+// la barra dell'energia (mana per il mago): un quadretto per punto
+function drawEnergy(x, y) {
+  const n = MAXEN(), low = hero.enFl > 0 && Math.floor(time * 10) % 2, c = CC().enC;
+  hg.fillStyle = '#0b0a12'; hg.fillRect(x - 1, y - 1, n * 4 + 1, 6);
+  for (let i = 0; i < n; i++) { hg.fillStyle = i < hero.en ? (low ? '#ff5a5a' : c) : (low ? '#5a2030' : '#2a2c3e'); hg.fillRect(x + i * 4, y, 3, 4); }
+}
+// il riquadro dell'abilità accanto al tasto C (un tocco la cambia) e la barra del colpo caricato
+function drawChip() {
+  chip = null;
+  if (st !== 'play' || dialog || shop || loot || menu || mapOpen || inCasa() || !hero || hero.dead) return;
+  const id = curSkill(), S = SKL[id], L = skillsOf(cls()), cw = 18, col = CC().col;
+  const cx = btnC ? Math.round(btnC.x - cw - 4) : Wr - insetR - cw - 4, cy = btnC ? Math.round(btnC.y + btnC.w / 2 - cw / 2) : Hr - cw - 8;
+  chip = { x: cx, y: cy, w: cw, h: cw };
+  const ok = id === 'parata' ? hero.guard <= 0 : hero.en >= S.cost;
+  panel(cx, cy, cw, cw, hero.block ? '#ffffff' : ok ? col : '#5a6478'); hg.globalAlpha = ok ? 1 : 0.4; hg.drawImage(skIcon(id), cx + 3, cy + 3); hg.globalAlpha = 1;
+  if (S.cost) T(String(S.cost), cx - 2, cy + 6, ok ? CC().enC : '#ff8f8f', 1, 'right');
+  if (L.length > 1) for (let i = 0; i < L.length; i++) { hg.fillStyle = L[i] === id ? col : '#5a6478'; hg.fillRect(Math.round(cx + cw / 2 - L.length * 2) + i * 4, cy + cw + 1, 3, 2); }
+  if (hero.chg > 0) { const w = 34, x = Math.round(Wr / 2 - w / 2), y = Hr - 31, full = hero.chg >= 1; hg.fillStyle = '#0b0a12'; hg.fillRect(x - 1, y - 1, w + 2, 5); hg.fillStyle = full && Math.floor(time * 12) % 2 ? '#ffffff' : col; hg.fillRect(x, y, Math.round(w * hero.chg), 3); }
+}
+function chipHit(x, y) {
+  if (st !== 'play' || !chip || dialog || shop || loot || menu || mapOpen || fade) return false;
+  const hx = (x - OX) / K, hy = (y - OY) / K; return hx > chip.x - 5 && hx < chip.x + chip.w + 5 && hy > chip.y - 5 && hy < chip.y + chip.h + 5;
 }
 function drawDialog() {
   const w = dialogW(), x = Math.round(Wr / 2 - w / 2), lines = dialog.lines[dialog.i], h = 14 + lines.length * 9 + (dialog.name ? 6 : 0), y = Hr - h - 6;
@@ -12435,7 +13024,7 @@ function drawMap() {
 }
 const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
-  if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
+  if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
   return ['vol', 'mus', 'giorno', 'vib', 'salva', 'esci'];
@@ -12452,13 +13041,16 @@ function drawMenu() {
     if (!menu.pick) SLOTS.forEach(([k, n], i) => {
       const yy = top + 13 + i * 14, on = i === menu.sel, id = save.eq[k], it = id ? IT[id] : null;
       if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); }
-      T(n, x + 8, yy, '#8a96aa'); if (it) { hg.drawImage(itemIcon(id), x + 78, yy - 3); T(it.n, x + 94, yy, RAR[it.r]); } else T('-', x + 94, yy, '#5a6478');
+      T(n, x + 8, yy, '#8a96aa'); if (k === 'scudo' && !CC().shield) T('SOLO IL CAVALIERE', x + 94, yy, '#5a6478'); else if (it) { hg.drawImage(itemIcon(id), x + 78, yy - 3); T(it.n, x + 94, yy, RAR[it.r]); } else T('-', x + 94, yy, '#5a6478');
     });
+    // sotto l'equipaggiamento: la classe e la sua abilità (C)
+    if (!menu.pick) { const i = SLOTS.length, yy = top + 13 + i * 14, on = i === menu.sel, id = curSkill(); if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(CC().n, x + 8, yy, CC().col); hg.drawImage(skIcon(id), x + 78, yy - 3); T(SKL[id].n + '  (C)', x + 94, yy, '#ffffff'); }
     else { T('SCEGLI: ' + SLOTS.find(s => s[0] === menu.pick)[1], x + 8, top + 12, '#ffd23f');
       rows.forEach((id, i) => { const yy = top + 25 + i * 12, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 12); } if (id === '-') { T('TOGLI', x + 26, yy, on ? '#fff' : '#8a96aa'); return; } const it = IT[id]; hg.drawImage(itemIcon(id), x + 8, yy - 3); T(it.n + (save.eq[menu.pick] === id ? '  (IN USO)' : ''), x + 26, yy, RAR[it.r]); }); }
     const sel = menu.pick ? rows[menu.sel] : save.eq[rows[menu.sel]];
     if (sel && sel !== '-' && IT[sel]) { const it = IT[sel], s = statLine(it); A.wrap(it.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); if (s) T(s, x + w - 8, y + h - 12, '#9af0b0', 1, 'right'); }
-    T(menu.pick ? 'A: USA   B: INDIETRO' : 'A: CAMBIA', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
+    if (!menu.pick && rows[menu.sel] === 'abil') A.wrap(SKL[curSkill()].d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3'));
+    T(menu.pick ? 'A: USA   B: INDIETRO' : rows[menu.sel] === 'abil' ? 'A: CAMBIA ABILITÀ' : 'A: CAMBIA', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 1) {
     rows.forEach((id, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } hg.drawImage(itemIcon(id), x + 8, yy - 3); T(id === 'pozione' ? 'POZIONI  x' + save.pot : id === 'elisir' ? 'ELISIR  x' + save.eli : IT[id].n, x + 26, yy, '#ffffff'); });
     let yy = top + 8 + rows.length * 14;
@@ -12524,8 +13116,10 @@ function onKey(name) {
     }
     return;
   }
-  if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { st = 'play'; intro = 0; toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f'); } } return; }
+  if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { intro = 0; openClass('new'); } } return; }
+  if (st === 'class') return classKey(name);
   if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
+      hero.en = MAXEN(); hero.atk = 0; hero.dash = null; hero.block = false; hero.chg = 0; hero.aDown = false; hero.hid = 0; things = [];
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
       else { hero.x = 2005; hero.z = 2690; hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
       camBehind(); writeSave(); } return; }
@@ -12548,6 +13142,7 @@ function onKey(name) {
     return;
   }
   if (shop && shop.board) return boardKey(name);
+  if (shop && shop.sk) return skillKey(name);
   if (shop) {
     const list = shopList(), rows = list.length + 1;
     if (name === 'up') { shop.sel = (shop.sel + rows - 1) % rows; tone(1318, 0.03); }
@@ -12577,8 +13172,10 @@ function onKey(name) {
   if (name === 'select') { openMap(); tone(988, 0.05); return; }
   if (name === 'a') {
     if (target) { interact(target); return; }
-    if (hero.atk <= 0 && !inCasa()) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); if (!D) fauna.scare(hero.x, hero.z, 46); }
+    heroAttack();
   }
+  else if (name === 'c') heroSkill();
+  else if (name === 'v') cycleSkill();
 }
 function menuKey(name) {
   const rows = menuRows();
@@ -12589,6 +13186,8 @@ function menuKey(name) {
   if (name !== 'a') return;
   const r = rows[menu.sel];
   if (menu.tab === 0) {
+    if (!menu.pick && r === 'abil') { cycleSkill(); return; }
+    if (!menu.pick && r === 'scudo' && !CC().shield) { tone(200, 0.1, 'square', 0.03); return; }
     if (!menu.pick) { menu.pick = r; menu.sel = 0; tone(988, 0.04); }
     else { if (r === '-') { save.eq[menu.pick] = menu.pick === 'armatura' ? 'tunica' : null; hero.hp = Math.min(hero.hp, MAXHP()); drawHeroSprites(); } else equip(r); tone(1046, 0.06); menu.sel = SLOTS.findIndex(s => s[0] === menu.pick); menu.pick = null; }
   } else if (menu.tab === 1) {
@@ -12622,6 +13221,7 @@ function measure(w, h) {
     const cr = $('scr').getBoundingClientRect(), sx = Wr / Math.max(1, cr.width);
     const l = $('cl').getBoundingClientRect(), r = $('cr').getBoundingClientRect();
     insetL = Math.max(40, Math.round((l.right - cr.left) * sx) + 4); insetR = Math.max(40, Math.round((cr.right - r.left) * sx) + 4);
+    const c3 = $('bC').getBoundingClientRect(); btnC = c3.width > 4 ? { x: (c3.left - cr.left) * sx, y: (c3.top - cr.top) * sx, w: c3.width * sx } : null;
   } catch (e) {}
 }
 function toTitle() { st = 'title'; title.t = 0; title.sel = 0; title.confirm = false; title.opts = loadSave() ? ['CONTINUA L\'AVVENTURA', 'NUOVA AVVENTURA'] : ['NUOVA AVVENTURA']; }
@@ -12634,7 +13234,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { startAct('slash'); }, get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
@@ -12643,8 +13243,8 @@ if (window.__SG_DEBUG) window.__sg = {
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
 return {
-  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, aspect: 0,
-  keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['START', 'menu']],
+  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, aspect: 0,
+  keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['C', 'abilità'], ['START', 'menu']],
   icon(c, x, y, s) {
     drawIcon(c, ['cccccccccccccccc', 'cccccccwwccccccc', 'ccwwccccccccsccc', 'ccccccccccccsccc', 'ccccccrrcccssscc', 'cccccrrrrccsscwc', 'ccccrrrrrrccsccc', 'cccrryrryrrccscc', 'ccrrrrrrrrrrcgcc', 'ggggmmmmmmgggggg', 'gggmmdddmmgggggg', 'ggggmmdmmgggtggg', 'gtggggggggggtttg', 'tttggggggggggtgg', 'gtgggggbbgggggtg', 'ggggggbbbbgggggg'],
       { c: '#5aa0e0', w: '#ffffff', r: '#8a8c96', y: '#ffd86a', s: '#e8eef6', g: '#58b048', m: '#c8c4bc', d: '#3a2416', t: '#2e7a30', b: '#3a7ac8' }, x, y, s, '#5aa0e0');
@@ -12666,6 +13266,7 @@ return {
       return;
     }
     if (st === 'title') { titleCam(dt); return; }
+    if (st === 'class') { clsUI.t += dt; return; }
     if (st === 'play' || st === 'dead') playUpdate(dt);
   },
   draw(c, w, h) {
@@ -12682,7 +13283,7 @@ return {
     }
     measure(w, h); scrW = w; scrH = h;
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
-    if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro')) {
+    if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class')) {
       G.resize(W3, H3);
       if (st !== 'intro') { render3D(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
     }
@@ -12690,7 +13291,8 @@ return {
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);
   },
   button(name, down) { if (down) onKey(name); },
-  pointer(type, x, y, id) { camPointer(type, x, y, id); },
+  // un tocco sul riquadro dell'abilità la cambia; tutto il resto dello schermo gira la visuale
+  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
 };
 })());
 
@@ -12710,6 +13312,7 @@ function layoutFor(g) {
   const con = $('console'), box = $('screenbox'), bz = $('bezel'), lg = $('legend');
   con.classList.remove('fit'); lg.className = ''; box.style.height = ''; bz.style.width = '';
   document.body.classList.toggle('full', !!(g && g.full));
+  document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -12746,9 +13349,9 @@ function syncBtn(name) {
   const v = !!(kbB[name] || tB[name]);
   if (v === BTN[name]) return;
   BTN[name] = v;
-  const el = { a: 'bA', b: 'bB', start: 'bSta', select: 'bSel' }[name];
+  const el = { a: 'bA', b: 'bB', c: 'bC', start: 'bSta', select: 'bSel' }[name];
   if (el) $(el).classList.toggle('on', v);
-  else {
+  else if (name !== 'v') {
     const rx = (BTN.up ? 13 : 0) - (BTN.down ? 13 : 0), ry = (BTN.right ? 13 : 0) - (BTN.left ? 13 : 0);
     $('dpin').style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
   }
@@ -12782,7 +13385,7 @@ function bindBtn(id, name, wide) {
   const up = e => { if (ids.delete(e.pointerId) && !ids.size) setT(name, false); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
 }
-bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bSta', 'start', true); bindBtn('bSel', 'select', true);
+bindBtn('bA', 'a'); bindBtn('bB', 'b'); bindBtn('bC', 'c'); bindBtn('bSta', 'start', true); bindBtn('bSel', 'select', true);
 // rete di sicurezza: un tasto non può restare premuto se il dito non c'è più
 function releaseTouch() {
   dptr.clear(); syncDpad();
@@ -12800,7 +13403,7 @@ if (screen.orientation && screen.orientation.addEventListener) screen.orientatio
 const KEYS = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
   Digit2: 'up', Numpad2: 'up', Digit8: 'down', Numpad8: 'down', Digit4: 'left', Numpad4: 'left', Digit6: 'right', Numpad6: 'right',
-  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b',
+  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v',
   Enter: 'start', KeyP: 'start', Escape: 'select', Backspace: 'select', ShiftRight: 'select'
 };
 addEventListener('keydown', e => { const n = KEYS[e.code]; if (!n) return; e.preventDefault(); audioUnlock(); if (!e.repeat) setKb(n, true); });
