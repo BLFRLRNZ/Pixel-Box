@@ -105,8 +105,8 @@ const PROPS = [
 // forzieri: [id, x, z, contenuto, rarità, direzione]
 const CHESTS = [
   ['c01', 1925, 2562, 'pozione', 0], ['c02', 2475, 2930, 'monete:40', 0], ['c03', 1625, 2330, 'giaco', 0], ['c04', 1195, 1765, 'monete:60', 0],
-  ['c05', 1080, 1392, 'cuore', 1], ['c06', 2150, 1352, 'aurora', 3], ['c07', 2316, 452, 'drago', 3], ['c08', 3395, 1655, 'corona', 3],
-  ['c09', 665, 2650, 'luna', 3], ['c10', 3702, 905, 'grifone', 3], ['c11', 860, 480, 'vento', 2], ['c12', 3230, 3150, 'runica', 2],
+  ['c05', 1080, 1392, 'cuore', 1], ['c06', 2150, 1352, 'cuore', 2], ['c07', 2316, 452, 'monete:350', 2], ['c08', 3395, 1655, 'monete:250', 2],
+  ['c09', 665, 2650, 'elisir', 2], ['c10', 3702, 905, 'monete:300', 2], ['c11', 860, 480, 'vento', 2], ['c12', 3230, 3150, 'runica', 2],
   ['c13', 2916, 3052, 'elmoFerro', 1], ['c14', 1292, 3632, 'cotta', 1], ['c15', 3060, 2385, 'argento', 1], ['c16', 830, 1175, 'monete:80', 0],
   ['c17', 3620, 1920, 'ascia', 2], ['c18', 2950, 3420, 'cuore', 1], ['c19', 1150, 3150, 'pozione:2', 0], ['c20', 3210, 1140, 'acciaio', 2],
   ['c21', 1650, 2850, 'cuore', 1], ['c22', 2600, 1150, 'monete:100', 0], ['c23', 1904, 897, 'alato', 2], ['c24', 2550, 3700, 'pozione:3', 0],
@@ -320,12 +320,19 @@ function* build(atlas, sprites) {
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
   const H = W.H = new Float32Array(V * V);
   for (let j = 0; j < V; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / V; }
-  // spianate (borgo, rocca, città...)
-  for (const [fx, fz, r, th] of FLAT) {
+  // spianate (borgo, rocca, città...) e, dopo, una piazzola sotto ogni edificio isolato: niente case mezze sepolte nei pendii
+  const pads = [];
+  for (const b of BUILD) {
+    if (b.k !== 'house' && b.k !== 'temple' && b.k !== 'cave' && b.k !== 'tower' && b.k !== 'special') continue;
+    const hw = b.k === 'tower' ? b.r : b.w / 2, hd = b.k === 'tower' ? b.r : b.d / 2; if (!hw || !hd) continue;
+    pads.push([b.x, b.z, (Math.hypot(hw, hd) + 5) / 0.62, null]);
+  }
+  const flatten = L => { for (const [fx, fz, r, th] of L) {
     const t = th !== null ? th : W_groundRaw(H, fx, fz);
     const i0 = Math.max(0, Math.floor((fx - r) / CELL)), i1 = Math.min(N, Math.ceil((fx + r) / CELL)), j0 = Math.max(0, Math.floor((fz - r) / CELL)), j1 = Math.min(N, Math.ceil((fz + r) / CELL));
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(i * CELL - fx, j * CELL - fz); if (d < r) H[j * V + i] = lerp(t, H[j * V + i], smooth(r * 0.62, r, d)); }
-  }
+  } };
+  flatten(FLAT.concat(pads));
   yield 0.31;
   // strade: il terreno lungo il percorso viene smussato (si sale anche in montagna)
   {
@@ -343,11 +350,15 @@ function* build(atlas, sprites) {
     for (let k = 0; k < V * V; k++) { const m = rmask[k * 4] / 255; if (m > 0 && H[k] > -0.5) H[k] = lerp(H[k], Hb[k], m * 0.92); }
     rm.width = rm.height = 1;
   }
+  flatten(pads);   // le strade passano accanto alle case e ne smussano il terreno: le piazzole tornano piane
   // opere: ponti, moli, bacini dei porti, terrazze
   for (const t of TERRA) {
-    const i0 = Math.max(0, Math.ceil(t.x0 / CELL)), i1 = Math.min(N, Math.floor(t.x1 / CELL)), j0 = Math.max(0, Math.ceil(t.z0 / CELL)), j1 = Math.min(N, Math.floor(t.z1 / CELL));
+    const sf = t.soft || 0;   // bordo morbido: attorno al rettangolo il terreno raggiunge la quota a poco a poco (niente gradini agli angoli)
+    const i0 = Math.max(0, Math.ceil((t.x0 - sf) / CELL)), i1 = Math.min(N, Math.floor((t.x1 + sf) / CELL)), j0 = Math.max(0, Math.ceil((t.z0 - sf) / CELL)), j1 = Math.min(N, Math.floor((t.z1 + sf) / CELL));
     const ty = t.y === null || t.y === undefined ? W_groundRaw(H, t.rx, t.rz) : t.y;
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * V + i; H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * V + i;
+      if (sf) { const x = i * CELL, z = j * CELL, d = Math.hypot(Math.max(t.x0 - x, 0, x - t.x1), Math.max(t.z0 - z, 0, z - t.z1)); if (d > 0) { if (d < sf && H[k] > -0.5) H[k] = lerp(ty, H[k], smooth(0, sf, d)); continue; } }
+      H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
   }
   // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
   const shore = W.shore = new Uint8Array(N * N);
@@ -768,7 +779,7 @@ W.upload = (G) => {
     const L = W.OB[cj * CH + ci];
     W.chunks.push({ ci, cj, cx: (ci + 0.5) * CS, cz: (cj + 0.5) * CS, lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
   }
-  const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null;
+  const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null; if (window.__SG_DEBUG) W.meshDbg = m;
   // acqua: un grande quadrato fino all'orizzonte
   W.waterBuf = G.buffer(new Float32Array([-3000, -3000, WS + 3000, -3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
 };

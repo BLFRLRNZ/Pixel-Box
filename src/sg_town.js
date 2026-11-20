@@ -221,17 +221,23 @@ function ship(x, z, dir, o = {}) {
   mast(A0 + L * 0.36, o.mh || 34); if (L > 40) mast(A0 + L * 0.66, (o.mh || 34) * 0.82);
   const bx = P(A0, -hb - 1, 0), bz = P(L / 2, hb + 1, 0); W.addBox(Math.min(bx[0], bz[0]), Math.min(bx[2], bz[2]), Math.max(bx[0], bz[0]), Math.max(bx[2], bz[2]), dk + 6, o.b);
 }
-// molo di legno: una striscia di terreno appena sopra l'acqua, coperta di assi, con i pali
+// molo di legno: una striscia di fondale alzata fin sopra l'acqua (la terra non viene mai scavata), coperta di assi, con i pali.
+// o.land: l'estremità che tocca terra ('a0' o 'a1'); lì una piccola spianata porta la riva alla quota del molo
 function addPier(o) {
   const X = o.axis === 'x', hw = o.hw || 8, y = o.y || 2.6, r = X ? [o.a0, o.c - hw, o.a1, o.c + hw] : [o.c - hw, o.a0, o.c + hw, o.a1];
-  W.TERRA.push({ x0: r[0], z0: r[1], x1: r[2], z1: r[3], y }); W.CLEAR.push([r[0] - 10, r[1] - 10, r[2] + 10, r[3] + 10]);
+  if (o.land && o.flat !== false) { const a = o[o.land] + (o.land === 'a0' ? -10 : 10); W.FLAT.push(X ? [a, o.c, 30, y] : [o.c, a, 30, y]); }
+  W.TERRA.push({ x0: r[0], z0: r[1], x1: r[2], z1: r[3], y, mode: 'max' }); W.CLEAR.push([r[0] - 10, r[1] - 10, r[2] + 10, r[3] + 10]);
   W.BUILD.push(Object.assign({ k: 'pier', x: (r[0] + r[2]) / 2, z: (r[1] + r[3]) / 2, r, y, site: o.site }, o));
 }
 W.builders.pier = b => {
-  const [x0, z0, x1, z1] = b.r, y = b.y, X = b.axis === 'x', e = 2.6;
+  // le assi sporgono oltre la striscia di terreno e ne coprono le scarpate; due ringhiere invisibili tengono l'eroe sul piano
+  const [x0, z0, x1, z1] = b.r, y = b.y, X = b.axis === 'x', e = 4, sea = b.land === 'a1' ? 'a0' : 'a1';
   box(x0 - (X ? 0 : e), z0 - (X ? e : 0), x1 + (X ? 0 : e), z1 + (X ? e : 0), -5, y + 0.08, 3, TL.PLANKS);
   const L = X ? x1 - x0 : z1 - z0;
   for (let a = 4; a < L; a += 16) for (const s of [-1, 1]) { const px = X ? x0 + a : (s < 0 ? x0 - e : x1 + e), pz = X ? (s < 0 ? z0 - e : z1 + e) : z0 + a; box(px - 0.7, pz - 0.7, px + 0.7, pz + 0.7, -5, y + 3, 3); }
+  for (const s of [-1, 1]) { if (X) W.addBox(x0, s < 0 ? z0 - e : z1 - 0.6, x1, s < 0 ? z0 + 0.6 : z1 + e, y + 3, b); else W.addBox(s < 0 ? x0 - e : x1 - 0.6, z0, s < 0 ? x0 + 0.6 : x1 + e, z1, y + 3, b); }
+  const end = sea === 'a1' ? (X ? x1 : z1) : (X ? x0 : z0), d = sea === 'a1' ? 1 : -1, c0 = Math.min(end - d * 0.6, end + d * e), c1 = Math.max(end - d * 0.6, end + d * e);
+  if (X) W.addBox(c0, z0 - e, c1, z1 + e, y + 3, b); else W.addBox(x0 - e, c0, x1 + e, c1, y + 3, b);
 };
 
 // ---------- oggetti di città (sprite) ----------

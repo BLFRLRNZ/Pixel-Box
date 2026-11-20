@@ -56,7 +56,7 @@ function city(o) {
   const plan = { o, S, x0, x1, z0, z1, px, pz, pl, y, houses: [], specials: [], gates: [], open };
   // terreno, nomi, pavimenti
   W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
-  W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z });
+  W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
   W.CLEAR.push([x0 - 18, z0 - 18, x1 + 18, z1 + 18]);
   W.PLACES.push([o.x, o.z, Math.max(hw, hd) + 34, o.name]); W.TOWNS.push({ x: o.x, z: o.z, name: o.name, big: !o.small });
   const prect = [px - pl.w / 2, pz - pl.d / 2, px + pl.w / 2, pz + pl.d / 2];

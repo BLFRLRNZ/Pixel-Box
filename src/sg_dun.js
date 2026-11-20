@@ -6,7 +6,7 @@ const A = SG.art, TAU = Math.PI * 2;
 // misure: lato della cella, altezza dei muri e delle porte, profondità di pozzi, acqua e lava
 const CS = 10, WH = 14, DH = 10.5, PD = 34, WD = 6, LD = 1.2;
 // tipi di cella
-const ROCK = 0, WALL = 1, CRACK = 2, FLOOR = 3, PIT = 4, WATER = 5, LAVA = 6, ICE = 7, SPIKE = 8, BRIDGE = 9, DOOR = 10, EXIT = 11, TOGB = 12, PLAT = 13;
+const ROCK = 0, WALL = 1, CRACK = 2, FLOOR = 3, PIT = 4, WATER = 5, LAVA = 6, ICE = 7, SPIKE = 8, BRIDGE = 9, DOOR = 10, EXIT = 11, TOGB = 12, PLAT = 13, STAIR = 14;
 const ORDER = ['bosco', 'lago', 'sole', 'ghiaccio', 'fuoco'];
 
 // ---------- come si disegna una mappa: stanze, porte e oggetti ----------
@@ -15,7 +15,10 @@ const ORDER = ['bosco', 'lago', 'sole', 'ghiaccio', 'fuoco'];
 // '1'-'9' saracinesca, 'r'/'u' blocchi rossi/blu, 'R'/'U' piattaforme rosse/blu sopra i pozzi, 'x' cristallo,
 // 'O' masso, 'p' piastra, 'P' piastra pesante (solo massi), 't' braciere, 'v' vaso, 'T' statua che spara, 'S' lapide,
 // 'k' forziere con piccola chiave, 'q' lo stesso ma compare a stanza ripulita, 'c'/'Q' forziere con bottino,
-// 'K' grande chiave, 'C' grande forziere, 'M' guardiano, 'e' 'f' 'g' 'h' nemici.
+// 'K' grande chiave, 'C' grande forziere, 'M' guardiano, 'e' 'f' 'g' 'h' nemici, 'j' il campione del piano.
+// Piani: '@' è la via del ritorno (l'uscita, oppure la scala verso il piano prima), '>' la scala verso il piano dopo,
+// 'G' il sigillo che si spezza quando cade il guardiano. Arredi: '$' oro, '*' cristalli che fanno luce, 'A' statua, 'b' ossa,
+// ':' tappeto, ';' lastra con la runa.
 function Maker() {
   const cells = new Map(), extra = { loot: {}, signs: {}, trig: {} };
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
@@ -25,7 +28,7 @@ function Maker() {
   return {
     room(a, b, c, d, fl = '.') { for (let y = b; y <= d; y++) for (let x = a; x <= c; x++) { if (x === a || x === c || y === b || y === d) { if (get(x, y) === ' ') put(x, y, '#'); } else put(x, y, fl); } },
     fill(a, b, c, d, ch) { for (let y = b; y <= d; y++) for (let x = a; x <= c; x++) put(x, y, ch); },
-    at(x, y, s) { for (let i = 0; i < s.length; i++) put(x + i, y, s[i]); },
+    get, at(x, y, s) { for (let i = 0; i < s.length; i++) put(x + i, y, s[i]); },
     col(x, y, s) { for (let i = 0; i < s.length; i++) put(x, y + i, s[i]); },
     chest(x, y, ch, loot) { put(x, y, ch); if (loot) extra.loot[key(x, y)] = loot; },
     sign(x, y, txt) { put(x, y, 'S'); extra.signs[key(x, y)] = txt; },
@@ -65,7 +68,7 @@ const DEF = {
       m.at(22, 10, 'BB'); m.col(34, 12, 'DD');
       // nord-est: punte, pipistrelli e la grande chiave
       m.fill(35, 10, 42, 10, '^'); m.fill(40, 11, 40, 18, '^');
-      m.at(37, 17, 'g'); m.at(42, 15, 'g'); m.at(43, 19, 'f'); m.at(36, 8, 'h'); m.chest(43, 8, 'K'); m.at(44, 21, 't');
+      m.at(37, 17, 'g'); m.at(42, 15, 'g'); m.at(43, 19, 'f'); m.at(36, 8, 'h'); m.at(42, 6, '>>'); m.at(42, 7, ';;'); m.at(42, 8, ';;'); m.at(44, 21, 't');
       // il guardiano
       m.at(21, 1, 'M'); m.at(11, -4, 't'); m.at(32, -4, 't'); m.at(11, 9, 't'); m.at(32, 9, 't');
     },
@@ -92,7 +95,7 @@ const DEF = {
       // est: la piccola chiave
       m.chest(42, 26, 'k'); m.chest(35, 26, 'c', 'monete:40'); m.at(38, 30, 'h'); m.at(36, 34, 'g'); m.at(41, 35, 'g'); m.at(34, 37, 'v'); m.at(43, 37, 'v'); m.at(34, 32, 't');
       // la grande vasca e l'isola della grande chiave
-      m.fill(11, 4, 30, 12, '~'); m.fill(18, 6, 23, 10, '.'); m.chest(20, 8, 'K'); m.at(18, 6, 't'); m.at(23, 10, 't'); m.col(31, 3, 'BB');
+      m.fill(11, 4, 30, 12, '~'); m.fill(18, 6, 23, 10, '.'); m.chest(20, 8, 'c', 'monete:80'); m.at(20, 2, '>>'); m.at(20, 3, ';;'); m.at(18, 6, 't'); m.at(23, 10, 't'); m.col(31, 3, 'BB');
       // il guardiano e le sue quattro vasche
       m.fill(33, -1, 35, 1, '~'); m.fill(44, -1, 46, 1, '~'); m.fill(33, 7, 35, 9, '~'); m.fill(44, 7, 46, 9, '~');
       m.at(39, 4, 'M'); m.at(32, -3, 't'); m.at(47, -3, 't'); m.at(32, 11, 't'); m.at(47, 11, 't');
@@ -116,7 +119,7 @@ const DEF = {
       m.at(38, 32, 'e'); m.at(43, 36, 'e'); m.at(40, 41, 'f'); m.at(44, 28, 'g'); m.at(36, 25, 't'); m.at(45, 25, 't');
       m.col(46, 40, '%'); m.chest(48, 40, 'c', 'cuore');
       // nord: l'abisso. Il cristallo sta dall'altra parte
-      m.fill(11, 18, 34, 21, '_'); m.fill(22, 18, 23, 21, 'U'); m.at(22, 15, 'x'); m.chest(12, 14, 'K'); m.at(30, 15, 'f'); m.at(15, 16, 'f');
+      m.fill(11, 18, 34, 21, '_'); m.fill(22, 18, 23, 21, 'U'); m.at(22, 15, 'x'); m.col(10, 14, '>>'); m.at(11, 14, ';;'); m.at(11, 15, ';;'); m.at(30, 15, 'f'); m.at(15, 16, 'f');
       m.at(11, 27, 't'); m.at(34, 27, 't'); m.at(34, 13, 't'); m.at(22, 12, 'BB');
       // lo scarabeo e i pilastri
       m.fill(14, -3, 15, -2, '#'); m.fill(30, -3, 31, -2, '#'); m.fill(14, 6, 15, 7, '#'); m.fill(30, 6, 31, 7, '#');
@@ -141,7 +144,7 @@ const DEF = {
       m.fill(9, 16, 36, 17, '_'); m.fill(31, 16, 32, 17, '='); m.at(31, 15, 'rr'); m.at(14, 13, 'x'); m.col(9, 12, 'uu'); m.col(8, 12, '++');
       m.at(20, 21, 'g'); m.at(27, 13, 'g'); m.at(33, 12, 'f'); m.at(9, 25, 't'); m.at(36, 25, 't'); m.at(36, 11, 't'); m.at(22, 10, 'BB');
       // nord-ovest: la grande chiave, e una crepa
-      m.fill(1, 15, 7, 20, 'I'); m.chest(4, 11, 'K'); m.at(3, 18, 'e'); m.at(5, 21, 'e'); m.chest(6, 22, 'c', 'pozione:2'); m.at(1, 11, 't'); m.at(7, 23, 't');
+      m.fill(1, 15, 7, 20, 'I'); m.at(3, 10, '>>'); m.at(3, 11, ';;'); m.at(3, 12, ';;'); m.at(3, 18, 'e'); m.at(5, 21, 'e'); m.chest(6, 22, 'c', 'pozione:2'); m.at(1, 11, 't'); m.at(7, 23, 't');
       m.col(0, 17, '%'); m.chest(-2, 17, 'c', 'monete:150');
       // la regina sul lago ghiacciato
       m.fill(7, -8, 38, 9, 'I'); m.at(12, -4, '#'); m.at(33, -4, '#'); m.at(12, 5, '#'); m.at(33, 5, '#');
@@ -165,7 +168,7 @@ const DEF = {
       m.chest(49, 20, 'C'); m.chest(51, 38, 'c', 'monete:120'); m.fill(40, 24, 48, 24, '^'); m.fill(43, 29, 51, 29, '^'); m.fill(40, 34, 48, 34, '^');
       m.at(45, 26, 'g'); m.at(47, 32, 'g'); m.at(42, 37, 'f'); m.at(50, 36, 'f'); m.at(40, 19, 't'); m.at(51, 19, 't');
       // nord: l'abisso, il cristallo e la grande chiave; una crepa a est
-      m.fill(9, 18, 14, 21, 'L'); m.fill(30, 18, 35, 21, 'L'); m.fill(7, 14, 38, 15, '_'); m.fill(10, 14, 11, 15, 'U'); m.at(20, 10, 'x'); m.chest(36, 8, 'K');
+      m.fill(9, 18, 14, 21, 'L'); m.fill(30, 18, 35, 21, 'L'); m.fill(7, 14, 38, 15, '_'); m.fill(10, 14, 11, 15, 'U'); m.at(20, 10, 'x'); m.col(6, 9, '>>'); m.at(7, 9, ';;'); m.at(7, 10, ';;');
       m.at(30, 11, 'e'); m.at(14, 9, 'e'); m.at(7, 23, 't'); m.at(38, 23, 't'); m.at(7, 7, 't'); m.at(22, 6, 'BB');
       m.col(39, 10, '%'); m.chest(41, 10, 'c', 'cuore');
       // la salamandra
@@ -189,7 +192,7 @@ const DEF = {
       // est: la tana dei goblin (trappola)
       m.col(26, 15, '33'); m.room(26, 9, 38, 22); m.at(29, 12, 'f'); m.at(35, 13, 'f'); m.at(32, 19, 'f'); m.at(29, 18, 'h'); m.at(36, 20, 'h');
       m.at(27, 10, 't'); m.at(37, 10, 't'); m.at(27, 21, 't'); m.at(37, 21, 't'); m.at(37, 16, 'v');
-      m.trig(3, 'kill', 32, 15); m.chest(32, 15, 'Q', 'mantello');
+      m.trig(3, 'kill', 32, 15); m.chest(32, 15, 'Q', 'mantello'); m.col(38, 15, '>>'); m.at(36, 15, ';;'); m.at(36, 16, ';;');
     },
   },
   mare: {
@@ -208,7 +211,7 @@ const DEF = {
       // nord: il deposito dei contrabbandieri (trappola)
       m.at(17, 12, '44'); m.room(8, 2, 27, 12); m.at(11, 5, 'f'); m.at(23, 5, 'f'); m.at(14, 9, 'e'); m.at(21, 9, 'e'); m.at(17, 4, 'g');
       m.at(9, 3, 't'); m.at(26, 3, 't'); m.at(9, 11, 'v'); m.at(10, 11, 'v'); m.at(26, 11, 'v');
-      m.trig(4, 'kill', 17, 7); m.chest(17, 6, 'Q', 'monete:150');
+      m.trig(4, 'kill', 17, 7); m.chest(17, 6, 'Q', 'monete:150'); m.at(17, 2, '>>'); m.at(17, 3, ';;');
     },
   },
   cristalli: {
@@ -225,7 +228,7 @@ const DEF = {
       m.at(17, 12, '%'); m.room(14, 4, 21, 12); m.chest(17, 7, 'c', 'elisir'); m.at(15, 5, 'v'); m.at(20, 5, 'v');
       // ovest: l'enigma del masso e il deposito dei minatori
       m.col(8, 16, '++'); m.room(-6, 12, 8, 22); m.at(2, 18, 'O'); m.at(-3, 14, 'p'); m.at(-5, 21, 't'); m.at(7, 13, 't');
-      m.at(0, 12, '55'); m.trig(5, 'plates'); m.room(-6, 2, 8, 12); m.chest(0, 6, 'c', 'bastone'); m.at(-5, 3, 't'); m.at(7, 3, 't'); m.at(-5, 11, 'v'); m.at(7, 11, 'v');
+      m.at(0, 12, '55'); m.trig(5, 'plates'); m.room(-6, 2, 8, 12); m.chest(0, 6, 'c', 'bastone'); m.at(0, 2, '>>'); m.at(0, 3, ';;'); m.at(0, 4, ';;'); m.at(-5, 3, 't'); m.at(7, 3, 't'); m.at(-5, 11, 'v'); m.at(7, 11, 'v');
     },
   },
   gelo: {
@@ -239,11 +242,11 @@ const DEF = {
       m.room(6, 8, 29, 22); m.fill(9, 11, 26, 19, 'I'); m.at(12, 14, 'e'); m.at(23, 16, 'e'); m.at(18, 10, 'g'); m.at(8, 20, 'g');
       m.at(7, 9, 't'); m.at(28, 9, 't'); m.at(7, 21, 't'); m.at(28, 21, 't'); m.chest(27, 19, 'c', 'pozione:3');
       // una crepa nel muro nord: la veste d'ombra
-      m.at(17, 8, '%'); m.room(12, 0, 23, 8); m.chest(17, 3, 'c', 'ombra'); m.at(13, 1, 't'); m.at(22, 1, 't'); m.at(13, 7, 'v'); m.at(22, 7, 'v');
+      m.at(17, 8, '%'); m.room(12, 0, 23, 8); m.chest(17, 3, 'c', 'monete:200'); m.at(13, 1, 't'); m.at(22, 1, 't'); m.at(13, 7, 'v'); m.at(22, 7, 'v');
       // est: la trappola degli scheletri di ghiaccio
       m.col(29, 14, '66'); m.room(29, 9, 40, 21); m.at(33, 12, 'f'); m.at(37, 16, 'f'); m.at(33, 19, 'f'); m.at(36, 11, 'g');
       m.at(30, 10, 't'); m.at(39, 10, 't'); m.at(30, 20, 't'); m.at(39, 20, 't');
-      m.trig(6, 'kill', 35, 15); m.chest(35, 15, 'Q', 'cuore');
+      m.trig(6, 'kill', 35, 15); m.chest(35, 15, 'Q', 'cuore'); m.col(40, 14, '>>'); m.at(38, 14, ';;'); m.at(38, 15, ';;');
     },
   },
 };
@@ -257,11 +260,12 @@ function parse(id) {
   const H = rows.length, Wd = Math.max(...rows.map(r => r.length));
   const ch = (i, j) => (j >= 0 && j < H && i >= 0 && i < rows[j].length) ? rows[j][i] : ' ';
   const cell = new Uint8Array(Wd * H), objs = [];
-  const BASE = { ' ': ROCK, '#': WALL, '%': CRACK, '.': FLOOR, '_': PIT, '~': WATER, 'L': LAVA, 'I': ICE, '^': SPIKE, '=': BRIDGE, '@': EXIT, 'r': TOGB, 'u': TOGB, 'R': PLAT, 'U': PLAT };
+  const BASE = { ' ': ROCK, '#': WALL, '%': CRACK, '.': FLOOR, '_': PIT, '~': WATER, 'L': LAVA, 'I': ICE, '^': SPIKE, '=': BRIDGE, '@': EXIT, '>': STAIR, 'r': TOGB, 'u': TOGB, 'R': PLAT, 'U': PLAT, ':': FLOOR, ';': FLOOR };
+  const FT = { ':': 59, ';': 60 }, tiles = {};
   for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) {
     const c = ch(i, j), k = j * Wd + i;
-    if (BASE[c] !== undefined) cell[k] = BASE[c];
-    else if ('DB+123456789'.includes(c)) cell[k] = DOOR;
+    if (BASE[c] !== undefined) { cell[k] = BASE[c]; if (FT[c]) tiles[k] = FT[c]; }
+    else if ('DBG+123456789'.includes(c)) cell[k] = DOOR;
     else {
       // oggetto appoggiato sul pavimento: ghiaccio se intorno c'è ghiaccio
       let ice = 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (ch(i + a, j + b) === 'I') ice++;
@@ -270,12 +274,12 @@ function parse(id) {
     }
     if (c === 'r' || c === 'u' || c === 'R' || c === 'U') objs.push({ c, i, j });
   }
-  const P = { id, def, w: Wd, h: H, rows, cell, loot: out.loot, signs: out.signs };
+  const P = { id, def, w: Wd, h: H, rows, cell, tiles, loot: out.loot, signs: out.signs };
   const at = (i, j) => (i >= 0 && j >= 0 && i < Wd && j < H) ? cell[j * Wd + i] : ROCK;
   P.at = at;
   // stanze: zone di pavimento separate da muri e porte
   const room = new Int16Array(Wd * H).fill(-1), boxes = [];
-  const inRoom = t => t !== ROCK && t !== WALL && t !== CRACK && t !== DOOR && t !== EXIT;
+  const inRoom = t => t !== ROCK && t !== WALL && t !== CRACK && t !== DOOR && t !== EXIT && t !== STAIR;
   let nR = 0;
   for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) {
     if (room[j * Wd + i] >= 0 || !inRoom(at(i, j))) continue;
@@ -299,12 +303,22 @@ function parse(id) {
     let cx = 0, cz = 0; for (const [x, y] of cells) { cx += (x + 0.5) * CS; cz += (y + 0.5) * CS; } cx /= cells.length; cz /= cells.length;
     const sides = new Set(); for (const [x, y] of cells) { if (axis === 'x') { sides.add(roomOf(x, y - 1)); sides.add(roomOf(x, y + 1)); } else { sides.add(roomOf(x - 1, y)); sides.add(roomOf(x + 1, y)); } }
     sides.delete(-1);
-    P.doors.push({ c, cells, axis, cx, cz, kind: c === 'D' ? 'lock' : c === 'B' ? 'boss' : c === '+' ? 'open' : 'shut', g: /[1-9]/.test(c) ? +c : 0, key: cells[0].join(','), rooms: [...sides] });
+    P.doors.push({ c, cells, axis, cx, cz, kind: c === 'D' ? 'lock' : c === 'B' ? 'boss' : c === 'G' ? 'seal' : c === '+' ? 'open' : 'shut', g: /[1-9]/.test(c) ? +c : 0, key: cells[0].join(','), rooms: [...sides] });
   }
-  // uscita e punto di partenza
-  P.exits = []; for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) if (at(i, j) === EXIT) P.exits.push([i, j]);
-  const ex = P.exits.reduce((s, [i]) => s + i, 0) / P.exits.length, ey = P.exits[0][1];
-  P.spawn = { x: (ex + 0.5) * CS, z: (ey - 1.1) * CS };
+  // la via del ritorno ('@') e la scala verso il piano dopo ('>'): da che parte sta la stanza, e dove ci si ritrova arrivando
+  const land = type => {
+    const cells = []; for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) if (at(i, j) === type) cells.push([i, j]);
+    if (!cells.length) return null;
+    const open = t => t !== ROCK && t !== WALL && t !== CRACK && t !== EXIT && t !== STAIR;
+    let d = [0, -1, 'n']; for (const q of [[0, -1, 'n'], [0, 1, 's'], [1, 0, 'e'], [-1, 0, 'w']]) if (cells.every(([i, j]) => open(at(i + q[0], j + q[1])))) { d = q; break; }
+    const cx = cells.reduce((s, c) => s + c[0], 0) / cells.length + 0.5, cz = cells.reduce((s, c) => s + c[1], 0) / cells.length + 0.5;
+    // si arriva a una cella e mezza dalla soglia; se lì dietro non c'è pavimento sicuro (acqua, vuoto...) ci si ferma sulla prima cella
+    const far = cells.every(([i, j]) => at(i + d[0] * 2, j + d[1] * 2) === FLOOR) ? 1.6 : 1.25;
+    return { x: (cx + d[0] * far) * CS, z: (cz + d[1] * far) * CS, yaw: Math.atan2(d[1], d[0]), side: d[2], cells, cx: cx * CS, cz: cz * CS };
+  };
+  P.spawn = land(EXIT); P.exits = P.spawn.cells; P.stairs = land(STAIR);
+  const sideOf = {}; for (const L of [P.spawn, P.stairs]) if (L) for (const [i, j] of L.cells) sideOf[j * Wd + i] = L.side;
+  P.sideOf = sideOf;
   // oggetti
   P.objs = objs.map(o => ({ ...o, x: (o.i + 0.5) * CS, z: (o.j + 0.5) * CS, room: roomOf(o.i, o.j) }));
   const M = P.objs.find(o => o.c === 'M'); P.bossRoom = M ? M.room : -1; P.bossAt = M;
@@ -315,7 +329,7 @@ function parse(id) {
     let r = tg[1] !== null ? roomOf(tg[1], tg[2]) : -1;
     if (r < 0) {
       const cand = new Set(); for (const dd of P.doors) if (dd.kind === 'shut' && dd.g === d.g) for (const rr of dd.rooms) cand.add(rr);
-      const good = [...cand].filter(rr => P.objs.some(o => o.room === rr && (type === 'kill' ? 'efgh'.includes(o.c) : (o.c === 'p' || o.c === 'P'))));
+      const good = [...cand].filter(rr => P.objs.some(o => o.room === rr && (type === 'kill' ? 'efghj'.includes(o.c) : (o.c === 'p' || o.c === 'P'))));
       if (good.length !== 1) throw new Error('SARACINESCA ' + d.g + ' DI ' + id + ': ' + good.length + ' STANZE POSSIBILI');
       r = good[0];
     }
@@ -350,25 +364,54 @@ function boxTo(a, x0, z0, x1, z1, y0, y1, tile, top = tile, sh = 1) {
   if (top !== null) quadTo(a, [x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], top, ux, uz, k('top'));
 }
 const isSolid = t => t === WALL || t === CRACK || t === ROCK;
-const isFlat = t => t === FLOOR || t === ICE || t === SPIKE || t === BRIDGE || t === DOOR || t === EXIT || t === TOGB;
+const isFlat = t => t === FLOOR || t === ICE || t === SPIKE || t === BRIDGE || t === DOOR || t === EXIT || t === TOGB || t === STAIR;
+// una scala dentro lo spessore del muro: un pianerottolo, poi quattro gradini che scendono (o salgono) nel buio.
+// side: da che parte sta la stanza
+const SDEEP = 4 * 1.9;
+function stairsTo(fl, wl, i, j, side, up, tile, ftile) {
+  const x0 = i * CS, z0 = j * CS, n = 4, flat = 3, run = (CS - flat) / n, rise = up ? 1.9 : -1.9;
+  const Q = (u, v, y) => side === 's' ? [x0 + v, y, z0 + CS - u] : side === 'n' ? [x0 + CS - v, y, z0 + u] : side === 'e' ? [x0 + CS - u, y, z0 + CS - v] : [x0 + u, y, z0 + v];
+  quadTo(fl, Q(0, 0, 0), Q(0, CS, 0), Q(flat, CS, 0), Q(flat, 0, 0), ftile, 1, flat / CS, LIT.floor);
+  for (let k = 0; k < n; k++) {
+    const u0 = flat + k * run, u1 = u0 + run, ya = k * rise, yb = (k + 1) * rise, L = Math.max(0.3, 0.86 - k * (up ? 0.07 : 0.15));
+    quadTo(fl, Q(u0, 0, yb), Q(u0, CS, yb), Q(u1, CS, yb), Q(u1, 0, yb), tile, 1, 0.25, L);               // pedata
+    if (up) quadTo(fl, Q(u0, 0, ya), Q(u0, CS, ya), Q(u0, CS, yb), Q(u0, 0, yb), tile, 1, 0.25, L * 0.8);  // alzata, vista dalla stanza
+  }
+  const yb = n * rise;
+  quadTo(wl, Q(CS, 0, Math.min(yb, 0) - 0.01), Q(CS, CS, Math.min(yb, 0) - 0.01), Q(CS, CS, DH), Q(CS, 0, DH), 42, 1, 1, up ? 0.12 : 0.05);  // il buio in fondo
+}
 const bottomOf = t => t === PIT || t === PLAT ? -PD : t === WATER ? -WD : t === LAVA ? -LD : 0;
 // cell: celle attuali (muri rotti, pozzi riempiti); filled: celle riempite da un masso
 function buildStatic(P, cell, filled) {
   const D = P.def, Wd = P.w, H = P.h, at = (i, j) => (i >= 0 && j >= 0 && i < Wd && j < H) ? cell[j * Wd + i] : ROCK;
   const floor = [], wall = [], water = [], lava = [];
   const N4 = [[0, -1, 'n'], [0, 1, 's'], [1, 0, 'e'], [-1, 0, 'w']];
+  // le scale: '>' porta avanti (giù, oppure su nelle torri), '@' nei piani dopo il primo riporta indietro
+  const tower = D.dir === 'up', isStair = t => t === STAIR || (t === EXIT && !!D.up), goesUp = t => t === STAIR ? tower : !tower;
+  const low = n => isStair(n) && !goesUp(n) ? -SDEEP - 0.5 : bottomOf(n);
   for (let j = 0; j < H; j++) for (let i = 0; i < Wd; i++) {
     const t = at(i, j), x0 = i * CS, z0 = j * CS, x1 = x0 + CS, z1 = z0 + CS, k = j * Wd + i;
     if (t === WALL || t === CRACK) {
       const tile = t === CRACK ? (D.crack || 41) : D.wall;
-      for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (!isSolid(n)) sideTo(wall, i, j, s, bottomOf(n), WH, tile); }
+      for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (!isSolid(n)) sideTo(wall, i, j, s, low(n), WH, tile); }
       let open = false; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) if (!isSolid(at(i + a, j + b))) open = true;
       if (open) flatTo(wall, x0, z0, x1, z1, WH, tile, 1, 1, LIT.top);
       continue;
     }
+    if (isStair(t)) {
+      const sd = P.sideOf[k] || 'n', fa = sd === 'n' || sd === 's' ? ['n', 's'] : ['e', 'w'];
+      stairsTo(floor, wall, i, j, sd, goesUp(t), 57, D.floor);
+      for (const f of fa) sideTo(wall, i, j, f, DH, WH, D.wall);
+      { const up = goesUp(t), sg = up ? 120 : 63, a = DH + 0.5, b = DH + 3.1, e = 0.07, c0 = CS / 2 - 1.5, c1 = CS / 2 + 1.5;     // la freccia accesa sopra l'arco: su o giù
+        const q = sd === 's' ? [[x0 + c0, z1 + e], [x0 + c1, z1 + e]] : sd === 'n' ? [[x0 + c1, z0 - e], [x0 + c0, z0 - e]] : sd === 'e' ? [[x1 + e, z0 + c1], [x1 + e, z0 + c0]] : [[x0 - e, z0 + c0], [x0 - e, z0 + c1]];
+        quadTo(wall, [q[0][0], a, q[0][1]], [q[1][0], a, q[1][1]], [q[1][0], b, q[1][1]], [q[0][0], b, q[0][1]], sg, 1, 1, 1); }
+      flatTo(wall, x0, z0, x1, z1, WH, D.wall, 1, 1, LIT.top);
+      quadTo(wall, [x0, DH, z0], [x1, DH, z0], [x1, DH, z1], [x0, DH, z1], D.wall, 1, 1, 0.5);
+      continue;
+    }
     if (isFlat(t)) {
-      const tile = t === ICE ? 28 : t === SPIKE ? 29 : t === BRIDGE ? 30 : filled && filled.has(k) ? 47 : P.room[k] === P.bossRoom && P.bossRoom >= 0 ? 44 : D.floor;
-      flatTo(floor, x0, z0, x1, z1, 0, tile);
+      const tile = t === ICE ? 28 : t === SPIKE ? 29 : t === BRIDGE ? 30 : filled && filled.has(k) ? 47 : P.tiles[k] ? P.tiles[k] : P.room[k] === P.bossRoom && P.bossRoom >= 0 ? 44 : D.floor;
+      flatTo(floor, x0, z0, x1, z1, 0, tile, 1, 1, tile === 60 ? 1 : LIT.floor);
       // bordi verso pozzi, acqua e lava
       for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (n === PIT || n === PLAT || n === WATER || n === LAVA) sideTo(floor, i, j, s, t === BRIDGE ? -1.4 : bottomOf(n), 0, t === BRIDGE ? 30 : 42); }
       // architrave sopra porte e uscite
@@ -473,6 +516,22 @@ function tilesOn(c, R) {
   at(56, () => { rocky(['#8a8690', '#9a96a2', '#7a7682', '#a8a4ae'], '#4a4652'); speck(['#5a8a3a', '#6a9a44'], 14, 2, 1); });
   at(55, () => { rocky(['#6a6460', '#7a726a', '#5a5450'], '#2e2a28'); g.fillStyle = '#141210'; let x = 15, y = 0; while (y < T) { g.fillRect(x, y, 2, 2); y += 2; x += rnd(3) - 1; } g.fillRect(8, 12, 8, 2); g.fillRect(18, 20, 7, 2); });
   at(47, () => { g.fillStyle = '#5a5a66'; g.fillRect(0, 0, T, T); g.fillStyle = '#7a7a86'; g.fillRect(1, 1, T - 2, T - 2); g.fillStyle = '#5a5a66'; g.fillRect(15, 1, 2, T - 2); g.fillRect(1, 15, T - 2, 2); });
+  // le profondità: gradini, sigillo del guardiano, tappeto, lastra con la runa, muro e pavimento delle cripte
+  at(57, () => { for (let y = 0; y < T; y += 8) { g.fillStyle = sh('#8a8690', 0.9 + R() * 0.2); g.fillRect(0, y, T, 8); g.fillStyle = '#b4b0bc'; g.fillRect(0, y, T, 2); g.fillStyle = '#4a4652'; g.fillRect(0, y + 7, T, 1); } speck(['#6a6670', '#9a96a2'], 30, 2, 1); });
+  at(58, () => { g.fillStyle = '#1e1a2a'; g.fillRect(0, 0, T, T); g.fillStyle = '#3a3450'; g.fillRect(2, 2, T - 4, T - 4); g.fillStyle = '#5a5278'; g.fillRect(2, 2, T - 4, 2); g.fillRect(2, 2, 2, T - 4);
+    for (let a = 0; a < TAU; a += 0.09) { g.fillStyle = '#7af0ff'; g.fillRect(Math.round(15.5 + Math.cos(a) * 9), Math.round(15.5 + Math.sin(a) * 9), 1, 1); g.fillStyle = '#3ab8e0'; g.fillRect(Math.round(15.5 + Math.cos(a) * 11), Math.round(15.5 + Math.sin(a) * 11), 1, 1); }
+    g.fillStyle = '#eaffff'; g.fillRect(15, 9, 2, 14); g.fillRect(11, 12, 10, 2); g.fillRect(12, 19, 8, 2); g.fillStyle = '#7af0ff'; g.fillRect(9, 15, 3, 2); g.fillRect(20, 15, 3, 2); });
+  at(59, () => { fill('#8a1e2a', 90, 0.22); g.fillStyle = '#e8b42a'; for (const [x, y] of [[8, 8], [24, 8], [8, 24], [24, 24], [16, 16], [0, 0], [0, 16], [16, 0]]) { g.fillRect((x + 31) % 32, y, 3, 1); g.fillRect(x, (y + 31) % 32, 1, 3); } g.fillStyle = '#5a1018'; for (let x = 0; x < T; x += 8) g.fillRect(x + 4, 0, 1, T); });
+  at(60, () => { g.fillStyle = '#12162a'; g.fillRect(0, 0, T, T); g.fillStyle = '#1e2440'; g.fillRect(1, 1, T - 2, T - 2); g.fillStyle = '#2a3258'; g.fillRect(1, 1, T - 2, 1); g.fillRect(1, 1, 1, T - 2);
+    for (let a = 0; a < TAU; a += 0.1) { g.fillStyle = '#5ae0ff'; g.fillRect(Math.round(15.5 + Math.cos(a) * 11), Math.round(15.5 + Math.sin(a) * 11), 1, 1); }
+    g.fillStyle = '#bff4ff'; for (let i = 0; i < 9; i++) { g.fillRect(11 + i, 11 + i, 2, 1); g.fillRect(20 - i, 11 + i, 2, 1); } g.fillRect(15, 6, 2, 5); g.fillRect(15, 21, 2, 5); g.fillRect(6, 15, 5, 2); g.fillRect(21, 15, 5, 2); });
+  at(61, () => { bricks('#4a4456', '#16121e', 11, 7); g.fillStyle = '#c89a2a'; g.fillRect(0, 14, T, 2); g.fillStyle = '#7a5a14'; g.fillRect(0, 16, T, 1); g.fillStyle = '#ffd86a'; for (let x = 3; x < T; x += 8) g.fillRect(x, 14, 2, 1);
+    g.fillStyle = '#0e0a14'; g.fillRect(12, 20, 8, 8); g.fillStyle = '#d8d0c0'; g.fillRect(13, 21, 6, 5); g.fillRect(14, 26, 4, 1); g.fillStyle = '#0e0a14'; g.fillRect(14, 23, 1, 2); g.fillRect(17, 23, 1, 2); });
+  at(62, () => { flags('#3e3a4a', '#14101c'); g.fillStyle = '#b8902a'; for (const [x, y] of [[0, 0], [T - 2, 0], [0, T - 2], [T - 2, T - 2], [15, 15]]) g.fillRect(x, y, 2, 2); g.fillStyle = '#6a5418'; g.fillRect(16, 0, 1, 10); g.fillRect(10, 16, 1, 16); });
+  const arrow = up => { g.fillStyle = '#10141f'; g.fillRect(0, 0, T, T); g.fillStyle = '#2a3258'; g.fillRect(1, 1, T - 2, T - 2); g.fillStyle = '#12162a'; g.fillRect(3, 3, T - 6, T - 6);
+    for (let k = 0; k < 11; k++) { const y = up ? 6 + k : 25 - k, w = k; g.fillStyle = '#bff4ff'; g.fillRect(15 - w, y, 2 * w + 2, 1); }
+    g.fillStyle = '#bff4ff'; g.fillRect(12, up ? 17 : 6, 8, 9); g.fillStyle = '#5ae0ff'; g.fillRect(12, up ? 25 : 6, 8, 1); };
+  at(63, () => arrow(false)); at(120, () => arrow(true));
   return c;
 }
 
@@ -492,9 +551,36 @@ const xtal = (c1, c2) => A.fit([Cy([0, 0, 0], [0, 0, 0.6], 2.6, '#3a3440'), Cy([
 const gem = c => A.fit([{ t: 'b', b: [-2.1, 2.1, -2.1, 2.1, -2.1, 2.1], c, k: 1.08, rot: [...GEMR, ['t', 0, 0, 3.8]] }, El([1.3, -0.7, 5.0], [0.4, 0.4, 0.6], '#ffffff', 1.2, 1)], Math.PI - 0.3);
 const lapide = () => A.fit([{ t: 'b', b: [-0.6, 0.6, -2.6, 2.6, 0, 3.6], c: '#8a8a94' }, Cy([-0.6, 0, 3.6], [0.6, 0, 3.6], 2.6, '#8a8a94'), { t: 'b', b: [-0.9, 0.9, -3.0, 3.0, 0, 0.45], c: '#6a6a74' },
   ...[4.6, 3.5, 2.4].map(z => ({ t: 'b', b: [0.6, 0.68, -1.6, 1.6, z, z + 0.32], c: '#4a4a54' }))], Math.PI - 0.3);
-function portal(f) {
-  const W = 40, H = 115, c = A.mk(W, H), g = c.getContext('2d');
-  for (let y = 0; y < H; y++) { const w = 7 + Math.round(10 * (1 - y / H)) + (f && y % 15 < 7 ? 2 : 0); g.fillStyle = y % 10 < 5 ? '#fff8d0' : '#bfe8ff'; g.fillRect(W / 2 - w, y, w * 2, 1); g.fillStyle = '#ffffff'; g.fillRect(W / 2 - 3, y, 6, 1); }
+// arredi delle profondità: mucchi d'oro, cristalli che fanno luce, ossa
+const goldPile = () => A.fit([El([0, 0, 0.7], [3.5, 3.5, 1.0], '#b8801a'), El([0.5, 0.3, 1.4], [2.6, 2.6, 0.95], '#e0a424'), El([-0.3, -0.3, 2.1], [1.7, 1.7, 0.8], '#ffc83a'), El([0.2, 0.1, 2.7], [0.9, 0.9, 0.5], '#ffe98a', 1.2),
+  Cy([2.9, -1.3, 0.1], [2.9, -1.3, 0.4], 0.75, '#ffd23f'), Cy([-2.7, 1.9, 0.1], [-2.7, 1.9, 0.4], 0.75, '#ffd23f'), Cy([-2.2, -2.4, 0.1], [-2.2, -2.4, 0.4], 0.6, '#ffe07a'),
+  El([1.5, 1.7, 1.25], [0.55, 0.55, 0.55], '#e8304a', 1.25), El([-1.6, -0.9, 1.7], [0.5, 0.5, 0.5], '#3ad0ff', 1.25), El([0.2, -1.9, 1.2], [0.45, 0.45, 0.45], '#5af07a', 1.25)], Math.PI - 0.4);
+const cluster = (c1, c2) => A.fit([Cy([0, 0, 0], [0, 0, 0.5], 2.5, '#3a3440'), Kc([0, 0, 0.3], [0.3, 0, 6.6], 1.35, 0.1, c1, 1.2), Kc([-1.2, 0.6, 0.3], [-2.5, 1.1, 4.4], 0.95, 0.1, c1, 1.1),
+  Kc([1.2, -0.6, 0.3], [2.7, -1.3, 3.8], 0.85, 0.1, c2, 1.3), Kc([0.4, 1.3, 0.3], [1.0, 2.7, 3.0], 0.7, 0.1, c2, 1.2), Kc([-0.5, -1.3, 0.3], [-1.1, -2.6, 2.6], 0.65, 0.1, c1, 1.15)], Math.PI - 0.3);
+const bonesPile = () => A.fit([El([0, 0, 0.9], [1.3, 1.2, 1.1], '#e8e2d0'), { t: 'b', b: [0.9, 1.3, -0.7, -0.2, 0.9, 1.4], c: '#1a1418' }, { t: 'b', b: [0.9, 1.3, 0.2, 0.7, 0.9, 1.4], c: '#1a1418' },
+  Cy([-2.6, 1.6, 0.25], [1.2, 2.6, 0.25], 0.3, '#d8d2c0'), Cy([-2.2, -2.2, 0.25], [1.6, -1.4, 0.25], 0.3, '#cfc8b4'), El([-2.6, 1.6, 0.3], [0.5, 0.5, 0.4], '#e8e2d0'), El([1.6, -1.4, 0.3], [0.5, 0.5, 0.4], '#e8e2d0')], Math.PI - 0.5);
+// le statue sono guerrieri di pietra; i campioni dei piani più bassi, guerrieri in carne e ossa (più grandi del normale)
+const STONE = { skin: '#8a8a94', hand: '#8a8a94', helm: { c: '#6a6a74', spike: true }, shirt: '#7a7a84', plate: '#9a9aa4', pauldron: '#6a6a74', pants: '#6a6a74', boots: '#5a5a64', belt: '#5a5a64', eyes: '#5a5a64', weapon: { kind: 'spear', col: '#9a9aa4' }, shield: '#7a7a84', emblem: '#9a9aa4' };
+const CHAMP = {
+  troll: { skin: '#5a8a3a', hand: '#5a8a3a', ears: true, shirt: '#5a4028', pants: '#4a3420', boots: '#2a2018', belt: '#8a6a3a', eyes: '#ffe14a', wide: 0.9, weapon: { kind: 'club' } },
+  tritone: { skin: '#4aa8c8', hand: '#4aa8c8', helm: { c: '#2a6a8a', wings: '#9ae8ff' }, shirt: '#2a6a8a', plate: '#5ac8e0', pants: '#1e4a6a', boots: '#1e3a4a', eyes: '#ffffff', weapon: { kind: 'spear' } },
+  faraone: { skin: '#e8d090', hand: '#e8d090', crown: '#ffc83a', shirt: '#f0e8d0', plate: '#ffc83a', pauldron: '#3a7ae8', pants: '#f0e8d0', boots: '#c89a2a', belt: '#3a7ae8', eyes: '#ff3a2a', weapon: { kind: 'staff', col: '#ffe14a' } },
+  jarl: { skin: '#cfe8ff', hand: '#cfe8ff', skull: true, crown: '#bfe6ff', shirt: '#5a8ac0', plate: '#8ab8e0', pauldron: '#e8f4ff', pants: '#4a6a90', boots: '#3a5a7a', cape: '#e8f4ff', weapon: { col: '#e8f8ff', guard: '#5a8ac0', glow: '#ffffff', len: 3 } },
+  demone: { skin: '#b82a1a', hand: '#b82a1a', horns: '#1a0e0e', shirt: '#3a1414', plate: '#5a1e1a', pauldron: '#ff7a2a', pants: '#2a1010', boots: '#1a0a0a', cape: '#5a1414', eyes: '#ffe14a', wide: 0.6, weapon: { kind: 'axe', col: '#ff9a3a' } },
+  lich: { skin: '#3a2a4a', hand: '#3a2a4a', helm: { c: '#2a1e3a', spike: true }, shirt: '#2a1e3a', plate: '#4a3a6a', pauldron: '#8a5ae0', pants: '#1e1628', boots: '#14101e', cape: '#5a2a7a', eyes: '#ff4ae0', weapon: { col: '#c8a0ff', guard: '#5a2a7a', glow: '#ffffff', len: 3 } },
+  idolo: { skin: '#4ac88a', hand: '#4ac88a', helm: { c: '#2a8a5a', crown: true, gem: '#ffd23f' }, shirt: '#2a8a5a', plate: '#5ae0a0', pauldron: '#ffd23f', pants: '#1e6a44', boots: '#1e4a34', eyes: '#ffd23f', wide: 0.5, weapon: { kind: 'hammer', col: '#ffd23f' } },
+  capo: { skin: '#6aa83e', hand: '#6aa83e', ears: true, helm: { c: '#8a6a3a', spike: true }, shirt: '#8a2a2a', pauldron: '#8a6a3a', pants: '#4a3a2a', boots: '#2a2a2a', belt: '#ffc83a', eyes: '#ffe14a', wide: 0.5, weapon: { kind: 'axe', col: '#9aa4b2' } },
+  pirata: { skin: '#d8a07a', hand: '#d8a07a', hat: '#1e1a22', beard: '#2a1a1a', shirt: '#8a1e2a', sleeve: '#f0e8d8', pants: '#2a2a3a', boots: '#1a1a1e', belt: '#ffc83a', cape: '#1e1a22', weapon: { col: '#e8eef6', guard: '#ffc83a', len: 1 } },
+  minatore: { skin: '#8a7aa8', hand: '#8a7aa8', skull: true, helm: { c: '#c8a0ff' }, shirt: '#3a2a5a', plate: '#6a5a8a', pants: '#2a1e44', boots: '#1e1630', eyes: '#f0e0ff', wide: 0.4, weapon: { kind: 'hammer', col: '#c8a0ff' } },
+  yeti: { skin: '#f4f8ff', hand: '#f4f8ff', shirt: '#e8eef8', sleeve: '#f4f8ff', pants: '#dce6f2', boots: '#c8d4e4', belt: '#dce6f2', eyes: '#4ae0ff', wide: 1.1, weapon: { kind: 'club' } },
+};
+const CPOSE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
+// la famiglia di un santuario: il piano d'ingresso e tutti quelli sotto (o sopra) di lui
+const rootOf = id => DEF[id].base || id;
+const family = id => { const r = rootOf(id); return Object.keys(DEF).filter(k => rootOf(k) === r); };
+function portal(f, W = 40, H = 115) {
+  const c = A.mk(W, H), g = c.getContext('2d');
+  for (let y = 0; y < H; y++) { const w = Math.round(W * 0.175) + Math.round(W * 0.25 * (1 - y / H)) + (f && y % 15 < 7 ? 2 : 0); g.fillStyle = y % 10 < 5 ? '#fff8d0' : '#bfe8ff'; g.fillRect(W / 2 - w, y, w * 2, 1); g.fillStyle = '#ffffff'; g.fillRect(W / 2 - 3, y, 6, 1); }
   for (let k = 0; k < 16; k++) { g.fillStyle = '#ffffff'; g.fillRect((k * 13 + f * 7) % (W - 4) + 2, (k * 29 + f * 17) % (H - 6), 2, 4); }
   return c;
 }
@@ -610,11 +696,12 @@ const BOSS = {
 };
 // costruisce nell'atlante del santuario i disegni che servono lì: guardiano, nemici nuovi, oggetti
 function art(id, atlas) {
-  const P = parse(id), D = P.def, CH = {}, SP = {};
+  const D = DEF[rootOf(id)], CH = {}, SP = {};
   const k = A.SR, dirs = (make, w, h, o = {}) => { const oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 8; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); return out; };
   const B = BOSS[D.boss] || null;
   CH.boss = []; if (B) for (let p = 0; p < B.poses; p++) CH.boss.push(dirs(() => B.make(p), B.w, B.h, { sc: B.sc, base: B.h - 4 }));
-  const need = new Set(Object.values(D.foes));
+  const need = new Set(); for (const k of family(id)) for (const t of Object.values(DEF[k].foes || {})) need.add(t);
+  for (const t of need) if (CHAMP[t]) CH[t] = CPOSE.map(p => dirs(() => A.human(CHAMP[t], p), 48, 56));
   if (need.has('plant')) CH.plant = [0, 1].map(f => dirs(() => plant(f), 26, 28));
   if (need.has('crab')) CH.crab = [0, 1].map(f => dirs(() => crab(f), 34, 22));
   if (need.has('slimeB')) CH.slimeB = [0, 1].map(f => dirs(() => A.slime({ c: '#4a8ae8' }, f), 34, 26));
@@ -629,9 +716,13 @@ function art(id, atlas) {
   SP.xtal = [atlas.add(xtal('#e83a3a', '#ff9a9a')), atlas.add(xtal('#3a7ae8', '#9ac8ff'))];
   SP.gem = atlas.add(gem(D.glow));
   SP.portal = [atlas.add(portal(0)), atlas.add(portal(1))];
+  SP.portalS = [atlas.add(portal(0, 56, 80)), atlas.add(portal(1, 56, 80))];      // quello delle tesorerie: basso, sta sotto l'architrave
   SP.lapide = atlas.add(lapide());
+  SP.gold = atlas.add(goldPile()); SP.bones = atlas.add(bonesPile());
+  SP.cluster = atlas.add(cluster(D.glow, sh(D.glow, 1.35)));
+  SP.statue = dirs(() => A.human(STONE, {}), 44, 50);
   return { CH, SP, boss: B };
 }
 
-SG.dun = { CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT }, ORDER, CAVES, DEF, BOSS, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
+SG.dun = { CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT, STAIR }, Maker, ORDER, CAVES, DEF, BOSS, CHAMP, rootOf, family, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
 })();

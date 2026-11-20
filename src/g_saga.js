@@ -14,25 +14,29 @@ const IT = {
   argento: { n: "SPADA D'ARGENTO", t: 'arma', r: 1, att: 6, d: 'LEGGERA E LUCENTE COME LA LUNA.', look: { col: '#f0f6ff', guard: '#c8a040', len: 1 } },
   runica: { n: 'SPADA RUNICA', t: 'arma', r: 2, att: 9, d: 'LE RUNE SULLA LAMA VIBRANO NEL BUIO.', look: { col: '#9a7af0', guard: '#4a3a7a', glow: '#e8dcff', len: 2 } },
   ascia: { n: 'ASCIA DEL GIGANTE', t: 'arma', r: 2, att: 10, d: 'PESANTE COME UN MACIGNO.', look: { kind: 'axe', col: '#c8d0dc' } },
-  aurora: { n: "LAMA DELL'AURORA", t: 'arma', r: 3, att: 14, d: 'FORGIATA CON LA PRIMA LUCE DEL MONDO.', look: { col: '#ffe8a0', guard: '#ffb02e', glow: '#ffffff', len: 3 } },
+  aurora: { n: "LAMA DELL'AURORA", t: 'arma', r: 3, att: 14, d: 'FORGIATA CON LA PRIMA LUCE DEL MONDO, E SEPOLTA DOVE LA LUCE NON ARRIVA.', look: { col: '#ffe8a0', guard: '#ffb02e', glow: '#ffffff', len: 3 } },
   tunica: { n: 'TUNICA DA VIAGGIO', t: 'armatura', r: 0, dif: 0, d: 'COMODA, MA NON FERMA NEMMENO UNA SPINA.', look: { shirt: '#3e8a4a', pants: '#4a5a7a', belt: '#6a4424' } },
   giaco: { n: 'GIACO DI CUOIO', t: 'armatura', r: 0, dif: 1, d: 'CUOIO SPESSO E BEN CUCITO.', look: { shirt: '#8a5a34', sleeve: '#6a4424', belt: '#3a2a1a', pants: '#5a4a3a' } },
   cotta: { n: 'COTTA DI MAGLIA', t: 'armatura', r: 1, dif: 2, d: 'MIGLIAIA DI ANELLI DI FERRO INTRECCIATI.', look: { shirt: '#9aa4b2', sleeve: '#8a94a2', belt: '#4a3a2a', pants: '#4a4a5a', cape: '#3a5a9a' } },
   acciaio: { n: "ARMATURA D'ACCIAIO", t: 'armatura', r: 2, dif: 3, d: 'LA PORTAVANO I CAVALIERI DELLA ROCCA.', look: { shirt: '#c8d0dc', plate: '#e8eef6', pauldron: '#c8d0dc', belt: '#5a4a3a', pants: '#5a6070', cape: '#8a2a2a' } },
-  drago: { n: 'ARMATURA DEL DRAGO', t: 'armatura', r: 3, dif: 5, fire: true, d: 'SCAGLIE CHE NESSUNA FIAMMA PUÒ BRUCIARE.', look: { shirt: '#c8342c', plate: '#f0b040', pauldron: '#8a1e1a', belt: '#f0b040', pants: '#5a1e1a', cape: '#3a1414' } },
+  drago: { n: 'ARMATURA DEL DRAGO', t: 'armatura', r: 3, dif: 8, hp: 2, fire: true, d: 'SCAGLIE CHE NESSUNA FIAMMA BRUCIA E NESSUNA LAMA SCALFISCE: CAMMINI SULLA LAVA. +1 CUORE.', look: { shirt: '#c8342c', plate: '#f0b040', pauldron: '#8a1e1a', belt: '#f0b040', pants: '#5a1e1a', cape: '#3a1414' } },
   elmoFerro: { n: 'ELMO DI FERRO', t: 'elmo', r: 1, dif: 1, d: 'UN ELMO SOLIDO, CON IL PARANASO.', look: { helm: { c: '#9aa4b2', nose: true } } },
   alato: { n: 'ELMO ALATO', t: 'elmo', r: 2, dif: 2, d: "LE ALI D'ARGENTO SEMBRANO VERE.", look: { helm: { c: '#c8d0dc', wings: '#ffffff' } } },
-  corona: { n: 'CORONA DEL RE ANTICO', t: 'elmo', r: 3, dif: 2, hp: 2, d: 'APPARTENEVA AL PRIMO RE DI LUMEN. +1 CUORE.', look: { helm: { c: '#ffc83a', crown: true, gem: '#e8304a' } } },
+  corona: { n: 'CORONA DEL RE ANTICO', t: 'elmo', r: 3, dif: 4, hp: 4, swim: true, d: "CHI LA PORTA NON TEME NÉ LAME NÉ ABISSI: RESPIRI SOTT'ACQUA. +2 CUORI.", look: { helm: { c: '#ffc83a', crown: true, gem: '#e8304a' } } },
   scudoLegno: { n: 'SCUDO DI LEGNO', t: 'scudo', r: 0, dif: 1, d: 'IL VECCHIO SCUDO DI OTTO.', look: { shield: '#8a5e34' } },
   scudoFerro: { n: 'SCUDO DI FERRO', t: 'scudo', r: 1, dif: 2, d: 'AMMACCATO, MA ANCORA FORTE.', look: { shield: '#9aa4b2', emblem: '#c8342c' } },
-  grifone: { n: 'SCUDO DEL GRIFONE', t: 'scudo', r: 3, dif: 4, d: 'LE PIUME DORATE DEVIANO OGNI COLPO.', look: { shield: '#3a6ab0', emblem: '#ffc83a' } },
+  grifone: { n: 'SCUDO DEL GRIFONE', t: 'scudo', r: 3, dif: 6, reflect: true, d: 'LE PIUME DORATE DEVIANO OGNI COLPO, E RESPINGONO QUELLI MAGICI.', look: { shield: '#3a6ab0', emblem: '#ffc83a' } },
   anelloVita: { n: 'ANELLO DI VITA', t: 'acc', r: 1, hp: 2, d: 'BRILLA DI UNA LUCE CALDA. +1 CUORE.', ico: 'ring' },
   anello2: { n: 'ANELLO DEL FALCO', t: 'acc', r: 1, vel: 0.15, d: 'CHI LO PORTA CORRE PIÙ SVELTO. +15% VELOCITÀ.', ico: 'ring' },
   vento: { n: 'STIVALI DEL VENTO', t: 'acc', r: 2, vel: 0.35, d: 'PIÙ VELOCI DEL VENTO. +35% VELOCITÀ.', ico: 'boots' },
-  luna: { n: 'AMULETO DELLA LUNA', t: 'acc', r: 3, regen: 1, d: 'LA LUCE DELLA LUNA RICUCE OGNI FERITA.', ico: 'amulet' },
+  luna: { n: 'AMULETO DELLA LUNA', t: 'acc', r: 3, regen: 1, hp: 4, att: 2, d: 'LA LUCE DELLA LUNA RICUCE OGNI FERITA E GUIDA IL BRACCIO. +2 CUORI, ATT +2.', ico: 'amulet' },
+  zanna: { n: "ZANNA DELL'INVERNO", t: 'arma', r: 3, att: 19, beam: true, d: 'UNA LAMA DI GHIACCIO CHE NON SI SCIOGLIE. A OGNI COLPO LANCIA UN RAGGIO GELIDO.', look: { col: '#cfeaff', guard: '#5a8ac0', glow: '#ffffff', len: 3 } },
+  guanti: { n: 'GUANTI DEL GIGANTE', t: 'acc', r: 2, att: 4, d: 'CUOIO SPESSO E BORCHIE DI FERRO: OGNI COLPO PESA IL DOPPIO. ATT +4.', ico: 'ring' },
+  lanterna: { n: 'LANTERNA DEL MINATORE', t: 'acc', r: 2, dif: 1, light: 1, d: 'NON SI SPEGNE MAI: NEL BUIO VEDI MOLTO PIÙ LONTANO. DIF +1.', ico: 'amulet' },
+  calamita: { n: 'CALAMITA DEL CERCATORE', t: 'acc', r: 2, luck: 1, magnet: 1, d: 'MONETE E CUORI VOLANO DA TE ANCHE DA LONTANO, E I NEMICI NE LASCIANO IL DOPPIO.', ico: 'amulet' },
   cuore: { n: 'CUORE DI CRISTALLO', t: 'cuore', r: 1, d: 'UN CUORE IN PIÙ, PER SEMPRE.' },
   pozione: { n: 'POZIONE', t: 'pozione', r: 0, d: 'RIDÀ 3 CUORI. SI USA DAL MENU (START).' },
-  mappa: { n: 'MAPPA DEI TESORI', t: 'mappa', r: 2, d: 'SEGNA SULLA MAPPA I FORZIERI LEGGENDARI.' },
+  mappa: { n: 'MAPPA DEI TESORI', t: 'mappa', r: 2, d: "SEGNA SULLA MAPPA I FORZIERI PIÙ RICCHI ALL'APERTO. I TESORI PIÙ GRANDI, PERÒ, STANNO SOTTOTERRA." },
   // capitolo 2: i tesori dei santuari
   radici: { n: 'SCUDO DELLE RADICI', t: 'scudo', r: 3, dif: 5, reflect: true, d: 'RESPINGE I COLPI MAGICI CHE TI ARRIVANO DI FRONTE (QUANDO NON ATTACCHI).', look: { shield: '#4a7a30', emblem: '#c8f08a' } },
   maree: { n: 'ELMO DELLE MAREE', t: 'elmo', r: 3, dif: 3, hp: 2, swim: true, d: "CON QUESTO ELMO RESPIRI SOTT'ACQUA E CAMMINI SUL FONDO DELL'ACQUA PROFONDA. +1 CUORE.", look: { helm: { c: '#3a8ac8', wings: '#bff0ff' } } },
@@ -135,6 +139,17 @@ const FOE = {
   slime2: { n: 'MELMA DORATA', k: 'slime', hp: 9, dmg: 2, sp: 18, aggro: 55, range: 6, r: 3, coins: [5, 10] },
   bandit: { n: 'PREDONE', k: 'human', hp: 16, dmg: 3, sp: 28, aggro: 75, range: 9, r: 3, coins: [10, 18] },
   tiger: { n: 'TIGRE DELLA SELVA', k: 'beast', sc: 0.26, hp: 20, dmg: 4, sp: 44, aggro: 90, range: 9, r: 4, coins: [10, 18] },
+  troll: { n: 'TROLL DELLE RADICI', k: 'human', sc: 0.33, hp: 60, dmg: 4, sp: 21, aggro: 150, range: 12, r: 5, coins: [50, 80], champ: 1 },
+  tritone: { n: 'TRITONE DEL LAGO', k: 'human', sc: 0.33, hp: 85, dmg: 5, sp: 24, aggro: 150, range: 13, r: 5, coins: [60, 90], champ: 1 },
+  faraone: { n: "L'ULTIMO RE DI SOLIS", k: 'human', sc: 0.33, hp: 100, dmg: 6, sp: 20, aggro: 150, range: 12, r: 5, coins: [80, 120], champ: 1 },
+  jarl: { n: 'RE DEI GHIACCI', k: 'human', sc: 0.34, hp: 115, dmg: 6, sp: 24, aggro: 150, range: 13, r: 5, coins: [90, 130], champ: 1 },
+  demone: { n: 'SIGNORE DELLE BRACI', k: 'human', sc: 0.35, hp: 135, dmg: 7, sp: 26, aggro: 150, range: 13, r: 5, coins: [110, 160], champ: 1 },
+  lich: { n: "CAVALIERE DELL'ECLISSE", k: 'human', sc: 0.34, hp: 125, dmg: 7, sp: 26, aggro: 150, range: 13, r: 5, coins: [100, 150], champ: 1 },
+  idolo: { n: 'IDOLO DI GIADA', k: 'human', sc: 0.34, hp: 110, dmg: 6, sp: 20, aggro: 150, range: 12, r: 5, coins: [90, 130], champ: 1 },
+  capo: { n: 'CAPO DEI GOBLIN', k: 'human', sc: 0.28, hp: 34, dmg: 2, sp: 24, aggro: 130, range: 10, r: 4, coins: [30, 50], champ: 1 },
+  pirata: { n: 'IL CAPITANO', k: 'human', sc: 0.28, hp: 50, dmg: 4, sp: 26, aggro: 130, range: 11, r: 4, coins: [50, 80], champ: 1 },
+  minatore: { n: 'IL CAPO MINATORE', k: 'human', sc: 0.28, hp: 55, dmg: 4, sp: 22, aggro: 130, range: 10, r: 4, coins: [40, 70], champ: 1 },
+  yeti: { n: 'LO YETI', k: 'human', sc: 0.34, hp: 65, dmg: 5, sp: 24, aggro: 140, range: 12, r: 5, coins: [50, 80], champ: 1 },
   wraith: { n: 'SPETTRO', k: 'human', hp: 22, dmg: 4, sp: 26, aggro: 85, range: 10, r: 3, coins: [12, 22] },
   slimeB: { n: 'MELMA BLU', k: 'slime', hp: 6, dmg: 1, sp: 17, aggro: 55, range: 6, r: 3, coins: [2, 4] },
   mummy: { n: 'MUMMIA', k: 'human', hp: 18, dmg: 3, sp: 13, aggro: 70, range: 9, r: 3, coins: [6, 12] },
@@ -455,7 +470,7 @@ function give(id, quiet) {
   if (it.t === 'cuore') { save.hearts++; hero.hp = MAXHP(); if (!quiet) toast('+1 CUORE!', '#ff6a8a'); return 'UN CUORE IN PIÙ!'; }
   if (it.t === 'pozione') { save.pot++; return null; }
   if (it.t === 'elisir') { save.eli = (save.eli || 0) + 1; return 'ELISIR NELLA BORSA: ' + save.eli; }
-  if (it.t === 'mappa') { save.flags.mappa = 1; return 'I FORZIERI LEGGENDARI SONO SEGNATI SULLA MAPPA.'; }
+  if (it.t === 'mappa') { save.flags.mappa = 1; return 'I FORZIERI PIÙ RICCHI SONO SEGNATI SULLA MAPPA.'; }
   if (it.t === 'chiave') { if (id === 'sigillo') save.flags.sigillo = 1; return null; }
   if (it.t === 'pietra') return "PIETRE DELL'ALBA: " + gemsN() + ' SU 5';
   if (!save.inv.includes(id)) save.inv.push(id);
@@ -553,7 +568,11 @@ function talk(n) {
       "I CERCATORI DI TESORI NON LASCIANO MAI I FORZIERI IN MEZZO AL SENTIERO: GUARDA TRA I CESPUGLI, DIETRO I MASSI E DIETRO LE CASE.",
       "SULLA SPIAGGIA A SUD, A EST DELLA FOCE DEL FIUME, I PIRATI AVEVANO UNA GROTTA. IL TESORO PIÙ BELLO STA OLTRE L'ACQUA PROFONDA.",
       "SUI MONTI A NORD, SOTTO IL PICCO DEL DRAGO, I MINATORI SCAVAVANO CRISTALLI. LA LORO GROTTA È ANCORA LÌ, TRA LE ROCCE.",
-      "NELLA VALLE GELATA, VICINO AL MARE A OVEST, C'È UNA GROTTA DI GHIACCIO. DICONO CHE NASCONDA UNA VESTE FATTA DI BUIO."];
+      "NELLA VALLE GELATA, VICINO AL MARE A OVEST, C'È UNA GROTTA DI GHIACCIO. DICONO CHE IN FONDO, MOLTO IN FONDO, CI SIA UNA VESTE FATTA DI BUIO.",
+      'SOTTO OGNI SANTUARIO CI SONO ALTRI PIANI. LA GRANDE CHIAVE NON STA MAI VICINO AL GUARDIANO: STA PIÙ IN BASSO.',
+      'I TESORI PIÙ GRANDI DI LUMEN NON STANNO ALL\'APERTO: DORMONO NELLE CRIPTE, SOTTO I SANTUARI. IL SIGILLO SI SPEZZA SOLO QUANDO IL GUARDIANO CADE.',
+      'ANCHE LE GROTTE HANNO UN FONDO. CHI CI È SCESO PARLA DI CAPI GOBLIN, PIRATI E BESTIE ENORMI SEDUTI SUL LORO ORO.',
+      "A SUD, OLTRE IL MARE, UNA TORRE NERA SALE VERSO LA LUNA. E NELLA SELVA D'ORIENTE UN TEMPIO SCENDE SOTTO LA LAGUNA. TUTTI E DUE HANNO UNA PORTA."];
     const h = H[save.hint % H.length]; save.hint++;
     return say(id, [h]);
   }
@@ -577,7 +596,7 @@ function talk(n) {
     return say(id, ['IL DRAGO... I SAPIENTI DICONO CHE SI PREPARA QUALCOSA. RESTA PRONTO, EROE.']);
   }
   if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE DUNE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
-  if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", "DICONO CHE SOLO LA LAMA DELL'AURORA POSSA FERIRLO. MA QUELLA LAMA È PERDUTA DA SECOLI... FORSE.", 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
+  if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", "DICONO CHE SOLO LA LAMA DELL'AURORA POSSA FERIRLO. MA QUELLA LAMA È PERDUTA DA SECOLI... O FORSE DORME NELLA CRIPTA SOTTO IL SANTUARIO DEL BOSCO.", 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
@@ -600,7 +619,7 @@ const SHOPS = {
   pesce: { title: 'ZUPPE E RIMEDI DEL PORTO', list: [['pozione', 18], ['elisir', 95]] },
   porto: { title: "L'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
   fiore: { title: 'LA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
-  dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['katana', 1200]] },
+  dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['acciaio', 420]] },
   bruno: { title: 'LA FUCINA DI BRUNO', list: [['pugnale', 45], ['elmoCuoio', 70], ['lancia', 120], ['mazza', 190], ['torre', 270], ['scaglie', 350], ['martello', 520, 4]] },
 };
 const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= r[2]);
@@ -625,7 +644,7 @@ try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
 function musicPick() {
   if (st === 'title' || st === 'intro') return 'title';
   if (st !== 'play' || musQuiet > 0) return null;
-  if (D) { if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; return D.def.cave ? 'grotta:' + D.id : MUS_DUN[D.id] || 'santuario:bosco'; }
+  if (D) { if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
   return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
 }
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
@@ -634,6 +653,7 @@ const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigat
 function openLoot(id, qty) {
   const it = IT[id];
   if (id === 'pozione') { save.pot += qty || 1; loot = { id, txt: qty > 1 ? qty + ' POZIONI' : 'UNA POZIONE', note: 'POZIONI NELLA BORSA: ' + save.pot, t: 0 }; seq([659, 880], 0.08, 0.08); return; }
+  if (it && EQS.includes(it.t) && save.inv.includes(id)) { const v = 120 * (it.r + 1); save.coins += v; loot = { id: 'monete', txt: v + ' MONETE', note: it.n + ": L'AVEVI GIÀ", t: 0 }; seq([1318, 1760, 2093], 0.06, 0.06); writeSave(); return; }
   const note = give(id);
   loot = { id, t: 0, note };
   if (it.r === 3) fanfare(); else jingle();
@@ -721,7 +741,7 @@ function heroUpdate(dt) {
     if (move(h, dx, dz, 1.6)) { h.moving = true; h.walk += Math.hypot(dx, dz); h.pushT = 0; }
     else if (D && f > 0 && !heroPush(dt)) {
       const ahead = dCellAt(h.x + Math.cos(h.yaw) * 4, h.z + Math.sin(h.yaw) * 4);
-      if (ahead === DT.WATER && !canSwim() && time > (h.hintT || 0)) { h.hintT = time + 4; toast(save.inv.includes('maree') ? "EQUIPAGGIA L'ELMO DELLE MAREE (START)" : "L'ACQUA È TROPPO PROFONDA", '#a9d8ff'); }
+      if (ahead === DT.WATER && !canSwim() && time > (h.hintT || 0)) { h.hintT = time + 4; toast(swimItem() ? 'EQUIPAGGIA ' + swimItem().n + ' (START)' : "L'ACQUA È TROPPO PROFONDA", '#a9d8ff'); }
     }
     if (h.wade && Math.random() < 0.3) fx.push({ k: 'drop', x: h.x, z: h.z, y: D ? -1 : W.WL + 0.3, vy: 8 + Math.random() * 6, t: 0.4, s: 0.35 });
   } else { h.vx = h.vz = 0; h.pushT = 0; }
@@ -748,7 +768,8 @@ function heroUpdate(dt) {
     const c = dCellAt(h.x, h.z), i = Math.floor(h.x / DCS), j = Math.floor(h.z / DCS);
     if (c === DT.PIT || (c === DT.PLAT && !D.platUp[j * D.w + i])) { h.fall = 0.7; h.atk = 0; tone(700, 0.6, 'triangle', 0.05, 90); return; }
     if (c === DT.SPIKE && h.inv <= 0) hurtHero(2, { x: h.x + Math.cos(h.yaw) * 4, z: h.z + Math.sin(h.yaw) * 4 });
-    if (c === DT.EXIT && !fade) startFade(() => exitDungeon());
+    if (c === DT.EXIT && !fade) startFade(() => D.def.up ? gotoLevel(D.def.up, 'down') : exitDungeon());
+    if (c === DT.STAIR && !fade && D.def.down) startFade(() => gotoLevel(D.def.down, 'up'));
   }
   // lava
   const lava = D ? dCellAt(h.x, h.z) === DT.LAVA : lavaAt(h.x, h.z);
@@ -761,11 +782,12 @@ function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x /
 // ---------- nemici ----------
 function hitFoe(e, dmg, a) {
   const T = FOE[e.type];
-  e.hp -= dmg; e.flash = 0.16; e.kb = 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; e.st = 'chase';
+  e.hp -= dmg; e.flash = 0.16; e.kb = T.champ ? 0.05 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase';
   for (let i = 0; i < 3; i++) fx.push({ k: 'spark', x: e.x, z: e.z, y: e.y + 3 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
   tone(240, 0.07, 'square', 0.05, 120); vib(15);
   if (e.hp <= 0) {
     e.st = 'dead'; e.fade = 0.5; puffAt(e.x, e.z, 8, e.y + 2); seq([523, 392, 262], 0.05, 0.05, 0.035);
+    if (T.champ) { e.fade = 0.9; ringFx(e.x, e.z, 9); quake = 0.6; fanfare(); banner = { t: T.n + ' È CADUTO!', s: 'LA TESORERIA È APERTA', life: 3.6, c: '#ffd23f' }; }
     let n = T.coins[0] + Math.floor(Math.random() * (T.coins[1] - T.coins[0] + 1));
     if (eqHas('luck')) n *= 2;
     for (let i = 0; i < Math.min(5, Math.ceil(n / 2)); i++) drops.push({ k: 'coin', v: Math.ceil(n / Math.min(5, Math.ceil(n / 2))), x: e.x, z: e.z, y: e.y + 2, vx: (Math.random() - 0.5) * 18, vz: (Math.random() - 0.5) * 18, vy: 20, t: 20 });
@@ -822,7 +844,8 @@ function foeUpdate(e, dt) {
     if (move(e, Math.cos(e.yaw) * m, Math.sin(e.yaw) * m, T.r, 1.6)) { e.moving = true; e.walk += m; }
   }
   // non si sovrappongono
-  for (const o of foes) if (o !== e && o.st !== 'dead') { const ox = e.x - o.x, oz = e.z - o.z, od = Math.hypot(ox, oz); if (od < 5 && od > 0.01) { e.x += ox / od * (5 - od) * 0.5; e.z += oz / od * (5 - od) * 0.5; } }
+  // (spostandosi rispettano muri e ostacoli: una spinta alla cieca li infilava nelle pareti)
+  for (const o of foes) if (o !== e && o.st !== 'dead') { const ox = e.x - o.x, oz = e.z - o.z, od = Math.hypot(ox, oz); if (od < 5 && od > 0.01) move(e, ox / od * (5 - od) * 0.5, oz / od * (5 - od) * 0.5, T.r, 3); }
 }
 
 // ---------- abitanti, monete, effetti ----------
@@ -846,30 +869,32 @@ function dropsUpdate(dt) {
     p.t -= dt; p.vy -= 60 * dt; p.y += p.vy * dt; p.x += p.vx * dt; p.z += p.vz * dt; p.vx *= 0.96; p.vz *= 0.96;
     const g = gH(p.x, p.z) + 1; if (p.y < g) { p.y = g; p.vy = Math.abs(p.vy) > 6 ? -p.vy * 0.4 : 0; }
     const d = Math.hypot(hero.x - p.x, hero.z - p.z);
-    if (d < 16 && p.t < 19.6) { p.x += (hero.x - p.x) * Math.min(1, 6 * dt); p.z += (hero.z - p.z) * Math.min(1, 6 * dt); }
+    if (d < (eqHas('magnet') ? 75 : 16) && p.t < 19.6) { p.x += (hero.x - p.x) * Math.min(1, 6 * dt); p.z += (hero.z - p.z) * Math.min(1, 6 * dt); }
     if (d < 3.5 && p.t < 19.7) { p.t = 0; if (p.k === 'coin') { save.coins += p.v; tone(1318, 0.04, 'square', 0.03); tone(1760, 0.07, 'square', 0.03, null, 0.04); } else { hero.hp = Math.min(MAXHP(), hero.hp + 2); tone(880, 0.06); tone(1318, 0.1, 'square', 0.035, null, 0.06); } }
   }
   drops = drops.filter(p => p.t > 0);
 }
 // ---------- vita dell'aria: foglie, petali, neve, polvere, lucciole; fumo dei camini; spruzzi delle fontane ----------
 let amb = [], ambT = 0;
-const AMB = { leaf: [34, -6, 9, 7], petal: [34, -4.5, 8, 8], snow: [46, -9, 5, 6], dust: [14, -0.5, 26, 2.2], fly: [20, 0, 3, 7], mote: [14, 1.2, 2, 6] };
+const AMB = { leaf: [34, -6, 9, 7], petal: [34, -4.5, 8, 8], snow: [46, -9, 5, 6], dust: [14, -0.5, 26, 2.2], fly: [20, 0, 3, 7], mote: [14, 1.2, 2, 6], ember: [20, 4.5, 3, 3.4] };
 function ambUpdate(dt) {
-  if (D) { amb.length = 0; return; }
-  const bw = W.atmo(hero.x, hero.z), B = W.B, n = day.night;
-  const want = { leaf: bw[B.AUTUMN] * 34 + bw[B.FOREST] * 4, petal: bw[B.BLOSSOM] * 34, snow: bw[B.SNOW] * 46 + (hero.y > 175 ? 22 : 0), dust: (bw[B.DESERT] + bw[B.MESA]) * 14,
+  // nei santuari l'aria è ferma e ogni luogo ha il suo pulviscolo: lucciole, polvere, cristalli di ghiaccio, faville
+  const bw = D ? null : W.atmo(hero.x, hero.z), B = W.B, n = day.night;
+  const want = D ? (D.def.air || {}) : { leaf: bw[B.AUTUMN] * 34 + bw[B.FOREST] * 4, petal: bw[B.BLOSSOM] * 34, snow: bw[B.SNOW] * 46 + (hero.y > 175 ? 22 : 0), dust: (bw[B.DESERT] + bw[B.MESA]) * 14,
     fly: n * (bw[B.FOREST] + bw[B.SWAMP] + bw[B.JUNGLE] + bw[B.MEADOW] * 0.5 + bw[B.BLOSSOM] * 0.6 + bw[B.AUTUMN] * 0.5) * 20, mote: bw[B.MOOR] * 14 + bw[B.JUNGLE] * 8 + bw[B.SWAMP] * 8 };
   const cnt = {}; for (const p of amb) cnt[p.k] = (cnt[p.k] || 0) + 1;
   ambT -= dt;
   if (ambT <= 0) { ambT = 0.06;
     for (const k in want) if ((cnt[k] || 0) < Math.round(want[k])) { const A2 = AMB[k], a = hero.yaw + (Math.random() - 0.5) * 2.6, r = 8 + Math.random() * 62, x = hero.x + Math.cos(a) * r, z = hero.z + Math.sin(a) * r, g = Math.max(0, gH(x, z));
-      amb.push({ k, x, z, y: g + (k === 'dust' ? 0.6 + Math.random() * 3 : k === 'fly' || k === 'mote' ? 1.5 + Math.random() * 7 : 6 + Math.random() * 26), g, t: A2[3] * (0.6 + Math.random() * 0.6), ph: Math.random() * 6.28, v: Math.random() }); } }
-  const wx = 0.8, wz = 0.6;
+      if (D) { const t = dAt(Math.floor(x / DCS), Math.floor(z / DCS)); if (t === DT.ROCK || t === DT.WALL || t === DT.CRACK) continue; }
+      amb.push({ k, x, z, y: g + (k === 'ember' ? 0.4 + Math.random() * 2 : k === 'dust' ? 0.6 + Math.random() * 3 : k === 'fly' || k === 'mote' ? 1.5 + Math.random() * 7 : D ? 5 + Math.random() * 8 : 6 + Math.random() * 26), g, t: A2[3] * (0.6 + Math.random() * 0.6), ph: Math.random() * 6.28, v: Math.random() }); } }
+  const wx = D ? 0.1 : 0.8, wz = D ? 0.08 : 0.6;
   for (const p of amb) { const A2 = AMB[p.k]; p.t -= dt; p.ph += dt;
     if (p.k === 'fly') { p.x += Math.sin(p.ph * 0.9 + p.v * 9) * 3 * dt; p.z += Math.cos(p.ph * 0.7 + p.v * 5) * 3 * dt; p.y += Math.sin(p.ph * 1.3) * 1.5 * dt; }
     else { const sw = p.k === 'dust' ? 0 : Math.sin(p.ph * 2.1 + p.v * 6) * 5; p.x += (wx * A2[2] + sw) * dt; p.z += wz * A2[2] * dt; p.y += A2[1] * dt; if (p.y < p.g + 0.2 && A2[1] < 0) p.t = Math.min(p.t, 0.6), p.y = p.g + 0.2, p.x -= wx * A2[2] * dt, p.z -= wz * A2[2] * dt; }
     if ((p.x - hero.x) ** 2 + (p.z - hero.z) ** 2 > 90 * 90) p.t = 0; }
   amb = amb.filter(p => p.t > 0);
+  if (D) return;
   // fumo dei camini e zampilli delle fontane vicine
   for (const s of W.smokes) if (Math.abs(s[0] - hero.x) < 240 && Math.abs(s[2] - hero.z) < 240 && Math.random() < dt * 1.1) fx.push({ k: 'smoke', x: s[0], y: s[1], z: s[2], vx: 1.6 + Math.random(), vz: 1.2, vy: 4 + Math.random() * 2, t: 2.4, s: 0.36 });
   for (const s of W.sprays) if (Math.abs(s[0] - hero.x) < 160 && Math.abs(s[2] - hero.z) < 160 && Math.random() < dt * 26) { const a = Math.random() * TAU, v = 2.5 + Math.random() * 2.5; fx.push({ k: 'drop', x: s[0], y: s[1], z: s[2], vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 9 + Math.random() * 3, t: 0.95, s: 0.3 }); }
@@ -893,7 +918,7 @@ function findTarget() {
   if (D) {
     const ds = dsave(D.id);
     for (const c of D.chests) if (!c.hidden && !ds.ch[c.key]) consider(c.x, c.z, 'dchest', c, 10);
-    for (const d of D.doors) if ((d.kind === 'lock' || d.kind === 'boss' || d.kind === 'shut') && d.anim < 0.5) consider(d.cx, d.cz, 'ddoor', d, 13);
+    for (const d of D.doors) if ((d.kind === 'lock' || d.kind === 'boss' || d.kind === 'shut' || d.kind === 'seal') && d.anim < 0.5) consider(d.cx, d.cz, 'ddoor', d, 13);
     for (const s2 of D.signs) consider(s2.x, s2.z, 'sign', s2, 10);
     if (D.gem) consider(D.gem.x, D.gem.z, 'gem', D.gem, 11);
     return best;
@@ -983,10 +1008,13 @@ const dynF2 = new Float32Array(1500 * 44), dmF = new Float32Array(900 * 32);
 let dynBuf2 = null, dmBuf = null, dmN = 0;
 const gH = (x, z) => D ? dGround(x, z) : W.ground(x, z);
 function dsave(id) { if (!save.dun) save.dun = {}; return save.dun[id] || (save.dun[id] = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 }); }
+const droot = () => dsave(DS.rootOf(D.id));     // quello che vale per tutto il santuario: grande chiave, guardiano
+const floorTag = d => { const n = DS.family(d.base || Object.keys(DS.DEF).find(k => DS.DEF[k] === d)).length; return n > 1 ? 'LIVELLO ' + (d.lv || 1) + ' DI ' + n : ''; };
 const sanctDone = id => !!(save && save.dun && save.dun[id] && save.dun[id].done);
 const gemsN = () => DS.ORDER.filter(sanctDone).length;
 const nextSanct = () => DS.ORDER.find(id => !sanctDone(id)) || null;
 const canSwim = () => !!(eqIt('elmo') || {}).swim;
+const swimItem = () => save.inv.map(id => IT[id]).find(it => it && it.swim);
 const fireProof = () => !!(eqIt('armatura') || {}).fire;
 const canReflect = () => !!(eqIt('scudo') || {}).reflect;
 function dAt(i, j) { return (i >= 0 && j >= 0 && i < D.w && j < D.h) ? D.cell[j * D.w + i] : DT.ROCK; }
@@ -1006,7 +1034,7 @@ function dBlocks(i, j, who) {
   switch (t) {
     case DT.ROCK: case DT.WALL: case DT.CRACK: return true;
     case DT.DOOR: return !D.doorOpen[k];
-    case DT.EXIT: return who !== 'hero';
+    case DT.EXIT: case DT.STAIR: return who !== 'hero';
     case DT.TOGB: return !!D.togUp[k];
     case DT.PIT: return who === 'foe';
     case DT.PLAT: return who === 'foe' && !D.platUp[k];
@@ -1032,17 +1060,24 @@ function dCanStand(e, nx, nz, r) {
 function makeDungeon(id) {
   const P = DS.parse(id), ds = dsave(id), w = P.w, h = P.h;
   const R = { id, P, def: P.def, w, h, cell: P.cell.slice(), filled: new Set(), doorOpen: new Uint8Array(w * h), togUp: new Uint8Array(w * h), platUp: new Uint8Array(w * h),
-    seen: new Uint8Array(w * h), trap: {}, crk: {}, room: -1, entry: { x: P.spawn.x, z: P.spawn.z, yaw: -Math.PI / 2 }, lights: [], fogC: hexf(P.def.fog) };
+    seen: new Uint8Array(w * h), trap: {}, crk: {}, room: -1, entry: { x: P.spawn.x, z: P.spawn.z, yaw: P.spawn.yaw }, lights: [], fogC: hexf(P.def.fog) };
   for (const k in ds.br) R.cell[+k] = DT.FLOOR;
+  // i pozzi riempiti dai massi restano pieni: tornando da un piano più basso la strada c'è ancora
+  const fl = ds.fl || {}, sunk = new Set(Object.values(fl)); for (const k in fl) { R.cell[+k] = DT.FLOOR; R.filled.add(+k); }
   unb64(ds.seen || '', R.seen);
   R.doors = P.doors.map(d => ({ ...d, anim: -1 }));
-  R.togs = []; R.plats = []; R.blocks = []; R.plates = []; R.solids = []; R.turrets = []; R.chests = []; R.pots = []; R.xtals = []; R.signs = []; R.torches = [];
+  R.togs = []; R.plats = []; R.blocks = []; R.plates = []; R.solids = []; R.turrets = []; R.chests = []; R.pots = []; R.xtals = []; R.signs = []; R.torches = []; R.decor = [];
   const TC = P.def.torch;
   for (const o of P.objs) {
     const k = o.j * w + o.i, rm = P.rooms[o.room];
     if (o.c === 'r' || o.c === 'u') R.togs.push({ ...o, k, up: false });
     else if (o.c === 'R' || o.c === 'U') R.plats.push({ ...o, k });
-    else if (o.c === 'O') R.blocks.push({ ...o, si: o.i, sj: o.j, mv: null, gone: false });
+    else if (o.c === 'O') R.blocks.push({ ...o, si: o.i, sj: o.j, mv: null, gone: sunk.has(o.i + ',' + o.j) });
+    else if (o.c === '$' || o.c === '*' || o.c === 'A' || o.c === 'b') {
+      R.decor.push({ ...o, yaw: rm ? Math.atan2(rm.z - o.z, rm.x - o.x) : 0, ph: (o.i * 7 + o.j * 13) % 10 });
+      if (o.c !== 'b') R.solids.push({ x: o.x, z: o.z, r: o.c === 'A' ? 2.8 : 2.6 });
+      if (o.c === '*') R.lights.push({ x: o.x, y: 5, z: o.z, r: 44, c: hexf(P.def.glow).map(v => v * 0.8) });
+    }
     else if (o.c === 'p' || o.c === 'P') R.plates.push({ ...o, heavy: o.c === 'P', on: false });
     else if (o.c === 't') { R.torches.push(o); R.solids.push({ x: o.x, z: o.z, r: 2.6 }); R.lights.push({ x: o.x, y: 9, z: o.z, r: 64, c: TC, flick: true }); }
     else if (o.c === 'v') { const p = { ...o, alive: true }; R.pots.push(p); R.solids.push({ x: o.x, z: o.z, r: 2.6, on: () => p.alive }); }
@@ -1056,7 +1091,8 @@ function makeDungeon(id) {
   }
   // la lava fa luce; l'uscita porta la luce del giorno
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (R.cell[j * w + i] === DT.LAVA && i % 3 === 1 && j % 3 === 1) R.lights.push({ x: (i + 0.5) * DCS, y: 5, z: (j + 0.5) * DCS, r: 46, c: [1, 0.45, 0.12], flick: true });
-  const ex = P.exits[0]; R.lights.push({ x: P.spawn.x, y: 8, z: (ex[1] + 0.5) * DCS, r: 52, c: [0.75, 0.82, 0.95] });
+  R.lights.push({ x: P.spawn.cx, y: 8, z: P.spawn.cz, r: 52, c: P.def.up ? [0.6, 0.52, 0.4] : [0.75, 0.82, 0.95] });
+  if (P.stairs) R.lights.push({ x: P.stairs.cx, y: 6, z: P.stairs.cz, r: 60, c: hexf(P.def.glow) });
   return R;
 }
 function dUpload() {
@@ -1065,25 +1101,32 @@ function dUpload() {
   const buf = a => G.buffer(a.length ? a : new Float32Array(32));
   D.gl = { floor: buf(m.floor), nf: m.floor.length / 32, wall: buf(m.wall), nw: m.wall.length / 32, water: buf(m.water), nwa: m.water.length / 8, lava: buf(m.lava), nl: m.lava.length / 8 };
 }
-function enterDungeon(id) {
-  const door = doors.find(d => d.id === id), b = W.BUILD.find(q => q.id === id), ov = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b ? b.door : 's'] || [0, 1];
-  D = makeDungeon(id);
-  D.outX = door ? door.x + ov[0] * 8 : hero.x; D.outZ = door ? door.z + ov[1] * 8 : hero.z; D.outYaw = Math.atan2(ov[1], ov[0]);
-  if (DID !== id) {
-    DAT = A.Atlas(2048, 1024); const r = DS.art(id, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
-    if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DAT.c.width = DAT.c.height = 1; DID = id;
+// from: 'out' si entra da fuori, 'up' si arriva dal piano prima (alla via del ritorno), 'down' si torna dal piano dopo (in cima alla scala)
+function loadLevel(id, from, out) {
+  if (D) dsave(D.id).seen = b64(D.seen);
+  D = makeDungeon(id); Object.assign(D, out);
+  const art = DS.rootOf(id);
+  if (DID !== art) {
+    DAT = A.Atlas(2048, 1024); const r = DS.art(art, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
+    if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DAT.c.width = DAT.c.height = 1; DID = art;
   }
   if (!dynBuf2) { dynBuf2 = G.buffer(dynF2, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); dmBuf = G.buffer(dmF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); }
   dUpload();
-  const h = hero; h.x = D.P.spawn.x; h.z = D.P.spawn.z; h.y = 0; h.yaw = -Math.PI / 2; h.vx = h.vz = 0; h.fall = 0; h.kb = 0; h.burnT = 0;
+  const L = from === 'down' && D.P.stairs ? D.P.stairs : D.P.spawn;
+  const h = hero; h.x = L.x; h.z = L.z; h.y = 0; h.yaw = L.yaw; h.vx = h.vz = 0; h.fall = 0; h.kb = 0; h.burnT = 0;
   D.entry = { x: h.x, z: h.z, yaw: h.yaw };
-  shots = []; drops = []; fx = []; hazards = []; foes = [];
+  shots = []; drops = []; fx = []; hazards = []; foes = []; amb = [];
   spawnDungeonFoes(); makeBoss();
   D.room = -1; dRoomCheck(); dungeonUpdate(0);
   cam.yaw = h.yaw; placeCam(true);
-  banner = { t: D.def.name, life: 3.2, c: '#ffd23f' }; target = null; curPlace = D.def.name;
+  banner = { t: D.def.name, s: floorTag(D.def), life: 3.2, c: '#ffd23f' }; target = null; curPlace = D.def.name;
   dsave(id).vis = 1; writeSave();
 }
+function enterDungeon(id) {
+  const door = doors.find(d => d.id === id), b = W.BUILD.find(q => q.id === id), ov = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b ? b.door : 's'] || [0, 1];
+  D = null; loadLevel(id, 'out', { outX: door ? door.x + ov[0] * 8 : hero.x, outZ: door ? door.z + ov[1] * 8 : hero.z, outYaw: Math.atan2(ov[1], ov[0]) });
+}
+function gotoLevel(id, from) { tone(from === 'up' ? 196 : 294, 0.25, 'triangle', 0.04, from === 'up' ? 131 : 392); loadLevel(id, from, { outX: D.outX, outZ: D.outZ, outYaw: D.outYaw }); }
 function exitDungeon() {
   dsave(D.id).seen = b64(D.seen);
   const h = hero; h.x = D.outX; h.z = D.outZ; h.yaw = D.outYaw; h.vx = h.vz = 0; h.fall = 0;
@@ -1094,7 +1137,7 @@ function exitDungeon() {
 }
 function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(392, 0.12, 'triangle', 0.04, 260); }
 function templeDoor(d) {
-  if (d.cave) { if (dsave(d.id).vis) startFade(() => enterDungeon(d.id)); else say(null, ["UN'APERTURA BUIA TRA LE ROCCE. DA DENTRO ARRIVA UN'ARIA FREDDA E UMIDA...", 'ENTRI CON CAUTELA.'], () => startFade(() => enterDungeon(d.id))); return; }
+  if (d.cave) { if (dsave(d.id).vis) startFade(() => enterDungeon(d.id)); else say(null, d.intro || ["UN'APERTURA BUIA TRA LE ROCCE. DA DENTRO ARRIVA UN'ARIA FREDDA E UMIDA...", 'ENTRI CON CAUTELA.'], () => startFade(() => enterDungeon(d.id))); return; }
   const id = d.id, q = save.q.main, nm = SANCT[id];
   if (q < 4) { say(null, ['UN ANTICO SIGILLO CHIUDE LA PORTA DEL ' + nm + '. LE RUNE BRILLANO DEBOLMENTE.', q === 3 ? 'FORSE IL CAPITANO ARDEA SA COME SPEZZARLO.' : 'SOLO IL SANGUE DEI RE DI LUMEN PUÒ SPEZZARLO.']); return; }
   const nx = nextSanct();
@@ -1115,7 +1158,7 @@ function addDFoe(type, x, z, room) {
 }
 function spawnDungeonFoes() {
   const ds = dsave(D.id); D.camps = {};
-  for (const o of D.P.objs) if ('efgh'.includes(o.c)) { const type = D.def.foes[o.c]; if (type && !ds.clr[o.room]) addDFoe(type, o.x, o.z, o.room); }
+  for (const o of D.P.objs) if ('efghj'.includes(o.c)) { const type = D.def.foes[o.c]; if (type && !ds.clr[o.room]) addDFoe(type, o.x, o.z, o.room); }
 }
 function poolsOf(room) {
   const out = [], seenP = new Set();
@@ -1127,8 +1170,13 @@ function poolsOf(room) {
   }
   return out;
 }
+// In fondo a ogni dungeon, aperto il grande forziere, sulle rune davanti si accende un portale che riporta fuori:
+// niente risalita a piedi. Appena comparso non scatta finché l'eroe non se ne allontana (ci sta sopra mentre apre).
+const vaultFloor = () => !!(D && D.def.base && !D.def.down);
+const vaultPortal = (c, armed) => ({ x: c.x + DCS / 2, z: c.z + DCS, arm: armed, s: 0.125 });      // più piccolo di quello delle arene: la tesoreria è una stanzetta
 function makeBoss() {
   boss = null; D.gem = null; D.portal = null; D.heartP = null;
+  if (vaultFloor()) { const c = D.chests.find(q => q.kind === 'C'); if (c && dsave(D.id).ch[c.key]) D.portal = vaultPortal(c, true); }
   const ds = dsave(D.id), M = D.P.bossAt; if (!M) return;
   const rm = D.P.rooms[D.P.bossRoom]; D.rewardAt = { x: rm.x, z: rm.z };
   if (ds.boss) { if (!ds.done) D.gem = { x: rm.x, z: rm.z }; else D.portal = { x: rm.x, z: rm.z }; if (!ds.heart) D.heartP = { x: rm.x + 16, z: rm.z }; return; }
@@ -1280,6 +1328,7 @@ function bossDefeated() {
   ringFx(b.x, b.z, 12); fanfare(); boss = null; musQuiet = 4.5;
   D.gem = { x: D.rewardAt.x, z: D.rewardAt.z }; if (!ds.heart) D.heartP = { x: D.rewardAt.x + 16, z: D.rewardAt.z };
   banner = { t: b.B.n + ' SCONFITTO!', s: "PRENDI LA PIETRA DELL'ALBA", life: 4, c: '#ffd23f' }; writeSave();
+  if (DS.family(D.id).some(k => DS.parse(k).doors.some(d => d.kind === 'seal'))) setTimeout(() => { if (D) toast('NELLE PROFONDITÀ UN SIGILLO SI È SPEZZATO...', '#7af0ff'); }, 5200);
 }
 function takeGem() {
   const ds = dsave(D.id); ds.done = 1; D.gem = null; D.portal = { x: D.rewardAt.x, z: D.rewardAt.z };
@@ -1316,7 +1365,7 @@ function blocksUpdate(dt) {
     const m = b.mv; m.t = Math.min(1, m.t + dt * m.sp); b.x = m.fx + (m.tx - m.fx) * m.t; b.z = m.fz + (m.tz - m.fz) * m.t;
     if (m.t < 1) continue;
     b.mv = null; const k = b.j * D.w + b.i, t = D.cell[k];
-    if (t === DT.PIT || t === DT.WATER) { b.gone = true; D.cell[k] = DT.FLOOR; D.filled.add(k); dUpload(); puffAt(b.x, b.z, 8, 1); tone(90, 0.3, 'sawtooth', 0.05, 50); jingle(); continue; }
+    if (t === DT.PIT || t === DT.WATER) { b.gone = true; D.cell[k] = DT.FLOOR; D.filled.add(k); const ds2 = dsave(D.id); (ds2.fl = ds2.fl || {})[k] = b.si + ',' + b.sj; writeSave(); dUpload(); puffAt(b.x, b.z, 8, 1); tone(90, 0.3, 'sawtooth', 0.05, 50); jingle(); continue; }
     if (t === DT.ICE && cellFreeFor(b.i + m.di, b.j + m.dj, b) && dAt(b.i + m.di, b.j + m.dj) !== DT.PIT) { b.mv = { fx: b.x, fz: b.z, tx: (b.i + m.di + 0.5) * DCS, tz: (b.j + m.dj + 0.5) * DCS, t: 0, di: m.di, dj: m.dj, sp: 7 }; b.i += m.di; b.j += m.dj; }
     else tone(140, 0.08, 'square', 0.04);
   }
@@ -1357,15 +1406,16 @@ function openDChest(c) {
   const ds = dsave(D.id); ds.ch[c.key] = 1;
   for (let i = 0; i < 6; i++) fx.push({ k: 'glint', x: c.x + (Math.random() - 0.5) * 6, z: c.z + (Math.random() - 0.5) * 6, y: 4, vy: 6 + Math.random() * 6, t: 1 });
   if (c.kind === 'k' || c.kind === 'q') { ds.keys++; loot = { id: 'chiave', t: 0, note: 'PICCOLE CHIAVI: ' + ds.keys }; jingle(); }
-  else if (c.kind === 'K') { ds.big = 1; loot = { id: 'grandeChiave', t: 0, note: 'APRE LA PORTA DEL GUARDIANO' }; fanfare(); }
-  else if (c.kind === 'C') { openLoot(D.def.item); }
+  else if (c.kind === 'K') { droot().big = 1; loot = { id: 'grandeChiave', t: 0, note: D.def.up ? 'APRE LA PORTA DEL GUARDIANO, AL PIANO DI SOPRA' : 'APRE LA PORTA DEL GUARDIANO' }; fanfare(); }
+  else if (c.kind === 'C') { openLoot(D.def.item); if (vaultFloor()) { D.portal = vaultPortal(c, false); setTimeout(() => { if (D && D.portal) toast("SULLE RUNE SI È ACCESO UN PORTALE: RIPORTA ALL'APERTO.", '#7af0ff'); }, 2600); } }
   else { const [k, n] = (c.loot || 'monete:20').split(':'); if (k === 'monete') { save.coins += +n; loot = { id: 'monete', txt: n + ' MONETE', t: 0 }; seq([1318, 1760, 2093], 0.06, 0.06); } else openLoot(k, n ? +n : 1); }
   writeSave();
 }
 function useDoor(d) {
   const ds = dsave(D.id);
-  if (d.kind === 'lock') { if (ds.keys > 0) { ds.keys--; ds.open[d.key] = 1; seq([392, 523, 659], 0.06, 0.07); toast('PORTA APERTA!', '#ffd86a'); writeSave(); } else say(null, ['LA PORTA È CHIUSA A CHIAVE. SERVE UNA PICCOLA CHIAVE DI QUESTO SANTUARIO.']); }
-  else if (d.kind === 'boss') { if (ds.big) { ds.open[d.key] = 1; seq([262, 330, 392, 523], 0.09, 0.09); writeSave(); } else say(null, ['UNA PORTA ENORME CON UNA SERRATURA DORATA. DA DIETRO ARRIVA UN RESPIRO PROFONDO...', 'SERVE LA GRANDE CHIAVE.']); }
+  if (d.kind === 'lock') { if (ds.keys > 0) { ds.keys--; ds.open[d.key] = 1; seq([392, 523, 659], 0.06, 0.07); toast('PORTA APERTA!', '#ffd86a'); writeSave(); } else say(null, ['LA PORTA È CHIUSA A CHIAVE. SERVE UNA PICCOLA CHIAVE: CERCALA SU QUESTO PIANO.']); }
+  else if (d.kind === 'boss') { if (droot().big) { ds.open[d.key] = 1; seq([262, 330, 392, 523], 0.09, 0.09); writeSave(); } else say(null, ['UNA PORTA ENORME CON UNA SERRATURA DORATA. DA DIETRO ARRIVA UN RESPIRO PROFONDO...', D.def.down ? 'SERVE LA GRANDE CHIAVE: DICONO CHE SIA NASCOSTA AL PIANO DI SOTTO.' : 'SERVE LA GRANDE CHIAVE.']); }
+  else if (d.kind === 'seal') say(null, ['UNA LASTRA DI PIETRA CON UN SIGILLO DI LUCE. OLTRE, UNA SCALA SCENDE ANCORA.', 'IL SIGILLO È LEGATO AL GUARDIANO DEL SANTUARIO: SI SPEZZERÀ QUANDO LUI CADRÀ.']);
   else say(null, [D.P.shut[d.g].type === 'plates' ? "LE SBARRE NON SI MUOVONO. DA QUALCHE PARTE C'È UN MECCANISMO..." : 'LE SBARRE SONO CALATE! SCONFIGGI TUTTI I NEMICI DELLA STANZA.']);
 }
 function solveGroup(g, S) {
@@ -1402,6 +1452,7 @@ function dungeonUpdate(dt) {
     if (d.kind === 'open') open = true;
     else if (d.kind === 'lock') open = !!ds.open[d.key];
     else if (d.kind === 'boss') open = !!ds.open[d.key] && !(boss && boss.on && !boss.dead);
+    else if (d.kind === 'seal') open = !!droot().boss;
     else open = !!ds.sol[d.g] || (D.P.shut[d.g].type === 'kill' && !D.trap[d.g]);
     if (d.anim < 0) d.anim = open ? 1 : 0;
     else { d.anim = Math.max(0, Math.min(1, d.anim + (open ? dt * 2 : -dt * 5))); if (open !== d.was && dt) { if (open) seq([330, 392], 0.06, 0.06); else noise(0.25, 0.06); } }
@@ -1423,7 +1474,8 @@ function dungeonUpdate(dt) {
   bossUpdate(dt);
   // premi del guardiano
   if (D.heartP && Math.hypot(h.x - D.heartP.x, h.z - D.heartP.z) < 5 && !loot) { D.heartP = null; ds.heart = 1; openLoot('cuore'); }
-  if (D.portal && !fade && Math.hypot(h.x - D.portal.x, h.z - D.portal.z) < 6.5 && st === 'play' && !loot && !dialog) { seq([523, 784, 1047, 1568], 0.07, 0.08); startFade(() => exitDungeon()); }
+  if (D.portal && D.portal.arm === false && Math.hypot(h.x - D.portal.x, h.z - D.portal.z) > 12) D.portal.arm = true;
+  if (D.portal && D.portal.arm !== false && !fade && Math.hypot(h.x - D.portal.x, h.z - D.portal.z) < 6.5 && st === 'play' && !loot && !dialog) { seq([523, 784, 1047, 1568], 0.07, 0.08); startFade(() => exitDungeon()); }
   if (quake > 0) quake = Math.max(0, quake - dt * 1.6);
 }
 function hazardsUpdate(dt) {
@@ -1490,7 +1542,8 @@ function dLights() {
   for (const g of [D.gem, D.portal]) if (g) cand.push([0, { x: g.x, y: 8, z: g.z, r: 70, c: hexf(D.def.glow) }]);
   cand.sort((a, b) => a[0] - b[0]);
   LP.fill(0); LC.fill(0);
-  LP[0] = hero.x; LP[1] = hero.y + 9; LP[2] = hero.z; LP[3] = 48; LC[0] = 0.44; LC[1] = 0.41; LC[2] = 0.36;
+  const lt = eqHas('light') ? 1.7 : 1;
+  LP[0] = hero.x; LP[1] = hero.y + 9; LP[2] = hero.z; LP[3] = 48 * lt; LC[0] = 0.44 * lt; LC[1] = 0.41 * lt; LC[2] = 0.36 * lt;
   let n = 1;
   for (const [, l] of cand) {
     if (n >= 10) break;
@@ -1502,7 +1555,7 @@ function buildDynMesh() {
   const a = [];
   for (const d of D.doors) {
     if (d.kind === 'open' || d.anim >= 0.999) continue;
-    const tile = d.kind === 'lock' ? 31 : d.kind === 'boss' ? 32 : 33, k = d.anim;
+    const tile = d.kind === 'lock' ? 31 : d.kind === 'boss' ? 32 : d.kind === 'seal' ? 58 : 33, k = d.anim;
     const y0 = d.kind === 'shut' ? k * DS.DH : -k * DS.DH, y1 = Math.min(DS.WH - 0.3, y0 + DS.DH);
     for (const [i, j] of d.cells) { const x0 = i * DCS, z0 = j * DCS; if (d.axis === 'x') DS.boxTo(a, x0, z0 + 3.8, x0 + DCS, z0 + 6.2, y0, y1, tile); else DS.boxTo(a, x0 + 3.8, z0, x0 + 6.2, z0 + DCS, y0, y1, tile); }
   }
@@ -1526,14 +1579,21 @@ function buildDynamicD() {
     pushBB2(b.x, b.y - 0.6, b.z, DCH.boss[Math.min(b.pose, DCH.boss.length - 1)][dirOf(b.x, b.z, b.yaw)], b.B.bs / SR, 1, b.flash > 0 || blink ? 0.85 : 0);
     if (b.vuln) for (let k = 0; k < 3; k++) { const a = time * 4 + k * TAU / 3; pushBB(b.x + Math.cos(a) * 6, b.y + (b.B.h * b.B.bs) * 0.75, b.z + Math.sin(a) * 6, SPR.spark, 0.28, 1.2); }
   }
-  for (const t of D.torches) { pushBB2(t.x, 0, t.z, DSP.brazier, 0.2); pushBB(t.x, 5.4, t.z, SPR.flame[Math.floor(time * 8 + t.x) % 2], 0.23, 1.2); }
+  for (const t of D.torches) { pushBB2(t.x, 0, t.z, DSP.brazier, 0.2); pushBB(t.x, 5.4, t.z, SPR.flame[Math.floor(time * 8 + t.x) % 2], 0.23, 1.2, 0, D.def.flame); }
+  for (const o of D.decor) {
+    if (o.c === '$') { pushBB2(o.x, 0, o.z, DSP.gold, 0.2, 1.12); if (Math.floor(time * 2.2 + o.ph) % 5 === 0) pushBB(o.x + Math.sin(o.ph * 3 + time) * 2.2, 2.6 + (o.ph % 3), o.z, SPR.glint, 0.24, 1.2); }
+    else if (o.c === '*') pushBB2(o.x, 0, o.z, DSP.cluster, 0.2, 1.15 + 0.1 * Math.sin(time * 2 + o.ph));
+    else if (o.c === 'A') pushBB2(o.x, 0, o.z, DSP.statue[dirOf(o.x, o.z, o.yaw)], 0.25 / SR);
+    else pushBB2(o.x, 0, o.z, DSP.bones, 0.2);
+  }
+  for (const p of amb) { const L = SPR[p.k].length ? SPR[p.k] : [SPR[p.k]]; if (p.k === 'fly' && Math.sin(p.ph * 3 + p.v * 20) < -0.1) continue; pushBB(p.x, p.y, p.z, L[Math.floor(p.v * L.length) % L.length], p.k === 'dust' ? 0.4 : p.k === 'ember' ? 0.2 + 0.12 * p.v : 0.3, p.k === 'fly' || p.k === 'ember' ? 1.4 : 1.1); }
   for (const p of D.pots) if (p.alive) pushBB2(p.x, 0, p.z, DSP.pot, 0.2);
   for (const t of D.turrets) pushBB2(t.x, 0, t.z, DSP.turret[dirOf(t.x, t.z, t.yaw)], 0.4 / SR, t.fl > 0 ? 1.3 : 1);
   for (const x of D.xtals) pushBB2(x.x, 0, x.z, DSP.xtal[ds.xs], 0.2, 1.12, x.cd > 0.3 ? 0.6 : 0);
   for (const s of D.signs) pushBB2(s.x, 0, s.z, DSP.lapide, 0.2);
   for (const c of D.chests) if (!c.hidden) { pushBB(c.x, -0.3, c.z, CHR.chest[RK[c.kind]][ds.ch[c.key] ? 1 : 0][dirOf(c.x, c.z, c.yaw)], (c.kind === 'C' ? 0.32 : 0.25) / SR); if (!ds.ch[c.key] && (c.kind === 'C' || c.kind === 'K') && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, 7, c.z, SPR.glint, 0.3, 1.2); }
   if (D.gem) { pushBB2(D.gem.x, 3 + Math.sin(time * 2.5) * 1.2, D.gem.z, DSP.gem, 0.2, 1.3); if (Math.floor(time * 4) % 2) pushBB(D.gem.x + Math.sin(time * 3) * 3, 9, D.gem.z, SPR.glint, 0.3, 1.2); }
-  if (D.portal) pushBB2(D.portal.x, 0, D.portal.z, DSP.portal[Math.floor(time * 6) % 2], 0.2, 1.3);
+  if (D.portal) pushBB2(D.portal.x, 0, D.portal.z, DSP[D.portal.s ? 'portalS' : 'portal'][Math.floor(time * 6) % 2], D.portal.s || 0.2, 1.3);
   if (D.heartP) pushBB(D.heartP.x, 3 + Math.sin(time * 3), D.heartP.z, SPR.heart, 1, 1.25);
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
@@ -1598,6 +1658,19 @@ function renderDungeon() {
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   if (D.gl.nwa) { gl.uniform1f(p.u.uY, -1); gl.uniform3fv(p.u.uWat, hexf(D.def.water)); gl.uniform3f(p.u.uHi, 0.85, 0.95, 1); gl.uniform1f(p.u.uA, 0.7); gl.uniform1f(p.u.uLight, 0.75); gl.bindBuffer(gl.ARRAY_BUFFER, D.gl.water); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, D.gl.nwa * 6, gl.UNSIGNED_SHORT, 0); }
   if (D.gl.nl) { gl.uniform1f(p.u.uY, -0.6); gl.uniform3f(p.u.uWat, 1, 0.38, 0.08); gl.uniform3f(p.u.uHi, 1, 0.92, 0.45); gl.uniform1f(p.u.uA, 1); gl.uniform1f(p.u.uLight, 1.2); gl.bindBuffer(gl.ARRAY_BUFFER, D.gl.lava); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, D.gl.nl * 6, gl.UNSIGNED_SHORT, 0); }
+  // aloni che si sommano al colore: fiamme, cristalli, tesori, scale, sigilli
+  { let n = 0; const ds = dsave(D.id), tc = D.def.torch, gc = hexf(D.def.glow);
+    const halo = (x, y, z, r, c, it) => { if (n >= 160 || (x - hero.x) ** 2 + (z - hero.z) ** 2 > 230 * 230) return; let q = n * 44; for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = x; glowF[q++] = y; glowF[q++] = z; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = c[0]; glowF[q++] = c[1]; glowF[q++] = c[2]; glowF[q++] = it; } n++; };
+    for (const t of D.torches) halo(t.x, 7, t.z, 11, tc, 0.3 + 0.05 * Math.sin(time * 11 + t.x));
+    for (const o of D.decor) if (o.c === '*') halo(o.x, 3.5, o.z, 10, gc, 0.3 + 0.08 * Math.sin(time * 2 + o.ph)); else if (o.c === '$') halo(o.x, 2, o.z, 6, [1, 0.8, 0.3], 0.16);
+    for (const x of D.xtals) halo(x.x, 4, x.z, 8, ds.xs ? [0.35, 0.55, 1.2] : [1.2, 0.35, 0.35], 0.34);
+    for (const c of D.chests) if (!c.hidden && !ds.ch[c.key] && (c.kind === 'C' || c.kind === 'K')) halo(c.x, 3, c.z, 12, [1, 0.78, 0.3], 0.3 + 0.1 * Math.sin(time * 3));
+    if (D.P.stairs) halo(D.P.stairs.cx, 4, D.P.stairs.cz, 13, gc, 0.3);
+    for (const d of D.doors) if (d.kind === 'seal' && d.anim < 0.9) halo(d.cx, 6, d.cz, 12, [0.45, 0.95, 1], 0.32 + 0.1 * Math.sin(time * 2.4));
+    for (const g of [D.gem, D.portal]) if (g) halo(g.x, 6, g.z, 16, gc, 0.4);
+    if (n) { p = P.glow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF);
+      gl.blendFunc(gl.ONE, gl.ONE); gl.bindBuffer(gl.ARRAY_BUFFER, glowBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, glowF.subarray(0, n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, n * 6, gl.UNSIGNED_SHORT, 0); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); } }
   // pareti tra la telecamera e l'eroe: trasparenti e pulite (seconda passata)
   p = P.dmesh; gl.useProgram(p.p); gl.uniform1f(p.u.uGhost, 1);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -1609,19 +1682,23 @@ function renderDungeon() {
 function drawDungeonMap() {
   const ds = dsave(D.id);
   hg.fillStyle = 'rgba(8,10,16,.9)'; hg.fillRect(0, 0, Wr, Hr);
-  T(D.def.name, Wr / 2, 5, '#ffd23f', 1, 'center');
+  const tag = floorTag(D.def), rt = droot();
+  T(D.def.name + (tag ? ' - ' + tag : ''), Wr / 2, 5, '#ffd23f', 1, 'center');
   const s = Math.max(2, Math.floor(Math.min((Wr - insetL - insetR - 16) / D.w, (Hr - 36) / D.h))), x0 = Math.round(Wr / 2 - D.w * s / 2), y0 = 16;
-  const COL = { [DT.WALL]: '#5a6478', [DT.CRACK]: '#5a6478', [DT.FLOOR]: '#26304a', [DT.PIT]: '#06070c', [DT.WATER]: '#2a5a9a', [DT.LAVA]: '#c8501a', [DT.ICE]: '#7ab8d8', [DT.SPIKE]: '#6a6a7a', [DT.BRIDGE]: '#7a5a3a', [DT.EXIT]: '#fff4b0', [DT.TOGB]: '#26304a', [DT.PLAT]: '#06070c', [DT.DOOR]: '#26304a' };
+  const COL = { [DT.WALL]: '#5a6478', [DT.CRACK]: '#5a6478', [DT.FLOOR]: '#26304a', [DT.PIT]: '#06070c', [DT.WATER]: '#2a5a9a', [DT.LAVA]: '#c8501a', [DT.ICE]: '#7ab8d8', [DT.SPIKE]: '#6a6a7a', [DT.BRIDGE]: '#7a5a3a', [DT.EXIT]: '#fff4b0', [DT.STAIR]: '#7af0ff', [DT.TOGB]: '#26304a', [DT.PLAT]: '#06070c', [DT.DOOR]: '#26304a' };
   for (let j = 0; j < D.h; j++) for (let i = 0; i < D.w; i++) { const k = j * D.w + i; if (!D.seen[k]) continue; const c = COL[D.cell[k]]; if (!c) continue; hg.fillStyle = D.P.room[k] === D.P.bossRoom && D.cell[k] === DT.FLOOR ? '#3a2430' : c; hg.fillRect(x0 + i * s, y0 + j * s, s, s); }
-  for (const d of D.doors) { if (!d.cells.some(([i, j]) => D.seen[j * D.w + i])) continue; const open = d.anim > 0.8; hg.fillStyle = open ? '#3a4a68' : d.kind === 'lock' ? '#ffc83a' : d.kind === 'boss' ? '#ff6a5a' : '#a8a8b8'; for (const [i, j] of d.cells) hg.fillRect(x0 + i * s, y0 + j * s, s, s); }
+  for (const d of D.doors) { if (!d.cells.some(([i, j]) => D.seen[j * D.w + i])) continue; const open = d.anim > 0.8; hg.fillStyle = open ? '#3a4a68' : d.kind === 'lock' ? '#ffc83a' : d.kind === 'boss' ? '#ff6a5a' : d.kind === 'seal' ? '#3ab8e0' : '#a8a8b8'; for (const [i, j] of d.cells) hg.fillRect(x0 + i * s, y0 + j * s, s, s); }
   const dot = (x, z, c, r = 1) => { hg.fillStyle = c; hg.fillRect(Math.round(x0 + x / DCS * s) - r, Math.round(y0 + z / DCS * s) - r, r * 2 + 1, r * 2 + 1); };
   for (const c of D.chests) if (!c.hidden && !ds.ch[c.key] && D.seen[c.j * D.w + c.i]) dot(c.x, c.z, c.kind === 'C' ? '#ffb02e' : c.kind === 'K' ? '#ff6a5a' : '#ffd86a', c.kind === 'C' || c.kind === 'K' ? 2 : 1);
-  if (D.P.bossAt && (ds.big || D.seen[D.P.bossAt.j * D.w + D.P.bossAt.i]) && !ds.done && Math.floor(time * 3) % 2) dot(D.P.bossAt.x, D.P.bossAt.z, '#ff3a3a', 2);
+  if (D.P.bossAt && (rt.big || D.seen[D.P.bossAt.j * D.w + D.P.bossAt.i]) && !ds.done && Math.floor(time * 3) % 2) dot(D.P.bossAt.x, D.P.bossAt.z, '#ff3a3a', 2);
+  // le scale lampeggiano: quella che porta avanti e quella del ritorno
+  if (Math.floor(time * 2.5) % 2) { if (D.P.stairs && D.P.stairs.cells.some(([i, j]) => D.seen[j * D.w + i])) dot(D.P.stairs.cx, D.P.stairs.cz, '#eaffff', 1); if (D.def.up) dot(D.P.spawn.cx, D.P.spawn.cz, '#fff4b0', 1); if (D.portal && D.portal.s) dot(D.portal.x, D.portal.z, '#ffffff', 1); }
   const hx = x0 + hero.x / DCS * s, hz = y0 + hero.z / DCS * s;
   for (let i = -1; i <= 4; i++) { hg.fillStyle = i > 2 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(hx + Math.cos(hero.yaw) * i) - 1, Math.round(hz + Math.sin(hero.yaw) * i) - 1, 3, 3); }
   const yb = Math.min(Hr - 10, y0 + D.h * s + 3);
   hg.drawImage(IKEY, x0, yb - 3); T('x' + ds.keys, x0 + 14, yb, '#ffd86a');
-  T(ds.big ? 'GRANDE CHIAVE: SÌ' : 'GRANDE CHIAVE: NO', x0 + D.w * s, yb, ds.big ? '#ff8a6a' : '#5a6478', 1, 'right');
+  if (DS.family(D.id).some(k => DS.DEF[k].boss)) T(rt.big ? 'GRANDE CHIAVE: SÌ' : 'GRANDE CHIAVE: NO', x0 + D.w * s, yb, rt.big ? '#ff8a6a' : '#5a6478', 1, 'right');
+  else if (D.def.down || D.def.up) T(D.def.dir === 'up' ? (D.def.down ? 'LA SCALA SALE' : 'LA CIMA') : (D.def.down ? 'LA SCALA SCENDE' : 'IL FONDO'), x0 + D.w * s, yb, '#7af0ff', 1, 'right');
 }
 // ---------- nemici: quale disegno e quale atlante ----------
 function foeFrame(e) {
@@ -1668,7 +1745,7 @@ function pickLights() {
   for (const g of W.glows) { const d = (g[0] - cx) ** 2 + (g[2] - cz) ** 2; if (d < 520 * 520) { nearGlows.push(g); if (d < 240 * 240) L.push([d, g]); } }
   WLQ.fill(0); let n = 0;
   if (ng < 0.02) return;
-  if (hero && st !== 'title') { WLP[0] = hero.x; WLP[1] = hero.y + 5; WLP[2] = hero.z; WLP[3] = 30; WLQ[0] = 0.6 * ng; WLQ[1] = 0.48 * ng; WLQ[2] = 0.3 * ng; n = 1; }
+  if (hero && st !== 'title') { WLP[0] = hero.x; WLP[1] = hero.y + 5; WLP[2] = hero.z; WLP[3] = eqHas('light') ? 54 : 30; WLQ[0] = 0.6 * ng; WLQ[1] = 0.48 * ng; WLQ[2] = 0.3 * ng; n = 1; }
   L.sort((a, b) => a[0] - b[0]);
   for (let k = 0; k < L.length && n < 8; k++, n++) { const g = L[k][1]; WLP[n * 4] = g[0]; WLP[n * 4 + 1] = g[1]; WLP[n * 4 + 2] = g[2]; WLP[n * 4 + 3] = g[3] * 5.5; WLQ[n * 3] = g[4] * 0.9 * ng; WLQ[n * 3 + 1] = g[5] * 0.9 * ng; WLQ[n * 3 + 2] = g[6] * 0.9 * ng; }
 }
@@ -1851,8 +1928,10 @@ function drawHUD() {
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
-  if (D) { const ds = dsave(D.id); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (ds.big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; }
+  if (D) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
   compass();
+  { const ch = D && !boss ? foes.find(e => FOE[e.type].champ && e.st !== 'dead' && e.room === D.room) : null;
+    if (ch) { const T2 = FOE[ch.type], w = Math.min(150, Wr * 0.38), x = Math.round(Wr / 2 - w / 2), y = 19; T(T2.n, Wr / 2, y, '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, ch.hp) / T2.hp), 4); } }
   if (boss && boss.on && !boss.dead && boss.st !== 'die') { const w = Math.min(170, Wr * 0.42), x = Math.round(Wr / 2 - w / 2), y = 19; T(boss.B.n, Wr / 2, y, '#ff8a5a', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = boss.vuln ? '#ffd23f' : '#ff4a5a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, boss.hp) / boss.max), 4); }
   toasts.forEach((t, i) => T(t.t, 6, ty + i * 10, t.c));
   if (banner) {
@@ -1955,7 +2034,7 @@ function drawMap() {
   const isSeen = (x, z) => seen[Math.min(MG - 1, Math.floor(z / 64)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
   for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
-  if (save.flags.mappa) for (const c of chests) if (c.r === 3 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
+  if (save.flags.mappa) for (const c of chests) if (c.r >= 2 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
   const q = curTrack(), tg = q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3, true);
   // freccia dell'eroe
   if (inV(hero.x, hero.z)) { const hx = x0 + (hero.x - wx0) * k, hz = y0 + (hero.z - wz0) * k; for (let i = -1; i <= 5; i++) { const px = hx + Math.cos(hero.yaw) * i, pz = hz + Math.sin(hero.yaw) * i; hg.fillStyle = i > 3 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(px) - 1, Math.round(pz) - 1, 3, 3); } }
@@ -1997,7 +2076,7 @@ function drawMenu() {
     if (save.q.ferro === 1 || save.q.ferro === 2) { hg.drawImage(IORE, x + 8, yy - 3); T('MINERALE DI FERRO  ' + Math.min(3, save.ore) + '/3', x + 26, yy, '#ffb070'); yy += 14; }
     T('CUORI DI CRISTALLO TROVATI: ' + save.hearts, x + 8, yy + 2, '#ff8aa0');
     if (save.q.main >= 4) { yy += 14; T("PIETRE DELL'ALBA", x + 8, yy + 2, '#ffd23f'); DS.ORDER.forEach((id, i) => { hg.globalAlpha = sanctDone(id) ? 1 : 0.22; hg.drawImage(itemIcon(DS.DEF[id].gem), x + 104 + i * 15, yy - 1); hg.globalAlpha = 1; }); }
-    T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI LEGGENDARI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
+    T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI PIÙ RICCHI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 2) {
     rows.forEach((q, i) => { const yy = top + 2 + i * 26, on = i === menu.sel, done = questDone(q); if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + QN[q], x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
@@ -2013,7 +2092,7 @@ function drawMenu() {
 function drawDeath() {
   death += 1 / 60;
   hg.fillStyle = 'rgba(30,0,8,' + Math.min(0.75, death).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr);
-  if (death > 0.6) { T('SEI CADUTO...', Wr / 2, Hr / 2 - 22, '#ff6a6a', 2, 'center'); T(D ? "TI RISVEGLI ALL'INGRESSO DEL SANTUARIO." : 'TI RISVEGLI AL POZZO DEL BORGO.', Wr / 2, Hr / 2, '#e6e9f2', 1, 'center'); if (Math.floor(time * 2.5) % 2) T('A: CONTINUA', Wr / 2, Hr / 2 + 16, '#ffd23f', 1, 'center'); }
+  if (death > 0.6) { T('SEI CADUTO...', Wr / 2, Hr / 2 - 22, '#ff6a6a', 2, 'center'); T(D ? (D.def.up ? "TI RISVEGLI ALL'INIZIO DEL PIANO." : "TI RISVEGLI ALL'INGRESSO.") : 'TI RISVEGLI AL POZZO DEL BORGO.', Wr / 2, Hr / 2, '#e6e9f2', 1, 'center'); if (Math.floor(time * 2.5) % 2) T('A: CONTINUA', Wr / 2, Hr / 2 + 16, '#ffd23f', 1, 'center'); }
 }
 function drawLoading() {
   hg.fillStyle = '#0b0d14'; hg.fillRect(0, 0, Wr, Hr);
@@ -2055,7 +2134,7 @@ function onKey(name) {
   }
   if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { st = 'play'; intro = 0; toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f'); } } return; }
   if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
-      if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = -Math.PI / 2; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
+      if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
       else { hero.x = 2005; hero.z = 2690; hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
       cam.yaw = hero.yaw; placeCam(true); writeSave(); } return; }
   if (st !== 'play') return;
@@ -2162,8 +2241,8 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
-  set camFix(v) { camFix = v; }, get atm() { return atm; }, NPC, day, openMapAll() { seen.fill(1); openMap(); },
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
+  set camFix(v) { camFix = v; }, get atm() { return atm; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta

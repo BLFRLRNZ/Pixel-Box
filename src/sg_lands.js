@@ -42,7 +42,7 @@ W.ROADS.push(
   { w: 9, pts: [[4120, 6400], [3900, 6300], [3600, 6000], [3200, 5700], [2800, 5480], [2500, 5350]] },
   { w: 8, pts: [[2300, 5170], [2100, 4980], [1800, 4860], [1630, 4800]] },
   { w: 8, pts: [[2300, 5530], [2250, 5900], [2100, 6400], [2010, 6850], [2000, 6940]] },
-  { w: 8, pts: [[1450, 3600], [1445, 3650]] }, { w: 8, pts: [[1480, 3745], [1480, 3795]] },
+  { w: 8, pts: [[1450, 3600], [1445, 3650]] }, { w: 8, pts: [[1480, 3745], [1480, 3790], [1480, 3826]] }, { w: 7, pts: [[1612, 4797], [1572, 4780], [1534, 4746], [1512, 4708]] },
   { w: 7, hidden: true, pts: [[6150, 1350], [6300, 1100], [6480, 900], [6420, 980]] }, { w: 7, hidden: true, pts: [[7150, 2900], [7400, 2750], [7500, 2700]] },
   { w: 7, hidden: true, pts: [[3600, 6000], [3450, 6200], [3400, 6380]] });
 // ---------- ponti ----------
@@ -170,7 +170,8 @@ C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, st
   pre(P) {
     // il bacino del porto scavato davanti alla banchina, tre moli, il molo del faro
     W.TERRA.push({ x0: 5150, z0: 5196, x1: PX0 - 4, z1: 5604, y: -10, mode: 'min' });
-    for (const c of [5304, 5400, 5496]) TN.addPier({ axis: 'x', a0: 5328, a1: PX0, c, hw: 8, y: 3.6 });
+    for (const c of [5304, 5400, 5496]) TN.addPier({ axis: 'x', a0: 5328, a1: PX0, c, hw: 8, y: 3.6, land: 'a1', flat: false });
+    W.BUILD.push({ k: 'quay', x: PX0 - 6, z: 5400, x0: PX0 - 10.5, x1: PX0 - 1.4, z0: 5222, z1: 5578, y: 4.5, gaps: [5304, 5400, 5496] });
     W.TERRA.push({ x0: 5320, z0: 5208, x1: PX0, z1: 5232, y: 4.5 });
     W.PAVE.push(['g', 'rect', PX0 - 2, 5222, PX0 + 14, 5578], ['g', 'rect', 5320, 5208, PX0, 5232]);
     for (const z of [5260, 5352, 5448, 5540]) W.PROPS.push(['lamp', PX0 + 3, z]);
@@ -205,19 +206,19 @@ C.city({ id: 'mezzavia', name: 'MEZZAVIA', x: 5900, z: 4330, w: 170, d: 130, sty
 W.PROPS.push(['well', 5900, 4330]); W.BUILD.push({ k: 'special', sk: 'mill', x: 6010, z: 4290, w: 20, d: 20, style: 'lumen', o: { roof: 4 } });
 // i due approdi del traghetto
 C.city({ id: 'faro', name: 'APPRODO DEL FARO', x: 1440, z: 3700, w: 120, d: 90, style: 'lumen', open: true, small: true, center: 'none', plaza: { w: 30, d: 28 },
-  people: [['traghettatore', 'IL TRAGHETTATORE', [], [40, 92, -Math.PI / 2], { id: 'ferry_faro', role: 'ferry', dock: 'faro' }], ['marinaio', 'IL GUARDIANO DEL FARO', ['DAL MOLO PARTE IL TRAGHETTO PER LE TERRE DEL SUD E PER PORTO SERENO. COSTA QUALCHE MONETA, MA RISPARMI GIORNI DI CAMMINO.'], 'p']] });
-TN.addPier({ axis: 'z', a0: 3786, a1: 3936, c: 1480, hw: 8, y: 3.4 }); W.PROPS.push(['boat', 1500, 3900], ['lamp', 1474, 3790], ['barrel', 1488, 3800]);
+  people: [['traghettatore', 'IL TRAGHETTATORE', [], [52, 116, -Math.PI / 2], { id: 'ferry_faro', role: 'ferry', dock: 'faro' }], ['marinaio', 'IL GUARDIANO DEL FARO', ['DAL MOLO PARTE IL TRAGHETTO PER LE TERRE DEL SUD E PER PORTO SERENO. COSTA QUALCHE MONETA, MA RISPARMI GIORNI DI CAMMINO.'], 'p']] });
+TN.addPier({ axis: 'z', a0: 3828, a1: 3952, c: 1480, hw: 8, y: 3.4, land: 'a0' }); W.PROPS.push(['boat', 1502, 3910], ['lamp', 1468, 3806], ['barrel', 1466, 3818]);
 C.city({ id: 'petali', name: 'APPRODO DEI PETALI', x: 1630, z: 4840, w: 130, d: 90, style: 'fiore', open: true, small: true, center: 'none', plaza: { w: 30, d: 28 },
-  people: [['traghettatore', 'LA TRAGHETTATRICE', [], [-70, -92, Math.PI / 2], { id: 'ferry_petali', role: 'ferry', dock: 'petali' }], ['fioraia', 'LA PESCATRICE', ['LA STRADA A SUD-EST PORTA A FIORALBA, LA CITTÀ DEI CILIEGI.'], 'p']] });
-TN.addPier({ axis: 'z', a0: 4590, a1: 4756, c: 1560, hw: 8, y: 3.4 }); W.PROPS.push(['boat', 1582, 4620], ['lantern', 1554, 4750]);
-W.DOCKS = { faro: { n: 'APPRODO DEL FARO', x: 1480, z: 3800, yaw: -Math.PI / 2 }, petali: { n: 'APPRODO DEI PETALI', x: 1560, z: 4744, yaw: Math.PI / 2 }, porto: { n: 'PORTO SERENO', x: 5398, z: 5400, yaw: 0 } };
+  people: [['traghettatore', 'LA TRAGHETTATRICE', [], [-106, -130, Math.PI / 2], { id: 'ferry_petali', role: 'ferry', dock: 'petali' }], ['fioraia', 'LA PESCATRICE', ['LA STRADA A SUD-EST PORTA A FIORALBA, LA CITTÀ DEI CILIEGI.'], 'p']] });
+TN.addPier({ axis: 'z', a0: 4576, a1: 4698, c: 1512, hw: 8, y: 3.4, land: 'a1' }); W.PROPS.push(['boat', 1534, 4612], ['lantern', 1500, 4712]);
+W.DOCKS = { faro: { n: 'APPRODO DEL FARO', x: 1480, z: 3832, yaw: -Math.PI / 2 }, petali: { n: 'APPRODO DEI PETALI', x: 1512, z: 4694, yaw: Math.PI / 2 }, porto: { n: 'PORTO SERENO', x: 5398, z: 5400, yaw: 0 } };
 // un po' di vita in più a Borgo Aurora
 W.PROPS.push(['lamp', 1962, 2612], ['lamp', 2038, 2612], ['lamp', 1962, 2690], ['lamp', 2038, 2690], ['bench', 1984, 2632], ['bench', 2016, 2668], ['barrel', 2068, 2606], ['crate', 2094, 2712], ['pot', 1936, 2600], ['pot', 2086, 2708], ['cart', 2180, 2776], ['haybale', 2196, 2790]);
 
 // ---------- luoghi da scoprire ----------
 // la Torre dell'Eclisse, nella Brughiera Nera
 W.FLAT.push([2000, 7000, 150, null]); W.CLEAR.push([1900, 6900, 2100, 7100]); W.PLACES.push([2000, 7000, 150, "TORRE DELL'ECLISSE"]); W.TOWNS.push({ x: 2000, z: 7000, name: "TORRE DELL'ECLISSE" });
-W.BUILD.push({ k: 'fort', x: 2000, z: 7000 });
+W.BUILD.push({ k: 'fort', x: 2000, z: 7000, id: 'torre', door: 's' });
 W.builders.fort = (b, g) => {
   const y = g(b.x, b.z), D = TL.DARKSTONE, M = TL.MERL_DARK, RP = TL.ROOF_PURPLE;
   tower(b.x, b.z, 20, y - 6, y + 118, D, { roof: RP, rh: 50, b }); oct(b.x, b.z, 23, y + 80, y + 86, D);
@@ -226,16 +227,26 @@ W.builders.fort = (b, g) => {
   for (const [dx, dz, hh] of [[-62, -62, 50], [62, -62, 38], [-62, 62, 30], [62, 62, 54]]) tower(b.x + dx, b.z + dz, 9, y - 6, y + hh, D, hh > 40 ? { roof: RP, win: TL.RUNEWIN, b } : { merl: M, b });
   // la cinta in rovina: tratti interi e brecce
   for (const [x0, z0, x1, z1, hh] of [[-62, -66, -8, -59, 22], [22, -66, 62, -59, 14], [-66, -62, -59, 10, 20], [-66, 34, -59, 62, 12], [59, -62, 66, -20, 16], [59, 6, 66, 62, 22], [-62, 59, -16, 66, 18], [16, 59, 62, 66, 22]]) wallSeg(b.x + x0, b.z + z0, b.x + x1, b.z + z1, y - 6, y + hh, D, M, b);
-  W.glows.push([b.x, y + 100, b.z, 18, 0.7, 0.35, 1, 1], [b.x, y + 46, b.z + 20, 8, 0.7, 0.35, 1, 0]);
+  W.glows.push([b.x, y + 100, b.z, 18, 0.7, 0.35, 1, 1], [b.x, y + 46, b.z + 20, 8, 0.7, 0.35, 1, 0], [b.x, y + 7, b.z + 20, 9, 0.7, 0.35, 1, 1]);
+  // il portone si apre: dentro, tre piani che salgono
+  W.lights.push({ x: b.x, z: b.z + 21, id: b.id, cave: true, intro: ["IL PORTONE DELLA TORRE È SOCCHIUSO. DENTRO, UNA SCALA SALE NEL BUIO: UN PIANO, POI UN ALTRO, POI UN ALTRO ANCORA...", 'SPINGI IL BATTENTE ED ENTRI.'] });
 };
 // il tempio a gradoni nella laguna della selva
 W.FLAT.push([6800, 5470, 110, 6]); W.CLEAR.push([6740, 5410, 6860, 5530]); W.PLACES.push([6800, 5470, 120, 'TEMPIO DELLA LAGUNA']); W.TOWNS.push({ x: 6800, z: 5470, name: 'TEMPIO DELLA LAGUNA' });
-W.BUILD.push({ k: 'zig', x: 6800, z: 5450 });
+W.BUILD.push({ k: 'zig', x: 6800, z: 5450, id: 'laguna', door: 's' });
 W.builders.zig = (b, g) => {
   const y = g(b.x, b.z + 50);
-  for (let k = 0; k < 4; k++) { const s = 40 - k * 9, y0 = y - 4 + k * 9 + (k ? 4 : 0); box(b.x - s, b.z - s, b.x + s, b.z + s, y0, y + 9 + k * 9, 11); decal(b.x, y + k * 9, b.z + s, 1, 0, 12, 9, TL.STEPS); }
+  for (let k = 0; k < 4; k++) { const s = 40 - k * 9, y0 = y - 4 + k * 9 + (k ? 4 : 0); box(b.x - s, b.z - s, b.x + s, b.z + s, y0, y + 9 + k * 9, 11); if (k) decal(b.x, y + k * 9, b.z + s, 1, 0, 12, 9, TL.STEPS); else decal(b.x, y, b.z + s, 1, 0, 9, 8.6, 12, true); }
   box(b.x - 8, b.z - 8, b.x + 8, b.z + 8, y + 36, y + 46, 11); pyramid(b.x - 8, b.z - 8, b.x + 8, b.z + 8, y + 46, 7, TL.GOLD, 2); decal(b.x, y + 36, b.z + 8, 1, 0, 6, 8, 12, true);
-  W.addBox(b.x - 40, b.z - 40, b.x + 40, b.z + 40, y + 9, b); W.glows.push([b.x, y + 41, b.z + 9, 7, 0.3, 0.9, 0.9, 0]);
+  W.addBox(b.x - 40, b.z - 40, b.x + 40, b.z + 40, y + 9, b); W.glows.push([b.x, y + 41, b.z + 9, 7, 0.3, 0.9, 0.9, 0], [b.x, y + 5, b.z + 41, 9, 0.3, 0.9, 0.8, 1]);
+  // ai piedi della gradinata, una porta: dentro, tre piani che scendono sotto il livello del mare
+  W.lights.push({ x: b.x, z: b.z + 41, id: b.id, cave: true, intro: ["AI PIEDI DELLA GRADINATA SI APRE UNA PORTA DI PIETRA VERDE. L'ARIA CHE ESCE SA DI SALE E DI MUSCHIO.", 'I GRADINI SCENDONO SOTTO IL LIVELLO DEL MARE. ENTRI.'] });
+};
+// la banchina di Porto Sereno: un muro di pietra a picco sull'acqua, con le bitte; tra un molo e l'altro non si cade in mare
+W.builders.quay = b => {
+  box(b.x0, b.z0, b.x1, b.z1, -11, b.y + 0.1, 9, TL.PAVING);
+  const cut = [b.z0].concat(...b.gaps.map(c => [c - 12, c + 12]), [b.z1]);
+  for (let k = 0; k < cut.length; k += 2) { W.addBox(b.x0 - 1, cut[k], b.x1 - 0.8, cut[k + 1], b.y + 3, b); for (let z = cut[k] + 10; z < cut[k + 1] - 6; z += 22) box(b.x0 + 1.6, z - 1, b.x0 + 3.6, z + 1, b.y, b.y + 2.4, TL.DARKSTONE); }
 };
 // torri di guardia, rovine, pietre
 W.BUILD.push({ k: 'tower', x: 5060, z: 1300, r: 9, h: 42, wall: 2, roof: 4 }, { k: 'tower', x: 6420, z: 4020, r: 9, h: 40, wall: 9, roof: 5 }, { k: 'tower', x: 3620, z: 5040, r: 9, h: 44, wall: 9, roof: TL.ROOF_PINK }, { k: 'tower', x: 7620, z: 4640, r: 9, h: 40, wall: 10, roof: TL.TURQ },
@@ -260,10 +271,10 @@ W.CHESTS.push(
   ['d06', 6420, 980, 'pelliccia', 2], ['d07', 7250, 1350, 'cuore', 1], ['d08', 5650, 950, 'elisir', 1],
   ['d09', 6670, 2452, 'monete:150', 0], ['d10', 7500, 2700, 'scimitarra', 2], ['d11', 7400, 3900, 'turbante', 1], ['d12', 7640, 2000, 'cuore', 1],
   ['d13', 6440, 4390, 'elisir', 1], ['d14', 5500, 4750, 'monete:100', 0],
-  ['d15', 6800, 5398, 'perla', 3], ['d16', 7350, 5500, 'tridente', 2], ['d17', 6500, 6300, 'cuore', 1], ['d18', 7300, 6500, 'monete:200', 0],
+  ['d15', 6800, 5398, 'monete:200', 1], ['d16', 7350, 5500, 'tridente', 2], ['d17', 6500, 6300, 'cuore', 1], ['d18', 7300, 6500, 'monete:200', 0],
   ['d19', 5452, 7056, 'madreperla', 2], ['d20', 4950, 6800, 'pozione:3', 0],
   ['d21', 3040, 5050, 'kabuto', 2], ['d22', 1250, 5050, 'cuore', 1], ['d23', 3350, 5650, 'monete:120', 0], ['d24', 3400, 6380, 'bussola', 2],
-  ['d25', 2000, 6952, 'eclisse', 3], ['d26', 1250, 6672, 'elisir', 1], ['d27', 2772, 7250, 'katana', 3], ['d28', 900, 6210, 'monete:160', 0]);
+  ['d25', 2000, 6952, 'elisir', 1], ['d26', 1250, 6672, 'elisir', 1], ['d27', 2772, 7250, 'monete:300', 2], ['d28', 900, 6210, 'monete:160', 0]);
 W.NOOKS.push(
   [4720, 2260, 'cespugli', 0.4], [5080, 1320, 'rocce', 1.2], [5420, 2200, 'ambra', 2.6], [6050, 2650, 'ambra', 3.4], [5300, 3650, 'ambra', 0.2],
   [6420, 980, 'neve', 1.8], [7250, 1350, 'neve', 2.4], [5650, 950, 'rocce', 1.2], [7500, 2700, 'rosse', 2.8], [7640, 2000, 'sabbia', 3.0],
