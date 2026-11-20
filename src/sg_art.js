@@ -834,11 +834,11 @@ function Atlas(AW, AH) {
   const c = mk(AW, AH), g = c.getContext('2d'); let x = 1, y = 1, rowH = 0;
   return {
     c, AW, AH,
-    add(img) {
-      const w = img.width, h = img.height;
+    add(img) { const r = this.room(img.width, img.height); g.drawImage(img, r.x, r.y); return r; },
+    // solo lo spazio, senza disegnarci niente (per gli sprite che arrivano dopo)
+    room(w, h) {
       if (x + w + 1 > AW) { x = 1; y += rowH + 2; rowH = 0; }
       if (y + h + 1 > AH) throw new Error('atlante pieno');
-      g.drawImage(img, x, y);
       const r = { x, y, w, h, u0: x / AW, v0: y / AH, u1: (x + w) / AW, v1: (y + h) / AH };
       x += w + 2; rowH = Math.max(rowH, h); return r;
     },

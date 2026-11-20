@@ -176,6 +176,7 @@ const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
 let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 427, H3 = 240, K3 = 1, OX3 = 0, OY3 = 0;
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
+let atlasUse = 0, fauna = null;
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
 const glowF = new Float32Array(160 * 44), WLP = new Float32Array(32), WLQ = new Float32Array(24);
@@ -360,6 +361,11 @@ function* buildCharacters() {
   CHR.wraith = POSE_FOE.map(p => dirs(() => A.human({ skin: '#b8a8e8', hand: '#b8a8e8', hood: '#3a2a5a', robe: '#2a1e44', shirt: '#3a2a5a', pants: '#2a1e44', boots: '#1e1630', eyes: '#ff4ae0', weapon: { kind: 'staff', col: '#c8a0ff' } }, p), 44, 52));
   CHR.dragon = [0, 1].map(f => dirs(() => A.dragon(f), 128, 96, { pitch: -0.3, base: 60, raw: true }));
   CHR.chest = [0, 1, 2, 3].map(r => [0, 1].map(o => dirs(() => A.chest(r, o), 28, 26)));
+  fauna = SG.fauna.create({ W, gH: (x, z) => W.ground(x, z), SR, figure: A.figure, time: () => time, tone, noise,
+    reserve: (w, h) => atlas.room(w, h), pix: (rows, pal) => atlas.add(A.pix(rows, pal)),
+    paint: (r, c) => { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); },
+    pushBB: (...a) => pushBB(...a), pushShadow: (...a) => pushShadow(...a), dirOf: (x, z, yaw) => dirOf(x, z, yaw), fx: p => fx.push(p) });
+  fauna.init();
   yield 1;
 }
 function drawHeroSprites() {
@@ -376,7 +382,7 @@ function* loader() {
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
   gl = G.gl;
-  atlas = A.Atlas(2048, 2560);
+  atlas = A.Atlas(2048, 3264);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -384,7 +390,7 @@ function* loader() {
   progMsg = 'DISEGNO ABITANTI E CREATURE';
   for (const p of buildCharacters()) yield 0.66 + p * 0.24;
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
-  ATEX = G.texture(atlas.c);
+  ATEX = G.texture(atlas.c); atlasUse = atlas.used;
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
@@ -421,11 +427,16 @@ function startGame(fresh) {
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0 };
   if (hero.hp <= 0) hero.hp = MAXHP();
-  cam.yaw = hero.yaw; placeCam(1);
+  orb.id = null; orb.pBack = false; orb.p = Math.max(-1, Math.min(1, +save.opt.cam || 0));
+  camBehind();
   foes = []; drops = []; fx = []; for (const c of camps) { c.alive = []; c.on = false; c.dead = 0; }
+  fauna.reset();
   curPlace = ''; placeCand = ''; banner = null; toasts = []; dialog = null; menu = null; shop = null; loot = null; mapOpen = false; death = 0;
   drawHeroSprites();
   help = fresh ? 9 : 0;
+  // chi giocava già scopre una volta sola che la visuale ora si gira col dito
+  if (!fresh && !save.flags.camTip) toasts.push({ t: 'NOVITÀ: UN DITO SULLO SCHERMO GIRA LA VISUALE', c: '#7af0ff', life: 9 });
+  save.flags.camTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   writeSave();
@@ -490,7 +501,7 @@ function say(id, lines, then) { dialog = { id, name: id && NPC[id] ? NPC[id].n :
 // una domanda con le risposte da scegliere (croce su/giù, A conferma, B = l'ultima)
 function ask(id, lines, opts, pick) { say(id, lines); dialog.opts = opts; dialog.sel = 0; dialog.pick = pick; }
 const npcHidden = n => n.id === 're' && (!save || save.q.main < 4);
-function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; cam.yaw = hero.yaw; placeCam(true); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
+function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; camBehind(); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
@@ -670,18 +681,64 @@ function openChest(c) {
 // ---------- telecamera ----------
 let camFix = null;   // (solo per le prove) telecamera ferma in un punto
 const CAM_D = 25, CAM_H = 11, LOOK_F = 9, LOOK_H = 6.5, FOVY = 0.95;
+// La visuale si gira trascinando un dito sullo schermo. Di lato gira intorno all'eroe, fino a vederlo di fronte:
+// quando lui riparte torna da sola alle sue spalle (i comandi restano quelli di sempre). In su e in giù si alza
+// e si abbassa, e l'altezza scelta resta. Due tocchi veloci rimettono tutto a posto.
+//   a: di quanto è girata rispetto alle spalle dell'eroe   p: altezza, da -1 (rasoterra, si guarda il cielo) a 1 (dall'alto)
+const orb = { a: 0, p: 0, id: null, x: 0, y: 0, moved: 0, sx: 0, sy: 0, ax: '', t0: 0, tap: -9, tx: 0, ty: 0, hold: 0, back: false, pBack: false };
+let scrW = 800, scrH = 400;
+function camBehind() { orb.a = 0; orb.back = false; orb.hold = 0; cam.yaw = hero.yaw; placeCam(true); }
+function camUpdate(dt) {
+  if (orb.id === null) {
+    if (orb.a !== 0) {
+      // l'eroe cammina o gira: dopo un attimo la visuale torna dietro di lui
+      orb.hold = hero.moving || BTN.left || BTN.right ? orb.hold + dt : 0;
+      if (orb.back || orb.hold > 0.3) { orb.a *= Math.exp(-dt * (orb.back ? 10 : 3.4)); if (Math.abs(orb.a) < 0.012) { orb.a = 0; orb.back = false; } }
+    } else orb.back = false;
+    if (orb.pBack) { orb.p *= Math.exp(-dt * 10); if (Math.abs(orb.p) < 0.012) { orb.p = 0; orb.pBack = false; } }
+  }
+  cam.yaw += angDiff(hero.yaw + orb.a, cam.yaw) * Math.min(1, 4.2 * dt);
+  placeCam(false);
+}
+function camPointer(type, x, y, id) {
+  if (type === 'down') {
+    if (orb.id !== null || st !== 'play' || !hero || hero.dead || dialog || shop || loot || menu || fade) return;
+    orb.id = id; orb.x = x; orb.y = y; orb.moved = 0; orb.t0 = time; orb.sx = 0; orb.sy = 0; orb.ax = '';
+    return;
+  }
+  if (orb.id !== id) return;
+  if (type === 'move') {
+    const dx = x - orb.x, dy = y - orb.y; orb.x = x; orb.y = y;
+    orb.moved += Math.abs(dx) + Math.abs(dy);
+    if (mapOpen) { if (!D) { const S = Math.min(Hr - 37, Wr - insetL - insetR - 10, 256) * K, q = mapV.span / Math.max(1, S); mapV.x -= dx * q; mapV.z -= dy * q; clampMap(); } return; }   // sulla mappa il dito la sposta
+    orb.sx += dx; orb.sy += dy;
+    if (orb.moved < scrH * 0.025) return;                    // un tocco non è un trascinamento
+    // il gesto è di lato oppure in su e giù: così girando la visuale non se ne cambia per sbaglio l'altezza (in diagonale vale tutto)
+    if (!orb.ax) { const ax = Math.abs(orb.sx), ay = Math.abs(orb.sy); orb.ax = ax > ay * 1.25 ? 'h' : ay > ax * 1.25 ? 'v' : 'hv'; return; }
+    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
+    if (orb.ax !== 'h') { orb.p = Math.max(-1, Math.min(1, orb.p + dy / Math.max(1, scrH) * 2.2)); orb.pBack = false; }
+    return;
+  }
+  orb.id = null;
+  if (save && !mapOpen) save.opt.cam = Math.round(orb.p * 100) / 100;      // l'altezza preferita si ricorda
+  if (type === 'up' && !mapOpen && orb.moved < scrH * 0.025 && time - orb.t0 < 0.3) {
+    if (time - orb.tap < 0.42 && Math.hypot(x - orb.tx, y - orb.ty) < scrH * 0.2) { if (orb.a !== 0) orb.back = true; orb.pBack = true; orb.tap = -9; if (save) save.opt.cam = 0; tone(880, 0.03, 'square', 0.02); }
+    else { orb.tap = time; orb.tx = x; orb.ty = y; }
+  }
+}
 function placeCam(snap) {
   if (camFix) { Object.assign(cam, camFix); return; }
-  if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), ex = hero.x - fx2 * 20, ez = hero.z - fz2 * 20, ey = Math.max(hero.y, -2) + 16, k = snap ? 1 : 0.25; cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * 8; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * 8; return; }
-  const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
-  let d = CAM_D * 0.24;
-  for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CAM_D * t, hero.z - fz * CAM_D * t, 1.5)) break; d = CAM_D * t; }
+  const up = Math.max(0, orb.p), dn = D ? 0 : Math.max(0, -orb.p);
+  if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), cd = 20 - up * 7, ex = hero.x - fx2 * cd, ez = hero.z - fz2 * cd, ey = Math.max(hero.y, -2) + 16 + up * 15, k = snap ? 1 : 0.25, lf = 8 * (1 - 0.6 * up); cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * lf; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * lf; return; }
+  const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = CAM_D - up * 7 - dn * 3;
+  let d = CD * 0.24;
+  for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CD * t, hero.z - fz * CD * t, 1.5)) break; d = CD * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
-  let ey = hero.y + CAM_H;
-  ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2);
-  const k = snap ? 1 : 0.25;
+  let ey = hero.y + CAM_H + up * 24 - dn * 8.5;
+  ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2, W.WL + 1.5);
+  const k = snap ? 1 : 0.25, lf = LOOK_F * (1 - 0.6 * up);
   cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k;
-  cam.tx = hero.x + fx * LOOK_F; cam.ty = hero.y + LOOK_H; cam.tz = hero.z + fz * LOOK_F;
+  cam.tx = hero.x + fx * lf; cam.ty = hero.y + LOOK_H + dn * 5; cam.tz = hero.z + fz * lf;
 }
 
 // ---------- movimento con collisioni ----------
@@ -718,7 +775,7 @@ function heroUpdate(dt) {
     h.fall -= dt; h.y -= 50 * dt; h.moving = false;
     if (h.fall <= 0) { h.fall = 0; h.hp -= 2; h.flash = 0.3; tone(170, 0.18, 'sawtooth', 0.06, 70); vib(60);
       if (h.hp <= 0) { h.hp = 0; h.dead = true; death = 0; st = 'dead'; noise(0.5, 0.08); }
-      else { h.x = D.entry.x; h.z = D.entry.z; h.yaw = D.entry.yaw; h.y = 0; h.vx = h.vz = 0; h.inv = 1.2; cam.yaw = h.yaw; placeCam(true); toast('SEI CADUTO!', '#ff8a8a'); } }
+      else { h.x = D.entry.x; h.z = D.entry.z; h.yaw = D.entry.yaw; h.y = 0; h.vx = h.vz = 0; h.inv = 1.2; camBehind(); toast('SEI CADUTO!', '#ff8a8a'); } }
     return;
   }
   const busy = dialog || shop || loot || menu || mapOpen || fade;
@@ -959,7 +1016,7 @@ function playUpdate(dt) {
   if (fade) { fade.t += dt; if (fade.ph === 0 && fade.t >= 0.35) { fade.ph = 1; fade.t = 0; fade.then(); } else if (fade.ph === 1 && fade.t >= 0.35) fade = null; }
   if (st === 'play' && !dialog && !shop && !loot && !menu && !mapOpen && !fade) heroUpdate(dt);
   else hero.moving = false;
-  if (D) dungeonUpdate(dt); else campsUpdate(dt);
+  if (D) dungeonUpdate(dt); else { campsUpdate(dt); fauna.update(dt, hero, hero.moving && !!BTN.b, day.night > 0.55); }
   for (const e of foes) foeUpdate(e, dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
   if (!D) npcsUpdate(dt);
@@ -994,8 +1051,7 @@ function playUpdate(dt) {
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
   saveT += dt; if (saveT > 20) { saveT = 0; writeSave(); }
-  cam.yaw += angDiff(hero.yaw, cam.yaw) * Math.min(1, 4.2 * dt);
-  placeCam(false);
+  camUpdate(dt);
   if (dialog) { const L = dialog.lines[dialog.i]; const tot = L.join(' ').length; if (dialog.ch < tot) { dialog.ch = Math.min(tot, dialog.ch + dt * 70); if (Math.floor(dialog.ch) % 3 === 0) tone(820 + Math.random() * 120, 0.012, 'square', 0.012); } }
   if (loot) loot.t += dt;
 }
@@ -1118,7 +1174,7 @@ function loadLevel(id, from, out) {
   shots = []; drops = []; fx = []; hazards = []; foes = []; amb = [];
   spawnDungeonFoes(); makeBoss();
   D.room = -1; dRoomCheck(); dungeonUpdate(0);
-  cam.yaw = h.yaw; placeCam(true);
+  camBehind();
   banner = { t: D.def.name, s: floorTag(D.def), life: 3.2, c: '#ffd23f' }; target = null; curPlace = D.def.name;
   dsave(id).vis = 1; writeSave();
 }
@@ -1132,7 +1188,7 @@ function exitDungeon() {
   const h = hero; h.x = D.outX; h.z = D.outZ; h.yaw = D.outYaw; h.vx = h.vz = 0; h.fall = 0;
   D = null; boss = null; shots = []; foes = []; drops = []; fx = []; hazards = []; quake = 0;
   for (const c of camps) { c.alive = []; c.on = false; }
-  h.y = W.ground(h.x, h.z); cam.yaw = h.yaw; placeCam(true);
+  h.y = W.ground(h.x, h.z); camBehind();
   curPlace = ''; placeCand = ''; target = null; writeSave();
 }
 function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(392, 0.12, 'triangle', 0.04, 260); }
@@ -1814,6 +1870,7 @@ function render3D() {
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
+  if (st !== 'title') fauna.shadows(cam);
   if (shN) {
     p = P.shadow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP);
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-2, -4);
@@ -1881,6 +1938,7 @@ function buildDynamic() {
   const opened = id => save && save.chests[id], taken = p => save && save.oreTaken[p.x + ',' + p.z];
   for (const c of chests) { if (!near(c.x, c.z, 420)) continue; pushBB(c.x, gH(c.x, c.z) - 0.3, c.z, CHR.chest[c.r][opened(c.id) ? 1 : 0][dirOf(c.x, c.z, c.yaw)], 0.24 / SR); if (!opened(c.id) && c.r >= 2 && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, gH(c.x, c.z) + 6, c.z, SPR.glint, 0.3); }
   for (const e of foes) if (near(e.x, e.z, 520)) drawFoe(e);
+  if (st !== 'title') fauna.draw(cam, time);
   for (const p of props) if (p.k === 'ore' && !taken(p) && near(p.x, p.z, 420)) { pushBB(p.x, gH(p.x, p.z) - 0.4, p.z, SPR.ore.r[0], SPR.ore.s); if (near(p.x, p.z, 200) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, gH(p.x, p.z) + 4, p.z, SPR.glint, 0.3); }
   for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 900)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 7.45 : 0.3), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.25 : 0.27, 1.2);
   for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
@@ -1902,7 +1960,7 @@ function drawHearts(x, y) {
   const mx = MAXHP(); for (let i = 0; i < mx / 2; i++) { const v = hero.hp - i * 2, img = v >= 2 ? HEARTS[0] : v === 1 ? HEARTS[1] : HEARTS[2]; hg.drawImage(img, x + (i % 10) * 8, y + Math.floor(i / 10) * 8); }
 }
 function compass() {
-  const cx = Math.round(Wr / 2), w = Math.min(150, Wr * 0.36), y = 4, yaw = hero.yaw;
+  const cx = Math.round(Wr / 2), w = Math.min(150, Wr * 0.36), y = 4, yaw = cam.yaw;      // la bussola segue lo sguardo, non i piedi
   hg.fillStyle = 'rgba(10,12,22,.55)'; hg.fillRect(cx - w / 2, y, w, 11);
   const mark = (a, s, c, k = 1) => { const d = angDiff(a, yaw); if (Math.abs(d) > 1.35) return; const x = cx + d / 1.35 * (w / 2 - 4); T(s, x, y + 2, c, k, 'center'); };
   mark(-Math.PI / 2, 'N', '#ff6a5a'); mark(0, 'E', '#e6e9f2'); mark(Math.PI / 2, 'S', '#e6e9f2'); mark(Math.PI, 'O', '#e6e9f2');
@@ -1948,8 +2006,8 @@ function drawHUD() {
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   if (help > 0) {
-    const L = ['CROCE: CAMMINA E GIRA   B: CORRI', 'A: PARLA, APRI, COLPISCI', 'START: MENU   SELECT: MAPPA'], w = 190;
-    panel(Wr / 2 - w / 2, Math.round(Hr * 0.3), w, 38, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, Math.round(Hr * 0.3) + 5 + i * 10, '#e6e9f2', 1, 'center'));
+    const L = ['CROCE: CAMMINA E GIRA   B: CORRI', 'A: PARLA, APRI, COLPISCI', 'START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE'], w = 196;
+    panel(Wr / 2 - w / 2, Math.round(Hr * 0.3), w, 48, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, Math.round(Hr * 0.3) + 5 + i * 10, '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
   if (hero.flash > 0) { hg.fillStyle = 'rgba(255,40,40,' + (hero.flash * 0.8).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr); }
@@ -2136,7 +2194,7 @@ function onKey(name) {
   if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
       else { hero.x = 2005; hero.z = 2690; hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
-      cam.yaw = hero.yaw; placeCam(true); writeSave(); } return; }
+      camBehind(); writeSave(); } return; }
   if (st !== 'play') return;
   if (loot) { if ((name === 'a' || name === 'b') && loot.t > 0.5) { loot = null; tone(880, 0.04); } return; }
   if (dialog) {
@@ -2184,7 +2242,7 @@ function onKey(name) {
   if (name === 'select') { openMap(); tone(988, 0.05); return; }
   if (name === 'a') {
     if (target) { interact(target); return; }
-    if (hero.atk <= 0) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); }
+    if (hero.atk <= 0) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); if (!D) fauna.scare(hero.x, hero.z, 46); }
   }
 }
 function menuKey(name) {
@@ -2242,8 +2300,8 @@ function titleCam(dt) {
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
   get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
-  set camFix(v) { camFix = v; }, get atm() { return atm; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
-  tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; cam.yaw = hero.yaw; placeCam(true); },
+  set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
+  tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
@@ -2286,7 +2344,7 @@ return {
       c.drawImage(tc, Math.round(w / 2 - 65 * u), Math.round(h / 2 + 10 * u), 130 * u, 42 * u);
       return;
     }
-    measure(w, h);
+    measure(w, h); scrW = w; scrH = h;
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro')) {
       G.resize(W3, H3);
@@ -2296,5 +2354,6 @@ return {
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);
   },
   button(name, down) { if (down) onKey(name); },
+  pointer(type, x, y, id) { camPointer(type, x, y, id); },
 };
 })());
