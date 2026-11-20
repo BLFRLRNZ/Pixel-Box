@@ -57,18 +57,26 @@ W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE 
 // ---------- la Rocca di Lumen: una città murata con il mastio del Re su una terrazza ----------
 const RX = 2760, RZ = 2960;
 C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
-  specials: [['big', -125, -51, 34, 22, 's', { h: 17, wall: 1, roof: 4, aw: 13, chim: true }], ['big', -66, -50, 26, 20, 's', { h: 11, wall: 2, roof: 5, chim: true }], ['church', -128, 60, 30, 22, 'e', { m: 15 }]],
-  stalls: [[-27, -8, 13], [27, -22, TL.AWN_BLUE], [-27, 28, TL.AWN_GREEN]],
+  specials: [['church', -128, 60, 30, 22, 'e', { m: 15 }]], board: [22, 20],
+  shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
+    ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]],
   people: [
     ['guardia', 'GUARDIA DELLA PORTA', ['BENVENUTO ALLA ROCCA DI LUMEN, LA CITTÀ DEL RE.', 'IL MASTIO È IN FONDO AL VIALE, SULLA TERRAZZA. NON SI PUÒ SBAGLIARE: È LA TORRE PIÙ ALTA DI TUTTA LUMEN.'], [-186, 16, 0]],
     ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.', 'DALLA TORRE GRANDE, NELLE GIORNATE LIMPIDE, SI VEDE FINO AL PONTE DEI RE.'], [6, -16, Math.PI]],
-    ['oste', 'OSTE DEL LEONE', ['BENVENUTO ALLA LOCANDA DEL LEONE!'], [-119, -34, Math.PI / 2], { role: 'inn', cost: 10 }],
-    ['borghese', 'MASTRO ORAFO', ['ANELLI, AMULETI, PIETRE CHE PORTANO FORTUNA. GUARDA PURE!'], 's0', { role: 'shop', shop: 'orafo' }],
-    ['mercantessa', "L'ERBORISTA", ['ERBE DEI PRATI DI LUMEN, DISTILLATE CON CURA.'], 's1', { role: 'shop', shop: 'erbe' }],
+    ['oste', 'OSTE DEL LEONE', ['BENVENUTO ALLA LOCANDA DEL LEONE!'], 'in:leone', { role: 'inn', cost: 10 }],
+    ['guardia', 'IL VETERANO', ['IL MONTE BRACE, A SUD-EST, SCOTTA ANCHE DA LONTANO. MA A SUD DELLA ROCCA, TRA LE PRIME BRACI, QUALCUNO HA LASCIATO UN CUORE DI CRISTALLO.', 'IO NON CI TORNO. HO GIÀ DATO.'], 'in:leone:ospite1'],
+    ['mercantessa', 'LA MERCANTESSA DI PASSAGGIO', ['VUOI UN CONSIGLIO? GUARDA LA BACHECA IN PIAZZA. CHI SBRIGA GLI INCARICHI DI UNA CITTÀ SI FA VOLERE BENE...', '...E AI BOTTEGAI DI QUELLA CITTÀ, CHI SI FA VOLERE BENE, STRAPPA SEMPRE UNO SCONTO.'], 'in:leone:ospite2'],
+    ['borghese', 'MASTRO ORAFO', ['ANELLI, AMULETI, PIETRE CHE PORTANO FORTUNA. GUARDA PURE!'], 'in:orafo', { id: 'orafo', role: 'shop', shop: 'orafo' }],
+    ['mercantessa', "L'ERBORISTA", ['ERBE DEI PRATI DI LUMEN, DISTILLATE CON CURA.'], 'in:erbe', { id: 'erborista', role: 'shop', shop: 'erbe' }],
+    ['fabbro', "L'ARMAIOLO DEL RE", ['LE GUARDIE DEL MASTIO SI ARMANO QUI. SE HAI MONETE, ANCHE TU.'], 'in:rocca_armi', { role: 'shop', shop: 'rocca_armi' }],
     ['dama', 'DAMA ISOTTA', ['DA QUANDO IL RE È TORNATO, LA CITTÀ È RINATA. HAI VISTO QUANTE BANDIERE?', "DICONO CHE OLTRE IL PONTE DEI RE CI SIANO CITTÀ PIÙ GRANDI DELLA NOSTRA. IO NON CI CREDO."], 'p'],
     ['bimbo', 'PAGGIO TEO', ['DA GRANDE FARÒ LA GUARDIA DEL MASTIO!', 'IL CAPITANO ARDEA MI HA PROMESSO UNA SPADA DI LEGNO.'], 'p', { walk: 1 }],
     ['monaco', 'FRATE ANSELMO', ["LE VETRATE DELLA CAPPELLA RACCONTANO LA STORIA DELLE CINQUE PIETRE DELL'ALBA.", 'DI NOTTE, CON LE CANDELE ACCESE, SEMBRANO VIVE.'], [-104, 62, 0]],
     ['borghese', 'IL CARRETTIERE', ['PORTO IL GRANO DEI CAMPI DORATI FIN QUI OGNI MATTINA.', 'LA STRADA NUOVA PER IL PONTE PASSA DAL DESERTO: SEGUI I CARTELLI.'], 'd', { walk: 1 }],
+    ['dama', 'LA FORNAIA', ["IL PANE DELLA ROCCA SI IMPASTA PRIMA DELL'ALBA. SE SENTI PROFUMO, SEGUI IL NASO."], 'd'],
+    ['borghese', 'LO SCRIVANO', ['SONO IO CHE APPENDO GLI INCARICHI ALLA BACHECA. IL RE FIRMA, IO INCHIODO.', 'OGNI INCARICO SBRIGATO È UNO SCONTO IN PIÙ NELLE BOTTEGHE DELLA CITTÀ: PAROLA DI SCRIVANO.'], 'p'],
+    ['guardia', 'LA RONDA', ["TUTTO TRANQUILLO IN PIAZZA. SE CERCHI UNA BOTTEGA, GUARDA LE INSEGNE: LA PORTA È LÌ SOTTO."], 'p'],
+    ['bimbo', 'LA PICCOLA LIDIA', ['HO CONTATO LE INSEGNE DELLA PIAZZA: UN BOCCALE, UN ANELLO, UNA BOCCETTA E UNA SPADA. LA SPADA È LA PIÙ BELLA.'], 'p', { walk: 1 }],
     ['re', 'RE ALDRIC DI LUMEN', [], [50, -13, Math.PI], { id: 're' }],
   ],
   pre(P) {
@@ -112,60 +120,87 @@ C.city({ id: 'rocca', name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, styl
 
 // ---------- le città del continente e del sud ----------
 C.city({ id: 'castelrosso', name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',
-  specials: [['hall', -30, -62, 34, 24, 's', { h: 17, wall: TL.TIMBER2, roof: 4 }], ['church', 34, -66, 22, 32, 's', { m: 15, wall: 2, roof: TL.ROOF_ORANGE }], ['big', -34, 60, 36, 22, 'n', { h: 17, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE, aw: 13, chim: true }], ['big', 30, 58, 24, 20, 'n', { h: 11, wall: 2, roof: TL.ROOF_DARK, chim: true }]],
-  stalls: [[-24, -22, 13], [24, -22, TL.AWN_GREEN], [-24, 26, TL.AWN_YELLOW]],
+  specials: [['hall', -30, -62, 34, 24, 's', { h: 17, wall: TL.TIMBER2, roof: 4 }], ['church', 34, -66, 22, 32, 's', { m: 15, wall: 2, roof: TL.ROOF_ORANGE }]], board: [22, -20],
+  shops: [['ghianda', 'locanda', "LOCANDA DELLA GHIANDA D'ORO", 's1', { fw: 36, fd: 22, h: 17, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }], ['ambra_erbe', 'erboristeria', "L'ERBORISTERIA DELLE FOGLIE", 's2', { wall: 2, roof: TL.ROOF_DARK }],
+    ['ambra_armi', 'armeria', "L'ARMERIA DI CASTELROSSO", 'w1', { fw: 22, wall: 3, roof: 4 }], ['ambra', 'sartoria', 'LA SARTORIA DELLA MERCIAIA', 'e1', { fw: 22, wall: TL.TIMBER2, roof: TL.ROOF_ORANGE }]],
   people: [
     ['borgomastro', 'BORGOMASTRO ULDERICO', [], [-30, -44, Math.PI / 2], { id: 'lead_ambra' }],
-    ['oste', "OSTESSA DELLA GHIANDA", ["BENVENUTO ALLA GHIANDA D'ORO, VIAGGIATORE!"], [-34, 43, -Math.PI / 2], { role: 'inn', cost: 14 }],
-    ['mercantessa', 'LA MERCIAIA', ['STOFFE, CUOIO E FERRO DEL BOSCO: TUTTO FATTO A CASTELROSSO.'], 's0', { role: 'shop', shop: 'ambra' }],
+    ['ostessa', "OSTESSA DELLA GHIANDA", ["BENVENUTO ALLA GHIANDA D'ORO, VIAGGIATORE!"], 'in:ghianda', { role: 'inn', cost: 14 }],
+    ['boscaiolo', 'IL TAGLIALEGNA STANCO', ["A NORD-EST DELLA CITTÀ, NEL FITTO DEL BOSCO D'AMBRA, HO VISTO UN FORZIERE TRA GLI ALBERI ROSSI. DENTRO C'ERA SETA, GIURO.", "NON L'HO PRESO: C'ERANO I LUPI. E IO HO SOLO UN'ASCIA E DUE GAMBE STANCHE."], 'in:ghianda:ospite1'],
+    ['dama', 'LA VIANDANTE', ['ALTABRINA È A NORD, OLTRE IL PONTICELLO SUL FIUME. COPRITI BENE: LASSÙ I LUPI SONO BIANCHI, E PIÙ CATTIVI DEI NOSTRI.'], 'in:ghianda:ospite2'],
+    ['mercantessa', 'LA MERCIAIA', ['STOFFE E MANTELLI CUCITI A CASTELROSSO, PUNTO DOPO PUNTO.'], 'in:ambra', { id: 'merciaia', role: 'shop', shop: 'ambra' }],
+    ['fabbro', "L'ARMAIOLO", ['FERRO DEI MONTI E LEGNO DEL BOSCO. QUELLO CHE ESCE DA QUI NON SI SPEZZA.'], 'in:ambra_armi', { role: 'shop', shop: 'ambra_armi' }],
+    ['monaco', "FRATE ERBOLARIO", ["FOGLIE D'AMBRA, RADICI, RUGIADA DEL MATTINO. E UN PO' DI PAZIENZA."], 'in:ambra_erbe', { role: 'shop', shop: 'ambra_erbe' }],
     ['boscaiolo', 'IL BOSCAIOLO', ["NEL BOSCO D'AMBRA È SEMPRE AUTUNNO. I VECCHI DICONO CHE GLI ALBERI RICORDINO UN TRAMONTO DI MILLE ANNI FA.", 'A NORD, DOVE IL FIUME SCENDE DAI MONTI, I LUPI SI SONO FATTI PIÙ GROSSI.'], 'd'],
     ['boscaiolo', 'IL CARBONAIO', ['LA STRADA A EST PORTA ALLE TERRE ROSSE E A ZAFIRA, LA CITTÀ DELLE CUPOLE.', "A SUD C'È PORTO SERENO. SE HAI MONETE, LÀ UNA NAVE TI PORTA DOVE VUOI."], 'd'],
     ['monaco', 'FRATE BENNO', ['IL CAMPANILE SUONA A OGNI TRAMONTO. LO SENTONO FINO AL PONTE SUL FIUME.'], [56, -46, Math.PI / 2]],
     ['bimbo', 'LA PICCOLA GRETA', ['IO LE FOGLIE ROSSE LE COLLEZIONO. NE HO GIÀ MILLE!', 'IL MULINO FUORI DALLE MURA FA UN RUMORE CHE SEMBRA UN DRAGO CHE RUSSA.'], 'p', { walk: 1 }],
     ['guardia', 'GUARDIA DI CASTELROSSO', ['CASTELROSSO, LA CITTÀ DELLE FOGLIE. COMPORTATI BENE E SARAI IL BENVENUTO.'], [-196, 16, 0]],
     ['borghese', 'IL MUGNAIO', ['IL GRANO ARRIVA DALLA PIANA DI MEZZO, LA FARINA TORNA INDIETRO. COSÌ GIRA IL MONDO.'], 'p', { walk: 1 }],
+    ['boscaiolo', 'IL FALEGNAME', ["LE INSEGNE DELLE BOTTEGHE LE HO INTAGLIATE IO. QUELLA DELL'ARMERIA MI È VENUTA MEGLIO DELLE ALTRE."], 'd'],
+    ['dama', 'LA FORNAIA', ['PANE DI CASTAGNE, ANCORA CALDO. I BOSCAIOLI NE PORTANO VIA TRE PAGNOTTE A TESTA.'], 'p'],
+    ['borghese', 'IL BANDITORE', ['UDITE, UDITE! ALLA BACHECA DELLA PIAZZA IL BORGOMASTRO CERCA BRACCIA FORTI. SI PAGA IN MONETE SONANTI!'], 'p', { walk: 1 }],
   ] });
 W.BUILD.push({ k: 'special', sk: 'mill', x: 5470, z: 3210, w: 20, d: 20, style: 'ambra' });
 C.city({ id: 'altabrina', name: 'ALTABRINA', x: 6150, z: 1500, w: 340, d: 300, style: 'nord', gates: 's', plaza: { w: 70, d: 64 },
-  specials: [['big', 0, -84, 60, 34, 's', { h: 20, wall: TL.LOGS, roof: TL.ROOF_SNOW, steep: 0.8, dw: 9, dh: 12, dr: TL.DOOR_BIG, chim: true }], ['big', -56, 52, 30, 20, 'n', { h: 15, wall: TL.LOGS, roof: 5, chim: true }], ['big', 52, 52, 24, 20, 'n', { h: 11, wall: 2, roof: TL.ROOF_SNOW, chim: true }]],
-  stalls: [[-22, -20, TL.AWN_BLUE], [22, -20, 13]],
+  specials: [['big', 0, -84, 60, 34, 's', { h: 20, wall: TL.LOGS, roof: TL.ROOF_SNOW, steep: 0.8, dw: 9, dh: 12, dr: TL.DOOR_BIG, chim: true }]], board: [20, 16],
+  shops: [['orso', 'locanda', "LOCANDA DELL'ORSO BIANCO", 's1', { fw: 32, fd: 21, h: 16, wall: TL.LOGS, roof: 5 }], ['nord_armi', 'fucina', 'LA FUCINA DEL NORD', 's2', { wall: 2, roof: TL.ROOF_SNOW }],
+    ['nord', 'sartoria', 'PELLI E PELLICCE', 'w1', { fw: 22, wall: TL.LOGS, roof: TL.ROOF_SNOW }]],
   people: [
     ['thane', 'THANE BRUNILDE', [], [0, -58, Math.PI / 2], { id: 'lead_nord' }],
-    ['oste', "OSTE DELL'ORSO", ["ENTRA, ENTRA! ALL'ORSO BIANCO IL FUOCO NON SI SPEGNE MAI."], [-56, 37, -Math.PI / 2], { role: 'inn', cost: 14 }],
-    ['montanaro', 'LA PELLICCIAIA', ['PELLICCE DEI MONTI DI FERRO: CON QUESTE IL GELO NON TI TROVA.'], 's0', { role: 'shop', shop: 'nord' }],
+    ['oste', "OSTE DELL'ORSO", ["ENTRA, ENTRA! ALL'ORSO BIANCO IL FUOCO NON SI SPEGNE MAI."], 'in:orso', { role: 'inn', cost: 14 }],
+    ['minatore', 'IL VECCHIO MINATORE', ['LA CIMA GRANDE SI SALE DAL SENTIERO DIETRO LA CITTÀ. LASSÙ, SOTTO LA NEVE, QUALCUNO HA LASCIATO UNA PELLICCIA CHE VALE UNA FORTUNA.'], 'in:orso:ospite1'],
+    ['montanaro', 'LA GUIDA DEI MONTI', ["A EST, OLTRE L'ALTOPIANO BIANCO, TRA LE ROCCE INNEVATE BRILLA UN CUORE DI CRISTALLO. L'HO VISTO COL CANNOCCHIALE."], 'in:orso:ospite2'],
+    ['montanaro', 'LA PELLICCIAIA', ['PELLICCE DEI MONTI DI FERRO: CON QUESTE IL GELO NON TI TROVA.'], 'in:nord', { id: 'pellicciaia', role: 'shop', shop: 'nord' }],
     ['minatore', 'IL MINATORE', ['SOTTO I MONTI DI FERRO CI SONO GALLERIE PIÙ LUNGHE DELLE STRADE DI SOPRA.', "IL FERRO DELLA SPADA DEL RE VIENE DA QUI. L'HA FORGIATA MIO NONNO."], 'd'],
-    ['minatore', 'IL FABBRO DEL NORD', ['DIETRO LA CITTÀ, UN SENTIERO SALE VERSO LA CIMA GRANDE. LASSÙ QUALCUNO HA LASCIATO UN FORZIERE.'], [52, 37, -Math.PI / 2]],
+    ['fabbro', 'IL FABBRO DEL NORD', ['QUI IL FERRO SI BATTE TRE VOLTE: UNA PER LA FORMA, UNA PER LA TEMPRA, UNA PER IL GELO.'], 'in:nord_armi', { role: 'shop', shop: 'nord_armi' }],
     ['montanaro', 'IL PASTORE', ['LE MIE CAPRE SENTONO LA NEVE DUE GIORNI PRIMA. E IO SENTO LE CAPRE.'], 'p', { walk: 1 }],
     ['bimbo', 'IL PICCOLO SVEN', ['HO FATTO UN PUPAZZO DI NEVE ALTO COME LA THANE! POI SI È SCIOLTO.'], 'p', { walk: 1 }],
+    ['montanaro', 'LA TAGLIALEGNA', ["D'INVERNO LE CASE DI ALTABRINA SI STRINGONO UNA ALL'ALTRA COME LE CAPRE. COSÌ IL VENTO NON PASSA."], 'd', { walk: 1 }],
+    ['minatore', 'IL CAPO DEI MINATORI', ["ALLA BACHECA C'È UNA TAGLIA SUL VECCHIO BIANCO. CI HO MESSO ANCH'IO DIECI MONETE: QUEL LUPO SI È MANGIATO IL MIO MULO."], 'p'],
+    ['montanaro', 'NONNA GERDA', ["ALL'ORSO BIANCO FANNO UNA ZUPPA D'ORZO CHE RISVEGLIA I MORTI. E UN LETTO COSTA MENO DI UN PAIO DI GUANTI."], 'd'],
   ] });
 C.city({ id: 'zafira', name: 'ZAFIRA', x: 7150, z: 3080, w: 400, d: 360, style: 'sole', gates: 'ws', plaza: { w: 90, d: 80 },
-  specials: [['palace', 138, 0, 64, 84, 'w'], ['pool', 68, 0, 30, 44], ['bazaar', -76, -72, 52, 44, 's'], ['big', 62, 76, 40, 26, 'n', { rt: 'flat', wall: TL.ADOBE, roof: TL.ADOBE, h: 13, aw: TL.AWN_YELLOW }]],
-  stalls: [[-28, -26, TL.AWN_YELLOW], [28, -26, TL.CLOTH], [-28, 28, TL.AWN_BLUE], [28, 28, TL.AWN_YELLOW]],
+  specials: [['palace', 138, 0, 64, 84, 'w'], ['pool', 68, 0, 30, 44], ['bazaar', -76, -72, 52, 44, 's']], board: [-22, 20],
+  shops: [['bazar', 'emporio', 'IL GRAN BAZAR', 2], ['carovana', 'locanda', 'IL CARAVANSERRAGLIO', 's2', { fw: 36, fd: 24, h: 15, rt: 'flat', wall: TL.ADOBE, roof: TL.ADOBE, chim: false }],
+    ['sole', 'armeria', 'LE LAME DI ZAFIRA', 'n2', { rt: 'flat', wall: TL.WHITE, roof: 10, chim: false }], ['spezie', 'erboristeria', 'LA SPEZIERIA', 'n1', { rt: 'dome', wall: TL.ADOBE, roof: TL.ADOBE, h: 12, chim: false }]],
   people: [
     ['emira', 'EMIRA SAHAR DI ZAFIRA', [], [98, 12, Math.PI], { id: 'lead_sole' }],
-    ['oste', 'IL CAROVANIERE', ['RIPOSA AL CARAVANSERRAGLIO, STRANIERO. IL DESERTO NON PERDONA CHI È STANCO.'], [62, 58, -Math.PI / 2], { role: 'inn', cost: 16 }],
-    ['mercante', "IL MERCANTE DI LAME", ["LAME CURVE, TEMPRATE NELLA SABBIA ROVENTE. NON NE TROVERAI DI UGUALI A OVEST DEL PONTE."], 's0', { role: 'shop', shop: 'sole' }],
-    ['donna', 'LA SPEZIALE', ['SPEZIE, UNGUENTI, ACQUA DI ROSE. E QUALCOSA DI PIÙ FORTE, PER CHI VIAGGIA.'], 's1', { role: 'shop', shop: 'spezie' }],
+    ['oste', 'IL CAROVANIERE', ['RIPOSA AL CARAVANSERRAGLIO, STRANIERO. IL DESERTO NON PERDONA CHI È STANCO.'], 'in:carovana', { role: 'inn', cost: 16 }],
+    ['mercante', 'IL CAMMELLIERE ASSETATO', ['NELLE DUNE DEL SOLE, A NORD-EST DELLA CITTÀ, IL VENTO HA SCOPERTO UN CUORE DI CRISTALLO.', 'IO HO VISTO SOLO IL LUCCICHIO. POI SONO ARRIVATE LE MUMMIE.'], 'in:carovana:ospite1'],
+    ['donna', 'LA CERCATRICE', ['A SUD, TRA LE ROVINE DELLE TERRE ROSSE, DORME UN TURBANTE CHE FU DI UN PRINCIPE. GLI SCIACALLI GLI FANNO LA GUARDIA.'], 'in:carovana:ospite2'],
+    ['mercante', "IL MERCANTE DI LAME", ["LAME CURVE, TEMPRATE NELLA SABBIA ROVENTE. NON NE TROVERAI DI UGUALI A OVEST DEL PONTE."], 'in:sole', { role: 'shop', shop: 'sole' }],
+    ['donna', 'LA SPEZIALE', ['SPEZIE, UNGUENTI, ACQUA DI ROSE. E QUALCOSA DI PIÙ FORTE, PER CHI VIAGGIA.'], 'in:spezie', { id: 'speziale', role: 'shop', shop: 'spezie' }],
+    ['mercante', 'IL SIGNORE DEL BAZAR', ['TUTTO QUELLO CHE BRILLA A ZAFIRA PASSA DA QUESTO BANCO. TOCCA PURE, MA CON GLI OCCHI.'], 'in:bazar', { role: 'shop', shop: 'bazar' }],
     ['lanciere', "GUARDIA DELL'EMIRA", ["ZAFIRA È SORTA ATTORNO ALL'ULTIMA SORGENTE DELLE TERRE ROSSE.", 'TRA GLI ALTOPIANI, A NORD-EST, UN SENTIERO NASCOSTO PORTA A UNA LAMA SEPOLTA DAL VENTO.'], [84, -14, Math.PI]],
     ['mercante', 'IL CAMMELLIERE', ['LE TERRE ROSSE SONO UN LABIRINTO DI GRADONI. SEGUI LA STRADA, O GLI SCHELETRI TI TROVERANNO PRIMA DI SERA.'], 'd', { walk: 1 }],
     ['donna', 'LA TESSITRICE', ['I TAPPETI DI ZAFIRA ARRIVANO FINO A PORTO SERENO, E DA LÌ PER MARE CHISSÀ DOVE.'], 'p'],
     ['bimbo', 'IL PICCOLO OMAR', ['DI NOTTE LA CUPOLA DEL PALAZZO BRILLA COME UNA SECONDA LUNA!'], 'p', { walk: 1 }],
+    ['mercante', "IL VENDITORE D'ACQUA", ["UN SORSO DELLA SORGENTE? PER TE È GRATIS. LE COSE CHE COSTANO STANNO NEL BAZAR, SOTTO LA CUPOLA."], 'p', { walk: 1 }],
+    ['donna', 'LA DANZATRICE', ['DI SERA, QUANDO SI ACCENDONO LE LANTERNE DELLE BOTTEGHE, LA PIAZZA DI ZAFIRA È IL POSTO PIÙ BELLO DEL MONDO.'], 'p'],
+    ['lanciere', 'LA SENTINELLA DELLA PIAZZA', ["L'EMIRA HA FATTO APPENDERE UNA TAGLIA ALLA BACHECA: IL RE SCIACALLO. NESSUNO DI NOI È ANCORA TORNATO CON LA SUA PELLE."], 'd'],
   ] });
 // Porto Sereno: affacciato sulla Baia di Zaffiro, con la banchina, i moli, le navi e il faro
 const PX0 = 5410;
 C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, style: 'porto', gates: 'nes', noWall: 'w', y: 4.5, plaza: { dx: -40, w: 90, d: 80 },
-  specials: [['big', -150, -92, 44, 26, 's', { h: 13, wall: 3, roof: TL.ROOF_ORANGE }], ['big', -150, 92, 44, 26, 'n', { h: 13, wall: 3, roof: 4 }], ['big', -110, -55, 34, 22, 's', { h: 17, wall: TL.WHITE, roof: TL.ROOF_ORANGE, aw: TL.AWN_BLUE, chim: true }], ['church', 30, -66, 22, 32, 's', { m: 15, wall: TL.WHITE, roof: TL.ROOF_ORANGE }]],
-  stalls: [[-30, -24, TL.AWN_BLUE], [22, -24, 13], [-30, 26, TL.AWN_BLUE], [22, 26, TL.AWN_GREEN]],
+  specials: [['big', -150, -92, 44, 26, 's', { h: 13, wall: 3, roof: TL.ROOF_ORANGE }], ['big', -150, 92, 44, 26, 'n', { h: 13, wall: 3, roof: 4 }], ['church', 30, -66, 22, 32, 's', { m: 15, wall: TL.WHITE, roof: TL.ROOF_ORANGE }]], board: [22, 20],
+  shops: [['ancora', 'locanda', "LOCANDA DELL'ANCORA D'ORO", [-110, -55, 34, 22, 's'], { h: 17, wall: TL.WHITE, roof: TL.ROOF_ORANGE }], ['porto', 'emporio', "L'EMPORIO DELL'ARMATORE", 'n1', { wall: TL.OCHRE, roof: 4 }],
+    ['pesce', 'pescheria', 'ZUPPE E RIMEDI DEL PORTO', 'n2', { wall: TL.WHITE, roof: TL.ROOF_ORANGE }]],
   people: [
     ['capitano', 'CAPITANO NEREO', [], [-170, -20, 0], { id: 'lead_porto' }],
-    ['oste', "OSTE DELL'ANCORA", ["ALL'ANCORA D'ORO SI MANGIA IL PESCE PIÙ FRESCO DELLA BAIA."], [-110, -38, Math.PI / 2], { role: 'inn', cost: 14 }],
-    ['pescivendola', 'LA PESCIVENDOLA', ['ZUPPA DI PESCE! RIMETTE IN PIEDI ANCHE UN ANNEGATO.'], 's0', { role: 'shop', shop: 'pesce' }],
-    ['mercante', "L'ARMATORE", ["ROBA VENUTA DA OLTREMARE: NON CHIEDERMI COME L'HO AVUTA."], 's1', { role: 'shop', shop: 'porto' }],
+    ['oste', "OSTE DELL'ANCORA", ["ALL'ANCORA D'ORO SI MANGIA IL PESCE PIÙ FRESCO DELLA BAIA."], 'in:ancora', { role: 'inn', cost: 14 }],
+    ['marinaio', 'IL VECCHIO LUPO DI MARE', ["NELLA SELVA SMERALDO, A EST, PIÙ IN LÀ DEL TEMPIO DELLA LAGUNA, UN NOSTROMO PERSE IL SUO TRIDENTE. E ANCHE UNA GAMBA, MA QUELLA NON SERVE A NESSUNO."], 'in:ancora:ospite1'],
+    ['pescivendola', 'LA PESCATRICE DI PERLE', ["NEL DELTA DELLE NEBBIE, A SUD, TRA LE ROVINE MEZZE SOMMERSE, C'È UNO SCUDO DI MADREPERLA GRANDE COME UNA PORTA."], 'in:ancora:ospite2'],
+    ['pescivendola', 'LA PESCIVENDOLA', ['ZUPPA DI PESCE! RIMETTE IN PIEDI ANCHE UN ANNEGATO.'], 'in:pesce', { role: 'shop', shop: 'pesce' }],
+    ['mercante', "L'ARMATORE", ["ROBA VENUTA DA OLTREMARE: NON CHIEDERMI COME L'HO AVUTA."], 'in:porto', { id: 'armatore', role: 'shop', shop: 'porto' }],
     ['traghettatore', 'IL NOSTROMO', [], [-205, 0, Math.PI], { id: 'ferry_porto', role: 'ferry', dock: 'porto' }],
     ['marinaio', 'IL MARINAIO', ['HO NAVIGATO FINO ALLE COLLINE DEI CILIEGI: LÀ I PETALI CADONO TUTTO L\'ANNO, COME LA NEVE.', "IL FARO DEL PORTO SI VEDE DA TRENTA MIGLIA. QUELLO VECCHIO, SULL'ISOLA DI LUMEN, DA DIECI."], 'p', { walk: 1 }],
     ['marinaio', 'IL PESCATORE DELLA BAIA', ['NELLA SELVA A EST DELLA CITTÀ, IN MEZZO A UNA LAGUNA, C\'È UN TEMPIO A GRADONI. NESSUNO SA CHI L\'HA COSTRUITO.'], 'd'],
     ['bimbo', 'IL MOZZO', ['UN GIORNO AVRÒ UNA NAVE TUTTA MIA, CON LE VELE ROSSE!'], 'p', { walk: 1 }],
     ['guardia', 'GUARDIA DEL PORTO', ['PORTO SERENO: DA QUI PARTONO LE NAVI PER TUTTO IL MONDO CONOSCIUTO.', "A SUD, OLTRE IL PONTE DELLE LANTERNE, COMINCIANO LE TERRE DEL SUD."], [-24, -166, Math.PI / 2]],
+    ['marinaio', 'IL CALAFATO', ["OGNI NAVE CHE ATTRACCA PORTA QUALCOSA ALL'EMPORIO DELL'ARMATORE. E OGNI TANTO QUALCOSA SPARISCE DALLA STIVA, MA IO NON HO VISTO NIENTE."], 'd'],
+    ['pescivendola', 'LA RETAIOLA', ["RAMMENDO RETI DA QUARANT'ANNI. LE CONCHIGLIE ROSA? IL MARE LE LASCIA SULLE SPIAGGE FUORI DAL PORTO, A NORD E A SUD."], 'p'],
+    ['bimbo', 'LA PICCOLA MARINA', ['DALLA LOCANDA SI VEDONO PARTIRE LE NAVI. IO LE SALUTO TUTTE, UNA PER UNA.'], 'p', { walk: 1 }],
   ],
   pre(P) {
     // il bacino del porto scavato davanti alla banchina, tre moli, il molo del faro
@@ -182,36 +217,63 @@ C.city({ id: 'porto', name: 'PORTO SERENO', x: 5600, z: 5400, w: 380, d: 360, st
 W.CLEAR.push([5150, 5190, 5420, 5610]);
 W.PROPS.push(['boat', 5300, 5372], ['boat', 5262, 5440]);
 C.city({ id: 'fioralba', name: 'FIORALBA', x: 2300, z: 5350, w: 360, d: 320, style: 'fiore', open: true, plaza: { w: 80, d: 70 },
-  specials: [['pagoda', -62, -72, 34, 34, 's'], ['big', 56, -60, 34, 22, 's', { rt: 'hip', wall: TL.WHITE, roof: TL.ROOF_PINK, h: 11, win: TL.SHOJI, dr: TL.DOOR_RED }], ['big', -58, 62, 40, 26, 'n', { rt: 'hip', wall: 3, roof: TL.ROOF_DARK, h: 13, win: TL.SHOJI, dr: TL.DOOR_RED }], ['pool', 62, 64, 36, 30],
+  board: [20, 16],
+  shops: [['te', 'locanda', 'LA CASA DEL TÈ', 'n2', { fw: 34, fd: 22, rt: 'hip', wall: TL.WHITE, roof: TL.ROOF_PINK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }], ['dojo', 'dojo', 'IL DOJO DI FIORALBA', 's1', { fw: 36, fd: 24, rt: 'hip', wall: 3, roof: TL.ROOF_DARK, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }],
+    ['fiore', 'erboristeria', 'LA SERRA DELLA FIORAIA', 'n1', { rt: 'hip', wall: TL.PINK, roof: TL.ROOF_PURPLE, h: 15, win: TL.SHOJI, dr: TL.DOOR_RED, chim: false }]],
+  specials: [['pagoda', -62, -72, 34, 34, 's'], ['pool', 62, 64, 36, 30],
     ['torii', 192, 0, 4, 24, 'e'], ['torii', 0, -172, 24, 4, 'n'], ['torii', 0, 172, 24, 4, 's']],
-  stalls: [[-24, -20, TL.AWN_GREEN], [24, -20, 13]],
   people: [
     ['dama2', 'DAMA SAKURA DI FIORALBA', [], [-62, -48, Math.PI / 2], { id: 'lead_fiore' }],
-    ['oste', 'LA LOCANDIERA DEL TÈ', ['SIEDITI, VIAGGIATORE. IL TÈ DEI PETALI SCIOGLIE LA STANCHEZZA.'], [56, -44, Math.PI / 2], { role: 'inn', cost: 14 }],
-    ['fioraia', 'LA FIORAIA', ['FIORI DI CILIEGIO ESSICCATI, AMULETI DI SETA, PICCOLE COSE CHE PORTANO BENE.'], 's0', { role: 'shop', shop: 'fiore' }],
-    ['spadaccino', "IL MAESTRO D'ARMI", ['NEL DOJO INSEGNO LA VIA DELLA LAMA. LE MIE SPADE NON SI SPEZZANO.'], 's1', { role: 'shop', shop: 'dojo' }],
+    ['ostessa', 'LA LOCANDIERA DEL TÈ', ['SIEDITI, VIAGGIATORE. IL TÈ DEI PETALI SCIOGLIE LA STANCHEZZA.'], 'in:te', { role: 'inn', cost: 14 }],
+    ['monaco', 'IL MONACO PELLEGRINO', ["SUI DENTI DEL SUD, A EST DELLA BRUGHIERA, UN SENTIERO SALE TRA LE ROCCE. IN CIMA HO TROVATO UNA BUSSOLA D'ORO... E L'HO LASCIATA DOV'ERA: NON È LA MIA STRADA."], 'in:te:ospite1'],
+    ['dama', 'LA POETESSA', ['A OVEST, DOVE I CILIEGI ARRIVANO FINO AL MARE, HO VISTO BRILLARE UN CUORE TRA I TRONCHI. NE HO FATTO UNA POESIA, MA IL CUORE È ANCORA LÀ.'], 'in:te:ospite2'],
+    ['fioraia', 'LA FIORAIA', ['FIORI DI CILIEGIO ESSICCATI, AMULETI DI SETA, PICCOLE COSE CHE PORTANO BENE.'], 'in:fiore', { id: 'fioraia', role: 'shop', shop: 'fiore' }],
+    ['spadaccino', "IL MAESTRO D'ARMI", ['NEL DOJO INSEGNO LA VIA DELLA LAMA. LE MIE SPADE NON SI SPEZZANO.'], 'in:dojo', { role: 'shop', shop: 'dojo' }],
     ['saggio', 'IL VECCHIO HARU', ["I CILIEGI DI QUESTE COLLINE NON SFIORISCONO MAI. È UN DONO DELLA PIETRA DELL'ALBA, DICONO.", 'A SUD COMINCIA LA BRUGHIERA NERA. LÀ SORGE LA TORRE DELL\'ECLISSE: NON ANDARCI SENZA UNA BUONA ARMATURA.'], 'p'],
     ['fioraia', 'LA RAGAZZA DEL LAGO', ['A NORD-EST C\'È IL LAGO DEI PETALI. SULLA RIVA, TRA I CILIEGI, MIO NONNO NASCOSE IL SUO ELMO DA GUERRIERO.'], 'd', { walk: 1 }],
     ['spadaccino', 'LA SENTINELLA', ["DALL'APPRODO DEI PETALI, A NORD-OVEST, IL TRAGHETTO PORTA AL FARO DI LUMEN E A PORTO SERENO."], [176, 14, 0]],
     ['bimbo', 'LA PICCOLA HANA', ['SE STAI FERMO SOTTO UN CILIEGIO, I PETALI TI CONTANO I CAPELLI!'], 'p', { walk: 1 }],
+    ['fioraia', 'LA GIARDINIERA', ['OGNI CASA DI FIORALBA HA IL SUO CILIEGIO. QUANDO NASCE UN BAMBINO, SE NE PIANTA UNO NUOVO.'], 'd', { walk: 1 }],
+    ['saggio', 'IL CALLIGRAFO', ['GLI INCARICHI DELLA BACHECA LI SCRIVO IO, COL PENNELLO. LA TAGLIA SUL CAVALIERE SENZA NOME MI HA FATTO TREMARE LA MANO.'], 'p'],
+    ['spadaccino', "L'ALLIEVO DEL DOJO", ['IL MAESTRO DICE CHE UNA BUONA LAMA SI COMPRA UNA VOLTA SOLA. PER QUESTO LE SUE COSTANO TANTO.'], 'd'],
   ] });
 // villaggi lungo la strada
 C.city({ id: 'ponte', name: 'LOCANDA DEL PONTE', x: 4650, z: 2096, w: 150, d: 110, style: 'ambra', open: true, small: true, center: 'none', plaza: { w: 40, d: 36 },
-  specials: [['big', -44, -34, 34, 22, 's', { h: 17, wall: TL.TIMBER2, roof: 4, aw: 13, chim: true }]],
-  people: [['oste', 'OSTE DEL PONTE', ['CHI PASSA IL PONTE DEI RE HA SEMPRE SETE. BENVENUTO!'], [-44, -18, Math.PI / 2], { role: 'inn', cost: 12 }],
+  shops: [['ponte', 'locanda', 'LA LOCANDA DEL PONTE', [-44, -34, 34, 22, 's'], { h: 17, wall: TL.TIMBER2, roof: 4 }]],
+  people: [['oste', 'OSTE DEL PONTE', ['CHI PASSA IL PONTE DEI RE HA SEMPRE SETE. BENVENUTO!'], 'in:ponte', { id: 'oste_ponte', role: 'inn', cost: 12 }],
+    ['guardia', 'LA GUARDIA DEL PONTE', ["A NORD-EST DI QUI, SOTTO LA VECCHIA TORRE DI GUARDIA DELLA PIANA, C'È UN CUORE DI CRISTALLO. LO SANNO ANCHE I PREDONI, PERÒ."], 'in:ponte:ospite1'],
     ['borghese', 'IL MERCANTE DI PASSAGGIO', ['SEI APPENA ARRIVATO SUL CONTINENTE? LA STRADA A EST PORTA A CASTELROSSO, QUELLA A NORD AD ALTABRINA, TRA LE NEVI.', 'QUI LE BESTIE SONO PIÙ FORTI CHE A LUMEN. TIENI PRONTE LE POZIONI.'], 'p']] });
 W.PROPS.push(['well', 4650, 2096]);
 C.city({ id: 'mezzavia', name: 'MEZZAVIA', x: 5900, z: 4330, w: 170, d: 130, style: 'lumen', open: true, small: true, center: 'none', plaza: { w: 40, d: 36 },
-  people: [['borghese', 'IL FATTORE', ['MEZZAVIA: A METÀ STRADA TRA CASTELROSSO E PORTO SERENO. DA NOI SI FERMANO TUTTI.', 'A EST, PRESSO LO STAGNO, QUALCUNO HA SEPOLTO UNA FIASCA PREZIOSA.'], 'p'], ['bimbo', 'IL GARZONE', ['LE MELME DELLA PIANA SONO GIALLE E GROSSE. IO LE FACCIO SCAPPARE COL BASTONE!'], 'p', { walk: 1 }]] });
+  shops: [['mezzavia', 'locanda', 'LA LOCANDA DI MEZZAVIA', [-50, -36, 32, 20, 's'], { wall: 1, roof: 4 }]],
+  people: [['ostessa', 'OSTESSA DI MEZZAVIA', ['A METÀ STRADA TRA IL BOSCO E IL MARE: QUI SI FERMANO TUTTI, E NESSUNO RIPARTE A STOMACO VUOTO.'], 'in:mezzavia', { role: 'inn', cost: 12 }],
+    ['marinaio', 'IL MARINAIO IN LICENZA', ['A SUD-OVEST DI QUI, VERSO IL FIUME, TRA I CESPUGLI DELLA PIANA, UN CARRETTIERE HA NASCOSTO LA PAGA DI UN MESE. ME LO HA DETTO LUI, DOPO IL TERZO BOCCALE.'], 'in:mezzavia:ospite1'],
+    ['borghese', 'IL FATTORE', ['MEZZAVIA: A METÀ STRADA TRA CASTELROSSO E PORTO SERENO. DA NOI SI FERMANO TUTTI.', 'A EST, PRESSO LO STAGNO, QUALCUNO HA SEPOLTO UNA FIASCA PREZIOSA.'], 'p', { id: 'fattore' }], ['bimbo', 'IL GARZONE', ['LE MELME DELLA PIANA SONO GIALLE E GROSSE. IO LE FACCIO SCAPPARE COL BASTONE!'], 'p', { walk: 1 }]] });
 W.PROPS.push(['well', 5900, 4330]); W.BUILD.push({ k: 'special', sk: 'mill', x: 6010, z: 4290, w: 20, d: 20, style: 'lumen', o: { roof: 4 } });
 // i due approdi del traghetto
 C.city({ id: 'faro', name: 'APPRODO DEL FARO', x: 1440, z: 3700, w: 120, d: 90, style: 'lumen', open: true, small: true, center: 'none', plaza: { w: 30, d: 28 },
-  people: [['traghettatore', 'IL TRAGHETTATORE', [], [52, 116, -Math.PI / 2], { id: 'ferry_faro', role: 'ferry', dock: 'faro' }], ['marinaio', 'IL GUARDIANO DEL FARO', ['DAL MOLO PARTE IL TRAGHETTO PER LE TERRE DEL SUD E PER PORTO SERENO. COSTA QUALCHE MONETA, MA RISPARMI GIORNI DI CAMMINO.'], 'p']] });
+  people: [['traghettatore', 'IL TRAGHETTATORE', [], [52, 116, -Math.PI / 2], { id: 'ferry_faro', role: 'ferry', dock: 'faro' }], ['marinaio', 'IL GUARDIANO DEL FARO', ['DAL MOLO PARTE IL TRAGHETTO PER LE TERRE DEL SUD E PER PORTO SERENO. COSTA QUALCHE MONETA, MA RISPARMI GIORNI DI CAMMINO.'], 'p', { id: 'guardiano_faro' }]] });
 TN.addPier({ axis: 'z', a0: 3828, a1: 3952, c: 1480, hw: 8, y: 3.4, land: 'a0' }); W.PROPS.push(['boat', 1502, 3910], ['lamp', 1468, 3806], ['barrel', 1466, 3818]);
 C.city({ id: 'petali', name: 'APPRODO DEI PETALI', x: 1630, z: 4840, w: 130, d: 90, style: 'fiore', open: true, small: true, center: 'none', plaza: { w: 30, d: 28 },
   people: [['traghettatore', 'LA TRAGHETTATRICE', [], [-106, -130, Math.PI / 2], { id: 'ferry_petali', role: 'ferry', dock: 'petali' }], ['fioraia', 'LA PESCATRICE', ['LA STRADA A SUD-EST PORTA A FIORALBA, LA CITTÀ DEI CILIEGI.'], 'p']] });
 TN.addPier({ axis: 'z', a0: 4576, a1: 4698, c: 1512, hw: 8, y: 3.4, land: 'a1' }); W.PROPS.push(['boat', 1534, 4612], ['lantern', 1500, 4712]);
 W.DOCKS = { faro: { n: 'APPRODO DEL FARO', x: 1480, z: 3832, yaw: -Math.PI / 2 }, petali: { n: 'APPRODO DEI PETALI', x: 1512, z: 4694, yaw: Math.PI / 2 }, porto: { n: 'PORTO SERENO', x: 5398, z: 5400, yaw: 0 } };
+// ---------- Borgo Aurora: l'emporio di Nino al posto della bancarella, la locanda, la bacheca in piazza ----------
+C.bottega('nino', 'emporio', "L'EMPORIO DI NINO", 'BORGO AURORA', 'lumen').folk.push('nino');
+C.bottega('gallo', 'locanda', 'LA LOCANDA DEL GALLO', 'BORGO AURORA', 'lumen');
+C.folk('ostessa', 'OSTESSA GEMMA', 0, 0, 0, ['BENVENUTO AL GALLO, CARO! QUI SI DORME TRA LENZUOLA CHE SANNO DI LAVANDA.'], { in: 'gallo', spot: 'banco', role: 'inn', cost: 6 });
+C.folk('borghese', 'IL VECCHIO TOBIA', 0, 0, 0, ["DA GIOVANE HO NASCOSTO UN GRUZZOLO TRA I CESPUGLI, SULLA STRADA PER LA ROCCA, POCO PRIMA DELLE DUE STATUE. POI ME NE SONO SCORDATO PER QUARANT'ANNI.", 'SE LO TROVI È TUO. IO ORMAI HO LA ZUPPA DI GEMMA.'], { in: 'gallo', spot: 'ospite1' });
+C.folk('boscaiolo', 'IL CACCIATORE', 0, 0, 0, ['I LUPI DEL BOSCO ANTICO GIRANO IN BRANCO: COLPISCI E ARRETRA, NON FARTI CHIUDERE IN MEZZO.', 'E DAI UN OCCHIO ALLA BACHECA IN PIAZZA: PER OGNI LAVORO FATTO, IL BORGO PAGA IN MONETE SONANTI.'], { in: 'gallo', spot: 'ospite2' });
+W.BOARDS.push({ id: 'borgo', city: 'BORGO AURORA', x: 2021, z: 2633 });
+W.builders.board = (b, g) => SG.shop.bacheca(b.x, b.z, g(b.x, b.z), b, 4);
+// il Borgo cresce: cinque case nuove attorno alla piazza, e chi ci abita
+W.BUILD.push({ k: 'house', x: 1868, z: 2602, w: 20, d: 16, h: 11, wall: 2, roof: 4, door: 's', chim: true }, { k: 'house', x: 2142, z: 2592, w: 20, d: 16, h: 12, wall: 0, roof: 6, door: 's', chim: true },
+  { k: 'house', x: 2144, z: 2734, w: 18, d: 16, h: 10, wall: 3, roof: 5, door: 'n' }, { k: 'house', x: 1914, z: 2794, w: 20, d: 16, h: 12, wall: 1, roof: 4, door: 'e', chim: true }, { k: 'house', x: 2052, z: 2798, w: 18, d: 16, h: 10, wall: 16, roof: 6, door: 'n' });
+C.folk('dama', 'LA TESSITRICE NORA', 1876, 2616, 0.6, ["DA QUANDO NINO HA APERTO L'EMPORIO, LA PIAZZA SEMBRA QUELLA DI UNA CITTÀ. CI MANCA SOLO IL CAMPANILE."]);
+C.folk('boscaiolo', 'IL BOSCAIOLO ELIO', 1930, 2786, 0, ["PRIMA DI PARTIRE PASSA DALLA BACHECA, IN PIAZZA. C'È SEMPRE QUALCUNO CHE HA BISOGNO DI DUE BRACCIA."]);
+C.folk('bimbo', 'LA PICCOLA ADA', 2044, 2686, 2.2, ['GEMMA DELLA LOCANDA MI DÀ SEMPRE UN BISCOTTO. PERÒ NON DIRLO A BISCOTTO, CHE È UN GATTO GELOSO.'], { walk: 1 });
+C.folk('borghese', 'IL CONTADINO BEPPE', 2142, 2606, 1.6, ["LE CASE NUOVE SONO VENUTE SU IN UN'ESTATE. IL BORGO CRESCE: MERITO DELLA STRADA PER LA ROCCA."], { walk: 1 });
+W.PROPS.push(['haybale', 2158, 2600], ['barrel', 1880, 2612], ['crate', 2064, 2788], ['pot', 1926, 2800], ['bench', 2130, 2722], ['lamp', 2118, 2664], ['lamp', 1905, 2700], ['pot', 2020, 2582], ['pot', 2044, 2582], ['sack', 2047, 2575], ['table', 2060, 2704], ['stool', 2065, 2700], ['stool', 2056, 2700]);
 // un po' di vita in più a Borgo Aurora
 W.PROPS.push(['lamp', 1962, 2612], ['lamp', 2038, 2612], ['lamp', 1962, 2690], ['lamp', 2038, 2690], ['bench', 1984, 2632], ['bench', 2016, 2668], ['barrel', 2068, 2606], ['crate', 2094, 2712], ['pot', 1936, 2600], ['pot', 2086, 2708], ['cart', 2180, 2776], ['haybale', 2196, 2790]);
 

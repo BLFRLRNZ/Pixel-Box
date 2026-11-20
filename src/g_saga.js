@@ -169,7 +169,7 @@ const ATMO = [
 // ---------- stato ----------
 let G = null, gl = null, st = 'boot', gen = null, prog = 0, progMsg = '', errMsg = '';
 let atlas = null, ATEX = null, TILES = null, DET = null, PANO = null, SHORE = null, glowBuf = null, SPR = {}, CHR = {}, heroRects = null;
-let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [];
+let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [], botteghe = [];
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
 const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
@@ -201,7 +201,7 @@ function setDay(tod) {
 function newSave() {
   return { v: 1, x: 2005, z: 2700, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
     eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0, viaggio: 0 }, track: 'main',
-    chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {} };
+    chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {}, jobs: {} };
 }
 function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) { const n = Object.assign(newSave(), s); n.q = Object.assign(newSave().q, s.q); return n; } } catch (e) {} return null; }
 function writeSave() {
@@ -300,7 +300,7 @@ function buildStatics() {
   setZ('cherrywhite', [A.oak(R, Z(40), Z(50), ['#c0a8b8', '#e8d0dc', '#f8ecf2', '#ffffff'], DARKT)], 0.43, 2);
   set('heather', [A.tuft(['#7a3a7a', '#b05aa8'], 12, 9), A.tuft(['#6a4a8a', '#9a6ac0'], 10, 8)], 0.2, 0, true);
   setZ('tomb', [A.rock(R, Z(8), Z(13), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae']), A.rock(R, Z(10), Z(10), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae'])], 0.4, 1.5);
-  SG.town.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35];
+  SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35];
   // il vento muove alberi (poco) ed erba (di più); cristalli e lava brillano
   for (const k of ['oak', 'oakbig', 'birch', 'pine', 'snowpine', 'palm', 'willow', 'deadtree', 'burnt', 'oakred', 'oakgold', 'birchgold', 'acacia', 'jungle', 'cherry', 'cherrywhite']) S[k].sway = 1;
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
@@ -330,6 +330,13 @@ function buildStatics() {
   SH.light = atlas.add(A.pix(['....aa....', '..abbbba..', '.abccccba.', 'abcc..ccba', 'abc....cba', 'ab......ba'], { a: '#ffb02e', b: '#ffe07a', c: '#ffffff' }));
   SH.rock = HD(A.orb(9, '#7a7a84', '#b8b8c4'), 5);
   SPR.shot = SH; SPR.rockfx = SH.rock; SPR.icefx = SH.ice;
+  // quello che si raccoglie per gli incarichi, e il punto esclamativo sopra le bacheche (giallo: c'è lavoro; verde: c'è una paga)
+  SPR.pick = { fungo: atlas.add(A.pix(['...aaaa...', '..abaaba..', '.aaaaaaba.', '.abaaaaaa.', '.aaaabaaa.', '...cccc...', '....cc....', '....cc....', '...cccc...'], { a: '#e8304a', b: '#ffffff', c: '#f0e0c0' })),
+    resina: atlas.add(A.pix(['....a....', '...aba...', '...aba...', '..abbca..', '.abbbbca.', '.abbbbba.', '.aabbbaa.', '..aaaaa..'], { a: '#c8701a', b: '#ffb02e', c: '#fff0a0' })),
+    rosa: atlas.add(A.pix(['...aa.aa...', '..abbabba..', '.abccbccba.', '.abcbbbcba.', '..abbcbba..', '.abbcccbba.', '.abcbbbcba.', '..aabbbaa..', '....aaa....'], { a: '#a8643a', b: '#e0a878', c: '#f8d8b8' })),
+    conchiglia: atlas.add(A.pix(['...aaaaa...', '..abcbcba..', '.abcbcbcba.', '.abcbcbcba.', '.abcbcbcba.', '..abcbcba..', '...abbba...', '....aaa....'], { a: '#c85a7a', b: '#f8a8c8', c: '#ffe4f0' })),
+    loto: atlas.add(A.pix(['....a.a....', '...abab....', '..abbbba.a.', '.abcbcbbaba', '.abbcbbbbba', '..abbbbbba.', 'ddddaaadddd', '.ddddddddd.'], { a: '#c85a9a', b: '#f8b8d8', c: '#ffffff', d: '#3a8a4a' })) };
+  SPR.bang = ['#ffd23f', '#5af07a'].map(c => atlas.add(A.pix(['.aaa.', 'abbba', 'abbba', 'abbba', '.aba.', '.aba.', '..a..', '.aaa.', 'abbba', '.aaa.'], { a: '#2a1a10', b: c })));
   SPR.rune = atlas.add(A.pix(['..aaa..', '.a...a.', 'a..b..a', 'a.bbb.a', 'a..b..a', '.a...a.', '..aaa..'], { a: '#4ae0e8', b: '#b8f8ff' }));
 }
 function* buildCharacters() {
@@ -382,7 +389,7 @@ function* loader() {
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
   gl = G.gl;
-  atlas = A.Atlas(2048, 3264);
+  atlas = A.Atlas(2048, 3392);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -392,7 +399,7 @@ function* loader() {
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
   ATEX = G.texture(atlas.c); atlasUse = atlas.used;
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
-  TILES = G.texture(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)));
+  TILES = G.texture(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
   SHORE = G.texture({ w: W.N, h: W.N, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
@@ -416,8 +423,13 @@ function setupWorld() {
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z }));
+  picks = [];
+  for (const id in JOBS) { const j = JOBS[id];
+    if (j.boss) { const [X, Z] = fixSpot(j.boss.x, j.boss.z, 5); camps.push({ x: X, z: Z, type: 'J_' + id, n: 1, r: 44, alive: [], dead: 0, cool: 0, on: false, job: id }); }
+    if (j.pts) j.pts.forEach((q, i) => { const [X, Z] = fixSpot(q[0], q[1], 3); picks.push({ job: id, i, x: X, z: Z, what: j.what }); }); }
   for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
   doors = W.lights.filter(l => l.id);
+  SG.shop.registra(); botteghe = Object.values(W.SHOPS).filter(b => b.x !== undefined);      // le botteghe con la loro soglia
   for (let j = 0; j < MG; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
 }
 function startGame(fresh) {
@@ -437,6 +449,9 @@ function startGame(fresh) {
   // chi giocava già scopre una volta sola che la visuale ora si gira col dito
   if (!fresh && !save.flags.camTip) toasts.push({ t: 'NOVITÀ: UN DITO SULLO SCHERMO GIRA LA VISUALE', c: '#7af0ff', life: 9 });
   save.flags.camTip = 1;
+  // ...e che nelle città ci sono botteghe in cui entrare e bacheche con gli incarichi
+  if (!fresh && !save.flags.cityTip) toasts.push({ t: 'NOVITÀ: BOTTEGHE, LOCANDE E BACHECHE NELLE CITTÀ', c: '#ffd23f', life: 11 });
+  save.flags.cityTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   writeSave();
@@ -448,7 +463,9 @@ const QALL = ['main', 'viaggio', 'ferro', 'gatto', 'melme'];
 // i cinque signori del grande viaggio: [chiave, abitante, città]
 const LEAD = [['ambra', 'lead_ambra', 'CASTELROSSO'], ['nord', 'lead_nord', 'ALTABRINA'], ['sole', 'lead_sole', 'ZAFIRA'], ['porto', 'lead_porto', 'PORTO SERENO'], ['fiore', 'lead_fiore', 'FIORALBA']];
 const allies = () => LEAD.filter(l => save.flags['al_' + l[0]]).length;
+const isJob = q => q[1] === ':', qName = q => isJob(q) ? JOBS[q.slice(2)].n : QN[q];
 function questLine(q) {
+  if (isJob(q)) return jobLine(q.slice(2));
   const s = save.q[q];
   if (q === 'main') { if (s === 4) return 'LIBERA IL ' + SANCT[nextSanct()] + ' (PIETRE ' + gemsN() + '/5).'; return ['PARLA CON L\'ANZIANA MIRTA, NEL BORGO.', "RAGGIUNGI L'ALBERO MADRE NEL BOSCO ANTICO (NORD-OVEST).", 'PARLA CON IL CAPITANO ARDEA ALLA ROCCA DI LUMEN (SUD-EST).', 'TORNA DAL CAPITANO ARDEA, ALLA ROCCA: PRESTO ARRIVERANNO NOTIZIE DAL RE.', '', "PORTA LE CINQUE PIETRE DELL'ALBA ALLO SPIRITO DEL BOSCO.", 'CAPITOLO 2 COMPLETATO. IL SEGUITO NEL CAPITOLO 3!'][s]; }
   if (q === 'ferro') return ['', 'TROVA 3 MINERALI DI FERRO A NORD-EST DEL BORGO (' + Math.min(3, save.ore) + '/3).', 'PORTA IL FERRO A BRUNO IL FABBRO.', 'COMPLETATA'][s];
@@ -457,9 +474,11 @@ function questLine(q) {
   if (q === 'viaggio') { const nx = LEAD.find(l => !save.flags['al_' + l[0]]); return ['', 'PORTA IL SIGILLO DEL RE AI CINQUE SIGNORI (' + allies() + '/5).' + (nx ? ' IL PROSSIMO: ' + nx[2] + '.' : ''), 'TORNA DAL RE ALDRIC, NEL CORTILE DEL MASTIO.', 'COMPLETATA'][s]; }
   return '';
 }
-const questDone = q => (q === 'main' ? save.q.main >= 6 : save.q[q] >= 3);
+const questDone = q => isJob(q) ? (jst(q.slice(2)) || {}).s === 3 : (q === 'main' ? save.q.main >= 6 : save.q[q] >= 3);
 function questTarget(q) {
-  const s = save.q[q], np = id => { const n = npcs.find(e => e.id === id); return n ? [n.x, n.z] : null; };
+  const np = id => { const n = npcs.find(e => e.id === id); if (n) return [n.x, n.z]; const f = W.FOLK[id], b = f && f.in ? W.SHOPS[f.in] : id === 'nino' ? W.SHOPS.nino : null; return b && b.x !== undefined ? [b.x, b.z] : null; };
+  if (isJob(q)) return jobTarget(q.slice(2), np);
+  const s = save.q[q];
   if (q === 'main') { if (s === 4) { const d = doors.find(o => o.id === nextSanct()); return d ? [d.x, d.z] : null; } return [np('mirta'), np('spirito'), np('ardea'), np('ardea'), null, np('spirito'), null][s]; }
   if (q === 'ferro') { if (s === 1) { let best = null, bd = 1e9; for (const p of props) if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) { const d = Math.hypot(p.x - hero.x, p.z - hero.z); if (d < bd) { bd = d; best = [p.x, p.z]; } } return best; } return s === 2 ? np('bruno') : null; }
   if (q === 'gatto') return s === 1 ? np('biscotto') : s === 2 ? np('lia') : null;
@@ -469,11 +488,65 @@ function questTarget(q) {
 }
 function trackQuest(q) { save.track = q; }
 function curTrack() {
-  const active = q => q === 'main' ? save.q.main < 6 : save.q[q] > 0 && save.q[q] < 3;
+  const active = q => isJob(q) ? !!JOBS[q.slice(2)] && [1, 2].includes((jst(q.slice(2)) || {}).s) : q === 'main' ? save.q.main < 6 : save.q[q] > 0 && save.q[q] < 3;
   if (save.track && active(save.track)) return save.track;
   for (const q of QALL) if (active(q)) return q;
+  for (const id in save.jobs) if (active('J:' + id)) return 'J:' + id;
   return null;
 }
+
+// ---------- incarichi delle bacheche ----------
+// save.jobs[id] = { s: 1 accettato | 2 compiuto, da riscuotere | 3 pagato, n: quanti finora, got: cose già raccolte }
+const JOBS = SG.jobs.LIST, JCITY = SG.jobs.CITY, JNOME = SG.jobs.NOME;
+let picks = [];
+const jst = id => (save && save.jobs && save.jobs[id]) || null;
+const jobsDone = city => { let n = 0; for (const id in JOBS) if (JNOME[JOBS[id].c] === city) { const s = jst(id); if (s && s.s === 3) n++; } return n; };
+const boardOf = c => W.BOARDS.find(b => b.id === c);
+// 2: c'è una paga da riscuotere, 1: c'è un incarico ancora da prendere, 0: niente di nuovo
+const boardMark = c => { let m = 0; for (const id of JCITY[c] || []) { const s = jst(id); if (s && s.s === 2) return 2; if (!s) m = 1; } return m; };
+function jobAccept(id) { save.jobs[id] = { s: 1, n: 0 }; trackQuest('J:' + id); toast('INCARICO ACCETTATO: ' + JOBS[id].n, '#ffd23f'); jingle(); writeSave(); }
+// l'incarico è compiuto: resta da riscuotere alla bacheca (le consegne invece le paga chi riceve)
+function jobReady(id) { const s = jst(id); if (!s || s.s !== 1) return; s.s = 2; banner = { t: 'INCARICO COMPIUTO', s: 'RISCUOTI ALLA BACHECA DI ' + JNOME[JOBS[id].c], life: 4, c: '#9af0b0' }; fanfare(); writeSave(); }
+function jobPay(id) {
+  const s = jst(id), j = JOBS[id]; if (!s || s.s === 3) return; s.s = 3; save.coins += j.coins; toast('+' + j.coins + ' MONETE', '#ffd23f');
+  if (j.gift) { if (j.gift[0] === 'pozione') save.pot += j.gift[1]; else save.eli = (save.eli || 0) + j.gift[1]; toast('+' + j.gift[1] + (j.gift[0] === 'pozione' ? ' POZIONI' : ' ELISIR'), '#ff8aa0'); }
+  const n = jobsDone(JNOME[j.c]); toast('SCONTO A ' + JNOME[j.c] + ': ' + Math.min(20, n * 5) + '%', '#9af0b0'); seq([523, 659, 784, 1047], 0.08, 0.08);
+  // tutti e quattro: cittadino onorario, e un cuore di cristallo in dono
+  if (JCITY[j.c].every(k => jst(k) && jst(k).s === 3) && !save.flags['on_' + j.c]) { save.flags['on_' + j.c] = 1; openLoot('cuore'); loot.note = 'CITTADINO ONORARIO DI ' + JNOME[j.c] + '!'; }
+  writeSave();
+}
+function jobKill(type) { for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (!j || s.s !== 1 || j.k !== 'caccia' || j.foe !== type) continue; s.n++; toast(j.pl + ': ' + Math.min(j.q, s.n) + '/' + j.q, '#9af0b0'); if (s.n >= j.q) jobReady(id); } }
+// chi aspetta una consegna ringrazia e paga subito
+function jobTalk(nid) { for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (!j || s.s !== 1 || j.k !== 'consegna' || j.to !== nid) continue; say(nid, j.thanks, () => { jingle(); jobPay(id); }); return true; } return false; }
+// cose da raccogliere (basta passarci sopra) e luoghi da raggiungere
+function jobsUpdate() {
+  if (D || !save.jobs) return;
+  for (const p of picks) { const s = jst(p.job); if (!s || s.s !== 1 || (s.got && s.got[p.i])) continue; if ((p.x - hero.x) ** 2 + (p.z - hero.z) ** 2 > 30) continue;
+    (s.got = s.got || {})[p.i] = 1; s.n++; const j = JOBS[p.job]; puffAt(p.x, p.z, 4); seq([659, 880], 0.06, 0.06); toast(j.label + ': ' + Math.min(j.q, s.n) + '/' + j.q, '#9af0b0'); if (s.n >= j.q) jobReady(p.job); }
+  if (dialog || shop || loot || fade || st !== 'play') return;
+  for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (j && s.s === 1 && j.k === 'visita' && Math.hypot(j.x - hero.x, j.z - hero.z) < j.r) { say(null, [j.found], () => jobReady(id)); return; } }
+}
+const jobLine = id => { const j = JOBS[id], s = jst(id) || { s: 0, n: 0 };
+  if (s.s === 2) return 'COMPIUTO! RISCUOTI LA PAGA ALLA BACHECA DI ' + JNOME[j.c] + '.';
+  if (s.s === 3) return 'COMPLETATO';
+  if (j.k === 'caccia') return 'SCONFIGGI ' + j.q + ' ' + j.pl + ' (' + Math.min(j.q, s.n) + '/' + j.q + ').';
+  if (j.k === 'taglia') return 'SCONFIGGI ' + j.boss.n + ': ' + j.where + '.';
+  if (j.k === 'consegna') return 'PORTA LA CONSEGNA A: ' + j.toN + '.';
+  if (j.k === 'raccolta') return 'RACCOGLI ' + j.q + ' ' + j.label + ' (' + Math.min(j.q, s.n) + '/' + j.q + '): ' + j.where + '.';
+  return 'RAGGIUNGI ' + j.at + ': ' + j.where + '.'; };
+function jobTarget(id, np) {
+  const j = JOBS[id], s = jst(id); if (!s) return null;
+  if (s.s === 2) { const b = boardOf(j.c); return b ? [b.x, b.z] : null; }
+  if (s.s !== 1) return null;
+  const nearest = L => { let best = null, bd = 1e12; for (const p of L) { const d = (p.x - hero.x) ** 2 + (p.z - hero.z) ** 2; if (d < bd) { bd = d; best = [p.x, p.z]; } } return best; };
+  if (j.k === 'caccia') return nearest(camps.filter(c => c.type === j.foe));
+  if (j.k === 'taglia') return nearest(camps.filter(c => c.job === id));
+  if (j.k === 'consegna') return np(j.to);
+  if (j.k === 'raccolta') return nearest(picks.filter(p => p.job === id && !(s.got && s.got[p.i])));
+  return [j.x, j.z];
+}
+// nemici con una taglia: il disegno di un nemico comune, ingrandito e tinto, e numeri tutti suoi
+for (const id in JOBS) { const j = JOBS[id], b = j.boss; if (!b) continue; const B = FOE[b.as]; FOE['J_' + id] = { n: b.n, k: B.k, as: b.as, sc: b.sc, hp: b.hp, dmg: b.dmg, sp: b.sp, aggro: 110, range: b.range, r: b.r, coins: [Math.round(j.coins * 0.1), Math.round(j.coins * 0.16)], elite: 1, tint: b.tint, job: id }; }
 
 // ---------- dare oggetti ----------
 function give(id, quiet) {
@@ -507,7 +580,7 @@ function talkFolk(n, N) {
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
   if (f.role === 'inn') return ask(id, [f.lines[0], 'UN LETTO E UNA ZUPPA CALDA, E DOMATTINA SEI COME NUOVO. FANNO ' + f.cost + ' MONETE.'], ['RIPOSA (' + f.cost + ' MONETE)', 'NO, GRAZIE'], i => {
     if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
-    save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); }); });
+    save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; setDay(save.tod); if (inCasa() && D.letto) { hero.x = D.letto[0]; hero.z = D.letto[1]; hero.yaw = D.letto[2]; hero.vx = hero.vz = 0; camBehind(); } toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); writeSave(); }); });
   if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
     return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
@@ -535,6 +608,7 @@ function talkFolk(n, N) {
 }
 function talk(n) {
   const q = save.q, id = n.id;
+  if (jobTalk(id)) return;
   if (NPC[id] && NPC[id].f) return talkFolk(n, NPC[id]);
   if (id === 'mirta') {
     if (q.main === 0) return say(id, ['BENVENUTO A BORGO AURORA, VIAGGIATORE. IO SONO MIRTA, LA PIÙ ANZIANA DEL VILLAGGIO.', "DA QUANDO LE CINQUE PIETRE DELL'ALBA SONO SPARITE, LE CREATURE DI LUMEN SI SONO FATTE INQUIETE.", 'E SUL PICCO A NORD SI È SVEGLIATO IL DRAGO. DALLE RIVE DEL LAGO LO SI VEDE VOLARE.', "LO SPIRITO DEL BOSCO SA DOVE SONO NASCOSTE LE PIETRE. VIVE SOTTO L'ALBERO MADRE, NEL BOSCO ANTICO, A NORD-OVEST.", 'NON PUOI ANDARCI A MANI NUDE: PRENDI QUESTA SPADA DI LEGNO E DUE POZIONI.'], () => { give('legno'); save.pot += 2; q.main = 1; trackQuest('main'); toast("MISSIONE: LE PIETRE DELL'ALBA", '#ffd23f'); jingle(); });
@@ -583,7 +657,9 @@ function talk(n) {
       'SOTTO OGNI SANTUARIO CI SONO ALTRI PIANI. LA GRANDE CHIAVE NON STA MAI VICINO AL GUARDIANO: STA PIÙ IN BASSO.',
       'I TESORI PIÙ GRANDI DI LUMEN NON STANNO ALL\'APERTO: DORMONO NELLE CRIPTE, SOTTO I SANTUARI. IL SIGILLO SI SPEZZA SOLO QUANDO IL GUARDIANO CADE.',
       'ANCHE LE GROTTE HANNO UN FONDO. CHI CI È SCESO PARLA DI CAPI GOBLIN, PIRATI E BESTIE ENORMI SEDUTI SUL LORO ORO.',
-      "A SUD, OLTRE IL MARE, UNA TORRE NERA SALE VERSO LA LUNA. E NELLA SELVA D'ORIENTE UN TEMPIO SCENDE SOTTO LA LAGUNA. TUTTI E DUE HANNO UNA PORTA."];
+      "A SUD, OLTRE IL MARE, UNA TORRE NERA SALE VERSO LA LUNA. E NELLA SELVA D'ORIENTE UN TEMPIO SCENDE SOTTO LA LAGUNA. TUTTI E DUE HANNO UNA PORTA.",
+      'NELLE LOCANDE, CHI BEVE PARLA. E CHI PARLA, OGNI TANTO, SA DOVE DORME UN TESORO: SIEDITI AI TAVOLI E ASCOLTA.',
+      "OGNI CITTÀ HA LA SUA BACHECA, IN PIAZZA. PIÙ INCARICHI SBRIGHI PER UNA CITTÀ, PIÙ I SUOI BOTTEGAI TI FANNO LO SCONTO. E CHI LI SBRIGA TUTTI DIVENTA UNO DI LORO."];
     const h = H[save.hint % H.length]; save.hint++;
     return say(id, [h]);
   }
@@ -619,21 +695,31 @@ const SIGNS = {
 const PROPTXT = { well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
+// quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
 const SHOPS = {
-  nino: { title: 'NINO IL MERCANTE', list: [['pozione', 20], ['elisir', 110], ['cappuccio', 40], ['brocchiere', 35], ['giaco', 60], ['scudoLegno', 45], ['talismano', 90], ['trifoglio', 160], ['mappa', 150], ['cappello', 380, 4]] },
-  orafo: { title: "L'ORAFO DELLA ROCCA", list: [['talismano', 90], ['trifoglio', 160], ['anello2', 260], ['anelloForza', 420]] },
-  erbe: { title: "L'ERBORISTA", list: [['pozione', 20], ['elisir', 100]] },
-  ambra: { title: 'LA MERCIAIA DI CASTELROSSO', list: [['pozione', 22], ['lancia', 120], ['seta', 180], ['torre', 270], ['mantello', 380]] },
-  nord: { title: 'PELLI E FERRO DEL NORD', list: [['pozione', 24], ['elmoFerro', 150], ['scudoFerro', 160], ['pelliccia', 460], ['martello', 520]] },
-  sole: { title: 'LE LAME DI ZAFIRA', list: [['turbante', 200], ['scaglie', 350], ['scimitarra', 480], ['piuma', 520]] },
-  spezie: { title: 'LA SPEZIALE', list: [['pozione', 22], ['elisir', 110], ['talismano', 90]] },
+  nino: { title: "L'EMPORIO DI NINO", list: [['pozione', 20], ['elisir', 110], ['cappuccio', 40], ['brocchiere', 35], ['giaco', 60], ['scudoLegno', 45], ['talismano', 90], ['trifoglio', 160], ['mappa', 150], ['cappello', 380, 4]] },
+  bruno: { title: 'LA FUCINA DI BRUNO', city: 'BORGO AURORA', list: [['pugnale', 45], ['elmoCuoio', 70], ['lancia', 120], ['mazza', 190], ['torre', 270], ['scaglie', 350], ['martello', 520, 4]] },
+  orafo: { title: "L'OREFICERIA DELLA ROCCA", list: [['talismano', 90], ['trifoglio', 160], ['anello2', 260], ['anelloForza', 420]] },
+  erbe: { title: "L'ERBORISTERIA DELLA ROCCA", list: [['pozione', 20], ['elisir', 100]] },
+  rocca_armi: { title: "L'ARMERIA DEL RE", list: [['elmoFerro', 150], ['scudoFerro', 160], ['mazza', 190], ['cotta', 230], ['argento', 250]] },
+  ambra: { title: 'LA SARTORIA DELLA MERCIAIA', list: [['cappuccio', 40], ['seta', 180], ['mantello', 380]] },
+  ambra_armi: { title: "L'ARMERIA DI CASTELROSSO", list: [['lancia', 120], ['mazza', 190], ['cotta', 230], ['torre', 270]] },
+  ambra_erbe: { title: "L'ERBORISTERIA DELLE FOGLIE", list: [['pozione', 22], ['elisir', 110]] },
+  nord: { title: 'PELLI E PELLICCE', list: [['pozione', 24], ['elisir', 115], ['pelliccia', 460]] },
+  nord_armi: { title: 'LA FUCINA DEL NORD', list: [['elmoFerro', 150], ['scudoFerro', 160], ['martello', 520]] },
+  sole: { title: 'LE LAME DI ZAFIRA', list: [['turbante', 200], ['scaglie', 350], ['scimitarra', 480]] },
+  spezie: { title: 'LA SPEZIERIA', list: [['pozione', 22], ['elisir', 110]] },
+  bazar: { title: 'IL GRAN BAZAR', list: [['talismano', 90], ['mappa', 150], ['trifoglio', 160], ['piuma', 520]] },
   pesce: { title: 'ZUPPE E RIMEDI DEL PORTO', list: [['pozione', 18], ['elisir', 95]] },
-  porto: { title: "L'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
-  fiore: { title: 'LA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
+  porto: { title: "L'EMPORIO DELL'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
+  fiore: { title: 'LA SERRA DELLA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
   dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['acciaio', 420]] },
-  bruno: { title: 'LA FUCINA DI BRUNO', list: [['pugnale', 45], ['elmoCuoio', 70], ['lancia', 120], ['mazza', 190], ['torre', 270], ['scaglie', 350], ['martello', 520, 4]] },
 };
-const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= r[2]);
+// lo sconto di una bottega: la città ricorda chi ha sbrigato i suoi incarichi (5% per incarico, fino al 20%)
+const shopCity = who => SHOPS[who].city || (W.SHOPS[who] || {}).city || '';
+const sconto = who => Math.min(0.2, 0.05 * jobsDone(shopCity(who)));
+const shopPrice = (who, p) => Math.max(1, Math.round(p * (1 - sconto(who))));
+const shopList = () => SHOPS[shop.who].list.filter(r => !r[2] || save.q.main >= r[2]).map(r => [r[0], shopPrice(shop.who, r[1])]);
 const shopOwned = id => id !== 'pozione' && id !== 'elisir' && id !== 'esci' && (id === 'mappa' ? !!save.flags.mappa : save.inv.includes(id));
 
 // ---------- suoni ----------
@@ -655,7 +741,7 @@ try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
 function musicPick() {
   if (st === 'title' || st === 'intro') return 'title';
   if (st !== 'play' || musQuiet > 0) return null;
-  if (D) { if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
+  if (D) { if (D.def.casa) return MUS_PLACE[D.town] || 'borgo'; if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
   return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
 }
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
@@ -839,7 +925,7 @@ function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x /
 // ---------- nemici ----------
 function hitFoe(e, dmg, a) {
   const T = FOE[e.type];
-  e.hp -= dmg; e.flash = 0.16; e.kb = T.champ ? 0.05 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase';
+  e.hp -= dmg; e.flash = 0.16; e.kb = T.champ ? 0.05 : T.elite ? 0.08 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase';
   for (let i = 0; i < 3; i++) fx.push({ k: 'spark', x: e.x, z: e.z, y: e.y + 3 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
   tone(240, 0.07, 'square', 0.05, 120); vib(15);
   if (e.hp <= 0) {
@@ -849,6 +935,8 @@ function hitFoe(e, dmg, a) {
     if (eqHas('luck')) n *= 2;
     for (let i = 0; i < Math.min(5, Math.ceil(n / 2)); i++) drops.push({ k: 'coin', v: Math.ceil(n / Math.min(5, Math.ceil(n / 2))), x: e.x, z: e.z, y: e.y + 2, vx: (Math.random() - 0.5) * 18, vz: (Math.random() - 0.5) * 18, vy: 20, t: 20 });
     if (hero.hp < MAXHP() && Math.random() < 0.3) drops.push({ k: 'heart', x: e.x, z: e.z, y: e.y + 2, vx: 0, vz: 0, vy: 22, t: 20 });
+    jobKill(T.as || e.type);
+    if (T.job) { e.fade = 0.9; ringFx(e.x, e.z, 8); quake = 0.5; jobReady(T.job); }
     if (e.type === 'slime' && save.q.melme === 1) { save.slimes++; toast('MELME: ' + Math.min(6, save.slimes) + '/6', '#9af0b0'); if (save.slimes >= 6) { save.q.melme = 2; toast('TORNA DA OTTO!', '#ffd23f'); jingle(); } }
   }
 }
@@ -865,6 +953,7 @@ function spawnCamp(c) {
 }
 function campsUpdate(dt) {
   for (const c of camps) {
+    if (c.job) { const js = jst(c.job); if (!js || js.s !== 1) { if (c.on) { c.on = false; for (const e of c.alive) e.gone = true; c.alive = []; } continue; } }
     const d = Math.hypot(c.x - hero.x, c.z - hero.z);
     if (c.cool > 0) c.cool -= dt;
     if (!c.on && d < 330) { if (c.dead >= c.n && c.cool <= 0) c.dead = 0; c.on = true; spawnCamp(c); }
@@ -978,6 +1067,7 @@ function findTarget() {
     for (const d of D.doors) if ((d.kind === 'lock' || d.kind === 'boss' || d.kind === 'shut' || d.kind === 'seal') && d.anim < 0.5) consider(d.cx, d.cz, 'ddoor', d, 13);
     for (const s2 of D.signs) consider(s2.x, s2.z, 'sign', s2, 10);
     if (D.gem) consider(D.gem.x, D.gem.z, 'gem', D.gem, 11);
+    if (D.folk) for (const n of D.folk) consider(n.x, n.z, 'npc', n, 17);       // il bottegaio sta dall'altra parte del banco
     return best;
   }
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
@@ -987,12 +1077,16 @@ function findTarget() {
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
+  for (const b of botteghe) consider(b.x, b.z, 'shop', b, 10);
+  for (const b of W.BOARDS) consider(b.x, b.z, 'board', b, 12);
   return best;
 }
 function interact(t) {
   if (t.kind === 'npc') { talk(t.obj); tone(660, 0.04); return; }
   if (t.kind === 'chest') { openChest(t.obj); return; }
   if (t.kind === 'door') { templeDoor(t.obj); return; }
+  if (t.kind === 'board') { shop = { board: t.obj, sel: 0 }; tone(660, 0.05); return; }
+  if (t.kind === 'shop') { tone(520, 0.06, 'triangle', 0.04, 660); startFade(() => enterShop(t.obj)); return; }
   if (t.kind === 'dchest') { openDChest(t.obj); return; }
   if (t.kind === 'ddoor') { useDoor(t.obj); return; }
   if (t.kind === 'sign') { say(null, [t.obj.txt]); return; }
@@ -1019,7 +1113,7 @@ function playUpdate(dt) {
   if (D) dungeonUpdate(dt); else { campsUpdate(dt); fauna.update(dt, hero, hero.moving && !!BTN.b, day.night > 0.55); }
   for (const e of foes) foeUpdate(e, dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
-  if (!D) npcsUpdate(dt);
+  if (!D) { npcsUpdate(dt); jobsUpdate(); }
   dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt);
   if (!D) {
   // il drago gira intorno al picco
@@ -1063,7 +1157,9 @@ let shots = [], boss = null, fade = null, hazards = [], quake = 0;
 const dynF2 = new Float32Array(1500 * 44), dmF = new Float32Array(900 * 32);
 let dynBuf2 = null, dmBuf = null, dmN = 0;
 const gH = (x, z) => D ? dGround(x, z) : W.ground(x, z);
-function dsave(id) { if (!save.dun) save.dun = {}; return save.dun[id] || (save.dun[id] = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 }); }
+const CASA = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 };       // le botteghe non lasciano tracce nel salvataggio
+const inCasa = () => !!(D && D.def.casa);
+function dsave(id) { if (DS.DEF[id] && DS.DEF[id].casa) return CASA; if (!save.dun) save.dun = {}; return save.dun[id] || (save.dun[id] = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 }); }
 const droot = () => dsave(DS.rootOf(D.id));     // quello che vale per tutto il santuario: grande chiave, guardiano
 const floorTag = d => { const n = DS.family(d.base || Object.keys(DS.DEF).find(k => DS.DEF[k] === d)).length; return n > 1 ? 'LIVELLO ' + (d.lv || 1) + ' DI ' + n : ''; };
 const sanctDone = id => !!(save && save.dun && save.dun[id] && save.dun[id].done);
@@ -1108,6 +1204,7 @@ function dCanStand(e, nx, nz, r) {
   }
   for (const o of D.solids) if (!o.on || o.on()) { const dn = Math.hypot(nx - o.x, nz - o.z); if (dn < o.r + r && dn < Math.hypot(e.x - o.x, e.z - o.z)) return false; }
   for (const b of D.blocks) if (!b.gone && Math.abs(nx - b.x) < 4.6 + r && Math.abs(nz - b.z) < 4.6 + r) return false;
+  if (D.rects) for (const q of D.rects) if (nx + r > q[0] && nx - r < q[2] && nz + r > q[1] && nz - r < q[3]) return false;
   if (boss && !boss.dead && boss.solid && !boss.hide && e !== boss) { const dn = Math.hypot(nx - boss.x, nz - boss.z); if (dn < boss.r + r && dn < Math.hypot(e.x - boss.x, e.z - boss.z)) return false; }
   return true;
 }
@@ -1147,8 +1244,9 @@ function makeDungeon(id) {
   }
   // la lava fa luce; l'uscita porta la luce del giorno
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (R.cell[j * w + i] === DT.LAVA && i % 3 === 1 && j % 3 === 1) R.lights.push({ x: (i + 0.5) * DCS, y: 5, z: (j + 0.5) * DCS, r: 46, c: [1, 0.45, 0.12], flick: true });
-  R.lights.push({ x: P.spawn.cx, y: 8, z: P.spawn.cz, r: 52, c: P.def.up ? [0.6, 0.52, 0.4] : [0.75, 0.82, 0.95] });
+  R.lights.push({ x: P.spawn.cx, y: 8, z: P.spawn.cz, r: 52, c: P.def.up ? [0.6, 0.52, 0.4] : P.def.casa ? [0.3, 0.33, 0.38] : [0.75, 0.82, 0.95], day: !!P.def.casa });
   if (P.stairs) R.lights.push({ x: P.stairs.cx, y: 6, z: P.stairs.cz, r: 60, c: hexf(P.def.glow) });
+  if (P.def.casa) P.def.casa.setup(R);      // una bottega: mobili, oggetti, lumi, chi ci lavora e chi ci beve
   return R;
 }
 function dUpload() {
@@ -1162,7 +1260,8 @@ function loadLevel(id, from, out) {
   if (D) dsave(D.id).seen = b64(D.seen);
   D = makeDungeon(id); Object.assign(D, out);
   const art = DS.rootOf(id);
-  if (DID !== art) {
+  if (D.def.casa) CASA.seen = '';
+  else if (DID !== art) {
     DAT = A.Atlas(2048, 1024); const r = DS.art(art, DAT); DCH = r.CH; DSP = r.SP; DBOSS = r.boss;
     if (DTEX) gl.deleteTexture(DTEX); DTEX = G.texture(DAT.c); DAT.c.width = DAT.c.height = 1; DID = art;
   }
@@ -1178,6 +1277,8 @@ function loadLevel(id, from, out) {
   banner = { t: D.def.name, s: floorTag(D.def), life: 3.2, c: '#ffd23f' }; target = null; curPlace = D.def.name;
   dsave(id).vis = 1; writeSave();
 }
+// si entra in una bottega dalla sua porta; uscendo ci si ritrova lì davanti, nella stessa città
+function enterShop(b) { const town = curPlace || W.placeName(hero.x, hero.z); D = null; loadLevel('in_' + b.key, 'out', { outX: b.ox, outZ: b.oz, outYaw: b.oyaw, town }); }
 function enterDungeon(id) {
   const door = doors.find(d => d.id === id), b = W.BUILD.find(q => q.id === id), ov = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[b ? b.door : 's'] || [0, 1];
   D = null; loadLevel(id, 'out', { outX: door ? door.x + ov[0] * 8 : hero.x, outZ: door ? door.z + ov[1] * 8 : hero.z, outYaw: Math.atan2(ov[1], ov[0]) });
@@ -1185,11 +1286,11 @@ function enterDungeon(id) {
 function gotoLevel(id, from) { tone(from === 'up' ? 196 : 294, 0.25, 'triangle', 0.04, from === 'up' ? 131 : 392); loadLevel(id, from, { outX: D.outX, outZ: D.outZ, outYaw: D.outYaw }); }
 function exitDungeon() {
   dsave(D.id).seen = b64(D.seen);
-  const h = hero; h.x = D.outX; h.z = D.outZ; h.yaw = D.outYaw; h.vx = h.vz = 0; h.fall = 0;
+  const h = hero, town = D.def.casa ? D.town : ''; h.x = D.outX; h.z = D.outZ; h.yaw = D.outYaw; h.vx = h.vz = 0; h.fall = 0;
   D = null; boss = null; shots = []; foes = []; drops = []; fx = []; hazards = []; quake = 0;
   for (const c of camps) { c.alive = []; c.on = false; }
   h.y = W.ground(h.x, h.z); camBehind();
-  curPlace = ''; placeCand = ''; target = null; writeSave();
+  curPlace = town || ''; placeCand = curPlace; target = null; if (town) setDay(save.tod); writeSave();
 }
 function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(392, 0.12, 'triangle', 0.04, 260); }
 function templeDoor(d) {
@@ -1482,6 +1583,7 @@ function solveGroup(g, S) {
 function dungeonUpdate(dt) {
   const ds = dsave(D.id), h = hero;
   dRoomCheck();
+  if (D.folk) for (const n of D.folk) { const nr = Math.hypot(h.x - n.x, h.z - n.z) < 36 || (dialog && dialog.id === n.id); n.yaw += angDiff(nr ? Math.atan2(h.z - n.z, h.x - n.x) : n.base, n.yaw) * Math.min(1, 4 * dt); }
   // piastre
   for (const p of D.plates) { const was = p.on; p.on = D.blocks.some(b => !b.gone && !b.mv && b.i === p.i && b.j === p.j) || (!p.heavy && !h.fall && Math.floor(h.x / DCS) === p.i && Math.floor(h.z / DCS) === p.j); if (was !== p.on && dt) tone(p.on ? 330 : 220, 0.06, 'square', 0.04); }
   // blocchi colorati e piattaforme
@@ -1598,12 +1700,12 @@ function dLights() {
   for (const g of [D.gem, D.portal]) if (g) cand.push([0, { x: g.x, y: 8, z: g.z, r: 70, c: hexf(D.def.glow) }]);
   cand.sort((a, b) => a[0] - b[0]);
   LP.fill(0); LC.fill(0);
-  const lt = eqHas('light') ? 1.7 : 1;
+  const lt = D.def.casa ? 0.3 : eqHas('light') ? 1.7 : 1;      // in bottega la luce c'è già: la lanterna dell'eroe quasi non serve
   LP[0] = hero.x; LP[1] = hero.y + 9; LP[2] = hero.z; LP[3] = 48 * lt; LC[0] = 0.44 * lt; LC[1] = 0.41 * lt; LC[2] = 0.36 * lt;
   let n = 1;
   for (const [, l] of cand) {
     if (n >= 10) break;
-    const f = l.flick ? 0.86 + 0.14 * Math.sin(time * 13 + l.x * 0.7) : 1, c = l.xt ? (ds.xs ? [0.35, 0.55, 1.2] : [1.2, 0.35, 0.35]) : l.c;
+    const f = (l.flick ? 0.86 + 0.14 * Math.sin(time * 13 + l.x * 0.7) : 1) * (l.day ? Math.max(0.1, 1 - day.night) : 1), c = l.xt ? (ds.xs ? [0.35, 0.55, 1.2] : [1.2, 0.35, 0.35]) : l.c;
     LP[n * 4] = l.x; LP[n * 4 + 1] = l.y; LP[n * 4 + 2] = l.z; LP[n * 4 + 3] = l.r; LC[n * 3] = c[0] * f; LC[n * 3 + 1] = c[1] * f; LC[n * 3 + 2] = c[2] * f; n++;
   }
 }
@@ -1642,6 +1744,12 @@ function buildDynamicD() {
     else if (o.c === 'A') pushBB2(o.x, 0, o.z, DSP.statue[dirOf(o.x, o.z, o.yaw)], 0.25 / SR);
     else pushBB2(o.x, 0, o.z, DSP.bones, 0.2);
   }
+  if (D.sprs) for (const p of D.sprs) {
+    if (p.fl) { pushBB(p.x, p.y, p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.s || 0.4, 1.2); continue; }
+    const S2 = SPR[p.k]; if (!S2) continue; pushBB(p.x, p.y, p.z, S2.r[Math.min(p.v, S2.r.length - 1)], p.s || S2.s);
+    if (p.lux && Math.floor(time * 2.2 + p.x) % 4 === 0) pushBB(p.x + Math.sin(time * 1.7 + p.x) * 1.2, p.y + 2.6, p.z, SPR.glint, 0.24, 1.2);
+  }
+  if (D.folk) for (const n of D.folk) { const sh = CHR[n.id]; if (sh) pushBB(n.x, n.y - 0.5, n.z, sh[0][dirOf(n.x, n.z, n.yaw)], R); }
   for (const p of amb) { const L = SPR[p.k].length ? SPR[p.k] : [SPR[p.k]]; if (p.k === 'fly' && Math.sin(p.ph * 3 + p.v * 20) < -0.1) continue; pushBB(p.x, p.y, p.z, L[Math.floor(p.v * L.length) % L.length], p.k === 'dust' ? 0.4 : p.k === 'ember' ? 0.2 + 0.12 * p.v : 0.3, p.k === 'fly' || p.k === 'ember' ? 1.4 : 1.1); }
   for (const p of D.pots) if (p.alive) pushBB2(p.x, 0, p.z, DSP.pot, 0.2);
   for (const t of D.turrets) pushBB2(t.x, 0, t.z, DSP.turret[dirOf(t.x, t.z, t.yaw)], 0.4 / SR, t.fl > 0 ? 1.3 : 1);
@@ -1660,7 +1768,7 @@ function projectPt(x, y, z) {
   return [((m[0] * x + m[4] * y + m[8] * z + m[12]) / w * 0.5 + 0.5) * W3, ((m[1] * x + m[5] * y + m[9] * z + m[13]) / w * 0.5 + 0.5) * H3];
 }
 function renderDungeon() {
-  const P = G.P, fogC = D.fogC, fogN = 95, fogF = 270;
+  const P = G.P, fogC = D.fogC, fogN = 95, fogF = 270, ambK = D.def.casa ? 1 - 0.24 * day.night : 1;       // di notte le botteghe vivono dei loro lumi
   gl.viewport(0, 0, W3, H3);
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const q = quake, qx = q ? (Math.random() - 0.5) * q * 2.4 : 0, qy = q ? (Math.random() - 0.5) * q * 2.4 : 0;
@@ -1673,8 +1781,8 @@ function renderDungeon() {
   const cut = hp ? [hp[0], hp[1], H3 * 0.21, Math.hypot(cam.x - hero.x, cam.y - hero.y, cam.z - hero.z) - 1] : [0, 0, 0, 0];
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.BLEND);
   let p = P.dmesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 16);
-  gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, D.def.amb + 0.05);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32);
+  gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.05) * ambK);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   gl.uniform1f(p.u.uGhost, 0);
@@ -1687,6 +1795,7 @@ function renderDungeon() {
   shN = 0;
   if (st === 'play' || st === 'dead') if (!hero.fall) pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const e of foes) if (e.st !== 'dead') pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
+  if (D.folk) for (const n of D.folk) pushShadow(n.x, n.z, 2.5, n.y);
   if (boss && !boss.hide) pushShadow(boss.x, boss.z, boss.r * 0.9, 0);
   p = P.shadow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-2, -4);
@@ -1701,7 +1810,7 @@ function renderDungeon() {
   // sprite: atlante principale e atlante del santuario
   p = P.dbb; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC);
-  gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, D.def.amb + 0.08);
+  gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.08) * ambK);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   pushBB.n = 0; pushBB2.n = 0; buildDynamicD();
   gl.activeTexture(gl.TEXTURE0); gl.uniform1i(p.u.uTex, 0);
@@ -1718,6 +1827,7 @@ function renderDungeon() {
   { let n = 0; const ds = dsave(D.id), tc = D.def.torch, gc = hexf(D.def.glow);
     const halo = (x, y, z, r, c, it) => { if (n >= 160 || (x - hero.x) ** 2 + (z - hero.z) ** 2 > 230 * 230) return; let q = n * 44; for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = x; glowF[q++] = y; glowF[q++] = z; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = c[0]; glowF[q++] = c[1]; glowF[q++] = c[2]; glowF[q++] = it; } n++; };
     for (const t of D.torches) halo(t.x, 7, t.z, 11, tc, 0.3 + 0.05 * Math.sin(time * 11 + t.x));
+    if (D.lumi) for (const l of D.lumi) if (l.halo) halo(l.x, l.y, l.z, l.halo, l.hc, 0.24 + (l.flick ? 0.05 * Math.sin(time * 11 + l.x) : 0));
     for (const o of D.decor) if (o.c === '*') halo(o.x, 3.5, o.z, 10, gc, 0.3 + 0.08 * Math.sin(time * 2 + o.ph)); else if (o.c === '$') halo(o.x, 2, o.z, 6, [1, 0.8, 0.3], 0.16);
     for (const x of D.xtals) halo(x.x, 4, x.z, 8, ds.xs ? [0.35, 0.55, 1.2] : [1.2, 0.35, 0.35], 0.34);
     for (const c of D.chests) if (!c.hidden && !ds.ch[c.key] && (c.kind === 'C' || c.kind === 'K')) halo(c.x, 3, c.z, 12, [1, 0.78, 0.3], 0.3 + 0.1 * Math.sin(time * 3));
@@ -1767,10 +1877,10 @@ function foeFrame(e) {
   return e.st === 'wind' ? (e.t > 0.2 ? 3 : 4) : e.moving ? 1 + (Math.floor(e.walk / 4) % 2) : 0;
 }
 function drawFoe(e) {
-  const two = !!DCH[e.type] && !!D, set = two ? DCH[e.type] : CHR[e.type]; if (!set) return;
+  const T2 = FOE[e.type], two = !!DCH[e.type] && !!D, set = two ? DCH[e.type] : CHR[T2.as || e.type]; if (!set) return;
   if (e.st === 'dead' && Math.floor(time * 20) % 2) return;
-  const T2 = FOE[e.type], k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? 0.25 : 0;
-  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], (T2.sc || 0.2) / SR, k, fl);
+  const k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? 0.25 : 0;
+  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], (T2.sc || 0.2) / SR, k, fl, two ? undefined : T2.tint);
 }
 
 // ---------- disegno 3D ----------
@@ -1858,7 +1968,7 @@ function render3D() {
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 16); gl.uniform1f(p.u.uNight, day.night); setWL(p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
@@ -1940,6 +2050,8 @@ function buildDynamic() {
   for (const e of foes) if (near(e.x, e.z, 520)) drawFoe(e);
   if (st !== 'title') fauna.draw(cam, time);
   for (const p of props) if (p.k === 'ore' && !taken(p) && near(p.x, p.z, 420)) { pushBB(p.x, gH(p.x, p.z) - 0.4, p.z, SPR.ore.r[0], SPR.ore.s); if (near(p.x, p.z, 200) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, gH(p.x, p.z) + 4, p.z, SPR.glint, 0.3); }
+  for (const p of picks) { const js = jst(p.job); if (!js || js.s !== 1 || (js.got && js.got[p.i]) || !near(p.x, p.z, 420)) continue; const y = gH(p.x, p.z); pushBB(p.x, y - 0.2, p.z, SPR.pick[p.what], 0.46); if (near(p.x, p.z, 280) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, y + 4.4, p.z, SPR.glint, 0.3); }
+  if (save) for (const b of W.BOARDS) if (near(b.x, b.z, 340)) { const m = boardMark(b.id); if (m) pushBB(b.x, gH(b.x, b.z) + 12.6 + Math.sin(time * 3.2) * 0.6, b.z, SPR.bang[m - 1], 0.36, 1.2); }
   for (const p of props) if ((p.k === 'torch' || p.k === 'campfire') && near(p.x, p.z, 900)) pushBB(p.x, gH(p.x, p.z) + (p.k === 'torch' ? 7.45 : 0.3), p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.k === 'torch' ? 0.25 : 0.27, 1.2);
   for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
   for (const s2 of shots) pushBB(s2.x, s2.y - 1.5, s2.z, SPR.shot[s2.k], s2.k === 'light' ? 0.6 : 0.42, 1.2);
@@ -1986,9 +2098,9 @@ function drawHUD() {
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
-  if (D) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
+  if (D && !D.def.casa) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
   compass();
-  { const ch = D && !boss ? foes.find(e => FOE[e.type].champ && e.st !== 'dead' && e.room === D.room) : null;
+  { const ch = D ? (!boss ? foes.find(e => FOE[e.type].champ && e.st !== 'dead' && e.room === D.room) : null) : foes.find(e => FOE[e.type].elite && e.st !== 'dead' && Math.hypot(e.x - hero.x, e.z - hero.z) < 130);
     if (ch) { const T2 = FOE[ch.type], w = Math.min(150, Wr * 0.38), x = Math.round(Wr / 2 - w / 2), y = 19; T(T2.n, Wr / 2, y, '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, ch.hp) / T2.hp), 4); } }
   if (boss && boss.on && !boss.dead && boss.st !== 'die') { const w = Math.min(170, Wr * 0.42), x = Math.round(Wr / 2 - w / 2), y = 19; T(boss.B.n, Wr / 2, y, '#ff8a5a', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = boss.vuln ? '#ffd23f' : '#ff4a5a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, boss.hp) / boss.max), 4); }
   toasts.forEach((t, i) => T(t.t, 6, ty + i * 10, t.c));
@@ -2002,7 +2114,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
+    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   if (help > 0) {
@@ -2012,7 +2124,7 @@ function drawHUD() {
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
   if (hero.flash > 0) { hg.fillStyle = 'rgba(255,40,40,' + (hero.flash * 0.8).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr); }
   if (dialog) drawDialog();
-  if (shop) drawShop();
+  if (shop) (shop.board ? drawBoard : drawShop)();
   if (loot) drawLoot();
   if (mapOpen) drawMap();
   if (menu) drawMenu();
@@ -2052,6 +2164,7 @@ function drawShop() {
   if (shop.sel < shop.top) shop.top = shop.sel; if (shop.sel >= shop.top + VIS) shop.top = shop.sel - VIS + 1;
   const w = Math.min(270, dialogW()), h = 20 + VIS * 12 + 30, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr / 2 - h / 2);
   panel(x, y, w, h); T(SHOPS[shop.who].title, x + 8, y + 5, '#ffd23f'); hg.drawImage(ICOIN, x + w - 50, y + 3); T(String(save.coins), x + w - 36, y + 6, '#ffd23f');
+  { const sc = sconto(shop.who); if (sc > 0) { const t2 = 'SCONTO ' + Math.round(sc * 100) + '%', tw = A.textW(t2) + 8; panel(x + w - tw - 4, y - 10, tw, 11, '#9af0b0'); T(t2, x + w - tw, y - 8, '#9af0b0'); } }
   for (let i = shop.top; i < Math.min(rows.length, shop.top + VIS); i++) {
     const [id, price] = rows[i], yy = y + 20 + (i - shop.top) * 12, on = i === shop.sel, owned = shopOwned(id);
     if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 2, w - 8, 11); }
@@ -2065,14 +2178,45 @@ function drawShop() {
   const sel = rows[shop.sel][0];
   if (sel !== 'esci') { const it = IT[sel], st2 = statLine(it); A.wrap(it.d, w - 16).slice(0, 1).forEach(l => T(l, Wr / 2, y + h - 22, '#a9c6e3', 1, 'center')); if (st2) T(st2, Wr / 2, y + h - 11, '#9af0b0', 1, 'center'); }
 }
+// la bacheca di una città: i quattro incarichi, e sotto il foglio di quello scelto
+function drawBoard() {
+  const b = shop.board, ids = JCITY[b.id] || [], w = Math.min(292, dialogW()), nl = Math.max(4, Math.min(6, Math.floor((Hr - 112) / 9))), h = 26 + ids.length * 13 + nl * 9 + 24, x = Math.round(Wr / 2 - w / 2), y = Math.max(3, Math.round(Hr / 2 - h / 2));
+  panel(x, y, w, h); T('BACHECA DI ' + b.city, x + 8, y + 5, '#ffd23f');
+  const sc = Math.min(20, jobsDone(b.city) * 5), on2 = save.flags['on_' + b.id]; T('SCONTO ' + sc + '%' + (on2 ? ' ♥' : ''), x + w - 8, y + 5, sc ? '#9af0b0' : '#5a6478', 1, 'right');
+  ids.forEach((id, i) => {
+    const j = JOBS[id], s2 = jst(id), k = s2 ? s2.s : 0, yy = y + 21 + i * 13, on = i === shop.sel;
+    if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 12); }
+    hg.fillStyle = '#0b0a12'; hg.fillRect(x + 7, yy, 6, 6); hg.fillStyle = ['#ffd23f', '#7ab8ff', '#5af07a', '#4a5468'][k]; hg.fillRect(x + 8, yy + 1, 4, 4);
+    T(j.n, x + 17, yy, k === 3 ? '#5a6478' : on ? '#ffffff' : '#c9d3e6');
+    if (k === 0) { hg.drawImage(ICOIN, x + w - 22, yy - 3); T(String(j.coins), x + w - 24, yy, '#ffd23f', 1, 'right'); }
+    else T(k === 3 ? 'FATTO' : k === 2 ? 'PAGA!' : j.q ? Math.min(j.q, s2.n) + '/' + j.q : '...', x + w - 9, yy, k === 3 ? '#5a6478' : k === 2 ? '#5af07a' : '#7ab8ff', 1, 'right');
+  });
+  const id = ids[shop.sel]; if (!id) return;
+  const j = JOBS[id], s2 = jst(id), k = s2 ? s2.s : 0, y2 = y + 24 + ids.length * 13;
+  hg.fillStyle = '#3a4458'; hg.fillRect(x + 6, y2 - 3, w - 12, 1);
+  A.wrap(k === 0 ? j.txt : k === 3 ? j.txt : jobLine(id), w - 16).slice(0, nl).forEach((l, i) => T(l, x + 8, y2 + i * 9, k === 3 ? '#5a6478' : '#a9c6e3', 1, 'left', null));
+  T(on2 ? 'SEI CITTADINO ONORARIO DI ' + b.city : 'FIRMATO: ' + j.by, x + 8, y + h - 21, on2 ? '#ff8aa0' : '#8a96aa', 1, 'left', null);
+  T(k === 0 ? "A: ACCETTA L'INCARICO" : k === 2 ? 'A: RISCUOTI ' + j.coins + ' MONETE' : k === 1 ? (j.k === 'consegna' ? 'IN CORSO: PAGA CHI RICEVE' : 'INCARICO IN CORSO') : 'INCARICO PAGATO', x + 8, y + h - 11, k === 0 || k === 2 ? '#ffd23f' : '#5a6478');
+  T('B: CHIUDI', x + w - 8, y + h - 11, '#5a6478', 1, 'right');
+}
+function boardKey(name) {
+  const ids = JCITY[shop.board.id] || [];
+  if (name === 'up' || name === 'down') { shop.sel = (shop.sel + (name === 'down' ? 1 : ids.length - 1)) % ids.length; tone(1318, 0.03); return; }
+  if (name === 'b' || name === 'start') { shop = null; tone(660, 0.04); return; }
+  if (name !== 'a') return;
+  const id = ids[shop.sel], s2 = jst(id);
+  if (!s2) jobAccept(id); else if (s2.s === 2) jobPay(id); else tone(200, 0.1, 'square', 0.03);
+}
 // riga con le statistiche di un oggetto
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
 // la mappa è una finestra sul mondo: una zona (4096 unità) oppure tutto. La croce la sposta, A cambia ingrandimento
 const mapV = { x: 2048, z: 2048, span: 4096 };
 function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(h, Math.min(W.WS - h, mapV.z)); }
-function openMap() { mapOpen = true; if (hero && !D) { mapV.span = 4096; mapV.x = hero.x; mapV.z = hero.z; clampMap(); } }
+const mapMe = () => inCasa() ? { x: D.outX, z: D.outZ, yaw: D.outYaw } : hero;
+function openMap() { mapOpen = true; if (hero && (!D || D.def.casa)) { const m = mapMe(); mapV.span = 4096; mapV.x = m.x; mapV.z = m.z; clampMap(); } }
 function drawMap() {
-  if (D) return drawDungeonMap();
+  if (D && !D.def.casa) return drawDungeonMap();
+  const hero = mapMe();
   const S = Math.min(Hr - 37, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, span = mapV.span, k = S / span, wx0 = mapV.x - span / 2, wz0 = mapV.z - span / 2;
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
   T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
@@ -2105,7 +2249,7 @@ const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
-  if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0);
+  if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
   return ['vol', 'mus', 'giorno', 'vib', 'salva', 'esci'];
 }
 function drawMenu() {
@@ -2136,7 +2280,9 @@ function drawMenu() {
     if (save.q.main >= 4) { yy += 14; T("PIETRE DELL'ALBA", x + 8, yy + 2, '#ffd23f'); DS.ORDER.forEach((id, i) => { hg.globalAlpha = sanctDone(id) ? 1 : 0.22; hg.drawImage(itemIcon(DS.DEF[id].gem), x + 104 + i * 15, yy - 1); hg.globalAlpha = 1; }); }
     T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI PIÙ RICCHI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 2) {
-    rows.forEach((q, i) => { const yy = top + 2 + i * 26, on = i === menu.sel, done = questDone(q); if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + QN[q], x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
+    const VIS = Math.max(2, Math.floor((h - 38) / 26)); menu.top = Math.max(0, Math.min(menu.top || 0, rows.length - VIS)); if (menu.sel < menu.top) menu.top = menu.sel; if (menu.sel >= menu.top + VIS) menu.top = menu.sel - VIS + 1;
+    rows.slice(menu.top, menu.top + VIS).forEach((q, k0) => { const i = k0 + menu.top, yy = top + 2 + k0 * 26, on = i === menu.sel, done = questDone(q), rdy = isJob(q) && jst(q.slice(2)).s === 2; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + qName(q), x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : rdy ? '#9af0b0' : isJob(q) ? '#ffe8a0' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
+    if (menu.top > 0) T('^', x + w - 10, top - 6, '#8a96aa', 1, 'right'); if (menu.top + VIS < rows.length) T('v', x + w - 10, top + VIS * 26 - 6, '#8a96aa', 1, 'right');
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
@@ -2213,6 +2359,7 @@ function onKey(name) {
     }
     return;
   }
+  if (shop && shop.board) return boardKey(name);
   if (shop) {
     const list = shopList(), rows = list.length + 1;
     if (name === 'up') { shop.sel = (shop.sel + rows - 1) % rows; tone(1318, 0.03); }
@@ -2233,7 +2380,7 @@ function onKey(name) {
     return;
   }
   if (mapOpen) {
-    if (name === 'a' && !D) { mapV.span = mapV.span < W.WS ? W.WS : 4096; if (mapV.span < W.WS) { mapV.x = hero.x; mapV.z = hero.z; } clampMap(); tone(880, 0.04); }
+    if (name === 'a' && (!D || D.def.casa)) { const m = mapMe(); mapV.span = mapV.span < W.WS ? W.WS : 4096; if (mapV.span < W.WS) { mapV.x = m.x; mapV.z = m.z; } clampMap(); tone(880, 0.04); }
     else if (name === 'select' || name === 'b' || name === 'start' || name === 'a') { mapOpen = false; tone(660, 0.04); }
     return;
   }
@@ -2242,7 +2389,7 @@ function onKey(name) {
   if (name === 'select') { openMap(); tone(988, 0.05); return; }
   if (name === 'a') {
     if (target) { interact(target); return; }
-    if (hero.atk <= 0) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); if (!D) fauna.scare(hero.x, hero.z, 46); }
+    if (hero.atk <= 0 && !inCasa()) { hero.atk = 0.42; hero.hitDone = false; noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); if (!D) fauna.scare(hero.x, hero.z, 46); }
   }
 }
 function menuKey(name) {
@@ -2302,7 +2449,8 @@ if (window.__SG_DEBUG) window.__sg = {
   get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0.42; hero.hitDone = false; }, W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
-  step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon,
+  step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
+  get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, jobs: { st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };

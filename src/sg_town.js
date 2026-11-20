@@ -160,6 +160,8 @@ function house(b, g) {
     for (const ry of rows) for (const off of offs) { if (s === b.door && ry < 5 && (len < 22 || Math.abs(off) < 0.2)) continue; onWall(s, x0, z0, x1, z1, cc + off * len, y0 + ry, 4.5, 4.5, win, true); } }
   if (b.chim && rt !== 'flat' && rt !== 'dome') { const cx = b.x + (b.w > b.d ? b.w * 0.28 : 0), cz = b.z + (b.w > b.d ? 0 : b.d * 0.28), ch = Math.min(b.w, b.d) * 0.5 + 3; box(cx - 1.3, cz - 1.3, cx + 1.3, cz + 1.3, top, top + ch, 16, 14); W.smokes.push([cx, top + ch + 0.5, cz]); }
   if (b.ivy) { const s = b.ivy, len = (s === 'n' || s === 's') ? b.w : b.d; onWall(s, x0, z0, x1, z1, ((s === 'n' || s === 's') ? b.x : b.z) + len * 0.34, y0 + 1, 6, Math.min(b.h - 1, 10), TL.IVY); }
+  // una bottega: l'insegna sopra la porta, e la soglia da cui si entra
+  if (b.shop && b.door) SG.shop.fronte(b.shop, b.door, x0, z0, x1, z1, c, y0, b.h);
   W.addBox(x0, z0, x1, z1, top, b);
   return { y0, top };
 }

@@ -41,11 +41,18 @@ const LOOKS = {
   saggio: { skin: '#e8c8a8', hairStyle: 'bun', hair: '#e8e8f0', beard: '#e8e8f0', robe: '#6a4a8a', shirt: '#8a6ab0', pants: '#4a3a6a', boots: '#3a2a3a', staff: '#7a5230' },
   spadaccino: { skin: '#f0d0b0', helm: { c: '#3a2a3a', spike: true }, shirt: '#8a2a4a', plate: '#3a2a3a', pauldron: '#c8342c', pants: '#2a2a3a', boots: B0, weapon: { col: '#f0f6ff', guard: '#c8a040', len: 1 } },
   dama2: { sc: 1.04, skin: '#f0d0b0', crown: '#f8a8c8', hairStyle: 'bun', hair: '#2a1a2a', robe: '#f8ecf2', shirt: '#f0a8c8', cape: '#c85a7a', pants: '#e07aa8', boots: '#6a3a4a' },
+  ostessa: { skin: '#f0c49a', hairStyle: 'bun', hair: '#8a4a2a', shirt: '#e8e0d0', apron: '#3a7a4a', pants: '#5a3a2a', boots: '#3a2a1a' },
+  fabbro: { skin: '#d8a07a', beard: '#3a2a1a', shirt: '#7a6a5a', apron: '#4a3428', pants: '#3a3a44', boots: B0, wide: 0.6, weapon: { kind: 'hammer', col: '#6a6e78' } },
   traghettatore: { skin: '#d89a70', hood: '#3a5a6a', beard: '#c8c8d0', robe: '#4a6a7a', shirt: '#5a7a8a', pants: '#3a4a52', boots: B0, staff: '#7a5230' },
 };
 // nomi e righe che si ripetono (riga a caso tra queste quando una persona non ha le sue)
 let seq = 0;
-function folk(look, n, x, z, yaw, lines, extra) { const id = (extra && extra.id) || 'f' + (seq++); W.FOLK[id] = Object.assign({ n, look, lines }, extra || {}); W.NPCS.push([id, x, z, yaw]); return id; }
+// chi sta dentro una bottega (extra.in) non compare per strada: lo mette al suo posto la stanza
+function folk(look, n, x, z, yaw, lines, extra) { const id = (extra && extra.id) || 'f' + (seq++); W.FOLK[id] = Object.assign({ n, look, lines }, extra || {}); if (extra && extra.in) W.SHOPS[extra.in].folk.push(id); else W.NPCS.push([id, x, z, yaw]); return id; }
+// tendone di ogni tipo di bottega
+const TENDA = { locanda: 13, armeria: TL.AWN_BLUE, fucina: TL.AWN_BLUE, dojo: TL.AWN_BLUE, erboristeria: TL.AWN_GREEN, emporio: TL.AWN_YELLOW, pescheria: TL.AWN_BLUE, orafo: TL.CLOTH, sartoria: TL.CLOTH };
+W.SHOPS = W.SHOPS || {}; W.BOARDS = W.BOARDS || [];
+function bottega(key, kind, name, city, style) { return W.SHOPS[key] = { key, kind, name, city, style, folk: [] }; }
 
 // ---------- il piano di una città ----------
 function city(o) {
@@ -66,12 +73,39 @@ function city(o) {
   for (const s of gates) plan.gates.push({ side: s, x: s === 'w' ? x0 : s === 'e' ? x1 : px, z: s === 'n' ? z0 : s === 's' ? z1 : pz });
   // edifici speciali: [tipo, dx, dz, w, d, porta, extra]
   for (const sp of o.specials || []) { const q = { k: sp[0], x: o.x + sp[1], z: o.z + sp[2], w: sp[3], d: sp[4], door: sp[5], o: sp[6] || {} }; plan.specials.push(q); const m = q.o.m || 1; occ.push([q.x - q.w / 2 - m, q.z - q.d / 2 - m, q.x + q.w / 2 + m, q.z + q.d / 2 + m]); }
+  // botteghe: [chiave, tipo, nome, posto, opzioni] — posto: uno degli otto attorno alla piazza ('n1' 'n2' 's1' 's2' 'w1' 'w2' 'e1' 'e2',
+  // 1 = a ovest o a nord dell'incrocio), oppure [dx, dz, larghezza, profondità, porta] dal centro della città
+  const posto = (code, w, d) => { const side = code[0], k = code[1] === '1' ? -1 : 1, off = MS + 2 + w / 2;
+    if (side === 'n' || side === 's') return [px + k * off, pz + (side === 'n' ? -1 : 1) * (pl.d / 2 + 1.5 + d / 2), w, d, side === 'n' ? 's' : 'n'];
+    return [px + (side === 'w' ? -1 : 1) * (pl.w / 2 + 1.5 + d / 2), pz + k * off, d, w, side === 'w' ? 'e' : 'w']; };
+  for (const [key, kind, name, at, opt] of o.shops || []) {
+    bottega(key, kind, name, o.name, o.style);
+    if (typeof at === 'number') { plan.specials[at].o.shop = key; continue; }       // un edificio speciale già in pianta (il bazar)
+    const oo = opt || {}, r = typeof at === 'string' ? posto(at, oo.fw || 26, oo.fd || 19) : [o.x + at[0], o.z + at[1], at[2], at[3], at[4]];
+    const q = { k: 'big', x: r[0], z: r[1], w: r[2], d: r[3], door: r[4], o: Object.assign({ shop: key, aw: TENDA[kind] || 13, chim: S.chim > 0 }, oo, { h: Math.max(17, oo.h || 0) }) }; plan.specials.push(q); occ.push([q.x - q.w / 2 - 1, q.z - q.d / 2 - 1, q.x + q.w / 2 + 1, q.z + q.d / 2 + 1]);
+    // due vasi (o due botti) ai lati della porta
+    const v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[q.door], fx = q.x + v[0] * (q.w / 2 + 1.6), fz = q.z + v[1] * (q.d / 2 + 1.6);
+    for (const sg of [-1, 1]) W.PROPS.push([kind === 'locanda' || kind === 'pescheria' ? 'barrel' : kind === 'armeria' || kind === 'fucina' ? 'crate' : 'pot', fx + (v[0] ? 0 : sg * 9.4), fz + (v[1] ? 0 : sg * 9.4)]);
+  }
+  // davanti a ogni porta di bottega resta libero un corridoio: niente case, alberi, panchine o carri sulla soglia
+  const vie = [];
+  for (const q of plan.specials) if (q.o.shop && q.door) { const v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[q.door], wx = q.x + v[0] * q.w / 2, wz = q.z + v[1] * q.d / 2, L = 17, hw = 5.5;
+    const r = v[0] ? [Math.min(wx, wx + v[0] * L), wz - hw, Math.max(wx, wx + v[0] * L), wz + hw] : [wx - hw, Math.min(wz, wz + v[1] * L), wx + hw, Math.max(wz, wz + v[1] * L)]; vie.push(r); occ.push(r); }
+  const sgombro = (x, z, r) => vie.every(q => x + r < q[0] || x - r > q[2] || z + r < q[1] || z - r > q[3]);
+  const primo = (L, r) => L.find(([x, z]) => sgombro(x, z, r) && Math.abs(x - px) < pl.w / 2 - 3 && Math.abs(z - pz) < pl.d / 2 - 3 && Math.hypot(x - px, z - pz) > 13 + r);
+  // la bacheca degli incarichi, in piazza: [dx, dz] dal centro della piazza
+  if (o.board) { const sx = Math.sign(o.board[0]), sz = Math.sign(o.board[1]), B0 = primo([[Math.abs(o.board[0]), Math.abs(o.board[1])], [30, 13], [13, 27], [31, 28], [24, 10]].map(([a, b]) => [px + sx * a, pz + sz * b]), 6.5) || [px + o.board[0], pz + o.board[1]], bx = B0[0], bz = B0[1]; plan.board = { x: bx, z: bz }; W.BOARDS.push({ id: o.id, city: o.name, x: bx, z: bz }); occ.push([bx - 6, bz - 2, bx + 6, bz + 2]);
+    // nell'angolo opposto il carro del mercato con le sue casse; negli altri due un albero con la panchina
+    const M = primo([[-23, -20], [-15, -29], [-33, -13], [-17, -16], [-31, -29]].map(([a, b]) => [px + sx * a, pz + sz * b]), 8);
+    if (M) { const [mx, mz] = M; W.PROPS.push(['cart', mx, mz], ['crate', mx + 5.5, mz + 3], ['sack', mx - 5, mz + 3.5], ['barrel', mx + 4.5, mz - 4.5], ['haybale', mx - 5.5, mz - 4], ['jar', mx + 1, mz + 6]); plan.mercato = M; }
+    for (const [qx, qz] of [[sx, -sz], [-sx, sz]]) { const T = primo([[25, 22], [15, 29], [33, 14], [17, 17], [32, 30]].map(([a, b]) => [px + qx * a, pz + qz * b]), 4.5); if (T) W.PROPS.push([S.trees[0], T[0], T[1]], ['bench', T[0] - qx * 6, T[1] + qz * 2]); }
+ }
   if (o.pre) o.pre(plan, occ);
   // isolati: i quattro quarti attorno all'incrocio, tagliati da vicoli se sono grandi
   const blocks = [];
   for (const q of [[x0 + IN, z0 + IN, px - MS, pz - MS], [px + MS, z0 + IN, x1 - IN, pz - MS], [x0 + IN, pz + MS, px - MS, z1 - IN], [px + MS, pz + MS, x1 - IN, z1 - IN]]) {
     const w = q[2] - q[0], d = q[3] - q[1]; if (w < 22 || d < 22) continue;
-    const xs = w > 150 ? [q[0], Math.round(q[0] + w * rr(0.44, 0.56)), q[2]] : [q[0], q[2]], zs = d > 140 ? [q[1], Math.round(q[1] + d * rr(0.44, 0.56)), q[3]] : [q[1], q[3]];
+    const xs = w > 116 ? [q[0], Math.round(q[0] + w * rr(0.44, 0.56)), q[2]] : [q[0], q[2]], zs = d > 104 ? [q[1], Math.round(q[1] + d * rr(0.44, 0.56)), q[3]] : [q[1], q[3]];
     if (xs.length === 3) W.PAVE.push([ch, 'line', SS * 2, [[xs[1], q[1] - 2], [xs[1], q[3] + 2]], 1]);
     if (zs.length === 3) W.PAVE.push([ch, 'line', SS * 2, [[q[0] - 2, zs[1]], [q[2] + 2, zs[1]]], 1]);
     for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) blocks.push([xs[i] + (i ? SS : 0), zs[j] + (j ? SS : 0), xs[i + 1] - (i < xs.length - 2 ? SS : 0), zs[j + 1] - (j < zs.length - 2 ? SS : 0)]);
@@ -103,7 +137,8 @@ function city(o) {
   // lampioni lungo le strade maestre, panchine e vasi in piazza
   for (let a = x0 + 24, k = 0; a < x1 - 20; a += 46, k++) { const z = pz + (k % 2 ? 1 : -1) * (MS - 1.4); if (a > prect[0] - 4 && a < prect[2] + 4) continue; if (free(a - 1, z - 1, a + 1, z + 1, 0)) W.PROPS.push([S.lamp, a, z]); }
   for (let a = z0 + 24, k = 0; a < z1 - 20; a += 46, k++) { const x = px + (k % 2 ? 1 : -1) * (MS - 1.4); if (a > prect[1] - 4 && a < prect[3] + 4) continue; if (free(x - 1, a - 1, x + 1, a + 1, 0)) W.PROPS.push([S.lamp, x, a]); }
-  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { W.PROPS.push([S.lamp, px + sx * (pl.w / 2 - 3), pz + sz * (pl.d / 2 - 3)]); W.PROPS.push(['bench', px + sx * (pl.w / 2 - 14), pz + sz * (pl.d / 2 - 3)]); W.PROPS.push(['pot', px + sx * (pl.w / 2 - 22), pz + sz * (pl.d / 2 - 3)]); }
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const cx = px + sx * (pl.w / 2 - 3), cz = pz + sz * (pl.d / 2 - 3); if (sgombro(cx, cz, 1.2)) W.PROPS.push([S.lamp, cx, cz]);
+    for (const [k, a, b] of [['bench', 14, 0], ['pot', 22, 0]]) { const c = [[cx - sx * a, cz], [cx, cz - sz * a], [cx - sx * (a - 8), cz]].find(([x, z]) => sgombro(x, z, 3)); if (c) W.PROPS.push([k, c[0], c[1]]); } }
   // bancarelle del mercato (con il loro posto per il venditore)
   plan.stalls = [];
   (o.stalls || []).forEach(([dx, dz, cloth], i) => { const b = { k: 'stall', x: px + dx, z: pz + dz, w: 14, d: 8, h: 7, cloth: cloth || pick([13, TL.AWN_BLUE, TL.AWN_GREEN, TL.AWN_YELLOW]) }; W.BUILD.push(b); plan.stalls.push(b); W.PROPS.push([pick(['crate', 'barrel']), b.x + 9.5, b.z - 1]); });
@@ -111,6 +146,7 @@ function city(o) {
   let pk = 0, hk = 0;
   for (const f of o.people || []) {
     const [look, n, lines, at, extra] = f; let x, z, yaw;
+    if (typeof at === 'string' && at.startsWith('in:')) { const [, key, spot] = at.split(':'); folk(look, n, 0, 0, 0, lines, Object.assign({ in: key, spot: spot || 'banco' }, extra)); continue; }
     if (Array.isArray(at)) { x = o.x + at[0]; z = o.z + at[1]; yaw = at[2] === undefined ? Math.atan2(pz - z, px - x) : at[2]; }
     else if (typeof at === 'string' && at[0] === 's') { const b = plan.stalls[+at.slice(1)]; x = b.x; z = b.z - 6; yaw = Math.PI / 2; }
     else if (at === 'p' || !plan.houses.length) { const a = (pk++ * 2.4 + 0.6), r = Math.min(pl.w, pl.d) * 0.33; x = px + Math.cos(a) * r; z = pz + Math.sin(a) * r; yaw = a + Math.PI; }
@@ -147,8 +183,33 @@ W.builders.city = (b, g) => {
   for (const h of P.houses) house(h, g);
   if (o.center !== 'none' && o.center !== 'statue') fountain(px, pz, y, 9, b);
   for (const sp of P.specials) (SPECIAL[sp.k] || SPECIAL.big)(sp, g, S, b);
+  if (P.board) SG.shop.bacheca(P.board.x, P.board.z, g(P.board.x, P.board.z), b, S.tr);
+  if (!P.open && !o.small) for (const gt of P.gates) fuoriPorta(P, gt, g);
   if (o.post) o.post(P, g, y, b);
 };
+
+// ---------- le case fuori porta ----------
+// Le città crescono anche oltre le mura: fuori da ogni porta, ai lati della strada, qualche casa di contadini con il suo fieno.
+// Si costruisce solo dove il terreno è asciutto e quasi piano, lontano da strade, altri edifici, forzieri, nascondigli e tane.
+function fuoriPorta(P, gt, g) {
+  const { o, S } = P, R = rng(Math.round(gt.x * 13 + gt.z * 7) + 5), pick = L => L[Math.floor(R() * L.length)], X = gt.side === 'w' || gt.side === 'e', sg = gt.side === 'w' || gt.side === 'n' ? -1 : 1;
+  const lontano = (L, x, z, d, ix = 0, iz = 1) => L.every(q => Math.abs(q[ix] - x) > d || Math.abs(q[iz] - z) > d);
+  let n = 0;
+  for (const [du, dv] of [[46, 28], [46, -28], [74, -31], [74, 31], [102, 28], [102, -28], [58, 56], [58, -56], [88, -58], [88, 58], [130, 30], [130, -30]]) {
+    if (n >= 5) break;
+    const fw = Math.round(16 + R() * 7), fd = Math.round(13 + R() * 4), ju = (R() - 0.5) * 6, cx = X ? gt.x + sg * (du + ju) : gt.x + dv, cz = X ? gt.z + dv : gt.z + sg * (du + ju), w = X ? fw : fd, d = X ? fd : fw;
+    const x0 = cx - w / 2, x1 = cx + w / 2, z0 = cz - d / 2, z1 = cz + d / 2; let ok = true, lo = 1e9, hi = -1e9;
+    for (let a = 0; a <= 4 && ok; a++) for (let c = 0; c <= 4 && ok; c++) { const x = x0 - 4 + (w + 8) * a / 4, z = z0 - 4 + (d + 8) * c / 4, h = g(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); if (h < 1.6 || W.roadAt(x, z) > 0.04 || W.inBox(x, z, 5)) ok = false; }
+    if (!ok || hi - lo > 4.5) continue;
+    if (!lontano(W.CHESTS, cx, cz, 34, 1, 2) || !lontano(W.NOOKS, cx, cz, 34) || !lontano(W.PROPS, cx, cz, Math.max(w, d) / 2 + 6, 1, 2) || !lontano(W.NPCS, cx, cz, Math.max(w, d) / 2 + 7, 1, 2) || !W.CAMPS.every(c => Math.hypot(c[0] - cx, c[1] - cz) > c[4] + 70)) continue;
+    const door = X ? (dv < 0 ? 's' : 'n') : (dv < 0 ? 'e' : 'w'), rt = pick(S.rt);
+    house({ x: cx, z: cz, w, d, h: Math.round(9 + R() * 4), wall: pick(S.walls), roof: pick(S.roofs), door, rt: rt === 'dome' ? 'flat' : rt, steep: S.steep, win: pick(S.win), dr: pick(S.dr), chim: R() < S.chim }, g);
+    // l'aia: fieno, un carro o una botte dal lato opposto alla porta
+    const bx = X ? cx + (R() < 0.5 ? -1 : 1) * (w / 2 + 4) : cx + (dv < 0 ? -1 : 1) * (w / 2 + 4), bz = X ? cz + (dv < 0 ? -1 : 1) * (d / 2 + 4) : cz + (R() < 0.5 ? -1 : 1) * (d / 2 + 4);
+    if (g(bx, bz) > 1.6 && W.roadAt(bx, bz) < 0.04 && !W.inBox(bx, bz, 3)) W.PROPS.push([pick(['haybale', 'haybale', 'barrel', 'crate', 'sack', 'cart']), bx, bz]);
+    n++;
+  }
+}
 
 // ---------- edifici speciali ----------
 const sides = (sp, fn) => { for (const s of ['n', 's', 'e', 'w']) fn(s, (s === 'n' || s === 's') ? sp.w : sp.d, (s === 'n' || s === 's') ? sp.x : sp.z); };
@@ -181,6 +242,7 @@ const SPECIAL = {
     sides(sp, (s, len, c) => { for (let k = 0; k < Math.floor(len / 10); k++) onWall(s, x0, z0, x1, z1, c - len / 2 + 5 + (len - Math.floor(len / 10) * 10) / 2 + k * 10, y0, 9, 10, s === sp.door && Math.abs(k - (Math.floor(len / 10) - 1) / 2) < 0.6 ? TL.DOOR_BLUE : TL.ARCADE); });
     dome(sp.x, sp.z, Math.min(sp.w, sp.d) * 0.3, top + 0.6, sp.o.dome || TL.TURQ);
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dome(sp.x + sx * (sp.w / 2 - 6), sp.z + sz * (sp.d / 2 - 6), 4.5, top + 0.6, TL.WHITE);
+    if (sp.o.shop) SG.shop.fronte(sp.o.shop, sp.door, x0, z0, x1, z1, (sp.door === 'n' || sp.door === 's') ? sp.x : sp.z, y0, 20);
     W.addBox(x0, z0, x1, z1, top, b);
   },
   // palazzo: come il bazar, più alto, cupola d'oro e quattro minareti
@@ -228,5 +290,5 @@ const SPECIAL = {
 };
 // un edificio speciale da solo, fuori dalle città: { k: 'special', sk: 'mill', x, z, w, d, door, style, o }
 W.builders.special = (b, g) => (SPECIAL[b.sk] || SPECIAL.big)({ k: b.sk, x: b.x, z: b.z, w: b.w, d: b.d, door: b.door, o: b.o || {} }, g, STYLES[b.style || 'lumen'], b);
-SG.city = { city, folk, STYLES, LOOKS, SPECIAL };
+SG.city = { city, folk, bottega, STYLES, LOOKS, SPECIAL, TENDA };
 })();

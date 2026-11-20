@@ -66,13 +66,14 @@ const FLAT = [[2000, 2650, 175, null], [2760, 2960, 310, 60], [3360, 1670, 150, 
 const BUILD = [
   { k: 'house', x: 1930, z: 2585, w: 24, d: 18, h: 12, wall: 1, roof: 4, door: 's', name: 'CASA DI MIRTA' },
   { k: 'house', x: 2078, z: 2588, w: 20, d: 16, h: 10, wall: 2, roof: 5, door: 'w', name: 'FUCINA' },
-  { k: 'house', x: 2075, z: 2722, w: 28, d: 20, h: 14, wall: 1, roof: 6, door: 'n', name: 'TAVERNA' },
+  { k: 'house', x: 2075, z: 2722, w: 28, d: 20, h: 17, wall: 1, roof: 6, door: 'n', name: 'LOCANDA', shop: 'gallo', aw: 13, chim: true },
   { k: 'house', x: 1925, z: 2722, w: 18, d: 16, h: 11, wall: 0, roof: 4, door: 'n' },
   { k: 'house', x: 1868, z: 2652, w: 16, d: 20, h: 10, wall: 3, roof: 6, door: 'e' },
   { k: 'house', x: 2128, z: 2650, w: 16, d: 16, h: 10, wall: 0, roof: 5, door: 'w' },
   { k: 'house', x: 1995, z: 2760, w: 16, d: 14, h: 10, wall: 16, roof: 4, door: 'n' },
   { k: 'house', x: 2220, z: 2770, w: 32, d: 20, h: 14, wall: 3, roof: 4, door: 'w' },
-  { k: 'stall', x: 2006, z: 2565, w: 14, d: 8, h: 7 },
+  { k: 'house', x: 2032, z: 2570, w: 24, d: 17, h: 17, wall: 1, roof: 5, door: 's', name: 'EMPORIO', shop: 'nino', aw: 101, chim: true },
+  { k: 'board', x: 2021, z: 2633 },
   { k: 'house', x: 2105, z: 1665, w: 14, d: 12, h: 9, wall: 3, roof: 6, door: 'n' },
   { k: 'house', x: 765, z: 700, w: 16, d: 14, h: 10, wall: 2, roof: 5, door: 'w' },
   // la Rocca di Lumen
@@ -122,7 +123,7 @@ const NOOKS = [
 ];
 // abitanti e creature con un nome: [id, x, z, direzione]
 const NPCS = [
-  ['mirta', 1958, 2605, 1.2], ['bruno', 2058, 2612, 3.6], ['lia', 2022, 2668, 2.4], ['otto', 2165, 2672, 3.14], ['nino', 2006, 2559, 1.57],
+  ['mirta', 1958, 2605, 1.2], ['bruno', 2058, 2612, 3.6], ['lia', 2022, 2668, 2.4], ['otto', 2165, 2672, 3.14],
   ['viandante', 2062, 2706, 4.4], ['pescatore', 2122, 1632, -1.4], ['spirito', 1095, 1462, 1.57], ['ardea', 2800, 2960, 3.14],
   ['nomade', 3150, 2000, 1.2], ['eremita', 748, 712, 3.4], ['contadino', 2380, 2700, 0.6], ['biscotto', 1475, 2020, 0.4],
 ];

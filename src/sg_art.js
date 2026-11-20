@@ -55,6 +55,9 @@ const FSRC = {
   '↑': '..#..|.###.|#.#.#|..#..|..#..|..#..|..#..', '↓': '..#..|..#..|..#..|..#..|#.#.#|.###.|..#..',
   '←': '.......|..#....|.#.....|#######|.#.....|..#....|.......', '→': '.......|....#..|.....#.|#######|.....#.|....#..|.......',
   '♥': '.....|##.##|#####|#####|.###.|..#..|.....',
+  '↗': '.####|...##|..#.#|.#..#|#....|.....|.....', '↘': '.....|.....|#....|.#..#|..#.#|...##|.####', '↖': '####.|##...|#.#..|#..#.|....#|.....|.....', '↙': '.....|.....|....#|#..#.|#.#..|##...|####.',
+  '^': '.....|..#..|.#.#.|#...#|.....|.....|.....',
+  '«': '.....|..#.#|.#.#.|#.#..|.#.#.|..#.#|.....', '»': '.....|#.#..|.#.#.|..#.#|.#.#.|#.#..|.....',
 };
 const GL = {}; for (const k in FSRC) { const rows = FSRC[k].split('|'); GL[k] = { w: rows[0].length, rows }; }
 const sheets = {};
@@ -725,7 +728,7 @@ function shard(D, c1, c2) {
 
 // ---------- texture degli edifici: 8x8 riquadri da 32 pixel ----------
 function tiles(R) {
-  const T = 32, c = mk(T * 8, T * 16), g = c.getContext('2d');
+  const T = 32, c = mk(T * 8, T * 32), g = c.getContext('2d');
   const at = (i, fn) => { g.save(); g.translate((i % 8) * T, Math.floor(i / 8) * T); g.beginPath(); g.rect(0, 0, T, T); g.clip(); fn(); g.restore(); };
   const fill = (col, n, v) => { g.fillStyle = col; g.fillRect(0, 0, T, T); for (let k = 0; k < n; k++) { g.fillStyle = shade(col, 1 + (R() - 0.5) * v); g.fillRect(R() * T | 0, R() * T | 0, 1 + (R() < 0.3), 1); } };
   const bricks = (col, mortar, bw, bh) => { g.fillStyle = mortar; g.fillRect(0, 0, T, T); for (let y = 0; y < T; y += bh) { const off = (y / bh) % 2 ? bw / 2 : 0; for (let x = -bw; x < T; x += bw) { g.fillStyle = shade(col, 0.88 + R() * 0.24); g.fillRect(x + off + 1, y + 1, bw - 1, bh - 1); g.fillStyle = shade(col, 1.12); g.fillRect(x + off + 1, y + 1, bw - 1, 1); } } };

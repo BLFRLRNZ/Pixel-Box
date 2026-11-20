@@ -346,8 +346,8 @@ function quadTo(a, p0, p1, p2, p3, tile, u, v, sh) {
 }
 const LIT = { s: 0.92, n: 0.66, e: 0.8, w: 0.74, top: 0.97, floor: 0.88 };
 // una parete verticale sul lato di una cella (lato: 'n', 's', 'e', 'w'), rivolta verso fuori
-function sideTo(a, i, j, side, y0, y1, tile, u = 1, sh) {
-  const x0 = i * CS, x1 = x0 + CS, z0 = j * CS, z1 = z0 + CS, v = (y1 - y0) / CS, L = sh !== undefined ? sh : LIT[side];
+function sideTo(a, i, j, side, y0, y1, tile, u = 1, sh, vv) {
+  const x0 = i * CS, x1 = x0 + CS, z0 = j * CS, z1 = z0 + CS, v = vv !== undefined ? vv : (y1 - y0) / CS, L = sh !== undefined ? sh : LIT[side];
   if (side === 's') quadTo(a, [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], tile, u, v, L);
   else if (side === 'n') quadTo(a, [x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], tile, u, v, L);
   else if (side === 'e') quadTo(a, [x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], tile, u, v, L);
@@ -384,7 +384,7 @@ const bottomOf = t => t === PIT || t === PLAT ? -PD : t === WATER ? -WD : t === 
 // cell: celle attuali (muri rotti, pozzi riempiti); filled: celle riempite da un masso
 function buildStatic(P, cell, filled) {
   const D = P.def, Wd = P.w, H = P.h, at = (i, j) => (i >= 0 && j >= 0 && i < Wd && j < H) ? cell[j * Wd + i] : ROCK;
-  const floor = [], wall = [], water = [], lava = [];
+  const floor = [], wall = [], water = [], lava = [], casa = D.casa, ZH = 4.4;     // nelle botteghe: zoccolo di legno ai piedi delle pareti, e in cima il buio
   const N4 = [[0, -1, 'n'], [0, 1, 's'], [1, 0, 'e'], [-1, 0, 'w']];
   // le scale: '>' porta avanti (giù, oppure su nelle torri), '@' nei piani dopo il primo riporta indietro
   const tower = D.dir === 'up', isStair = t => t === STAIR || (t === EXIT && !!D.up), goesUp = t => t === STAIR ? tower : !tower;
@@ -393,9 +393,9 @@ function buildStatic(P, cell, filled) {
     const t = at(i, j), x0 = i * CS, z0 = j * CS, x1 = x0 + CS, z1 = z0 + CS, k = j * Wd + i;
     if (t === WALL || t === CRACK) {
       const tile = t === CRACK ? (D.crack || 41) : D.wall;
-      for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (!isSolid(n)) sideTo(wall, i, j, s, low(n), WH, tile); }
+      for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (isSolid(n)) continue; if (casa) { sideTo(wall, i, j, s, 0, ZH, casa.base, 1, undefined, 1); sideTo(wall, i, j, s, ZH, WH, tile, 1, undefined, 1); } else sideTo(wall, i, j, s, low(n), WH, tile); }
       let open = false; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) if (!isSolid(at(i + a, j + b))) open = true;
-      if (open) flatTo(wall, x0, z0, x1, z1, WH, tile, 1, 1, LIT.top);
+      if (open) flatTo(wall, x0, z0, x1, z1, WH, casa ? casa.top : tile, 1, 1, LIT.top);
       continue;
     }
     if (isStair(t)) {
@@ -419,7 +419,7 @@ function buildStatic(P, cell, filled) {
         const ax = isSolid(at(i - 1, j)) || at(i - 1, j) === DOOR || at(i - 1, j) === EXIT || isSolid(at(i + 1, j)) || at(i + 1, j) === DOOR || at(i + 1, j) === EXIT;
         if (ax) { sideTo(wall, i, j, 'n', DH, WH, D.wall); sideTo(wall, i, j, 's', DH, WH, D.wall); }
         else { sideTo(wall, i, j, 'e', DH, WH, D.wall); sideTo(wall, i, j, 'w', DH, WH, D.wall); }
-        flatTo(wall, x0, z0, x1, z1, WH, D.wall, 1, 1, LIT.top);
+        flatTo(wall, x0, z0, x1, z1, WH, casa ? casa.top : D.wall, 1, 1, LIT.top);
         quadTo(wall, [x0, DH, z0], [x1, DH, z0], [x1, DH, z1], [x0, DH, z1], D.wall, 1, 1, 0.5);
         if (t === EXIT) quadTo(wall, [x0, 0, z1 + CS * 0.6], [x1, 0, z1 + CS * 0.6], [x1, DH, z1 + CS * 0.6], [x0, DH, z1 + CS * 0.6], 45, 1, 1, 1);
       }
@@ -429,6 +429,7 @@ function buildStatic(P, cell, filled) {
     if (t === LAVA) lava.push(x0, z0, x1, z0, x1, z1, x0, z1);
     if (t === WATER || t === LAVA) for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (n === PIT) sideTo(floor, i, j, s, -PD, bottomOf(t), 42); }
   }
+  if (casa) casa.build({ floor, wall, quadTo, boxTo, flatTo });
   return { floor: new Float32Array(floor), wall: new Float32Array(wall), water: new Float32Array(water), lava: new Float32Array(lava) };
 }
 
