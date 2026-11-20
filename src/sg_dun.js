@@ -81,7 +81,7 @@ const DEF = {
       m.room(10, 2, 31, 14); m.room(31, -4, 48, 12);
       // ingresso, con una crepa a est
       m.at(20, 48, '@@'); m.at(20, 40, '++'); m.at(15, 41, 't'); m.at(26, 41, 't'); m.fill(15, 44, 16, 47, '~'); m.fill(25, 44, 26, 46, '~');
-      m.sign(18, 42, 'SANTUARIO DEL LAGO.\nCOLPISCI I CRISTALLI CON LA SPADA: I BLOCCHI ROSSI E QUELLI BLU NON STANNO MAI ALZATI INSIEME.');
+      m.sign(18, 42, 'SANTUARIO DEL LAGO.\nCOLPISCI I CRISTALLI: I BLOCCHI ROSSI E QUELLI BLU NON STANNO MAI ALZATI INSIEME.');
       m.col(27, 45, '%'); m.chest(29, 45, 'c', 'pozione:3');
       // sala del cristallo: il fossato e il ponte
       m.fill(9, 32, 32, 33, '~'); m.fill(20, 32, 21, 33, '='); m.at(20, 31, 'rr'); m.at(13, 36, 'x'); m.at(28, 29, 'x'); m.col(32, 29, 'uu');

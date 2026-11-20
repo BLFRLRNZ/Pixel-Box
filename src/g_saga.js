@@ -481,7 +481,7 @@ function startGame(fresh) {
   save.flags.cityTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
-  else if (!save.cls) openClass('old');       // chi giocava già sceglie la classe la prima volta che riprende
+  else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
   writeSave();
 }
 
@@ -965,13 +965,15 @@ function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x /
 const ACT = { slash: [0.42, 0.27], spin: [0.52, 0.38], shot: [0.4, 0.28], pshot: [0.5, 0.38], stab: [0.26, 0.18], knives: [0.42, 0.3], bolt: [0.45, 0.31], orb: [0.55, 0.39], cast: [0.4, 0.28] };
 const ICE_T = [0.62, 0.95, 1.6], LIGHT_T = [1.6, 1.5, 0.9];
 let things = [], clsUI = null, clsPics = null, chip = null, btnC = null;
+function ringLite(x, z, r, k = 'spark', n = 14) { const gy = gH(x, z); for (let i = 0; i < n; i++) { const a = i / n * TAU; fx.push({ k, x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, y: gy + 2.5, vy: 5, t: 0.28, s: 0.3 }); } }
 function startAct(a, fn) { const h = hero; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
 const tough = e => FOE[e.type].champ || FOE[e.type].elite;
 function stun(e, t) { if (e.st === 'dead') return; e.stun = Math.max(e.stun || 0, t * (tough(e) ? 0.4 : 1)); if (e.st === 'wind') { e.st = 'chase'; e.cd = Math.max(e.cd, 0.3); } }
 function freeze(e, t) { stun(e, t); e.frz = e.stun; }
 function burn(e, t, d) { if (e.st === 'dead') return; e.burn = t; e.burnD = d; if (!(e.burnT > 0)) e.burnT = 0.8; }
 // i guardiani si lasciano interrompere dai colpi forti delle classi, ma non di continuo
-const classStun = () => !!boss && time > (boss.stunT || 0) && stunBoss(boss) && ((boss.stunT = time + 6), true);
+let ptime = 0, frozen = false;      // il tempo di gioco (fermo nei menu)
+const classStun = () => !!boss && ptime > (boss.stunT || 0) && stunBoss(boss) && ((boss.stunT = ptime + 6), true);
 // colpo alle spalle del furfante: il nemico non ti ha visto, è stordito o ti dà la schiena
 const sneak = e => e.stun > 0 || hero.hid > 0 || (e.st !== 'chase' && e.st !== 'wind') || Math.cos(e.yaw - Math.atan2(hero.z - e.z, hero.x - e.x)) < -0.2;
 function critFx(e) { for (let i = 0; i < 6; i++) fx.push({ k: 'glint', x: e.x + (Math.random() - 0.5) * 5, z: e.z + (Math.random() - 0.5) * 5, y: e.y + 3 + Math.random() * 4, vy: 7, t: 0.4, s: 0.34 }); tone(1760, 0.05, 'square', 0.05); tone(2349, 0.09, 'square', 0.04, null, 0.05); }
@@ -979,11 +981,19 @@ function dSight(x0, z0, x1, z1) { const d = Math.hypot(x1 - x0, z1 - z0), n = Ma
 // il bersaglio di frecce e magie: il nemico più comodo davanti all'eroe (vicino e poco di lato), se non c'è un muro di mezzo
 function aimAt(range, cone = 0.72) {
   const h = hero; let best = null, bs = -1e9;
-  const see = (x, z, r, obj) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); if (d > range + r || d < 0.5) return; const c = Math.cos(Math.atan2(dz, dx) - h.yaw); if (c < cone) return; if (D && !dSight(h.x, h.z, x, z)) return; const s = c * 60 - d; if (s > bs) { bs = s; best = { x, z, obj }; } };
+  const see = (x, z, r, obj) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); if (d > range + r || d < 0.5) return; const c = Math.cos(Math.atan2(dz, dx) - h.yaw); if (c < cone) return; if (D && !dSight(h.x, h.z, x, z)) return; const s = c * 60 - d; if (s > bs) { bs = s; best = { x, z, obj, c }; } };
   for (const e of foes) if (e.st !== 'dead' && (!D || e.room === D.room)) see(e.x, e.z, FOE[e.type].r, e);
   if (D && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die') see(boss.x, boss.z, boss.r, boss);
   return best;
 }
+// chi punta dritto un cristallo vuole colpire quello: vince sul nemico solo se l'eroe guarda più il cristallo che lui
+function aimXtal(range) {
+  if (!D) return null; const h = hero; let best = null, bc = 0.972;
+  for (const x of D.xtals) { const dx = x.x - h.x, dz = x.z - h.z, d = Math.hypot(dx, dz); if (d > range || d < 0.5) continue; const c = Math.cos(Math.atan2(dz, dx) - h.yaw); if (c > bc && dSight(h.x, h.z, x.x, x.z)) { bc = c; best = { x: x.x, z: x.z, c }; } }
+  return best;
+}
+// il bersaglio di un colpo a distanza: un nemico, oppure il cristallo se è quello che l'eroe ha davanti
+function aimShot(range) { const xt = aimXtal(range), tg = aimAt(range); return xt && (!tg || xt.c >= tg.c) ? xt : tg; }
 // colpi da vicino: davanti (o tutt'intorno), su nemici, guardiano, vasi, cristalli e crepe
 function meleeHit(reach, cosMin, dmg, o = {}) {
   const h = hero;
@@ -998,7 +1008,7 @@ function lightBeam(dmg) { const h = hero, a = h.yaw; shots.push({ k: 'light', fr
 // frecce, pugnali lanciati, dardi: partono verso il bersaglio e lo inseguono un poco
 function heroShot(k, o = {}) {
   const h = hero; let tg = null;
-  if (!o.noAim) { tg = aimAt(o.range || 125); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); }
+  if (!o.noAim) { tg = aimShot(o.range || 125); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); }
   const a = h.yaw + (o.da || 0), sp = o.sp || 170;
   shots.push(Object.assign({ k, from: 'hero', cls: 1, x: h.x + Math.cos(a) * 4, z: h.z + Math.sin(a) * 4, y: h.y + 4.6, gy: D ? 0 : Math.max(W.ground(h.x, h.z), W.WL), vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, yaw: a, r: 2.2, dmg: 1, life: 0.75, tg: tg ? tg.obj : null, turn: 2.5 }, o));
 }
@@ -1006,7 +1016,7 @@ function heroShot(k, o = {}) {
 function boom(x, z, r, dmg, o = {}) {
   const gy = gH(x, z);
   ringFx(x, z, r * 0.55); puffAt(x, z, 10, gy + 3);
-  for (let i = 0; i < 10; i++) fx.push({ k: o.ice ? 'icefx' : 'ember', x: x + (Math.random() - 0.5) * r, z: z + (Math.random() - 0.5) * r, y: gy + 1 + Math.random() * 4, vy: 10 + Math.random() * 14, t: 0.4 + Math.random() * 0.3, s: 0.5 });
+  for (let i = 0; i < 10; i++) fx.push({ k: o.ice ? 'icefx' : 'ember', x: x + (Math.random() - 0.5) * r, z: z + (Math.random() - 0.5) * r, y: gy + 1 + Math.random() * 4, vy: 10 + Math.random() * 14, t: 0.4 + Math.random() * 0.3, s: o.ice ? 0.3 : 0.5 });
   noise(0.32, 0.09); tone(90, 0.32, 'sawtooth', 0.06, 40); quake = Math.max(quake, 0.4); vib(40);
   for (const e of foes) { if (e.st === 'dead' || e === o.skip) continue; if (Math.hypot(e.x - x, e.z - z) < r + FOE[e.type].r) { e.rage = 6; hitFoe(e, dmg, Math.atan2(e.z - z, e.x - x)); if (o.burn) burn(e, o.burn, Math.max(1, Math.round(dmg * 0.25))); if (o.frz) freeze(e, o.frz); } }
   if (D) {
@@ -1042,12 +1052,14 @@ function heroCharged() {
 // il momento in cui il colpo va a segno
 function heroHit(a) {
   const h = hero, w = eqIt('arma'), att = ATT(), beam = !!(w && w.beam);
+  // chi tira da lontano, nei santuari, colpisce anche quello che ha a portata di mano (un cristallo, un vaso, una crepa): come una spada
+  if (D && (a === 'shot' || a === 'pshot' || a === 'bolt' || a === 'orb')) dSwing(10.5, 0.35, { noBoss: true });
   if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
-  else if (a === 'spin') { meleeHit(15.5, 0, Math.round(att * 2), { all: true, boss: 2 }); ringFx(h.x, h.z, 12); if (beam) lightBeam(att); }
+  else if (a === 'spin') { meleeHit(15.5, 0, Math.round(att * 2), { all: true, boss: 2 }); ringLite(h.x, h.z, 9); ringLite(h.x, h.z, 14, 'glint', 10); if (beam) lightBeam(att); }
   else if (a === 'stab') { meleeHit(9.5, 0.3, Math.max(1, Math.round(att * 0.75)), { back: true, boss: 0.65 }); if (beam) lightBeam(att * 0.75); }
   else if (a === 'shot') { const o = h.nextShot || {}; h.nextShot = null; heroShot('arrow', Object.assign({ dmg: Math.max(1, Math.round(att * 0.8)), bossD: 0.8, pierce: beam, tint: beam ? LIGHT_T : null }, o)); }
   else if (a === 'pshot') { heroShot('arrow', { dmg: Math.max(2, Math.round(att * 1.8)), sp: 230, life: 0.85, pierce: true, pow: true, bossD: 1.6, big: 1.4, turn: 1.2, tint: beam ? LIGHT_T : null }); noise(0.08, 0.04); }
-  else if (a === 'knives') { const tg = aimAt(95); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); for (const da of [-0.19, 0, 0.19]) heroShot('knife', { noAim: true, da, dmg: Math.max(1, Math.round(att * 0.6)), sp: 185, life: 0.5, pow: true, bossD: 0.6, turn: 0, tg: null }); }
+  else if (a === 'knives') { const tg = aimShot(95); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); for (const da of [-0.19, 0, 0.19]) heroShot('knife', { noAim: true, da, dmg: Math.max(1, Math.round(att * 0.6)), sp: 185, life: 0.5, pow: true, bossD: 0.6, turn: 0, tg: null }); }
   else if (a === 'bolt') heroShot('bolt', { dmg: Math.max(1, Math.round(att * 0.85)), sp: 135, life: 0.8, turn: 5, bossD: 0.85, pierce: beam, tint: beam ? LIGHT_T : null });
   else if (a === 'orb') heroShot('orb', { dmg: Math.max(2, Math.round(att * 1.6)), sp: 120, life: 0.9, turn: 3, r: 3.2, pow: true, bossD: 1.6, big: 1.5, boom: { r: 11, dmg: Math.max(1, Math.round(att * 0.8)) } });
   else if (a === 'cast') { const fn = h.castFn; h.castFn = null; if (fn) fn(); }
@@ -1065,7 +1077,7 @@ function heroTick(dt) {
       if (eqIt('arma') && h.atk <= 0 && !h.dash && !inCasa()) {
         const was = h.chg; h.chg = Math.min(1, Math.max(0, (h.aHold - 0.4) / 0.5));
         if (h.chg >= 1 && was < 1) { tone(1568, 0.06, 'square', 0.04); tone(2093, 0.1, 'square', 0.035, null, 0.06); vib(15); }
-        if (h.chg > 0 && Math.random() < 0.3 + h.chg * 0.45) { const a = Math.random() * TAU; fx.push({ k: 'glint', x: h.x + Math.cos(a) * 3, z: h.z + Math.sin(a) * 3, y: h.y + 2 + Math.random() * 6, vy: 5, t: 0.3, s: 0.2 + h.chg * 0.14 }); }
+        if (h.chg > 0 && Math.random() < 0.18 + h.chg * 0.3) { const a = Math.random() * TAU; fx.push({ k: 'glint', x: h.x + Math.cos(a) * 2.6, z: h.z + Math.sin(a) * 2.6, y: h.y + 2 + Math.random() * 5, vy: 5, t: 0.22, s: 0.1 + h.chg * 0.07 }); }
       }
     } else { const full = h.chg >= 1; h.aDown = false; h.chg = 0; if (full && h.atk <= 0 && !h.dash) heroCharged(); }
   }
@@ -1076,7 +1088,7 @@ function dashStep(dt) {
   const h = hero, d = h.dash, sp = Math.hypot(d.vx, d.vz) || 1; d.t -= dt; h.inv = Math.max(h.inv, 0.1);
   for (let k = 0; k < 3; k++) {
     const mx = d.vx * dt / 3, mz = d.vz * dt / 3;
-    if (D) { const i = Math.floor((h.x + mx + d.vx / sp * 2.2) / DCS), j = Math.floor((h.z + mz + d.vz / sp * 2.2) / DCS), c = dAt(i, j); if (c === DT.PIT || (c === DT.PLAT && !D.platUp[j * D.w + i])) { d.t = 0; break; } }
+    if (D) { const i = Math.floor((h.x + mx + d.vx / sp * 2.2) / DCS), j = Math.floor((h.z + mz + d.vz / sp * 2.2) / DCS), c = dAt(i, j); if (c === DT.PIT || c === DT.EXIT || c === DT.STAIR || (c === DT.PLAT && !D.platUp[j * D.w + i])) { d.t = 0; break; } }
     if (!move(h, mx, mz, 1.6)) { d.t = 0; break; }
   }
   h.moving = true; h.walk += sp * dt; h.vx = h.vz = 0;
@@ -1094,7 +1106,7 @@ function dashStep(dt) {
 const SKILL = {
   carica() { const h = hero; h.dash = { k: 'carica', t: 0.27, vx: Math.cos(h.yaw) * 135, vz: Math.sin(h.yaw) * 135, hit: new Set() }; noise(0.18, 0.05); tone(180, 0.25, 'sawtooth', 0.05, 420); },
   grido() {
-    const h = hero; startAct('cast'); ringFx(h.x, h.z, 14); ringFx(h.x, h.z, 30); tone(140, 0.5, 'sawtooth', 0.07, 90); tone(210, 0.4, 'square', 0.04, 120, 0.05); quake = Math.max(quake, 0.35); vib(60);
+    const h = hero; startAct('cast'); ringLite(h.x, h.z, 12, 'glint', 12); ringLite(h.x, h.z, 26, 'spark', 20); ringLite(h.x, h.z, 40, 'spark', 26); tone(140, 0.5, 'sawtooth', 0.07, 90); tone(210, 0.4, 'square', 0.04, 120, 0.05); quake = Math.max(quake, 0.35); vib(60);
     for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 46 && (!D || e.room === D.room)) { stun(e, 2.6); const a = Math.atan2(e.z - h.z, e.x - h.x); e.kb = tough(e) ? 0.05 : 0.16; e.kx = Math.cos(a) * 50; e.kz = Math.sin(a) * 50; }
     if (!D) fauna.scare(h.x, h.z, 90);
   },
@@ -1109,14 +1121,14 @@ const SKILL = {
     things.push({ k: 'bomb', x: h.x + Math.cos(a) * 2, z: h.z + Math.sin(a) * 2, y: h.y + 5, y0: h.y + 5, vx: Math.cos(a) * v, vz: Math.sin(a) * v, fly: 0.42, t: 1.1, dmg: Math.max(3, Math.round(ATT() * 1.6)) }); tone(500, 0.1, 'triangle', 0.04, 250); }); },
   fumo() {
     const h = hero; h.hid = 4.5; noise(0.3, 0.05); tone(240, 0.2, 'sine', 0.04, 120);
-    for (let i = 0; i < 16; i++) fx.push({ k: 'smoke', x: h.x + (Math.random() - 0.5) * 16, y: h.y + 1 + Math.random() * 5, z: h.z + (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 6, vz: (Math.random() - 0.5) * 6, vy: 1.5 + Math.random() * 2, t: 2 + Math.random() * 1.4, s: 0.5 });
+    for (let i = 0; i < 14; i++) fx.push({ k: 'smoke', x: h.x + (Math.random() - 0.5) * 14, y: h.y + 0.5 + Math.random() * 4, z: h.z + (Math.random() - 0.5) * 14, vx: (Math.random() - 0.5) * 5, vz: (Math.random() - 0.5) * 5, vy: 1 + Math.random() * 1.5, t: 1.4 + Math.random() * 0.9, s: 0.26 });
     for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 70) { e.rage = 0; if (e.st === 'chase' || e.st === 'wind') e.st = 'home'; }
   },
   trappola() { const h = hero, mine = things.filter(t => t.k === 'trap'); if (mine.length >= 2) mine[0].dead = true; things.push({ k: 'trap', x: h.x + Math.cos(h.yaw) * 4, z: h.z + Math.sin(h.yaw) * 4, life: 60, dmg: Math.max(2, Math.round(ATT() * 1.2)) }); tone(300, 0.06, 'square', 0.04); tone(200, 0.08, 'square', 0.04, null, 0.07); },
   fuoco() { startAct('cast', () => { const d = Math.max(3, Math.round(ATT() * 1.5)); heroShot('fire', { dmg: d, sp: 115, life: 0.95, turn: 2, r: 3, pow: true, bossD: 2, big: 1.3, boomOnly: true, boom: { r: 16, dmg: d, burn: 3.2 } }); }); tone(240, 0.25, 'sawtooth', 0.05, 520); },
   gelo() {
     startAct('cast', () => { const h = hero, d = Math.max(1, Math.round(ATT() * 0.5));
-      for (let k = 0; k < 20; k++) { const a = k / 20 * TAU, r = 8 + Math.random() * 22; fx.push({ k: 'icefx', x: h.x + Math.cos(a) * r, z: h.z + Math.sin(a) * r, y: h.y + 1, vy: 12 + Math.random() * 8, t: 0.5, s: 0.55 }); }
+      for (let k = 0; k < 20; k++) { const a = k / 20 * TAU, r = 9 + Math.random() * 21; fx.push({ k: 'icefx', x: h.x + Math.cos(a) * r, z: h.z + Math.sin(a) * r, y: h.y + 0.5, vy: 11 + Math.random() * 7, t: 0.45, s: 0.3 }); }
       tone(1500, 0.14, 'square', 0.04, 700); tone(2093, 0.3, 'triangle', 0.03, 1046, 0.05);
       for (const e of foes) if (e.st !== 'dead' && Math.hypot(e.x - h.x, e.z - h.z) < 32 + FOE[e.type].r && (!D || e.room === D.room)) { e.rage = 6; hitFoe(e, d, Math.atan2(e.z - h.z, e.x - h.x)); freeze(e, 3.2); }
       if (D && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && Math.hypot(boss.x - h.x, boss.z - h.z) < 32 + boss.r && !classStun()) bossHit(boss.vuln ? 1 : 0, true); });
@@ -1246,7 +1258,7 @@ function drawSkills() {
     T(kn ? 'LA SAI GIÀ' : S.price + '', x + w - 10, yy, kn ? '#5a6478' : save.coins >= S.price ? '#ffd23f' : '#ff8f8f', 1, 'right');
   });
   const sel = rows[shop.sel];
-  if (sel !== 'esci') { const S = SKL[sel]; A.wrap(S.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); T(sel === 'parata' ? 'ENERGIA: 1 PER OGNI COLPO PARATO' : 'ENERGIA: ' + S.cost, x + 8, y + h - 11, CL[c].enC); T(skKnown(sel) ? 'A: USA QUESTA' : 'A: IMPARA', x + w - 8, y + h - 11, '#5a6478', 1, 'right', null); }
+  if (sel !== 'esci') { const S = SKL[sel]; A.wrap(S.d, w - 16).slice(0, 2).forEach((l, i) => T(l, x + 8, y + h - 30 + i * 9, '#a9c6e3')); T(sel === 'parata' ? 'ENERGIA: 1 PER OGNI COLPO PARATO' : (c === 'mago' ? 'MANA: ' : 'ENERGIA: ') + S.cost, x + 8, y + h - 11, CL[c].enC); T(skKnown(sel) ? 'A: USA QUESTA' : 'A: IMPARA', x + w - 8, y + h - 11, '#5a6478', 1, 'right', null); }
 }
 
 // ---------- nemici ----------
@@ -1441,7 +1453,7 @@ function interact(t) {
 
 // ---------- aggiornamento ----------
 function playUpdate(dt) {
-  save.time += dt;
+  save.time += dt; ptime += dt;
   if (fade) { fade.t += dt; if (fade.ph === 0 && fade.t >= 0.35) { fade.ph = 1; fade.t = 0; fade.then(); } else if (fade.ph === 1 && fade.t >= 0.35) fade = null; }
   if (st === 'play' && !dialog && !shop && !loot && !menu && !mapOpen && !fade) heroUpdate(dt);
   else hero.moving = false;
@@ -1890,7 +1902,7 @@ function hitCrack(i, j) {
 function dSwing(reach = 10.5, cosMin = 0.35, o = {}) {
   const h = hero, fx2 = Math.cos(h.yaw), fz2 = Math.sin(h.yaw);
   const front = (x, z, r) => { const dx = x - h.x, dz = z - h.z, d = Math.hypot(dx, dz); return d < r && (o.all || d < 3 || (dx * fx2 + dz * fz2) / d > cosMin); };
-  if (boss && !boss.hide && front(boss.x, boss.z, reach + boss.r)) bossHit(o.boss || 1);
+  if (!o.noBoss && boss && !boss.hide && front(boss.x, boss.z, reach + boss.r)) bossHit(o.boss || 1);
   for (const p of D.pots) if (p.alive && front(p.x, p.z, reach - 0.5)) breakPot(p);
   for (const x of D.xtals) if (front(x.x, x.z, reach)) hitXtal(x);
   // le crepe: davanti (o tutt'intorno, col colpo rotante)
@@ -2253,7 +2265,7 @@ function drawHero(R) {
   const spin = h.atk > 0 && h.act === 'spin' ? (1 - h.atk / h.atkT) * TAU * 1.5 : 0, hop = h.dash && h.dash.k === 'balzo' ? Math.sin(Math.max(0, h.dash.t) / 0.25 * Math.PI) * 2.6 : 0;
   pushBB(h.x, h.y - 0.5 + hop, h.z, heroRects[heroAnim()][dirOf(h.x, h.z, h.yaw + spin)], R, 1, h.flash > 0 ? 0.7 : h.chg >= 1 ? (Math.floor(time * 12) % 2 ? 0.5 : 0.15) : h.chg > 0 ? h.chg * 0.2 : 0, h.hid > 0 ? [0.5, 0.52, 0.64] : null);
 }
-function drawShot(s) { const r = SPR.shot[s.k], dir = Array.isArray(r); pushBB(s.x, s.y - 1.5, s.z, dir ? r[dirOf(s.x, s.z, s.yaw)] : r, (dir ? 0.3 / SR : s.k === 'light' ? 0.6 : 0.42) * (s.big || 1), 1.2, 0, s.tint || undefined); }
+function drawShot(s) { const r = SPR.shot[s.k], dir = Array.isArray(r); pushBB(s.x, s.y - 1.5, s.z, dir ? r[dirOf(s.x, s.z, s.yaw)] : r, (dir ? 0.36 / SR : s.k === 'light' ? 0.6 : 0.42) * (s.big || 1), 1.2, 0, s.tint || undefined); }
 function drawThings() {
   for (const t of things) {
     if (t.k === 'bomb') pushBB(t.x, t.y, t.z, SPR.bomb, 0.3, 1, t.fly <= 0 && Math.floor(t.t * (t.t < 0.4 ? 20 : 9)) % 2 ? 0.7 : 0);
@@ -2580,7 +2592,7 @@ function drawShop() {
   if (shop.top > 0) T('^', x + w - 10, y + 13, '#8a96aa', 1, 'right');
   if (shop.top + VIS < rows.length) T('v', x + w - 10, y + 20 + VIS * 12 - 3, '#8a96aa', 1, 'right');
   const sel = rows[shop.sel][0];
-  if (sel !== 'esci') { const it = IT[sel], st2 = statLine(it); A.wrap(it.d, w - 16).slice(0, 1).forEach(l => T(l, Wr / 2, y + h - 22, '#a9c6e3', 1, 'center')); if (st2) T(st2, Wr / 2, y + h - 11, '#9af0b0', 1, 'center'); }
+  if (sel !== 'esci') { const it = IT[sel], st2 = statLine(it), no = it.t === 'scudo' && !CC().shield; A.wrap(it.d, w - 16).slice(0, 1).forEach(l => T(l, Wr / 2, y + h - 22, '#a9c6e3', 1, 'center')); if (no) T('LO SCUDO LO PORTA SOLO IL CAVALIERE', Wr / 2, y + h - 11, '#ff8f8f', 1, 'center'); else if (st2) T(st2, Wr / 2, y + h - 11, '#9af0b0', 1, 'center'); }
 }
 // la bacheca di una città: i quattro incarichi, e sotto il foglio di quello scelto
 function drawBoard() {
@@ -2861,7 +2873,8 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { startAct('slash'); }, get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+   set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
@@ -2894,6 +2907,7 @@ return {
     }
     if (st === 'title') { titleCam(dt); return; }
     if (st === 'class') { clsUI.t += dt; return; }
+    if (frozen) return;                      // (solo per le prove) il gioco avanza soltanto a comando
     if (st === 'play' || st === 'dead') playUpdate(dt);
   },
   draw(c, w, h) {

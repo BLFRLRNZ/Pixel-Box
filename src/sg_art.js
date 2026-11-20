@@ -316,7 +316,7 @@ function human(o, pose = {}) {
     if (s < 0) weapon(B, C, E, o.weapon, rot, y, pose);
     if (s > 0 && o.weapon2) weapon(B, C, E, o.weapon2, rot, y, pose);
     if (s < 0 && o.staff) { C([1.4, y, -1.5], [1.4, y, 25], 0.6, o.staff, rot); if (o.orb) E([1.4, y, 26.4], [1.75, 1.75, 1.75], o.orb, rot, 1.15); }
-    if (s > 0 && o.shield && pose.guard) { E([4.9, 1.6, 13.4], [0.8, 3.8, 4.4], o.shield, null, 1.05); if (o.emblem) E([5.6, 1.6, 13.4], [0.35, 1.6, 1.8], o.emblem, null, 1.2); }     // in guardia: lo scudo davanti al petto
+    if (s > 0 && o.shield && pose.guard) { E([4.4, 3.6, 13.6], [0.9, 4.1, 4.7], o.shield, null, 1.05); if (o.emblem) E([5.2, 3.6, 13.6], [0.35, 1.7, 1.9], o.emblem, null, 1.2); }     // in guardia: lo scudo davanti al petto
     else if (s > 0 && o.shield) { E([0, y + 2.1, 14], [3.4, 0.75, 3.8], o.shield, rot); if (o.emblem) E([0, y + 2.75, 14], [1.4, 0.35, 1.6], o.emblem, rot, 1.2); }
   }
   // testa
