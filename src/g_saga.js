@@ -172,6 +172,8 @@ let atlas = null, ATEX = null, TILES = null, DET = null, PAVT = null, PANO = nul
 let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [], botteghe = [];
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
+// misure del telefono (START, OPZIONI): quanto ci mette il mondo a nascere, immagini al secondo, spazio
+const MIS = { t0: 0, wall: 0, calc: 0, fasi: {}, fr: [], last: 0, ts: 0, fps: 0, min: 0, scatti: 0, tex: 0, tex0: 0, dati: 0, sp: null, pers: null, gpu: '', maxTex: 0 };
 const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
 let GIANTS = []; const PKS = new Float32Array(40);
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
@@ -425,6 +427,7 @@ function* loader() {
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
   gl = G.gl;
+  { const tx = G.texture.bind(G); G.texture = (src, o) => { MIS.tex += (src.w || src.width || 0) * (src.h || src.height || 0) * (o && o.lum ? 1 : 4); return tx(src, o); }; }
   atlas = A.Atlas(2048, 3520);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
@@ -2711,6 +2714,7 @@ function drawHUD() {
   if (shop) (shop.board ? drawBoard : shop.sk ? drawSkills : drawShop)();
   if (loot) drawLoot();
   if (mapOpen) drawMap();
+  if (save.opt.cnt && !menu && !mapOpen && !shop && MIS.fps) T(MIS.fps + ' FPS  MIN ' + MIS.min, Wr / 2, Hr - 8, MIS.min < 30 ? '#ffb070' : '#9af0b0', 1, 'center');
   if (menu) drawMenu();
   if (st === 'dead') drawDeath();
   if (fade) { hg.fillStyle = 'rgba(0,0,0,' + Math.max(0, Math.min(1, fade.ph === 0 ? fade.t / 0.35 : 1 - fade.t / 0.35)).toFixed(2) + ')'; hg.fillRect(0, 0, Wr, Hr); }
@@ -2868,7 +2872,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno', 'vib', 'comandi'].concat(bowOn() ? ['mira'] : [], ['salva', 'esci']);
+  return ['vol', 'mus', 'giorno', 'vib', 'comandi'].concat(bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -2905,14 +2909,44 @@ function drawMenu() {
     rows.slice(menu.top, menu.top + VIS).forEach((q, k0) => { const i = k0 + menu.top, yy = top + 2 + k0 * 26, on = i === menu.sel, done = questDone(q), rdy = isJob(q) && jst(q.slice(2)).s === 2; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + qName(q), x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : rdy ? '#9af0b0' : isJob(q) ? '#ffe8a0' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
     if (menu.top > 0) T('^', x + w - 10, top - 6, '#8a96aa', 1, 'right'); if (menu.top + VIS < rows.length) T('v', x + w - 10, top + VIS * 26 - 6, '#8a96aa', 1, 'right');
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
-  } else {
+  } else if (menu.mis) drawMisure(x, top, w, y + h);
+  else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
-    rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const ph = rows.length > 8 ? 12 : 14;
+    rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
     T('IL GIOCO SI SALVA DA SOLO', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   }
+}
+function misFrame() {
+  const tn = performance.now(), f = MIS.fr;
+  if (st === 'play' && !menu && !frozen && MIS.last) { const d = tn - MIS.last; if (d < 1000) f.push(tn, d); while (f.length && f[0] < tn - 10000) { f.shift(); f.shift(); } if (tn - MIS.ts > 500) { MIS.ts = tn; misStat(); } }
+  MIS.last = tn;
+}
+function misStat() {
+  const f = MIS.fr; if (f.length < 4) return;
+  let sum = 0, worst = 0, sc = 0; for (let i = 1; i < f.length; i += 2) { const d = f[i]; sum += d; if (d > worst) worst = d; if (d > 50) sc++; }
+  MIS.fps = Math.round(500 * f.length / sum); MIS.min = Math.round(1000 / worst); MIS.scatti = sc;
+}
+function misPeso() { let b = 0; for (const k in W) { const v = W[k]; if (v && v.BYTES_PER_ELEMENT && v.byteLength) b += v.byteLength; } MIS.dati = b; MIS.tex0 = MIS.tex; }
+function misApri() {
+  MIS.sp = null; MIS.pers = null; misStat();
+  try { if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { MIS.sp = e; }, () => { MIS.sp = false; }); else MIS.sp = false; } catch (e) { MIS.sp = false; }
+  try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(p => { MIS.pers = !!p; }, () => { MIS.pers = false; }); else MIS.pers = false; } catch (e) { MIS.pers = false; }
+  if (!MIS.gpu && gl) { try { const x = gl.getExtension('WEBGL_debug_renderer_info'); MIS.gpu = String(x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)).toUpperCase().replace(/[^A-Z0-9 .,()\/+-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 26) || '?'; MIS.maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE); } catch (e) { MIS.gpu = '?'; } }
+}
+function drawMisure(x, top, w, bot) {
+  const sec = v => (v / 1000).toFixed(1) + ' S', mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' GB' : (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB', dpr = window.devicePixelRatio || 1;
+  const L = [['IL MONDO NASCE IN', sec(MIS.wall)], ['  DI CUI CALCOLO', sec(MIS.calc)], ['  SOLO TERRE E OGGETTI', sec(MIS.fasi['MODELLO LE TERRE DI LUMEN'] || 0)],
+    ['IMMAGINI AL SECONDO', MIS.fps ? MIS.fps + ' (MINIMO ' + MIS.min + ')' : 'PRIMA GIOCA UN PO\''], ['SCATTI IN 10 SECONDI', MIS.fps ? String(MIS.scatti) : '-'],
+    ['SCHERMO', Math.round(screen.width * dpr) + ' X ' + Math.round(screen.height * dpr)], ['DISEGNO 3D', W3 + ' X ' + H3], ['GRAFICA', MIS.gpu || '?'], ['TRAMA MASSIMA', String(MIS.maxTex || '?')],
+    ['MONDO IN MEMORIA', 'CIRCA ' + mb(MIS.tex0 + MIS.dati)], ['SPAZIO SUL TELEFONO', MIS.sp ? mb(MIS.sp.usage || 0) + ' DI ' + mb(MIS.sp.quota || 0) : MIS.sp === false ? 'NON SI SA' : '...'], ['SPAZIO PROTETTO', MIS.pers === null ? '...' : MIS.pers ? 'SÌ' : 'NO']];
+  T('MISURE DEL TELEFONO', x + 8, top, '#ffd23f');
+  L.forEach((l, i) => { const yy = top + 12 + i * 9; T(l[0], x + 8, yy, '#a9c6e3', 1, 'left', null); T(l[1], x + w - 8, yy, '#ffffff', 1, 'right', null); });
+  T('A: CONTATORE SULLO SCHERMO: ' + (save.opt.cnt ? 'SÌ' : 'NO'), x + 8, bot - 24, '#9af0b0', 1, 'left', null);
+  T('B: INDIETRO', x + 8, bot - 12, '#5a6478', 1, 'left', null);
 }
 function drawDeath() {
   death += 1 / 60;
@@ -3020,6 +3054,7 @@ function onKey(name) {
   else if (name === 'm') toggleAim();
 }
 function menuKey(name) {
+  if (menu.mis) { if (name === 'a') { save.opt.cnt = !save.opt.cnt; tone(1046, 0.05); } else if (name === 'b' || name === 'start') { menu.mis = false; tone(660, 0.04); } return; }
   const rows = menuRows();
   if (name === 'start' || (name === 'b' && !menu.pick)) { menu = null; tone(660, 0.04); writeSave(); return; }
   if (name === 'b' && menu.pick) { menu.sel = SLOTS.findIndex(s => s[0] === menu.pick); menu.pick = null; tone(660, 0.04); return; }
@@ -3044,6 +3079,7 @@ function menuKey(name) {
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
     else if (r === 'mira') toggleAim();
+    else if (r === 'misure') { menu.mis = true; misApri(); tone(1046, 0.05); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
     else if (r === 'esci') { writeSave(); menu = null; leave(); }
   }
@@ -3078,7 +3114,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -3097,7 +3133,7 @@ return {
       { c: '#5aa0e0', w: '#ffffff', r: '#8a8c96', y: '#ffd86a', s: '#e8eef6', g: '#58b048', m: '#c8c4bc', d: '#3a2416', t: '#2e7a30', b: '#3a7ac8' }, x, y, s, '#5aa0e0');
   },
   enter() {
-    if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); }
+    if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); MIS.t0 = performance.now(); MIS.calc = 0; MIS.fasi = {}; }
     else if (st === 'play') { menu = null; }
   },
   leave() { MU.stop(); if (st === 'play' || st === 'dead') writeSave(); },
@@ -3108,7 +3144,7 @@ return {
     MU.want(musicPick()); MU.tick(menu || mapOpen ? 0.55 : 1);
     if (st === 'loading') {
       const t0 = performance.now();
-      try { while (performance.now() - t0 < 40) { const r = gen.next(); if (r.done) { toTitle(); break; } prog = r.value; } }
+      try { while (performance.now() - t0 < 40) { const fase = progMsg, t1 = performance.now(), r = gen.next(), d = performance.now() - t1; MIS.calc += d; MIS.fasi[fase] = (MIS.fasi[fase] || 0) + d; if (r.done) { MIS.wall = performance.now() - MIS.t0; misPeso(); toTitle(); break; } prog = r.value; } }
       catch (e) { st = 'error'; errMsg = e.message === 'NOGL' ? 'QUESTO TELEFONO NON SUPPORTA LA GRAFICA 3D (WEBGL). PIXEL SAGA NON PUÒ PARTIRE.' : 'ERRORE: ' + e.message; console.error(e); }
       return;
     }
@@ -3130,6 +3166,7 @@ return {
       return;
     }
     measure(w, h); scrW = w; scrH = h;
+    misFrame();
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class')) {
       G.resize(W3, H3);
