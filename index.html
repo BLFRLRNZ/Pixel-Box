@@ -16,10 +16,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-  :root{--dp:clamp(116px,33vw,150px);--bs:clamp(54px,15vw,68px)}
-  html,body{margin:0;height:100%;background:#1b1f24;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:"Press Start 2P",system-ui,sans-serif}
-  #wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  #console{position:relative;box-sizing:border-box;width:min(100vw,470px);height:min(100%,940px);display:flex;flex-direction:column;
+  /* le misure della finestra le dà il programma (--vw, --vh, --vl, --vt e i centesimi --vwu, --vhu): sui telefoni quelle del foglio di stile
+     arrivano tardi o sbagliate quando lo schermo ruota o entra a tutto schermo, e i tasti finivano spostati rispetto a dove si tocca */
+  :root{--vwu:1vw;--vhu:1vh;--dp:clamp(116px,calc(var(--vwu)*33),150px);--bs:clamp(54px,calc(var(--vwu)*15),68px)}
+  html,body{margin:0;width:100%;height:100%;background:#1b1f24;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:"Press Start 2P",system-ui,sans-serif}
+  body{position:fixed;left:0;top:0}
+  #wrap{position:fixed;left:var(--vl,0px);top:var(--vt,0px);width:var(--vw,100%);height:var(--vh,100%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #wrap.kick{opacity:.999}
+  #console{position:relative;box-sizing:border-box;width:min(var(--vw,100vw),470px);height:min(100%,940px);display:flex;flex-direction:column;
     background:linear-gradient(160deg,#dedad2,#c8c4bc 55%,#b7b3ab);border-radius:14px 14px 72px 14px;padding:12px 12px 0;
     box-shadow:inset 0 2px 0 rgba(255,255,255,.65),inset 0 -6px 0 rgba(0,0,0,.08),0 10px 30px rgba(0,0,0,.5)}
   #bezel{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:#575c69;border-radius:10px 10px 44px 10px;
@@ -42,7 +46,7 @@
   #console.fit #bezel{flex:0 1 auto}
   #console.fit #screenbox{flex:none}
   #console.fit #legend{display:flex;flex:1 1 0;min-height:0;overflow:hidden;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px 6px;color:#2c3a7a}
-  #legend .gt{font-size:clamp(17px,5.4vw,24px);font-weight:800;font-style:italic;letter-spacing:2px;opacity:.85}
+  #legend .gt{font-size:clamp(17px,calc(var(--vwu)*5.4),24px);font-weight:800;font-style:italic;letter-spacing:2px;opacity:.85}
   #legend .ks{display:flex;flex-wrap:wrap;justify-content:center;gap:9px 15px;max-width:380px}
   #legend .it{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.5px;white-space:nowrap}
   #legend .k{display:inline-flex;align-items:center;justify-content:center;flex:none}
@@ -51,7 +55,7 @@
   #legend .k.d{width:17px;height:17px;background:linear-gradient(#34373f,#34373f) center/6px 17px no-repeat,linear-gradient(#34373f,#34373f) center/17px 6px no-repeat}
   #legend.compact .gt{display:none}
   #legend.tiny{visibility:hidden}
-  #ctrlin{position:relative;width:100%;height:clamp(200px,33vh,280px)}
+  #ctrlin{position:relative;width:100%;height:clamp(200px,calc(var(--vhu)*33),280px)}
   #cl{position:absolute;left:4%;top:10%}
   #dpad{position:relative;width:var(--dp);height:var(--dp);touch-action:none;perspective:320px;cursor:pointer}
   #dpin{position:absolute;inset:0;transition:transform .04s;transform-style:preserve-3d}
@@ -89,33 +93,32 @@
   #grille i{width:6px;height:52px;border-radius:4px;background:#a9a59d;box-shadow:inset 1px 2px 2px rgba(0,0,0,.35)}
   #hint{display:none;color:#8a93a0;font-size:8px;line-height:2;text-align:center;padding:8px}
   @media (hover:hover) and (pointer:fine){#hint{display:block}#console{height:min(calc(100% - 52px),900px)}}
-  @media (orientation:landscape) and (max-height:560px){
-    :root{--dp:min(128px,36vh);--bs:min(58px,17vh)}
-    #console{width:100vw;height:100%;border-radius:0;padding:8px;display:grid;grid-template-columns:1fr auto 1fr;grid-template-rows:1fr auto;
-      grid-template-areas:"cl bezel cr" "cm bezel gr";column-gap:8px}
-    #bezel{grid-area:bezel;width:min(calc((100vh - 16px) * 1.3),64vw);padding:24px 12px 12px 24px}
-    #bzl{top:9px}
-    #vol{top:1px}
-    #brand,#legend{display:none!important}
-    #controls,#ctrlin{display:contents}
-    #cl{grid-area:cl;position:static;align-self:center;justify-self:center}
-    #cr{grid-area:cr;position:relative;right:auto;top:auto;align-self:center;justify-self:center}
-    #cm{grid-area:cm;position:static;transform:none;justify-self:center;align-self:center;gap:12px}
-    #grille{grid-area:gr;position:static;justify-self:center;align-self:center;transform:rotate(-28deg) scale(.6)}
-    #hint{display:none!important}
-  }
+  /* telefono di traverso: lo decide il programma (classe «land» sul body), con le stesse misure che usa per tutto il resto */
+  body.land{--dp:min(128px,calc(var(--vhu)*36));--bs:min(58px,calc(var(--vhu)*17))}
+  body.land #console{width:var(--vw,100vw);height:100%;border-radius:0;padding:8px;display:grid;grid-template-columns:1fr auto 1fr;grid-template-rows:1fr auto;
+    grid-template-areas:"cl bezel cr" "cm bezel gr";column-gap:8px}
+  body.land #bezel{grid-area:bezel;width:min(calc((var(--vhu)*100 - 16px) * 1.3),calc(var(--vwu)*64));padding:24px 12px 12px 24px}
+  body.land #bzl{top:9px}
+  body.land #vol{top:1px}
+  body.land #brand,body.land #legend{display:none!important}
+  body.land #controls,body.land #ctrlin{display:contents}
+  body.land #cl{grid-area:cl;position:static;align-self:center;justify-self:center}
+  body.land #cr{grid-area:cr;position:relative;right:auto;top:auto;align-self:center;justify-self:center}
+  body.land #cm{grid-area:cm;position:static;transform:none;justify-self:center;align-self:center;gap:12px}
+  body.land #grille{grid-area:gr;position:static;justify-self:center;align-self:center;transform:rotate(-28deg) scale(.6)}
+  body.land #hint{display:none!important}
   /* giochi a schermo intero: l'immagine riempie tutto e i tasti stanno sopra, semitrasparenti */
-  body.full{--dp:min(38vh,150px);--bs:min(19vh,66px)}
+  body.full{--dp:min(calc(var(--vhu)*38),150px);--bs:min(calc(var(--vhu)*19),66px)}
   body.full #wrap{display:block}
-  body.full #console{position:fixed;inset:0;width:auto;height:auto;padding:0;border-radius:0;background:#000;box-shadow:none;display:block}
-  body.full #bezel{position:fixed;inset:0;width:auto!important;padding:0;border-radius:0;background:#000;box-shadow:none}
+  body.full #console{position:absolute;inset:0;width:auto;height:auto;padding:0;border-radius:0;background:#000;box-shadow:none;display:block}
+  body.full #bezel{position:absolute;inset:0;width:auto!important;padding:0;border-radius:0;background:#000;box-shadow:none}
   body.full #bzl,body.full #led,body.full #ledl,body.full #brand,body.full #legend,body.full #grille,body.full #hint,body.full #vol{display:none!important}
   body.full #screenbox{position:absolute;inset:0;height:auto!important;border-radius:0;box-shadow:none}
   body.full #screenbox::after{display:none}
   body.full #controls,body.full #ctrlin{display:contents}
-  body.full #cl{position:fixed;left:max(16px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));top:auto;opacity:.5;z-index:5}
-  body.full #cr{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));top:auto;left:auto;opacity:.55;z-index:5}
-  body.full #cm{position:fixed;top:max(2px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));left:auto;bottom:auto;transform:none;gap:4px;opacity:.65;z-index:5}
+  body.full #cl{position:absolute;left:max(16px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));top:auto;opacity:.5;z-index:5}
+  body.full #cr{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));top:auto;left:auto;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75);opacity:.55;z-index:5}
+  body.full #cm{position:absolute;top:max(2px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));left:auto;bottom:auto;transform:none;gap:4px;opacity:.65;z-index:5}
   body.full .pw{transform:none;gap:5px;padding:6px 6px 8px}
   body.full .pill{width:58px;height:22px;border-radius:11px}
   body.full .pw span{color:#e8ecf4;font-size:7px;text-shadow:0 0 2px #000,0 1px 1px #000}
@@ -149,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.12", "id": "2.12-b2c64fc7", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.12.1", "id": "2.12.1-10298987", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -15085,7 +15088,6 @@ let mode = 'boot', bootT = 0, cur = null, quitAsk = false, gtime = 0, msel = 0, 
 try { msel = clamp(+localStorage.getItem('px_sel') || 0, 0, GAMES.length - 1); } catch (e) {}
 
 $('bzt').textContent = 'PIXEL BOX · ' + GAMES.length + ' GIOCHI';
-function landscape() { return innerWidth > innerHeight && innerHeight < 560; }
 function legendHTML(g) {
   const chip = k => k === 'D' ? '<span class="k d"></span>' : (k === 'A' || k === 'B') ? '<span class="k r">' + k + '</span>' : '<span class="k p">' + k + '</span>';
   const items = (g.keys || []).concat([['SELECT', 'menu']]);
@@ -15105,7 +15107,7 @@ function layoutFor(g) {
       const r = box.getBoundingClientRect(), bzr = bz.getBoundingClientRect();
       const padW = bzr.width - r.width, want = r.height * asp + padW;
       const side = Math.max($('cl').getBoundingClientRect().width, $('cr').getBoundingClientRect().width) + 24;
-      bz.style.width = Math.round(Math.min(innerWidth - 32 - 2 * side, want) - padW) + 'px';   // width è senza i margini interni
+      bz.style.width = Math.round(Math.min(VP.w - 32 - 2 * side, want) - padW) + 'px';   // width è senza i margini interni
     }
   } else if (asp) {
     const r = box.getBoundingClientRect(), h = Math.round(r.width / asp);
@@ -15126,8 +15128,36 @@ function fitScreen() {
   W = nw; H = nh; cv.width = W; cv.height = H;
   for (const g of GAMES) if (g.resize) g.resize(W, H);
 }
-addEventListener('resize', () => layoutFor(mode === 'game' ? cur : null));
 if (window.ResizeObserver) new ResizeObserver(fitScreen).observe($('screenbox'));
+// ---------- la finestra vera ----------
+// Le misure si leggono da visualViewport (quel che si vede davvero) e si passano al foglio di stile: la console le segue al punto.
+// Quando lo schermo ruota, entra o esce dal tutto schermo, o l'app torna in primo piano, sui telefoni le misure giuste arrivano
+// spesso in ritardo e senza avviso: per due secondi si ricontrolla dieci volte al secondo, e poi ogni tanto, per sempre.
+// Se la pagina è scivolata (non deve scorrere mai) la si riporta in cima. Così tasti disegnati e tasti toccati restano nello stesso posto.
+const VP = { w: 0, h: 0, l: 0, t: 0 };
+function landscape() { return VP.w > VP.h && VP.h <= 560; }
+function applyVP(force) {
+  if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+  const de = document.documentElement, bo = document.body;
+  if (de.scrollTop || de.scrollLeft) { de.scrollTop = 0; de.scrollLeft = 0; } if (bo.scrollTop || bo.scrollLeft) { bo.scrollTop = 0; bo.scrollLeft = 0; }
+  const v = window.visualViewport, w = v ? v.width : innerWidth, h = v ? v.height : innerHeight, l = v ? v.offsetLeft : 0, t = v ? v.offsetTop : 0;
+  if (!(w > 0 && h > 0)) return false;
+  if (!force && Math.abs(w - VP.w) < 0.5 && Math.abs(h - VP.h) < 0.5 && Math.abs(l - VP.l) < 0.5 && Math.abs(t - VP.t) < 0.5) return false;
+  VP.w = w; VP.h = h; VP.l = l; VP.t = t;
+  const st = de.style; st.setProperty('--vw', w + 'px'); st.setProperty('--vh', h + 'px'); st.setProperty('--vl', l + 'px'); st.setProperty('--vt', t + 'px'); st.setProperty('--vwu', w / 100 + 'px'); st.setProperty('--vhu', h / 100 + 'px');
+  bo.classList.toggle('land', landscape());
+  layoutFor(mode === 'game' ? cur : null);
+  // una spinta al disegno: gli strati dei tasti si ricompongono dove stanno adesso
+  const wr = $('wrap'); wr.classList.add('kick'); requestAnimationFrame(() => requestAnimationFrame(() => wr.classList.remove('kick')));
+  return true;
+}
+let vpTimer = 0;
+function watchVP() { applyVP(); let n = 0; clearInterval(vpTimer); vpTimer = setInterval(() => { applyVP(); if (++n >= 20) { clearInterval(vpTimer); vpTimer = 0; } }, 100); }
+for (const ev of ['resize', 'orientationchange', 'fullscreenchange', 'webkitfullscreenchange', 'pageshow', 'focus']) addEventListener(ev, watchVP);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) watchVP(); });
+if (window.visualViewport) { visualViewport.addEventListener('resize', watchVP); visualViewport.addEventListener('scroll', watchVP); }
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', watchVP);
+setInterval(() => { if (!vpTimer) applyVP(); }, 750);
 
 // ---------- tasti: tocco + tastiera ----------
 function syncBtn(name) {
@@ -15444,7 +15474,7 @@ function loop(t) {
     frameDraw();
   } catch (e) { acc = 0; if (loopErr++ < 3) console.error(e); }
 }
-layoutFor(null);
+applyVP(true); watchVP();
 requestAnimationFrame(loop);
 
 })();

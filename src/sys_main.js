@@ -3,7 +3,6 @@ let mode = 'boot', bootT = 0, cur = null, quitAsk = false, gtime = 0, msel = 0, 
 try { msel = clamp(+localStorage.getItem('px_sel') || 0, 0, GAMES.length - 1); } catch (e) {}
 
 $('bzt').textContent = 'PIXEL BOX · ' + GAMES.length + ' GIOCHI';
-function landscape() { return innerWidth > innerHeight && innerHeight < 560; }
 function legendHTML(g) {
   const chip = k => k === 'D' ? '<span class="k d"></span>' : (k === 'A' || k === 'B') ? '<span class="k r">' + k + '</span>' : '<span class="k p">' + k + '</span>';
   const items = (g.keys || []).concat([['SELECT', 'menu']]);
@@ -23,7 +22,7 @@ function layoutFor(g) {
       const r = box.getBoundingClientRect(), bzr = bz.getBoundingClientRect();
       const padW = bzr.width - r.width, want = r.height * asp + padW;
       const side = Math.max($('cl').getBoundingClientRect().width, $('cr').getBoundingClientRect().width) + 24;
-      bz.style.width = Math.round(Math.min(innerWidth - 32 - 2 * side, want) - padW) + 'px';   // width è senza i margini interni
+      bz.style.width = Math.round(Math.min(VP.w - 32 - 2 * side, want) - padW) + 'px';   // width è senza i margini interni
     }
   } else if (asp) {
     const r = box.getBoundingClientRect(), h = Math.round(r.width / asp);
@@ -44,8 +43,36 @@ function fitScreen() {
   W = nw; H = nh; cv.width = W; cv.height = H;
   for (const g of GAMES) if (g.resize) g.resize(W, H);
 }
-addEventListener('resize', () => layoutFor(mode === 'game' ? cur : null));
 if (window.ResizeObserver) new ResizeObserver(fitScreen).observe($('screenbox'));
+// ---------- la finestra vera ----------
+// Le misure si leggono da visualViewport (quel che si vede davvero) e si passano al foglio di stile: la console le segue al punto.
+// Quando lo schermo ruota, entra o esce dal tutto schermo, o l'app torna in primo piano, sui telefoni le misure giuste arrivano
+// spesso in ritardo e senza avviso: per due secondi si ricontrolla dieci volte al secondo, e poi ogni tanto, per sempre.
+// Se la pagina è scivolata (non deve scorrere mai) la si riporta in cima. Così tasti disegnati e tasti toccati restano nello stesso posto.
+const VP = { w: 0, h: 0, l: 0, t: 0 };
+function landscape() { return VP.w > VP.h && VP.h <= 560; }
+function applyVP(force) {
+  if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+  const de = document.documentElement, bo = document.body;
+  if (de.scrollTop || de.scrollLeft) { de.scrollTop = 0; de.scrollLeft = 0; } if (bo.scrollTop || bo.scrollLeft) { bo.scrollTop = 0; bo.scrollLeft = 0; }
+  const v = window.visualViewport, w = v ? v.width : innerWidth, h = v ? v.height : innerHeight, l = v ? v.offsetLeft : 0, t = v ? v.offsetTop : 0;
+  if (!(w > 0 && h > 0)) return false;
+  if (!force && Math.abs(w - VP.w) < 0.5 && Math.abs(h - VP.h) < 0.5 && Math.abs(l - VP.l) < 0.5 && Math.abs(t - VP.t) < 0.5) return false;
+  VP.w = w; VP.h = h; VP.l = l; VP.t = t;
+  const st = de.style; st.setProperty('--vw', w + 'px'); st.setProperty('--vh', h + 'px'); st.setProperty('--vl', l + 'px'); st.setProperty('--vt', t + 'px'); st.setProperty('--vwu', w / 100 + 'px'); st.setProperty('--vhu', h / 100 + 'px');
+  bo.classList.toggle('land', landscape());
+  layoutFor(mode === 'game' ? cur : null);
+  // una spinta al disegno: gli strati dei tasti si ricompongono dove stanno adesso
+  const wr = $('wrap'); wr.classList.add('kick'); requestAnimationFrame(() => requestAnimationFrame(() => wr.classList.remove('kick')));
+  return true;
+}
+let vpTimer = 0;
+function watchVP() { applyVP(); let n = 0; clearInterval(vpTimer); vpTimer = setInterval(() => { applyVP(); if (++n >= 20) { clearInterval(vpTimer); vpTimer = 0; } }, 100); }
+for (const ev of ['resize', 'orientationchange', 'fullscreenchange', 'webkitfullscreenchange', 'pageshow', 'focus']) addEventListener(ev, watchVP);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) watchVP(); });
+if (window.visualViewport) { visualViewport.addEventListener('resize', watchVP); visualViewport.addEventListener('scroll', watchVP); }
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', watchVP);
+setInterval(() => { if (!vpTimer) applyVP(); }, 750);
 
 // ---------- tasti: tocco + tastiera ----------
 function syncBtn(name) {
@@ -362,5 +389,5 @@ function loop(t) {
     frameDraw();
   } catch (e) { acc = 0; if (loopErr++ < 3) console.error(e); }
 }
-layoutFor(null);
+applyVP(true); watchVP();
 requestAnimationFrame(loop);

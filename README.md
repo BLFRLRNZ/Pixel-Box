@@ -87,6 +87,7 @@ Croce direzionale (in Pixel Saga una leva a otto direzioni), A, B, START e SELEC
 In Pixel Saga c'è anche un terzo tasto, C, per l'abilità della classe.
 Sul computer: frecce, X = A, Z = B, C = C (V cambia abilità), Invio = START, Esc = SELECT.
 Il pulsante dell'altoparlante in alto a destra cambia il volume: alto, medio, spento.
+Quando il telefono ruota, entra o esce dal tutto schermo, la console si rimisura da sola su quel che si vede davvero (anche in ritardo, se il telefono avvisa tardi) e non lascia mai scorrere la pagina: i tasti disegnati e i tasti toccati restano nello stesso posto.
 
 ## Com'è fatto
 
