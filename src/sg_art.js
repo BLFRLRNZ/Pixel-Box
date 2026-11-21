@@ -495,6 +495,29 @@ function pine(R, W, H, pal, snow) {
   }
   return finish(c);
 }
+// cipresso: una fiamma verde scuro, stretta e alta
+function cypress(R, W, H, pal) {
+  const c = mk(W, H), g = c.getContext('2d');
+  trunk(g, W / 2, H * 0.84, H - 1, Math.max(2, W * 0.16), TRUNK, 0.3);
+  const yt = H * 0.02, yb = H * 0.9;
+  for (let y = Math.floor(yt); y < yb; y++) {
+    const f = (y - yt) / (yb - yt), w = (W / 2 - 1) * Math.pow(Math.sin(Math.min(1, f * 1.12 + 0.04) * Math.PI * 0.62), 0.8) * (f > 0.9 ? 1 - (f - 0.9) * 4 : 1) + 0.6;
+    for (let x = Math.floor(W / 2 - w); x <= W / 2 + w; x++) {
+      const s = (x - (W / 2 - w)) / (2 * w + 0.001); let k = s < 0.3 ? 2 : s > 0.68 ? 0 : 1;
+      if ((x * 3 + y) % 7 === 0 && k > 0) k--; if (R() < 0.06) k = Math.min(2, k + 1);
+      g.fillStyle = pal[k]; g.fillRect(x, y, 1, 1);
+    }
+  }
+  return finish(c);
+}
+// girasoli: un ciuffo di tre fiori (v = 1: due soli, più bassi)
+function sunflower(v) {
+  const c = mk(v ? 17 : 23, 19), g = c.getContext('2d'), P = (col, x, y, w = 1, h = 1) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  const one = (x, y) => { for (let k = y + 7; k < 19; k++) P('#3e8a3a', x + 3, k); P('#4ea044', x + 1, y + 10, 2, 2); P('#4ea044', x + 4, y + 12, 3, 2); P('#4ea044', x, y + 14, 3, 1);
+    for (const [a, b] of [[1, 0], [3, 0], [5, 0], [0, 1], [6, 1], [0, 3], [6, 3], [0, 5], [6, 5], [1, 6], [3, 6], [5, 6]]) P('#ffd21e', x + a, y + b); P('#f0b012', x + 1, y + 1, 5, 5); P('#6a4420', x + 2, y + 2, 3, 3); P('#8a5a2a', x + 2, y + 2); };
+  if (v) { one(1, 3); one(9, 0); } else { one(0, 2); one(8, 0); one(16, 4); }
+  return finish(c);
+}
 // acacia: chioma piatta e larga su un tronco a forcella
 function acacia(R, W, H, pal) {
   const c = mk(W, H), g = c.getContext('2d'), tp = ['#4a3420', '#6a4a2c', '#8a6238'];
@@ -895,6 +918,6 @@ function Atlas(AW, AH) {
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
 SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
-  oak, acacia, giantTree, pine, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
+  oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, pano, icon, Atlas, TRUNK, BIRCH };
 })();

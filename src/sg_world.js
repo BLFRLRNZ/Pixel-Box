@@ -20,8 +20,8 @@ function fbm(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i 
 function ridge(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++) { const r = 1 - Math.abs(vn(x * f + i * 31.7, y * f) * 2 - 1); s += a * r * r; n += a; a *= 0.5; f *= 2.1; } return s / n; }
 
 // ---------- disegno del mondo ----------
-const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14 };
-const NB = 15;
+const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14, HILLS: 15 };
+const NB = 16;
 const COAST = [[520, 420], [900, 230], [1150, 150], [1120, -250], [1020, -700], [1160, -1150], [1500, -1520], [2000, -1760], [2500, -1840], [3000, -1760], [3400, -1480], [3640, -1050], [3700, -550], [3620, -120], [3500, 120],
   [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
   [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880], [1150, 3740], [750, 3480], [430, 3100], [260, 2650], [200, 2150], [260, 1650], [190, 1150], [300, 750]];
@@ -32,7 +32,8 @@ const REG = [
   [2150, 1340, 420, B.MEADOW, 'LAGO DI CRISTALLO'],
   [1250, 520, 430, B.MOUNT, 'MONTI DEL DRAGO'], [2300, 480, 470, B.MOUNT, 'PICCO DEL DRAGO'], [3150, 620, 430, B.MOUNT, 'MONTI DEL DRAGO'], [3680, 900, 260, B.MOUNT, 'RUPI DEL GRIFONE'],
   [650, 640, 300, B.SNOW, 'VALLE GELATA'],
-  [3250, 1750, 560, B.DESERT, 'DESERTO DI SOLIS'], [3550, 2350, 320, B.DESERT, 'DESERTO DI SOLIS'],
+  // (qui c'era il Deserto di Solis: le due regioni restano, ma dove contavano davvero il loro peso passa alle colline: vedi SOLIS in prepCoarse)
+  [3250, 1750, 560, B.DESERT, 'COLLINE DI SOLIS', null, B.HILLS], [3550, 2350, 320, B.DESERT, 'COLLINE DI SOLIS', null, B.HILLS],
   [650, 2650, 450, B.SWAMP, "PALUDE D'OMBRA"],
   [3350, 3150, 430, B.VOLCANO, 'MONTE BRACE'],
   [2760, 2960, 330, B.MEADOW, 'ROCCA DI LUMEN'],
@@ -119,9 +120,9 @@ const CHESTS = [
 // nascondigli: un cerchio di cespugli, alberi o massi attorno a un forziere (stile, apertura verso...)
 const NOOKS = [
   [1925, 2562, 'cespugli'], [2475, 2930, 'cespugli'], [1625, 2330, 'cespugli'], [1195, 1765, 'bosco'], [1080, 1392, 'bosco'], [860, 480, 'neve'],
-  [3230, 3150, 'brace'], [1292, 3632, 'cespugli'], [3060, 2385, 'sabbia'], [830, 1175, 'bosco'], [3620, 1920, 'sabbia'], [2950, 3420, 'brace'],
+  [3230, 3150, 'brace'], [1292, 3632, 'cespugli'], [3060, 2385, 'solis'], [830, 1175, 'bosco'], [3620, 1920, 'solis'], [2950, 3420, 'brace'],
   [1150, 3150, 'cespugli'], [3210, 1140, 'rocce'], [2600, 1150, 'rocce'], [1904, 897, 'rocce'], [2550, 3700, 'cespugli'], [820, 1900, 'bosco'],
-  [1850, 3650, 'cespugli'], [3150, 2700, 'brace'], [1550, 1050, 'bosco'], [610, 2960, 'palude'], [1330, 1180, 'bosco'], [3500, 2150, 'sabbia'],
+  [1850, 3650, 'cespugli'], [3150, 2700, 'brace'], [1550, 1050, 'bosco'], [610, 2960, 'palude'], [1330, 1180, 'bosco'], [3500, 2150, 'solis'],
 ];
 // abitanti e creature con un nome: [id, x, z, direzione]
 const NPCS = [
@@ -141,7 +142,7 @@ const CAMPS = [
 ];
 // nomi dei luoghi speciali (prima delle regioni): [x, z, raggio, nome]
 const PLACES = [[2000, 2650, 200, 'BORGO AURORA'], [2760, 2960, 300, 'ROCCA DI LUMEN'], [3360, 1670, 180, 'ROVINE DI SOLIS'], [1080, 1420, 150, "L'ALBERO MADRE"],
-  [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'OASI DI SABBIA'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
+  [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'FONTE DEI GIRASOLI'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
 // altre tabelle che le terre nuove e le città possono allungare
 const COASTS = [COAST], RIVERS = [RIVER];
 const FINE = [];                                   // zone dove il rilievo resta preciso anche da lontano: [x0, z0, x1, z1]
@@ -156,9 +157,12 @@ const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 172
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
+// la sequenza della vegetazione di Lumen, riga per riga (vedi placeObjects): numeri già usati all'inizio della riga 738, poi quanti ne usa ogni riga
+const SOLR0 = 64383, SOLR = [1052,1051,1054,1051,1050,1055,1058,1070,1062,1057,1068,1068,1065,1064,1081,1074,1074,1085,1090,1093,1099,1105,1115,1102,1114,1093,1097,1100,1110,1094,1108,1090,1097,1106,1103,1091,1098,1090,1091,1097,1087,1098,1102,1090,1096,1096,1103,1101,1093,1083,1085,1086,1084,1086,1074,1093,1080,1086,1089,1077,1075,1084,1077,1080,1089,1090,1101,1095,1104,1093,1096,1095,1094,1101,1103,1103,1089,1092,1105,1102,1105,1088,1107,1108,1095,1097,1099,1095,1104,1104,1102,1095,1102,1094,1103,1107,1096,1104,1094,1101,1084,1101,1100,1086,1081,1087,1091,1085,1091,1086,1089,1082,1071,1081,1086,1083,1077,1071,1075,1070,1073,1072,1060,1055,1061,1060,1062,1085,1074,1084,1071,1065,1067,1072,1068,1069,1071,1052,1074,1077,1063,1063,1068,1072,1073,1070,1064,1060,1065,1063,1060,1056,1064,1059,1067,1054,1059,1056,1056,1057,1061,1059,1049,1056,1053,1064,1055,1053,1052,1054,1058,1062,1057,1074,1058,1056,1057,1068,1062,1061,1058,1054,1060,1053,1065,1057,1047,1065,1056,1055,1067,1057,1054,1059,1059,1058,1052,1059,1059,1057,1051,1056,1052,1053,1058,1057,1052,1066,1058,1053,1067,1068,1057];
 
 // ---------- griglie larghe (un punto ogni 32 unità): distanza dalla costa e pesi dei biomi ----------
 const CG = 32, CGN = WS / CG, CGV = CGN + 1, CGNZ = WSZ / CG, CGVZ = CGNZ + 1;
+let CHGc = null;   // dove il mondo è cambiato rispetto a prima (le Colline di Solis): serve a lasciare identica la vegetazione di tutto il resto
 let SDc = null, BWc = null;
 function polySD(P, x, z) {
   let inside = false, md = 1e18;
@@ -172,7 +176,7 @@ function polySD(P, x, z) {
 }
 function warp(x, z, o) { o[0] = x + (fbm(x / 640, z / 640, 3) - 0.5) * 460; o[1] = z + (fbm(x / 640 + 41, z / 640 + 13, 3) - 0.5) * 460; }
 function* prepCoarse() {
-  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB);
+  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB); CHGc = new Uint8Array(CGV * CGVZ);
   const BB = COASTS.map(P => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const [x, z] of P) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; });
   const wp = [0, 0];
   for (let j = 0; j < CGVZ; j++) {
@@ -186,8 +190,11 @@ function* prepCoarse() {
       SDc[k] = best;
       if (best < -420) { BWc[o] = 1; continue; }
       warp(x, z, wp); let tot = 0;
-      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
+      let ws = 0;
+      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; if (r[6] !== undefined) ws += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
       if (tot > 1e-200) for (let b = 0; b < NB; b++) BWc[o + b] /= tot; else { for (let b = 0; b < NB; b++) BWc[o + b] = 0; BWc[o] = 1; }
+      // SOLIS: dove il vecchio deserto pesava almeno un po', il suo peso diventa collina. Altrove (a ovest del lago, a nord, oltre lo stretto) niente cambia di una virgola
+      if (ws > 0 && tot > 1e-200) { const wn = ws / tot, m = smooth(0.03, 0.15, wn) * smooth(880, 960, z) * smooth(4250, 4120, x); if (m > 0) { BWc[o + B.DESERT] -= wn * m; BWc[o + B.HILLS] += wn * m; CHGc[k] = 1; } }
     }
     if (j % 32 === 0) yield j / CGVZ;
   }
@@ -231,6 +238,8 @@ function biomeH(b, x, z) {
     case B.BLOSSOM: return 20 + 44 * fbm(x / 460, z / 460, 4) + 6 * fbm(x / 100, z / 100, 2);
     case B.MOOR: return 10 + 22 * fbm(x / 420, z / 420, 3) + 12 * Math.pow(ridge(x / 300, z / 300, 3), 2);
     // i grandi monti del nord: salgono a poco a poco verso settentrione, con creste sempre più alte
+    // le Colline di Solis: dossi morbidi, più mossi dei prati
+    case B.HILLS: return 15 + 30 * fbm(x / 360 + 5.3, z / 360 + 1.9, 4) + 6 * fbm(x / 95, z / 95, 2);
     case B.ALP: { const up = smooth(280, -1050, z), rg = Math.pow(ridge(x / 880 + 3.1, z / 880 + 7.7, 5), 1.45); return 150 + 300 * up + (230 + 470 * up) * rg + 26 * fbm(x / 150, z / 150, 3); }
     default: return 20 + 10 * fbm(x / 200, z / 200, 2);
   }
@@ -329,9 +338,9 @@ W.inBox = (x, z, m = 0) => {
 
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
-  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262'];
+  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262', '#74a644', '#a4b850'];
 const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 0], [0, 0.1, 0, 0.9], [0, 0.75, 0, 0.25], [0.45, 0.35, 0, 0.2], [0, 0.6, 0.4, 0],
-  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0]];
+  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0], [0.9, 0.1, 0, 0]];
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
@@ -457,6 +466,8 @@ function* build(atlas, sprites) {
           else if (b === B.MESA) { const bd = Math.floor((h + n1 * 14) / 7) % 3; if (bd === 1) { cr *= 0.86; cg *= 0.84; cb *= 0.86; } else if (bd === 2) { cr = lerp(cr, 236, 0.35); cg = lerp(cg, 190, 0.35); cb = lerp(cb, 140, 0.35); } }
           else if (b === B.JUNGLE) { if (n2 > 0.7) { cr *= 0.78; cg *= 0.8; cb *= 0.78; } }
           else if (b === B.BLOSSOM) { if (vn(x / 6, z / 6) > 0.8) { cr = 250; cg = 176; cb = 204; } }
+          // colline: chiazze di grano dorato a righe, e prati più gialli dove crescono i girasoli
+          else if (b === B.HILLS) { if (n1 > 0.55) { const k = smooth(0.55, 0.6, n1), st = Math.floor((x * 0.8 + z * 0.3) / 5) % 2 ? 0.9 : 1; cr = lerp(cr, 226 * st, k); cg = lerp(cg, 190 * st, k); cb = lerp(cb, 86 * st, k); } else if (n1 < 0.45 && n2 > 0.6) { const k = 0.6 * smooth(0.6, 0.68, n2); cr = lerp(cr, 206, k); cg = lerp(cg, 196, k); cb = lerp(cb, 66, k); } }
           else if (b === B.ALP) { const g = smooth(400, 520, h + (n1 - 0.5) * 70); cr = lerp(cr, 134, g); cg = lerp(cg, 130, g); cb = lerp(cb, 124, g); if (g < 0.5 && n2 > 0.8) { cr *= 0.86; cg *= 0.9; cb *= 0.84; } }
           else if (b === B.MOOR) { if (n2 > 0.62) { cr = 124; cg = 76; cb = 124; } else if (n2 < 0.2) { cr = 66; cg = 70; cb = 60; } }
           c[0] += cr * wb; c[1] += cg * wb; c[2] += cb * wb;
@@ -689,6 +700,7 @@ function* placeObjects(S) {
     rocce: { ring: ['rock', 5, 8, true], back: [['pine', 2, 14]], deco: ['tuft'] },
     neve: { ring: ['rocksnow', 5, 8, true], back: [['snowpine', 3, 14]], deco: [] },
     sabbia: { ring: ['sandrock', 4, 8, true], back: [['cactus', 1, 13], ['drybush', 3, 6]], deco: ['bones'] },
+    solis: { ring: ['rock', 4, 8, true], back: [['cipresso', 1, 13], ['bush', 3, 6]], deco: ['flower'] },   // (stessi numeri di «sabbia»: la sequenza non si sposta)
     palude: { ring: ['reeds', 7, 6], back: [['willow', 3, 13]], deco: ['mushroom'] },
     brace: { ring: ['lavarock', 5, 8, true], back: [['burnt', 2, 14]], deco: ['bones'] },
     ambra: { ring: ['bushred', 7, 6.5], back: [['oakred', 3, 14]], deco: ['mushroom', 'fern'] },
@@ -738,6 +750,7 @@ function* placeObjects(S) {
     [B.JUNGLE]: [[0.15, 'jungle'], [0.24, 'palm'], [0.33, 'fernbig'], [0.4, 'fern', 1], [0.44, 'flower', 1], [0.46, 'bush'], [0.47, 'rock']],
     [B.BLOSSOM]: [[0.035, 'cherry'], [0.05, 'cherrywhite'], [0.062, 'bush'], [0.2, 'flower', 1], [0.27, 'tuft', 1], [0.276, 'rock']],
     [B.MOOR]: [[0.02, 'deadtree'], [0.03, 'willow'], [0.14, 'heather', 1], [0.16, 'rock'], [0.175, 'tomb'], [0.19, 'tuft', 1]],
+    [B.HILLS]: [[0.012, 'cipresso'], [0.021, 'ulivo'], [0.03, 'bush'], [0.085, 'flower', 1], [0.14, 'tuft', 1], [0.146, 'rock']],
     [B.ALP]: [[0.06, 'pine'], [0.088, 'rock'], [0.098, 'rocksnow'], [0.14, 'tuft', 1], [0.185, 'flower', 1]],
   };
   const scatter = (gx0, gz0, gx1, gz1, skipOld) => {
@@ -752,6 +765,7 @@ function* placeObjects(S) {
       if (W.col[(Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
       let pick = null;
       for (const e of TBL[b]) if (r < e[0]) { pick = e; break; }
+      if (b === B.HILLS) { const f = fbm(x / 210, z / 210, 3); if (f < 0.45 && r >= 0.03 && r < 0.4) pick = [0, 'girasole', 1]; else if (f > 0.56 && pick && pick[2]) pick = null; }   // i campi di girasoli; nel grano niente erbacce
       if (!pick) continue;
       if (sl > 0.75 && pick[1] !== 'rock' && pick[1] !== 'mesarock') continue;
       // sui grandi monti: boschi di pini nelle valli, più radi salendo, e sopra i nevai soltanto roccia
@@ -770,15 +784,33 @@ function* placeObjects(S) {
   // a nord della riga 732 il terreno di Lumen è cambiato (i grandi monti, il valico): lì la vegetazione segue una sequenza sua.
   // Da lì in giù la sequenza riparte dal punto esatto di prima (64383 numeri già usati): ogni albero di Lumen resta dov'era
   R = rng(7117); scatter(0, 0, OLD, 732, false);
-  R = rng((4242 + Math.imul(64383, 0x6D2B79F5)) >>> 0); scatter(0, 732, OLD, OLD, false);
+  // ...tranne dove c'era il Deserto di Solis, ora colline: lì (e a est, fino al mare) la sequenza è un'altra. Perché il resto non si sposti,
+  // a ogni riga la sequenza di Lumen riparte dal punto in cui stava prima (SOLR: quanti numeri erano già usati all'inizio di ogni riga, dalla 738 alla 3294)
+  { const at = n => rng((4242 + Math.imul(n, 0x6D2B79F5)) >>> 0), RZ = rng(2626);
+    const xaOf = gz => { let m = 1e9; for (let j = Math.floor((gz - 140 - Z0) / CG); j <= Math.ceil((gz + 140 - Z0) / CG); j++) for (let i = 0; i < CGV; i++) if (CHGc[j * CGV + i]) { m = Math.min(m, i * CG); break; } return m > 1e8 ? OLD : Math.max(0, Math.min(OLD, Math.floor((m - 140) / 12) * 12)); };
+    W.solisX = xaOf;
+    let n = SOLR0, gz = 738;
+    for (let k = 0; k < SOLR.length; k++, gz += 12) {
+      R = at(n); const xa = xaOf(gz);
+      scatter(0, gz - 6, xa, gz + 6, false);
+      if (xa < OLD) { R = RZ; scatter(xa, gz - 6, OLD, gz + 6, false); }
+      n += SOLR[k];
+    }
+    R = at(n); scatter(0, gz - 6, OLD, OLD, false);   // dalla riga 3294 in giù, tutto di fila come prima
+    const RM = R;
+    // il viale di cipressi che sale alle rovine
+    R = RZ; for (const [ax, az, bx, bz] of [[3200, 2000, 3330, 1740]]) { const L = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / L, uz = (bz - az) / L; for (let t = 34; t < L - 26; t += 26) for (const s of [-1, 1]) { const x = ax + ux * t - uz * s * 10, z = az + uz * t + ux * s * 10; if (W.roadAt(x, z) < 0.05 && !busy(x, z, 3)) add('cipresso', x, z); } }
+    R = RM;
+  }
   yield 0.3;
   // pietre che affiorano dal lago: il passaggio verso l'isola
   for (let i = 0; i < STONES.length - 1; i++) { const [ax, az] = STONES[i], [bx, bz] = STONES[i + 1], L = Math.hypot(bx - ax, bz - az); for (let t = 0; t < L; t += 11) { const x = ax + (bx - ax) * t / L + (R() - 0.5) * 4, z = az + (bz - az) * t / L + (R() - 0.5) * 4; add('stepstone', x, z, { y: WL + 0.15, sink: 0 }); } }
   // cristalli sulle rive del lago
   for (let k = 0; k < 70; k++) { const a = R() * Math.PI * 2, s = 1.02 + R() * 0.12, x = 2150 + Math.cos(a) * 330 * s, z = 1340 + Math.sin(a) * 250 * s; if (W.ground(x, z) > 0.5 && W.roadAt(x, z) < 0.05) add('crystal', x, z); }
   // palme sulla costa
-  const warm = b => b !== B.SNOW && b !== B.MOUNT && b !== B.MOOR && b !== B.AUTUMN;
-  for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
+  const warm = b => b !== B.SNOW && b !== B.MOUNT && b !== B.MOOR && b !== B.AUTUMN && b !== B.HILLS;
+  // (nella zona delle colline non c'erano palme e non ce ne sono: la sequenza resta al passo)
+  for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (z > 732 && z < 3300 && x >= W.solisX(Math.floor((z - 732) / 12) * 12 + 738)) continue; if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
   // poi le terre nuove, con un'altra sequenza di numeri
   R = rng(90210);
   const NN = W.NORDN || { nooks: [0, 0], props: [0, 0] };   // le cose dei grandi monti (un tratto degli elenchi) hanno la loro sequenza: le lasciamo per ultime

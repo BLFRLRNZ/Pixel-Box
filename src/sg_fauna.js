@@ -287,14 +287,6 @@ const SPEC = {
       extra: ({ E }, q) => E([-0.4, 0, q.bz + 3.4], [3.4, 2.4, 3.2], '#d8a868') }, p), f: GRAZE, W: 50, H: 44, k: 'graze', v: 8, run: 30, fl: 0, al: 50, r: 3.2, g: [1, 3], roam: 60 },
   fennec: { n: 'volpe del deserto', m: p => quad(Object.assign({}, FOX, { s: 1.1, c: '#ecca94', c2: '#fff6e6', leg: '#d8b078', ear: ['point', 4.4, '#ecca94'], tail: ['bushy', 6, '#ecca94'], tuft: '#3a2a26' }), p), f: WALK, W: 30, H: 24, k: 'scurry', v: 14, run: 48, fl: 20, al: 50, r: 1.7, g: [1, 2], roam: 60 },
   lucertola: { n: 'lucertola', m: p => lizard({ c: '#5aa83e', c2: '#c8e088', s: 0.85 }, p), f: [{}, { leg: 0.6 }, { leg: -0.6 }], W: 22, H: 10, k: 'dart', v: 30, run: 52, fl: 14, al: 0, r: 1, g: [1, 2], roam: 24, tn: [null, [1.5, 1.1, 0.7], [0.8, 0.9, 1.3]], when: 'day' },
-  gazzella: { n: 'gazzella', m: p => quad(Object.assign({}, DEER, { s: 1.2, c: '#dca468', c2: '#fff8ec', leg: '#c88c54', horn: ['lyre', 4.4, '#3a2e2a'], ear: ['point', 2.2, '#dca468'], tail: ['hang', 2.6, '#3a2e2a'],
-      extra: ({ E }, q) => { for (const t of [1, -1]) E([0, t * 2.1, q.bz - 0.9], [4.4, 0.5, 0.6], '#5a3e2a'); } }), p), f: GRAZE, W: 44, H: 36, k: 'graze', v: 10, run: 54, fl: 24, al: 56, r: 2.4, g: [3, 6], roam: 60 },
-  zebra: { n: 'zebra', m: p => quad(Object.assign({}, HORSE, { s: 1.4, c: '#f6f4ee', c2: '#f6f4ee', leg: '#e8e6e0', sn: [2.3, '#2a2630', 0.5], ear: ['point', 1.7, '#f6f4ee'], tail: ['hang', 5.4, '#f6f4ee'], tuft: '#2a2630', mane: ['#2a2630', 1.15],
-      extra: ({ E, K }, q) => { for (const x of [-6, -4, -2, 0, 2, 4, 5.8]) { const f = Math.sqrt(Math.max(0.12, 1 - (x / 8.2) ** 2)); E([x, 0, q.bz + 0.12], [0.62, 3.26 * f, 3.68 * f], '#2a2630'); } for (let i = 1; i <= 4; i++) { const f = i / 5; E([q.nb[0] + (q.hx - q.nb[0]) * f, 0, q.nb[2] + (q.hz - q.nb[2]) * f], [0.52, 3.1 - f * 0.75, 3.1 - f * 0.75], '#2a2630', join([['y', -0.6, q.nb[0] + (q.hx - q.nb[0]) * f, 0, q.nb[2] + (q.hz - q.nb[2]) * f]], q.HR)); } } }), p), f: GRAZE, W: 46, H: 39, k: 'graze', v: 10, run: 50, fl: 20, al: 50, r: 3.1, g: [3, 6], roam: 70 },
-  giraffa: { n: 'giraffa', m: p => quad({ s: 1.7, c: '#ecc068', c2: '#f4dca0', leg: '#e8c888', hoof: '#4a3828', len: 6, wid: 2.8, hgt: 3.3, ll: 13, lr: 1.0, tilt: 0.2, nl: 15, na: 1.22, nt: 1.7, nb: 1.7, nx: 0.6, head: [2.2, 1.4, 1.5], sn: [2, '#f4dca0', 0.2], ear: ['side', 1.6, '#ecc068'], horn: ['knob', 1.5, '#8a5a30'], tail: ['hang', 6, '#ecc068'], tuft: '#4a3020', eye: 0.44, grazeA: 0.5,
-      extra: ({ E }, q) => { const sp = '#a86a2e'; for (const [x, y, z, r] of [[3, 2.1, 1.2, 1.5], [0.2, 2.5, 0.2, 1.7], [-3, 2.2, 0.6, 1.6], [3, -2.1, 0.6, 1.6], [0, -2.5, 1.2, 1.5], [-3.2, -2.2, 0, 1.6], [-1, 0, 2.9, 1.7], [2.6, 0, 3.4, 1.4], [-4.6, 0, 1.6, 1.5]]) E([x, y, q.bz + z + (x + 3) * 0.2], [r, r * 0.5, r], sp); for (let i = 1; i <= 6; i++) { const f = i / 7, cx = q.nb[0] + (q.hx - q.nb[0]) * f, cz = q.nb[2] + (q.hz - q.nb[2]) * f; E([cx, (i % 2 ? 1 : -1) * 1.2, cz], [1.0, 0.75, 1.3], sp, q.HR); } } }, p), f: [{}, { leg: 0.4 }], W: 52, H: 69, k: 'graze', v: 8, run: 34, fl: 0, al: 60, r: 3.2, g: [2, 4], roam: 70 },
-  elefante: { n: 'elefante', m: p => quad({ s: 2.05, c: '#8e8e9a', c2: '#a4a4b0', leg: '#82828e', hoof: '#d8d4c8', len: 8, wid: 4.8, hgt: 5.4, ll: 7, lr: 2, nl: 1.6, na: 0.5, nt: 3.6, nz: 0.2, head: [4, 3.7, 4.2], sn: [0, 0], ear: ['big', 7.6, '#82828e'], horn: ['tusk', 4.4, '#f8f0dc'], tail: ['hang', 5, '#6a6a76'], eye: 0.5, chest: 1.02, rump: 1.02, grazeA: 0.12,
-      extra: ({ K }, q) => { const H = q.H, sw = q.pose.graze ? 1.2 : 0, a = [H[0] + 3.2, 0, H[2] - 1], b = [H[0] + 5 + sw, 0, H[2] - 5], c = [H[0] + 4.6 + sw * 2.2, 0, 2.6], d = [H[0] + 5.8 + sw * 2.6, 0, 1.6 + sw]; K(a, b, 2, 1.4, '#8e8e9a', q.HR); K(b, c, 1.4, 1.0, '#8e8e9a', q.HR); K(c, d, 1.0, 0.75, '#82828e', q.HR); } }, p), f: [{}, { leg: 0.32 }, { graze: 1 }], W: 74, H: 48, k: 'graze', v: 6, run: 16, fl: 0, al: 0, r: 5, g: [2, 4], roam: 70 },
   bisonte: { n: 'bisonte', m: p => quad({ s: 1.65, c: '#7a5c42', c2: '#6a4e38', leg: '#4a3628', hoof: '#2a2020', len: 7.4, wid: 3.6, hgt: 3.9, ll: 4.8, lr: 1.2, chest: 1.3, chestC: '#4a3628', nl: 1.4, na: -0.1, nt: 3.2, nz: 0.1, head: [2.8, 2.4, 2.6], headC: '#3a2a20', sn: [1.5, '#3a2a20', 0.4], snw: 0.8, ear: ['side', 1.2, '#3a2a20'], horn: ['short', 2.2, '#e8dcc0'], tail: ['hang', 4.4, '#4a3628'], eye: 0.4, grazeA: 0.6,
       extra: ({ E, K }, q) => { E([3.6, 0, q.bz + 2.8], [3.6, 3.2, 3.2], '#4a3628'); K([q.H[0] + 1.5, 0, q.H[2] - 2], [q.H[0] + 1, 0, q.H[2] - 4.4], 0.9, 0.2, '#3a2a20', q.HR); } }, p), f: GRAZE, W: 46, H: 30, k: 'graze', v: 6, run: 30, fl: 0, al: 50, r: 3.6, g: [2, 5], roam: 60 },
   // --- palude, giungla, colline dei ciliegi
@@ -349,18 +341,19 @@ const LAND = [
   /*  6 palude    */ [['rana', 5], ['airone', 3], ['tartaruga', 2], ['capibara', 1.5], ['corvo', 1], ['gufo', 2]],
   /*  7 vulcano   */ [['lucertola', 3], ['corvo', 2]],
   /*  8 autunno   */ [['cervo', 4], ['scoiattolo', 4], ['volpe', 2.5], ['cinghiale', 2], ['coniglio', 2], ['passero', 2.5], ['gufo', 3], ['riccio', 2.5]],
-  /*  9 savana    */ [['zebra', 4], ['gazzella', 4], ['giraffa', 2.5], ['elefante', 2], ['lucertola', 1]],
+  /*  9 piana     */ [['cavallo', 4.5], ['bisonte', 2.5], ['cervo', 2.5], ['coniglio', 3], ['volpe', 1.2], ['passero', 2], ['lucertola', 1]],
   /* 10 altopiano */ [['bisonte', 4], ['lucertola', 3], ['fennec', 1.5], ['cavallo', 2]],
   /* 11 giungla   */ [['scimmia', 4], ['pappagallo', 4], ['tucano', 2.5], ['capibara', 2], ['rana', 3], ['tartaruga', 1]],
   /* 12 ciliegi   */ [['cervoS', 4], ['gru', 3], ['tanuki', 2.5], ['coniglio', 2], ['passero', 3], ['gatto', 0.7], ['gufo', 2]],
   /* 13 brughiera */ [['pecora', 3], ['cavallo', 2], ['corvo', 3], ['coniglio', 3], ['volpe', 1.5], ['gufo', 2]],
   /* 14 alpi      */ [['stambecco', 5], ['cervo', 2.5], ['lepreB', 2], ['volpeB', 1], ['corvo', 1.5], ['gufo', 1.5], ['passero', 1.5]],
+  /* 15 colline   */ [['pecora', 3], ['cavallo', 2], ['coniglio', 4], ['cervo', 2], ['volpe', 1.5], ['passero', 3], ['riccio', 2], ['corvo', 1]],
 ];
-const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila', 14: 'aquila' };
+const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'aquila', 10: 'aquila', 14: 'aquila' };
 const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_COLD = [['foca', 4], ['pinguino', 3.5], ['gabbiano', 2]];
 const TOWN = [['piccione', 5], ['gatto', 2.2], ['cane', 2.2], ['gallina', 1.5], ['passero', 2]];
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
-const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14]);
+const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14, 15]);
 
 // ---------- il motore ----------
 // Il mondo è diviso in riquadri: quando l'eroe si avvicina, ogni riquadro fa comparire i suoi gruppi (sempre gli stessi

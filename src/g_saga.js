@@ -48,7 +48,7 @@ const IT = {
   grandeChiave: { n: 'GRANDE CHIAVE', t: 'chiave', r: 2, d: 'APRE LA PORTA DEL GUARDIANO.' },
   pBosco: { n: "PIETRA DELL'ALBA DEL BOSCO", t: 'pietra', r: 3, c: '#5af07a', d: 'BRILLA DELLA LUCE VERDE DELLE FORESTE.' },
   pLago: { n: "PIETRA DELL'ALBA DEL LAGO", t: 'pietra', r: 3, c: '#5ac8ff', d: 'BRILLA DELLA LUCE AZZURRA DELLE ACQUE.' },
-  pSole: { n: "PIETRA DELL'ALBA DEL SOLE", t: 'pietra', r: 3, c: '#ffd23f', d: 'BRILLA DELLA LUCE DORATA DEL DESERTO.' },
+  pSole: { n: "PIETRA DELL'ALBA DEL SOLE", t: 'pietra', r: 3, c: '#ffd23f', d: 'BRILLA DELLA LUCE DORATA DI SOLIS.' },
   pGhiaccio: { n: "PIETRA DELL'ALBA DEL GHIACCIO", t: 'pietra', r: 3, c: '#bff0ff', d: 'BRILLA DELLA LUCE BIANCA DEI GHIACCI.' },
   pFuoco: { n: "PIETRA DELL'ALBA DEL FUOCO", t: 'pietra', r: 3, c: '#ff5a3a', d: 'BRILLA DELLA LUCE ROSSA DEL VULCANO.' },
   // armi, armature e amuleti nuovi: nei negozi e nelle grotte nascoste
@@ -120,7 +120,7 @@ const NPC = {
   pescatore: { n: 'IL PESCATORE', look: { skin: '#e0a880', hat: '#d8b85a', shirt: '#4a7aa8', pants: '#6a5a3a', boots: '#3a3a3a', beard: '#c8c8d0', hairStyle: 'short', hair: '#c8c8d0' } },
   spirito: { n: 'SPIRITO DEL BOSCO', sc: 1.18, look: { skin: '#9af0b0', shirt: '#3aa860', robe: '#2a8a50', pants: '#2a8a50', boots: '#1e6a3a', antlers: '#f0e8d0', eyes: '#ffffff' } },
   ardea: { n: 'CAPITANO ARDEA', look: { skin: '#e8b890', helm: { c: '#c8d0dc', plume: '#c8342c' }, shirt: '#c8d0dc', plate: '#e8eef6', pauldron: '#c8d0dc', pants: '#5a6070', boots: '#3a3a44', cape: '#c8342c', weapon: { col: '#e8eef6', guard: '#c8a040' }, shield: '#c8342c', emblem: '#ffd23f' } },
-  nomade: { n: 'LA NOMADE', look: { skin: '#b07a50', hood: '#d8b878', robe: '#c89a5a', shirt: '#e0c080', pants: '#a87a4a', boots: '#6a4a2a' } },
+  nomade: { n: 'LA PELLEGRINA', look: { skin: '#b07a50', hood: '#d8b878', robe: '#c89a5a', shirt: '#e0c080', pants: '#a87a4a', boots: '#6a4a2a' } },
   eremita: { n: "L'EREMITA", look: { skin: '#e0b8a0', hood: '#8a8a9a', robe: '#6a6a7a', shirt: '#7a7a8a', pants: '#5a5a6a', boots: '#3a3a44', beard: '#e8e8f0', staff: '#8a6a4a' } },
   contadino: { n: 'IL CONTADINO', look: { skin: '#d89a70', hat: '#d8b85a', shirt: '#8aaa5a', pants: '#6a5a3a', boots: '#4a3a2a', hairStyle: 'short', hair: '#5a3a1a', weapon: { kind: 'spear' } } },
 };
@@ -163,7 +163,7 @@ const ATMO = [
   ['#bcd8ee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#c4dcee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#a8c8b4', '#4a8ac0', 240, 900, '#3a6aa0'], ['#c8d6e8', '#3a7ccc', 450, 1450, '#3a72b8'],
   ['#dce6f2', '#7aa4d4', 200, 860, '#5a8ac0'], ['#f0d8a8', '#5a9cdc', 400, 1300, '#3a8ab8'], ['#8a9a7a', '#4a5a4e', 70, 480, '#4a5e46'], ['#b8786a', '#4a2424', 190, 820, '#5a3a3a'],
   ['#ecc8a0', '#6a9ad0', 300, 1050, '#3a7ab0'], ['#ecdcb0', '#5aa0dc', 420, 1350, '#3a86c0'], ['#f0c8a0', '#5a94d8', 400, 1300, '#3a8ab8'], ['#a8d0b0', '#4a90b8', 180, 760, '#2a8a80'],
-  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'],
+  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'], ['#cfe0ee', '#4a94e0', 400, 1300, '#3a7ac8'],
 ].map(a => [hexf(a[0]), hexf(a[1]), a[2], a[3], hexf(a[4])]);
 
 // ---------- stato ----------
@@ -323,6 +323,12 @@ function buildStatics() {
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
   for (const k of ['crystal', 'icecrystal', 'lavarock']) S[k].lit = 1.15;
   setZ('ore', [A.rock(R, Z(22), Z(16), ['#3a3a44', '#5a5a66', '#7a7a88', '#9a9aa8'], ['#ff9a3a', '#ffd06a', '#e8eef6'])], 0.48, 3.5);
+  // le Colline di Solis: cipressi, ulivi, girasoli (con numeri loro: gli altri disegni restano identici)
+  { const R2 = rng(4711), CYP = ['#16382a', '#235238', '#3a7048'], OLV = ['#4a5a3a', '#66805a', '#8ea476', '#bccaa0'];
+    setZ('cipresso', [A.cypress(R2, Z(15), Z(60), CYP), A.cypress(R2, Z(13), Z(50), CYP), A.cypress(R2, Z(16), Z(66), CYP)], 0.46, 1.5);
+    setZ('ulivo', [A.oak(R2, Z(38), Z(40), OLV, A.TRUNK, 8), A.oak(R2, Z(34), Z(36), OLV, A.TRUNK, 7)], 0.42, 1.6);
+    set('girasole', [A.sunflower(0), A.sunflower(1)], 0.25, 0, true);
+    S.cipresso.sway = 1; S.ulivo.sway = 1; S.girasole.sway = 2; }
   // effetti
   const HD = (c, old) => { const r = atlas.add(c); r.f = old / c.width; return r; };
   SPR.puff = HD(A.puff(), 7);
@@ -624,7 +630,7 @@ function talkFolk(n, N) {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
       save.coins -= cost; startFade(() => sail(W.DOCKS[to[i]])); }); }
   if (id === 're') {
-    if (q.viaggio === 0) return say(id, ['EROE DI LUMEN! IL CAPITANO ARDEA MI HA RACCONTATO TUTTO DI TE.', 'IL DRAGO SI È SVEGLIATO, E LUMEN DA SOLA NON BASTERÀ. OLTRE IL PONTE DEI RE VIVONO POPOLI CHE UN TEMPO ERANO NOSTRI ALLEATI.', "PORTA IL MIO SIGILLO AI CINQUE SIGNORI: IL BORGOMASTRO DI CASTELROSSO, LA THANE DI ALTABRINA, L'EMIRA DI ZAFIRA, IL CAPITANO DI PORTO SERENO E LA DAMA DI FIORALBA.", 'IL PONTE È A EST, OLTRE IL DESERTO DI SOLIS. È UN VIAGGIO LUNGO: PRENDI QUESTE CENTO MONETE PER LOCANDE E TRAGHETTI.'], () => { q.viaggio = 1; save.coins += 100; trackQuest('viaggio'); toast("MISSIONE: L'ALLEANZA DELLE CITTÀ", '#ffd23f'); jingle(); });
+    if (q.viaggio === 0) return say(id, ['EROE DI LUMEN! IL CAPITANO ARDEA MI HA RACCONTATO TUTTO DI TE.', 'IL DRAGO SI È SVEGLIATO, E LUMEN DA SOLA NON BASTERÀ. OLTRE IL PONTE DEI RE VIVONO POPOLI CHE UN TEMPO ERANO NOSTRI ALLEATI.', "PORTA IL MIO SIGILLO AI CINQUE SIGNORI: IL BORGOMASTRO DI CASTELROSSO, LA THANE DI ALTABRINA, L'EMIRA DI ZAFIRA, IL CAPITANO DI PORTO SERENO E LA DAMA DI FIORALBA.", 'IL PONTE È A EST, OLTRE LE COLLINE DI SOLIS. È UN VIAGGIO LUNGO: PRENDI QUESTE CENTO MONETE PER LOCANDE E TRAGHETTI.'], () => { q.viaggio = 1; save.coins += 100; trackQuest('viaggio'); toast("MISSIONE: L'ALLEANZA DELLE CITTÀ", '#ffd23f'); jingle(); });
     if (q.viaggio === 1) return say(id, ['HAI PARLATO CON ' + allies() + ' SIGNORI SU CINQUE. LA MAPPA (SELECT) TI MOSTRA DOVE SI TROVA IL PROSSIMO.', 'NEI PORTI I TRAGHETTI TI RISPARMIANO GIORNI DI CAMMINO.']);
     if (q.viaggio === 2) return say(id, ['CINQUE GIURAMENTI! NON ACCADEVA DAI TEMPI DI RE AURELIO.', "QUANDO IL DRAGO SCENDERÀ DAL PICCO, LUMEN NON SARÀ SOLA. PRENDI LA STELLA DELL'ALLEANZA: L'HAI MERITATA.", 'E TRECENTO MONETE DAL TESORO DELLA ROCCA.'], () => { q.viaggio = 3; save.coins += 300; openLoot('alleanza'); });
     return say(id, ['LE CITTÀ SONO CON NOI. RIPOSA, EROE: IL GIORNO DEL DRAGO SI AVVICINA.']);
@@ -685,7 +691,7 @@ function talk(n) {
   if (id === 'nino') return say(id, ['BENVENUTO! MERCI DA TUTTA LUMEN, PREZZI ONESTI... QUASI.'], () => { shop = { sel: 0, top: 0, who: 'nino' }; });
   if (id === 'viandante') {
     const H = ['HO GIRATO TUTTA LUMEN. SAPEVI CHE SULL\'ISOLA DEL LAGO DI CRISTALLO C\'È UN ANTICO SANTUARIO?', "L'ACQUA DEL LAGO È PROFONDA... MA DALLA RIVA SUD-OVEST HO VISTO UN PUNTO DOVE SEMBRA PIÙ CHIARA.",
-      'IN CIMA AL PICCO DEL DRAGO C\'È UN TESORO. IL SENTIERO PARTE DALLA RIVA NORD DEL LAGO: È RIPIDO, MA SI SALE.', 'LE RUPI DEL GRIFONE, A NORD-EST, SEMBRANO IMPOSSIBILI DA SCALARE. MA DAL DESERTO, TRA LE ROCCE, QUALCUNO CI È RIUSCITO.',
+      'IN CIMA AL PICCO DEL DRAGO C\'È UN TESORO. IL SENTIERO PARTE DALLA RIVA NORD DEL LAGO: È RIPIDO, MA SI SALE.', 'LE RUPI DEL GRIFONE, A NORD-EST, SEMBRANO IMPOSSIBILI DA SCALARE. MA DALLE COLLINE DI SOLIS, TRA LE ROCCE, QUALCUNO CI È RIUSCITO.',
       "NEL CUORE DELLA PALUDE D'OMBRA BRILLA QUALCOSA. LE POZZE SONO BASSE: SI POSSONO GUADARE.", 'NEL CERCHIO DI PIETRE, A SUD-OVEST DEL BORGO, GLI ANTICHI LASCIAVANO DONI AGLI DEI.',
       'DIETRO AL GRANDE ALBERO DEL BOSCO, TRA LE RADICI, I BAMBINI DICONO DI AVER VISTO UN FORZIERE.',
       "NEL FITTO DEL BOSCO ANTICO, VERSO OVEST, C'È UNA GROTTA PIENA DI FUNGHI. I GOBLIN CI NASCONDONO IL LORO BOTTINO.",
@@ -705,7 +711,7 @@ function talk(n) {
   if (id === 'pescatore') return say(id, ['IL LAGO È PROFONDO E I PESCI SONO FURBI.', "L'ALTRO GIORNO HO VISTO DELLE PIETRE CHIARE SOTT'ACQUA, PARTIVANO DALLA STRADA A OVEST DI QUI E ANDAVANO VERSO L'ISOLA."]);
   if (id === 'spirito') {
     if (q.main === 0) return say(id, ['...NON SEI ANCORA PRONTO. PARLA PRIMA CON LA SAGGIA DEL BORGO.']);
-    if (q.main === 1) return say(id, ['...UN CUORE CORAGGIOSO. FINALMENTE.', "LE CINQUE PIETRE DELL'ALBA RIPOSANO NEI SANTUARI: NEL BOSCO, NEL DESERTO, TRA I GHIACCI, NEL VULCANO E SULL'ISOLA DEL LAGO.", 'OGNI SANTUARIO È CHIUSO DA UN SIGILLO CHE SOLO IL SANGUE DEI RE DI LUMEN SA SPEZZARE.', "VA' ALLA ROCCA, A SUD-EST DEL BORGO, E PARLA CON IL CAPITANO ARDEA. E PRENDI QUESTO CUORE DI CRISTALLO: TI DARÀ FORZA."], () => { q.main = 2; trackQuest('main'); openLoot('cuore'); });
+    if (q.main === 1) return say(id, ['...UN CUORE CORAGGIOSO. FINALMENTE.', "LE CINQUE PIETRE DELL'ALBA RIPOSANO NEI SANTUARI: NEL BOSCO, TRA LE ROVINE DI SOLIS, TRA I GHIACCI, NEL VULCANO E SULL'ISOLA DEL LAGO.", 'OGNI SANTUARIO È CHIUSO DA UN SIGILLO CHE SOLO IL SANGUE DEI RE DI LUMEN SA SPEZZARE.', "VA' ALLA ROCCA, A SUD-EST DEL BORGO, E PARLA CON IL CAPITANO ARDEA. E PRENDI QUESTO CUORE DI CRISTALLO: TI DARÀ FORZA."], () => { q.main = 2; trackQuest('main'); openLoot('cuore'); });
     if (q.main === 5) return say(id, ["...LE CINQUE PIETRE DELL'ALBA. LE SENTO CANTARE.", 'LA LUCE TORNA SULLE TERRE DI LUMEN: LE CREATURE SI CALMERANNO E I CAMPI TORNERANNO A FIORIRE.', 'MA ASCOLTA... SUL PICCO IL DRAGO SI È SVEGLIATO DEL TUTTO. HA SENTITO LA LUCE DELLE PIETRE, E LA VUOLE PER SÉ.', 'CON LUI SI SONO DESTATE LE CREATURE LEGGENDARIE DI LUMEN. PREPARATI, EROE: IL VIAGGIO NON È FINITO.', 'PRENDI QUESTE POZIONI E QUESTE MONETE. TI SERVIRANNO.'], () => { q.main = 6; save.pot += 3; save.coins += 200; toast('+3 POZIONI  +200 MONETE', '#ffd23f'); banner = { t: 'CAPITOLO 2 COMPLETATO', s: 'IL SEGUITO NEL CAPITOLO 3', life: 6, c: '#ffd23f' }; fanfare(); writeSave(); });
     if (q.main === 4) return say(id, ['LE PIETRE TI ASPETTANO NEI SANTUARI. IL PROSSIMO È IL ' + SANCT[nextSanct()] + '.']);
     if (q.main >= 6) return say(id, ['IL BOSCO È IN PACE, GRAZIE A TE. MA IL CIELO SOPRA IL PICCO... NON MI PIACE.']);
@@ -717,18 +723,18 @@ function talk(n) {
     if (q.main === 3 && save.c1t !== undefined && save.time - save.c1t < 90) return say(id, ['IL RE NON È ANCORA TORNATO. ESPLORA UN PO\' LUMEN E TORNA PIÙ TARDI: I SUOI MESSAGGERI SONO GIÀ IN VIAGGIO.']);
     if (q.main === 3) return say(id, ['FINALMENTE SEI QUI! IL RE È TORNATO DALLE TERRE DEL NORD: I SAPIENTI HANNO DECIFRATO LE RUNE DEI SANTUARI.', "I SIGILLI SI SPEZZANO UNO ALLA VOLTA, NELL'ORDINE IN CUI FURONO POSTI: IL BOSCO, IL LAGO, IL SOLE, IL GHIACCIO E PER ULTIMO IL FUOCO.", 'IL RE TI AFFIDA IL SUO SIGILLO: NEL RUBINO SCORRE IL SANGUE DEI RE DI LUMEN. APPOGGIALO ALLA PORTA DI UN SANTUARIO E LE RUNE SI APRIRANNO.', "DENTRO TROVERAI PICCOLE CHIAVI, UNA GRANDE CHIAVE E UN GUARDIANO. SCONFIGGILO, E LA PIETRA DELL'ALBA SARÀ TUA.", "IL PRIMO È IL SANTUARIO DEL BOSCO, NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE. VA', EROE. LUMEN CONTA SU DI TE."], () => { q.main = 4; openLoot('sigillo'); trackQuest('main'); banner = { t: 'CAPITOLO 2', s: 'I CINQUE SANTUARI', life: 5, c: '#ffd23f' }; writeSave(); });
     if (q.main >= 4 && q.viaggio === 0 && !save.flags.reHint) { save.flags.reHint = 1; return say(id, ['IL RE VUOLE VEDERTI: TI ASPETTA QUI NEL CORTILE, DAVANTI AL PORTONE DEL MASTIO.']); }
-    if (q.main === 4) { const nx = nextSanct(), H = { bosco: "È NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE.", lago: "È SULL'ISOLA IN MEZZO AL LAGO DI CRISTALLO: LE PIETRE CHIARE NELL'ACQUA PORTANO FIN LÀ.", sole: 'È TRA LE ROVINE DI SOLIS, NEL DESERTO A EST.', ghiaccio: 'È IN FONDO ALLA VALLE GELATA, LONTANO A NORD-OVEST.', fuoco: 'È SUL MONTE BRACE, A SUD-EST: LA SUA PORTA GUARDA IL CRATERE.' }; return say(id, ['IL PROSSIMO È IL ' + SANCT[nx] + '. ' + H[nx], "PIETRE DELL'ALBA RECUPERATE: " + gemsN() + ' SU 5.']); }
+    if (q.main === 4) { const nx = nextSanct(), H = { bosco: "È NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE.", lago: "È SULL'ISOLA IN MEZZO AL LAGO DI CRISTALLO: LE PIETRE CHIARE NELL'ACQUA PORTANO FIN LÀ.", sole: 'È TRA LE ROVINE DI SOLIS, SULLE COLLINE A EST.', ghiaccio: 'È IN FONDO ALLA VALLE GELATA, LONTANO A NORD-OVEST.', fuoco: 'È SUL MONTE BRACE, A SUD-EST: LA SUA PORTA GUARDA IL CRATERE.' }; return say(id, ['IL PROSSIMO È IL ' + SANCT[nx] + '. ' + H[nx], "PIETRE DELL'ALBA RECUPERATE: " + gemsN() + ' SU 5.']); }
     if (q.main === 5) return say(id, ['LE CINQUE PIETRE! CHE IL RE TI BENEDICA. ORA PORTALE ALLO SPIRITO DEL BOSCO: SOLO LUI SA COSA FARNE.']);
     return say(id, ['IL DRAGO... I SAPIENTI DICONO CHE SI PREPARA QUALCOSA. RESTA PRONTO, EROE.']);
   }
-  if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE DUNE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
+  if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE COLLINE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
   if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", CLS.TXT.eremita[cls()], 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
   '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO E VALICO PER MARMOREA: A OVEST DEL LAGO',
   '2326,672': '↑ VETTA DEL DRAGO\n→ VALICO DEI GIGANTI: MARMOREA, LA CITTÀ DELLE CASCATE', '2652,160': 'VALLE DELLE CASCATE\n↑ MARMOREA   ↓ LAGO DI CRISTALLO', '2532,-486': 'MARMOREA\nLE RAMPE AI LATI DEL LAGO SALGONO ALLA GRANDE TERRAZZA',
-  '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ DESERTO DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
+  '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ COLLINE DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
@@ -771,7 +777,7 @@ const fanfare = () => { MU.duck(1.6); seq([523, 659, 784, 1047, 784, 1047, 1319,
 // ---------- musica: un brano per ogni luogo ----------
 const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI DI LUMEN': 'prati', 'CAMPI DORATI': 'campi', 'BOSCO ANTICO': 'bosco', "L'ALBERO MADRE": 'bosco',
   'LAGO DI CRISTALLO': 'lago', 'ISOLA DEL LAGO': 'lago', 'MONTI DEL DRAGO': 'monti', 'PICCO DEL DRAGO': 'monti', 'VETTA DEL DRAGO': 'monti', 'RUPI DEL GRIFONE': 'rupi',
-  'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'DESERTO DI SOLIS': 'deserto', 'ROVINE DI SOLIS': 'deserto', 'OASI DI SABBIA': 'deserto', "PALUDE D'OMBRA": 'palude',
+  'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'COLLINE DI SOLIS': 'campi', 'ROVINE DI SOLIS': 'campi', 'FONTE DEI GIRASOLI': 'campi', "PALUDE D'OMBRA": 'palude',
   'MONTE BRACE': 'brace', 'CRATERE DEL BRACE': 'brace', 'COSTA DELLE CONCHIGLIE': 'costa', 'FARO DEL SUD': 'costa',
   // le terre nuove
   'CASTELROSSO': 'borgo:ambra', 'ALTABRINA': 'borgo:nord', 'LOCANDA DEL PONTE': 'campi', 'MEZZAVIA': 'campi', 'APPRODO DEL FARO': 'costa', 'APPRODO DEI PETALI': 'costa', 'PORTO SERENO': 'costa', 'ZAFIRA': 'deserto',

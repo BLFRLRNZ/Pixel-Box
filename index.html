@@ -139,7 +139,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.5", "id": "2.5-d879b97b", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.6", "id": "2.6-44f098fd", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -5041,6 +5041,29 @@ function pine(R, W, H, pal, snow) {
   }
   return finish(c);
 }
+// cipresso: una fiamma verde scuro, stretta e alta
+function cypress(R, W, H, pal) {
+  const c = mk(W, H), g = c.getContext('2d');
+  trunk(g, W / 2, H * 0.84, H - 1, Math.max(2, W * 0.16), TRUNK, 0.3);
+  const yt = H * 0.02, yb = H * 0.9;
+  for (let y = Math.floor(yt); y < yb; y++) {
+    const f = (y - yt) / (yb - yt), w = (W / 2 - 1) * Math.pow(Math.sin(Math.min(1, f * 1.12 + 0.04) * Math.PI * 0.62), 0.8) * (f > 0.9 ? 1 - (f - 0.9) * 4 : 1) + 0.6;
+    for (let x = Math.floor(W / 2 - w); x <= W / 2 + w; x++) {
+      const s = (x - (W / 2 - w)) / (2 * w + 0.001); let k = s < 0.3 ? 2 : s > 0.68 ? 0 : 1;
+      if ((x * 3 + y) % 7 === 0 && k > 0) k--; if (R() < 0.06) k = Math.min(2, k + 1);
+      g.fillStyle = pal[k]; g.fillRect(x, y, 1, 1);
+    }
+  }
+  return finish(c);
+}
+// girasoli: un ciuffo di tre fiori (v = 1: due soli, più bassi)
+function sunflower(v) {
+  const c = mk(v ? 17 : 23, 19), g = c.getContext('2d'), P = (col, x, y, w = 1, h = 1) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  const one = (x, y) => { for (let k = y + 7; k < 19; k++) P('#3e8a3a', x + 3, k); P('#4ea044', x + 1, y + 10, 2, 2); P('#4ea044', x + 4, y + 12, 3, 2); P('#4ea044', x, y + 14, 3, 1);
+    for (const [a, b] of [[1, 0], [3, 0], [5, 0], [0, 1], [6, 1], [0, 3], [6, 3], [0, 5], [6, 5], [1, 6], [3, 6], [5, 6]]) P('#ffd21e', x + a, y + b); P('#f0b012', x + 1, y + 1, 5, 5); P('#6a4420', x + 2, y + 2, 3, 3); P('#8a5a2a', x + 2, y + 2); };
+  if (v) { one(1, 3); one(9, 0); } else { one(0, 2); one(8, 0); one(16, 4); }
+  return finish(c);
+}
 // acacia: chioma piatta e larga su un tronco a forcella
 function acacia(R, W, H, pal) {
   const c = mk(W, H), g = c.getContext('2d'), tp = ['#4a3420', '#6a4a2c', '#8a6238'];
@@ -5441,7 +5464,7 @@ function Atlas(AW, AH) {
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
 SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
-  oak, acacia, giantTree, pine, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
+  oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, pano, icon, Atlas, TRUNK, BIRCH };
 })();
 
@@ -5467,8 +5490,8 @@ function fbm(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i 
 function ridge(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++) { const r = 1 - Math.abs(vn(x * f + i * 31.7, y * f) * 2 - 1); s += a * r * r; n += a; a *= 0.5; f *= 2.1; } return s / n; }
 
 // ---------- disegno del mondo ----------
-const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14 };
-const NB = 15;
+const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14, HILLS: 15 };
+const NB = 16;
 const COAST = [[520, 420], [900, 230], [1150, 150], [1120, -250], [1020, -700], [1160, -1150], [1500, -1520], [2000, -1760], [2500, -1840], [3000, -1760], [3400, -1480], [3640, -1050], [3700, -550], [3620, -120], [3500, 120],
   [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
   [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880], [1150, 3740], [750, 3480], [430, 3100], [260, 2650], [200, 2150], [260, 1650], [190, 1150], [300, 750]];
@@ -5479,7 +5502,8 @@ const REG = [
   [2150, 1340, 420, B.MEADOW, 'LAGO DI CRISTALLO'],
   [1250, 520, 430, B.MOUNT, 'MONTI DEL DRAGO'], [2300, 480, 470, B.MOUNT, 'PICCO DEL DRAGO'], [3150, 620, 430, B.MOUNT, 'MONTI DEL DRAGO'], [3680, 900, 260, B.MOUNT, 'RUPI DEL GRIFONE'],
   [650, 640, 300, B.SNOW, 'VALLE GELATA'],
-  [3250, 1750, 560, B.DESERT, 'DESERTO DI SOLIS'], [3550, 2350, 320, B.DESERT, 'DESERTO DI SOLIS'],
+  // (qui c'era il Deserto di Solis: le due regioni restano, ma dove contavano davvero il loro peso passa alle colline: vedi SOLIS in prepCoarse)
+  [3250, 1750, 560, B.DESERT, 'COLLINE DI SOLIS', null, B.HILLS], [3550, 2350, 320, B.DESERT, 'COLLINE DI SOLIS', null, B.HILLS],
   [650, 2650, 450, B.SWAMP, "PALUDE D'OMBRA"],
   [3350, 3150, 430, B.VOLCANO, 'MONTE BRACE'],
   [2760, 2960, 330, B.MEADOW, 'ROCCA DI LUMEN'],
@@ -5566,9 +5590,9 @@ const CHESTS = [
 // nascondigli: un cerchio di cespugli, alberi o massi attorno a un forziere (stile, apertura verso...)
 const NOOKS = [
   [1925, 2562, 'cespugli'], [2475, 2930, 'cespugli'], [1625, 2330, 'cespugli'], [1195, 1765, 'bosco'], [1080, 1392, 'bosco'], [860, 480, 'neve'],
-  [3230, 3150, 'brace'], [1292, 3632, 'cespugli'], [3060, 2385, 'sabbia'], [830, 1175, 'bosco'], [3620, 1920, 'sabbia'], [2950, 3420, 'brace'],
+  [3230, 3150, 'brace'], [1292, 3632, 'cespugli'], [3060, 2385, 'solis'], [830, 1175, 'bosco'], [3620, 1920, 'solis'], [2950, 3420, 'brace'],
   [1150, 3150, 'cespugli'], [3210, 1140, 'rocce'], [2600, 1150, 'rocce'], [1904, 897, 'rocce'], [2550, 3700, 'cespugli'], [820, 1900, 'bosco'],
-  [1850, 3650, 'cespugli'], [3150, 2700, 'brace'], [1550, 1050, 'bosco'], [610, 2960, 'palude'], [1330, 1180, 'bosco'], [3500, 2150, 'sabbia'],
+  [1850, 3650, 'cespugli'], [3150, 2700, 'brace'], [1550, 1050, 'bosco'], [610, 2960, 'palude'], [1330, 1180, 'bosco'], [3500, 2150, 'solis'],
 ];
 // abitanti e creature con un nome: [id, x, z, direzione]
 const NPCS = [
@@ -5588,7 +5612,7 @@ const CAMPS = [
 ];
 // nomi dei luoghi speciali (prima delle regioni): [x, z, raggio, nome]
 const PLACES = [[2000, 2650, 200, 'BORGO AURORA'], [2760, 2960, 300, 'ROCCA DI LUMEN'], [3360, 1670, 180, 'ROVINE DI SOLIS'], [1080, 1420, 150, "L'ALBERO MADRE"],
-  [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'OASI DI SABBIA'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
+  [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'FONTE DEI GIRASOLI'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
 // altre tabelle che le terre nuove e le città possono allungare
 const COASTS = [COAST], RIVERS = [RIVER];
 const FINE = [];                                   // zone dove il rilievo resta preciso anche da lontano: [x0, z0, x1, z1]
@@ -5603,9 +5627,12 @@ const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 172
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
+// la sequenza della vegetazione di Lumen, riga per riga (vedi placeObjects): numeri già usati all'inizio della riga 738, poi quanti ne usa ogni riga
+const SOLR0 = 64383, SOLR = [1052,1051,1054,1051,1050,1055,1058,1070,1062,1057,1068,1068,1065,1064,1081,1074,1074,1085,1090,1093,1099,1105,1115,1102,1114,1093,1097,1100,1110,1094,1108,1090,1097,1106,1103,1091,1098,1090,1091,1097,1087,1098,1102,1090,1096,1096,1103,1101,1093,1083,1085,1086,1084,1086,1074,1093,1080,1086,1089,1077,1075,1084,1077,1080,1089,1090,1101,1095,1104,1093,1096,1095,1094,1101,1103,1103,1089,1092,1105,1102,1105,1088,1107,1108,1095,1097,1099,1095,1104,1104,1102,1095,1102,1094,1103,1107,1096,1104,1094,1101,1084,1101,1100,1086,1081,1087,1091,1085,1091,1086,1089,1082,1071,1081,1086,1083,1077,1071,1075,1070,1073,1072,1060,1055,1061,1060,1062,1085,1074,1084,1071,1065,1067,1072,1068,1069,1071,1052,1074,1077,1063,1063,1068,1072,1073,1070,1064,1060,1065,1063,1060,1056,1064,1059,1067,1054,1059,1056,1056,1057,1061,1059,1049,1056,1053,1064,1055,1053,1052,1054,1058,1062,1057,1074,1058,1056,1057,1068,1062,1061,1058,1054,1060,1053,1065,1057,1047,1065,1056,1055,1067,1057,1054,1059,1059,1058,1052,1059,1059,1057,1051,1056,1052,1053,1058,1057,1052,1066,1058,1053,1067,1068,1057];
 
 // ---------- griglie larghe (un punto ogni 32 unità): distanza dalla costa e pesi dei biomi ----------
 const CG = 32, CGN = WS / CG, CGV = CGN + 1, CGNZ = WSZ / CG, CGVZ = CGNZ + 1;
+let CHGc = null;   // dove il mondo è cambiato rispetto a prima (le Colline di Solis): serve a lasciare identica la vegetazione di tutto il resto
 let SDc = null, BWc = null;
 function polySD(P, x, z) {
   let inside = false, md = 1e18;
@@ -5619,7 +5646,7 @@ function polySD(P, x, z) {
 }
 function warp(x, z, o) { o[0] = x + (fbm(x / 640, z / 640, 3) - 0.5) * 460; o[1] = z + (fbm(x / 640 + 41, z / 640 + 13, 3) - 0.5) * 460; }
 function* prepCoarse() {
-  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB);
+  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB); CHGc = new Uint8Array(CGV * CGVZ);
   const BB = COASTS.map(P => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const [x, z] of P) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; });
   const wp = [0, 0];
   for (let j = 0; j < CGVZ; j++) {
@@ -5633,8 +5660,11 @@ function* prepCoarse() {
       SDc[k] = best;
       if (best < -420) { BWc[o] = 1; continue; }
       warp(x, z, wp); let tot = 0;
-      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
+      let ws = 0;
+      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; if (r[6] !== undefined) ws += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
       if (tot > 1e-200) for (let b = 0; b < NB; b++) BWc[o + b] /= tot; else { for (let b = 0; b < NB; b++) BWc[o + b] = 0; BWc[o] = 1; }
+      // SOLIS: dove il vecchio deserto pesava almeno un po', il suo peso diventa collina. Altrove (a ovest del lago, a nord, oltre lo stretto) niente cambia di una virgola
+      if (ws > 0 && tot > 1e-200) { const wn = ws / tot, m = smooth(0.03, 0.15, wn) * smooth(880, 960, z) * smooth(4250, 4120, x); if (m > 0) { BWc[o + B.DESERT] -= wn * m; BWc[o + B.HILLS] += wn * m; CHGc[k] = 1; } }
     }
     if (j % 32 === 0) yield j / CGVZ;
   }
@@ -5678,6 +5708,8 @@ function biomeH(b, x, z) {
     case B.BLOSSOM: return 20 + 44 * fbm(x / 460, z / 460, 4) + 6 * fbm(x / 100, z / 100, 2);
     case B.MOOR: return 10 + 22 * fbm(x / 420, z / 420, 3) + 12 * Math.pow(ridge(x / 300, z / 300, 3), 2);
     // i grandi monti del nord: salgono a poco a poco verso settentrione, con creste sempre più alte
+    // le Colline di Solis: dossi morbidi, più mossi dei prati
+    case B.HILLS: return 15 + 30 * fbm(x / 360 + 5.3, z / 360 + 1.9, 4) + 6 * fbm(x / 95, z / 95, 2);
     case B.ALP: { const up = smooth(280, -1050, z), rg = Math.pow(ridge(x / 880 + 3.1, z / 880 + 7.7, 5), 1.45); return 150 + 300 * up + (230 + 470 * up) * rg + 26 * fbm(x / 150, z / 150, 3); }
     default: return 20 + 10 * fbm(x / 200, z / 200, 2);
   }
@@ -5776,9 +5808,9 @@ W.inBox = (x, z, m = 0) => {
 
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
-  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262'];
+  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262', '#74a644', '#a4b850'];
 const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 0], [0, 0.1, 0, 0.9], [0, 0.75, 0, 0.25], [0.45, 0.35, 0, 0.2], [0, 0.6, 0.4, 0],
-  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0]];
+  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0], [0.9, 0.1, 0, 0]];
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
@@ -5904,6 +5936,8 @@ function* build(atlas, sprites) {
           else if (b === B.MESA) { const bd = Math.floor((h + n1 * 14) / 7) % 3; if (bd === 1) { cr *= 0.86; cg *= 0.84; cb *= 0.86; } else if (bd === 2) { cr = lerp(cr, 236, 0.35); cg = lerp(cg, 190, 0.35); cb = lerp(cb, 140, 0.35); } }
           else if (b === B.JUNGLE) { if (n2 > 0.7) { cr *= 0.78; cg *= 0.8; cb *= 0.78; } }
           else if (b === B.BLOSSOM) { if (vn(x / 6, z / 6) > 0.8) { cr = 250; cg = 176; cb = 204; } }
+          // colline: chiazze di grano dorato a righe, e prati più gialli dove crescono i girasoli
+          else if (b === B.HILLS) { if (n1 > 0.55) { const k = smooth(0.55, 0.6, n1), st = Math.floor((x * 0.8 + z * 0.3) / 5) % 2 ? 0.9 : 1; cr = lerp(cr, 226 * st, k); cg = lerp(cg, 190 * st, k); cb = lerp(cb, 86 * st, k); } else if (n1 < 0.45 && n2 > 0.6) { const k = 0.6 * smooth(0.6, 0.68, n2); cr = lerp(cr, 206, k); cg = lerp(cg, 196, k); cb = lerp(cb, 66, k); } }
           else if (b === B.ALP) { const g = smooth(400, 520, h + (n1 - 0.5) * 70); cr = lerp(cr, 134, g); cg = lerp(cg, 130, g); cb = lerp(cb, 124, g); if (g < 0.5 && n2 > 0.8) { cr *= 0.86; cg *= 0.9; cb *= 0.84; } }
           else if (b === B.MOOR) { if (n2 > 0.62) { cr = 124; cg = 76; cb = 124; } else if (n2 < 0.2) { cr = 66; cg = 70; cb = 60; } }
           c[0] += cr * wb; c[1] += cg * wb; c[2] += cb * wb;
@@ -6136,6 +6170,7 @@ function* placeObjects(S) {
     rocce: { ring: ['rock', 5, 8, true], back: [['pine', 2, 14]], deco: ['tuft'] },
     neve: { ring: ['rocksnow', 5, 8, true], back: [['snowpine', 3, 14]], deco: [] },
     sabbia: { ring: ['sandrock', 4, 8, true], back: [['cactus', 1, 13], ['drybush', 3, 6]], deco: ['bones'] },
+    solis: { ring: ['rock', 4, 8, true], back: [['cipresso', 1, 13], ['bush', 3, 6]], deco: ['flower'] },   // (stessi numeri di «sabbia»: la sequenza non si sposta)
     palude: { ring: ['reeds', 7, 6], back: [['willow', 3, 13]], deco: ['mushroom'] },
     brace: { ring: ['lavarock', 5, 8, true], back: [['burnt', 2, 14]], deco: ['bones'] },
     ambra: { ring: ['bushred', 7, 6.5], back: [['oakred', 3, 14]], deco: ['mushroom', 'fern'] },
@@ -6185,6 +6220,7 @@ function* placeObjects(S) {
     [B.JUNGLE]: [[0.15, 'jungle'], [0.24, 'palm'], [0.33, 'fernbig'], [0.4, 'fern', 1], [0.44, 'flower', 1], [0.46, 'bush'], [0.47, 'rock']],
     [B.BLOSSOM]: [[0.035, 'cherry'], [0.05, 'cherrywhite'], [0.062, 'bush'], [0.2, 'flower', 1], [0.27, 'tuft', 1], [0.276, 'rock']],
     [B.MOOR]: [[0.02, 'deadtree'], [0.03, 'willow'], [0.14, 'heather', 1], [0.16, 'rock'], [0.175, 'tomb'], [0.19, 'tuft', 1]],
+    [B.HILLS]: [[0.012, 'cipresso'], [0.021, 'ulivo'], [0.03, 'bush'], [0.085, 'flower', 1], [0.14, 'tuft', 1], [0.146, 'rock']],
     [B.ALP]: [[0.06, 'pine'], [0.088, 'rock'], [0.098, 'rocksnow'], [0.14, 'tuft', 1], [0.185, 'flower', 1]],
   };
   const scatter = (gx0, gz0, gx1, gz1, skipOld) => {
@@ -6199,6 +6235,7 @@ function* placeObjects(S) {
       if (W.col[(Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
       let pick = null;
       for (const e of TBL[b]) if (r < e[0]) { pick = e; break; }
+      if (b === B.HILLS) { const f = fbm(x / 210, z / 210, 3); if (f < 0.45 && r >= 0.03 && r < 0.4) pick = [0, 'girasole', 1]; else if (f > 0.56 && pick && pick[2]) pick = null; }   // i campi di girasoli; nel grano niente erbacce
       if (!pick) continue;
       if (sl > 0.75 && pick[1] !== 'rock' && pick[1] !== 'mesarock') continue;
       // sui grandi monti: boschi di pini nelle valli, più radi salendo, e sopra i nevai soltanto roccia
@@ -6217,15 +6254,33 @@ function* placeObjects(S) {
   // a nord della riga 732 il terreno di Lumen è cambiato (i grandi monti, il valico): lì la vegetazione segue una sequenza sua.
   // Da lì in giù la sequenza riparte dal punto esatto di prima (64383 numeri già usati): ogni albero di Lumen resta dov'era
   R = rng(7117); scatter(0, 0, OLD, 732, false);
-  R = rng((4242 + Math.imul(64383, 0x6D2B79F5)) >>> 0); scatter(0, 732, OLD, OLD, false);
+  // ...tranne dove c'era il Deserto di Solis, ora colline: lì (e a est, fino al mare) la sequenza è un'altra. Perché il resto non si sposti,
+  // a ogni riga la sequenza di Lumen riparte dal punto in cui stava prima (SOLR: quanti numeri erano già usati all'inizio di ogni riga, dalla 738 alla 3294)
+  { const at = n => rng((4242 + Math.imul(n, 0x6D2B79F5)) >>> 0), RZ = rng(2626);
+    const xaOf = gz => { let m = 1e9; for (let j = Math.floor((gz - 140 - Z0) / CG); j <= Math.ceil((gz + 140 - Z0) / CG); j++) for (let i = 0; i < CGV; i++) if (CHGc[j * CGV + i]) { m = Math.min(m, i * CG); break; } return m > 1e8 ? OLD : Math.max(0, Math.min(OLD, Math.floor((m - 140) / 12) * 12)); };
+    W.solisX = xaOf;
+    let n = SOLR0, gz = 738;
+    for (let k = 0; k < SOLR.length; k++, gz += 12) {
+      R = at(n); const xa = xaOf(gz);
+      scatter(0, gz - 6, xa, gz + 6, false);
+      if (xa < OLD) { R = RZ; scatter(xa, gz - 6, OLD, gz + 6, false); }
+      n += SOLR[k];
+    }
+    R = at(n); scatter(0, gz - 6, OLD, OLD, false);   // dalla riga 3294 in giù, tutto di fila come prima
+    const RM = R;
+    // il viale di cipressi che sale alle rovine
+    R = RZ; for (const [ax, az, bx, bz] of [[3200, 2000, 3330, 1740]]) { const L = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / L, uz = (bz - az) / L; for (let t = 34; t < L - 26; t += 26) for (const s of [-1, 1]) { const x = ax + ux * t - uz * s * 10, z = az + uz * t + ux * s * 10; if (W.roadAt(x, z) < 0.05 && !busy(x, z, 3)) add('cipresso', x, z); } }
+    R = RM;
+  }
   yield 0.3;
   // pietre che affiorano dal lago: il passaggio verso l'isola
   for (let i = 0; i < STONES.length - 1; i++) { const [ax, az] = STONES[i], [bx, bz] = STONES[i + 1], L = Math.hypot(bx - ax, bz - az); for (let t = 0; t < L; t += 11) { const x = ax + (bx - ax) * t / L + (R() - 0.5) * 4, z = az + (bz - az) * t / L + (R() - 0.5) * 4; add('stepstone', x, z, { y: WL + 0.15, sink: 0 }); } }
   // cristalli sulle rive del lago
   for (let k = 0; k < 70; k++) { const a = R() * Math.PI * 2, s = 1.02 + R() * 0.12, x = 2150 + Math.cos(a) * 330 * s, z = 1340 + Math.sin(a) * 250 * s; if (W.ground(x, z) > 0.5 && W.roadAt(x, z) < 0.05) add('crystal', x, z); }
   // palme sulla costa
-  const warm = b => b !== B.SNOW && b !== B.MOUNT && b !== B.MOOR && b !== B.AUTUMN;
-  for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
+  const warm = b => b !== B.SNOW && b !== B.MOUNT && b !== B.MOOR && b !== B.AUTUMN && b !== B.HILLS;
+  // (nella zona delle colline non c'erano palme e non ce ne sono: la sequenza resta al passo)
+  for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (z > 732 && z < 3300 && x >= W.solisX(Math.floor((z - 732) / 12) * 12 + 738)) continue; if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
   // poi le terre nuove, con un'altra sequenza di numeri
   R = rng(90210);
   const NN = W.NORDN || { nooks: [0, 0], props: [0, 0] };   // le cose dei grandi monti (un tratto degli elenchi) hanno la loro sequenza: le lasciamo per ultime
@@ -6988,7 +7043,7 @@ C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400,
     ['dama', 'DAMA ISOTTA', ['DA QUANDO IL RE È TORNATO, LA CITTÀ È RINATA. HAI VISTO QUANTE BANDIERE?', "DICONO CHE OLTRE IL PONTE DEI RE CI SIANO CITTÀ PIÙ GRANDI DELLA NOSTRA. IO NON CI CREDO."], 'p'],
     ['bimbo', 'PAGGIO TEO', ['DA GRANDE FARÒ LA GUARDIA DEL MASTIO!', 'IL CAPITANO ARDEA MI HA PROMESSO UNA SPADA DI LEGNO.'], 'p', { walk: 1 }],
     ['monaco', 'FRATE ANSELMO', ["LE VETRATE DELLA CAPPELLA RACCONTANO LA STORIA DELLE CINQUE PIETRE DELL'ALBA.", 'DI NOTTE, CON LE CANDELE ACCESE, SEMBRANO VIVE.'], [-104, 62, 0]],
-    ['borghese', 'IL CARRETTIERE', ['PORTO IL GRANO DEI CAMPI DORATI FIN QUI OGNI MATTINA.', 'LA STRADA NUOVA PER IL PONTE PASSA DAL DESERTO: SEGUI I CARTELLI.'], 'd', { walk: 1 }],
+    ['borghese', 'IL CARRETTIERE', ['PORTO IL GRANO DEI CAMPI DORATI FIN QUI OGNI MATTINA.', 'LA STRADA NUOVA PER IL PONTE PASSA DALLE COLLINE DI SOLIS: SEGUI I CARTELLI.'], 'd', { walk: 1 }],
     ['dama', 'LA FORNAIA', ["IL PANE DELLA ROCCA SI IMPASTA PRIMA DELL'ALBA. SE SENTI PROFUMO, SEGUI IL NASO."], 'd'],
     ['borghese', 'LO SCRIVANO', ['SONO IO CHE APPENDO GLI INCARICHI ALLA BACHECA. IL RE FIRMA, IO INCHIODO.', 'OGNI INCARICO SBRIGATO È UNO SCONTO IN PIÙ NELLE BOTTEGHE DELLA CITTÀ: PAROLA DI SCRIVANO.'], 'p'],
     ['guardia', 'LA RONDA', ["TUTTO TRANQUILLO IN PIAZZA. SE CERCHI UNA BOTTEGA, GUARDA LE INSEGNE: LA PORTA È LÌ SOTTO."], 'p'],
@@ -8970,8 +9025,8 @@ const LIST = {
     boss: { n: 'IL RE DELLE MELME', as: 'slime', x: 2500, z: 2590, sc: 0.46, hp: 34, dmg: 2, sp: 15, r: 5.5, range: 9, tint: [1.04, 0.6, 0.66] },
     txt: "NEI CAMPI DORATI SI AGGIRA UNA MELMA GRANDE COME UN CARRO. I CONTADINI LA CHIAMANO IL RE. IO LA CHIAMO UN PROBLEMA. CENTOVENTI MONETE A CHI LO RISOLVE." },
   // ---------- Rocca di Lumen ----------
-  r1: { c: 'rocca', n: 'SCHELETRI SULLA VIA DEL DESERTO', by: 'IL CAPITANO ARDEA', k: 'caccia', foe: 'skel', pl: 'SCHELETRI', q: 6, coins: 130,
-    txt: 'GLI SCHELETRI DI SOLIS SI SPINGONO OGNI NOTTE PIÙ VICINO ALLA STRADA. LA ROCCA PAGA CENTOTRENTA MONETE A CHI NE RIMANDA SEI A DORMIRE SOTTO LA SABBIA.' },
+  r1: { c: 'rocca', n: 'SCHELETRI SULLA VIA DI SOLIS', by: 'IL CAPITANO ARDEA', k: 'caccia', foe: 'skel', pl: 'SCHELETRI', q: 6, coins: 130,
+    txt: 'GLI SCHELETRI DI SOLIS SI SPINGONO OGNI NOTTE PIÙ VICINO ALLA STRADA. LA ROCCA PAGA CENTOTRENTA MONETE A CHI NE RIMANDA SEI A DORMIRE SOTTO LE ROVINE.' },
   r2: { c: 'rocca', n: 'IL FARO SPENTO', by: 'I PESCATORI DELLA FOCE', k: 'visita', x: 1310, z: 3640, r: 44, at: 'IL FARO DEL SUD', coins: 90, where: 'SULLA COSTA A SUD-OVEST',
     txt: "DA TRE NOTTI IL VECCHIO FARO DEL SUD NON SI ACCENDE, E LE BARCHE NON TROVANO LA FOCE. QUALCUNO VADA A VEDERE: LA TORRE È SULLA COSTA, A SUD-OVEST DEL BORGO.",
     found: 'LA LANTERNA ERA SOLO INCROSTATA DI SALSEDINE: UNA BELLA STROFINATA, E IL FARO TORNA A VEDERSI.' },
@@ -9349,14 +9404,6 @@ const SPEC = {
       extra: ({ E }, q) => E([-0.4, 0, q.bz + 3.4], [3.4, 2.4, 3.2], '#d8a868') }, p), f: GRAZE, W: 50, H: 44, k: 'graze', v: 8, run: 30, fl: 0, al: 50, r: 3.2, g: [1, 3], roam: 60 },
   fennec: { n: 'volpe del deserto', m: p => quad(Object.assign({}, FOX, { s: 1.1, c: '#ecca94', c2: '#fff6e6', leg: '#d8b078', ear: ['point', 4.4, '#ecca94'], tail: ['bushy', 6, '#ecca94'], tuft: '#3a2a26' }), p), f: WALK, W: 30, H: 24, k: 'scurry', v: 14, run: 48, fl: 20, al: 50, r: 1.7, g: [1, 2], roam: 60 },
   lucertola: { n: 'lucertola', m: p => lizard({ c: '#5aa83e', c2: '#c8e088', s: 0.85 }, p), f: [{}, { leg: 0.6 }, { leg: -0.6 }], W: 22, H: 10, k: 'dart', v: 30, run: 52, fl: 14, al: 0, r: 1, g: [1, 2], roam: 24, tn: [null, [1.5, 1.1, 0.7], [0.8, 0.9, 1.3]], when: 'day' },
-  gazzella: { n: 'gazzella', m: p => quad(Object.assign({}, DEER, { s: 1.2, c: '#dca468', c2: '#fff8ec', leg: '#c88c54', horn: ['lyre', 4.4, '#3a2e2a'], ear: ['point', 2.2, '#dca468'], tail: ['hang', 2.6, '#3a2e2a'],
-      extra: ({ E }, q) => { for (const t of [1, -1]) E([0, t * 2.1, q.bz - 0.9], [4.4, 0.5, 0.6], '#5a3e2a'); } }), p), f: GRAZE, W: 44, H: 36, k: 'graze', v: 10, run: 54, fl: 24, al: 56, r: 2.4, g: [3, 6], roam: 60 },
-  zebra: { n: 'zebra', m: p => quad(Object.assign({}, HORSE, { s: 1.4, c: '#f6f4ee', c2: '#f6f4ee', leg: '#e8e6e0', sn: [2.3, '#2a2630', 0.5], ear: ['point', 1.7, '#f6f4ee'], tail: ['hang', 5.4, '#f6f4ee'], tuft: '#2a2630', mane: ['#2a2630', 1.15],
-      extra: ({ E, K }, q) => { for (const x of [-6, -4, -2, 0, 2, 4, 5.8]) { const f = Math.sqrt(Math.max(0.12, 1 - (x / 8.2) ** 2)); E([x, 0, q.bz + 0.12], [0.62, 3.26 * f, 3.68 * f], '#2a2630'); } for (let i = 1; i <= 4; i++) { const f = i / 5; E([q.nb[0] + (q.hx - q.nb[0]) * f, 0, q.nb[2] + (q.hz - q.nb[2]) * f], [0.52, 3.1 - f * 0.75, 3.1 - f * 0.75], '#2a2630', join([['y', -0.6, q.nb[0] + (q.hx - q.nb[0]) * f, 0, q.nb[2] + (q.hz - q.nb[2]) * f]], q.HR)); } } }), p), f: GRAZE, W: 46, H: 39, k: 'graze', v: 10, run: 50, fl: 20, al: 50, r: 3.1, g: [3, 6], roam: 70 },
-  giraffa: { n: 'giraffa', m: p => quad({ s: 1.7, c: '#ecc068', c2: '#f4dca0', leg: '#e8c888', hoof: '#4a3828', len: 6, wid: 2.8, hgt: 3.3, ll: 13, lr: 1.0, tilt: 0.2, nl: 15, na: 1.22, nt: 1.7, nb: 1.7, nx: 0.6, head: [2.2, 1.4, 1.5], sn: [2, '#f4dca0', 0.2], ear: ['side', 1.6, '#ecc068'], horn: ['knob', 1.5, '#8a5a30'], tail: ['hang', 6, '#ecc068'], tuft: '#4a3020', eye: 0.44, grazeA: 0.5,
-      extra: ({ E }, q) => { const sp = '#a86a2e'; for (const [x, y, z, r] of [[3, 2.1, 1.2, 1.5], [0.2, 2.5, 0.2, 1.7], [-3, 2.2, 0.6, 1.6], [3, -2.1, 0.6, 1.6], [0, -2.5, 1.2, 1.5], [-3.2, -2.2, 0, 1.6], [-1, 0, 2.9, 1.7], [2.6, 0, 3.4, 1.4], [-4.6, 0, 1.6, 1.5]]) E([x, y, q.bz + z + (x + 3) * 0.2], [r, r * 0.5, r], sp); for (let i = 1; i <= 6; i++) { const f = i / 7, cx = q.nb[0] + (q.hx - q.nb[0]) * f, cz = q.nb[2] + (q.hz - q.nb[2]) * f; E([cx, (i % 2 ? 1 : -1) * 1.2, cz], [1.0, 0.75, 1.3], sp, q.HR); } } }, p), f: [{}, { leg: 0.4 }], W: 52, H: 69, k: 'graze', v: 8, run: 34, fl: 0, al: 60, r: 3.2, g: [2, 4], roam: 70 },
-  elefante: { n: 'elefante', m: p => quad({ s: 2.05, c: '#8e8e9a', c2: '#a4a4b0', leg: '#82828e', hoof: '#d8d4c8', len: 8, wid: 4.8, hgt: 5.4, ll: 7, lr: 2, nl: 1.6, na: 0.5, nt: 3.6, nz: 0.2, head: [4, 3.7, 4.2], sn: [0, 0], ear: ['big', 7.6, '#82828e'], horn: ['tusk', 4.4, '#f8f0dc'], tail: ['hang', 5, '#6a6a76'], eye: 0.5, chest: 1.02, rump: 1.02, grazeA: 0.12,
-      extra: ({ K }, q) => { const H = q.H, sw = q.pose.graze ? 1.2 : 0, a = [H[0] + 3.2, 0, H[2] - 1], b = [H[0] + 5 + sw, 0, H[2] - 5], c = [H[0] + 4.6 + sw * 2.2, 0, 2.6], d = [H[0] + 5.8 + sw * 2.6, 0, 1.6 + sw]; K(a, b, 2, 1.4, '#8e8e9a', q.HR); K(b, c, 1.4, 1.0, '#8e8e9a', q.HR); K(c, d, 1.0, 0.75, '#82828e', q.HR); } }, p), f: [{}, { leg: 0.32 }, { graze: 1 }], W: 74, H: 48, k: 'graze', v: 6, run: 16, fl: 0, al: 0, r: 5, g: [2, 4], roam: 70 },
   bisonte: { n: 'bisonte', m: p => quad({ s: 1.65, c: '#7a5c42', c2: '#6a4e38', leg: '#4a3628', hoof: '#2a2020', len: 7.4, wid: 3.6, hgt: 3.9, ll: 4.8, lr: 1.2, chest: 1.3, chestC: '#4a3628', nl: 1.4, na: -0.1, nt: 3.2, nz: 0.1, head: [2.8, 2.4, 2.6], headC: '#3a2a20', sn: [1.5, '#3a2a20', 0.4], snw: 0.8, ear: ['side', 1.2, '#3a2a20'], horn: ['short', 2.2, '#e8dcc0'], tail: ['hang', 4.4, '#4a3628'], eye: 0.4, grazeA: 0.6,
       extra: ({ E, K }, q) => { E([3.6, 0, q.bz + 2.8], [3.6, 3.2, 3.2], '#4a3628'); K([q.H[0] + 1.5, 0, q.H[2] - 2], [q.H[0] + 1, 0, q.H[2] - 4.4], 0.9, 0.2, '#3a2a20', q.HR); } }, p), f: GRAZE, W: 46, H: 30, k: 'graze', v: 6, run: 30, fl: 0, al: 50, r: 3.6, g: [2, 5], roam: 60 },
   // --- palude, giungla, colline dei ciliegi
@@ -9411,18 +9458,19 @@ const LAND = [
   /*  6 palude    */ [['rana', 5], ['airone', 3], ['tartaruga', 2], ['capibara', 1.5], ['corvo', 1], ['gufo', 2]],
   /*  7 vulcano   */ [['lucertola', 3], ['corvo', 2]],
   /*  8 autunno   */ [['cervo', 4], ['scoiattolo', 4], ['volpe', 2.5], ['cinghiale', 2], ['coniglio', 2], ['passero', 2.5], ['gufo', 3], ['riccio', 2.5]],
-  /*  9 savana    */ [['zebra', 4], ['gazzella', 4], ['giraffa', 2.5], ['elefante', 2], ['lucertola', 1]],
+  /*  9 piana     */ [['cavallo', 4.5], ['bisonte', 2.5], ['cervo', 2.5], ['coniglio', 3], ['volpe', 1.2], ['passero', 2], ['lucertola', 1]],
   /* 10 altopiano */ [['bisonte', 4], ['lucertola', 3], ['fennec', 1.5], ['cavallo', 2]],
   /* 11 giungla   */ [['scimmia', 4], ['pappagallo', 4], ['tucano', 2.5], ['capibara', 2], ['rana', 3], ['tartaruga', 1]],
   /* 12 ciliegi   */ [['cervoS', 4], ['gru', 3], ['tanuki', 2.5], ['coniglio', 2], ['passero', 3], ['gatto', 0.7], ['gufo', 2]],
   /* 13 brughiera */ [['pecora', 3], ['cavallo', 2], ['corvo', 3], ['coniglio', 3], ['volpe', 1.5], ['gufo', 2]],
   /* 14 alpi      */ [['stambecco', 5], ['cervo', 2.5], ['lepreB', 2], ['volpeB', 1], ['corvo', 1.5], ['gufo', 1.5], ['passero', 1.5]],
+  /* 15 colline   */ [['pecora', 3], ['cavallo', 2], ['coniglio', 4], ['cervo', 2], ['volpe', 1.5], ['passero', 3], ['riccio', 2], ['corvo', 1]],
 ];
-const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila', 14: 'aquila' };
+const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'aquila', 10: 'aquila', 14: 'aquila' };
 const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_COLD = [['foca', 4], ['pinguino', 3.5], ['gabbiano', 2]];
 const TOWN = [['piccione', 5], ['gatto', 2.2], ['cane', 2.2], ['gallina', 1.5], ['passero', 2]];
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
-const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14]);
+const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14, 15]);
 
 // ---------- il motore ----------
 // Il mondo è diviso in riquadri: quando l'eroe si avvicina, ogni riquadro fa comparire i suoi gruppi (sempre gli stessi
@@ -10179,7 +10227,7 @@ const TRACKS = {}, bar1 = n => 'X' + '.'.repeat(n - 1);
     o: ['A', 'B', 'A2', 'B'] };
 }
 
-// Deserto di Solis: scala hijaz, ney, oud e darbuka (al secondo giro la zurna)
+// Il deserto (Dune del Sole, Terre Rosse, Zafira): scala hijaz, ney, oud e darbuka (al secondo giro la zurna)
 {
   const a = { c: 'E | F | E | Dm E',
     mel: 'f5/e5*4 f5*2 g#5*2 a5*4 g#5*2 f5*2 | f5*6 e5*2 f5*2 a5*2 c6*4 | b5*4 a5*2 g#5*2 f5*4 e5*4 | d5*4 f5*4 f5/e5*8',
@@ -10783,7 +10831,7 @@ const IT = {
   grandeChiave: { n: 'GRANDE CHIAVE', t: 'chiave', r: 2, d: 'APRE LA PORTA DEL GUARDIANO.' },
   pBosco: { n: "PIETRA DELL'ALBA DEL BOSCO", t: 'pietra', r: 3, c: '#5af07a', d: 'BRILLA DELLA LUCE VERDE DELLE FORESTE.' },
   pLago: { n: "PIETRA DELL'ALBA DEL LAGO", t: 'pietra', r: 3, c: '#5ac8ff', d: 'BRILLA DELLA LUCE AZZURRA DELLE ACQUE.' },
-  pSole: { n: "PIETRA DELL'ALBA DEL SOLE", t: 'pietra', r: 3, c: '#ffd23f', d: 'BRILLA DELLA LUCE DORATA DEL DESERTO.' },
+  pSole: { n: "PIETRA DELL'ALBA DEL SOLE", t: 'pietra', r: 3, c: '#ffd23f', d: 'BRILLA DELLA LUCE DORATA DI SOLIS.' },
   pGhiaccio: { n: "PIETRA DELL'ALBA DEL GHIACCIO", t: 'pietra', r: 3, c: '#bff0ff', d: 'BRILLA DELLA LUCE BIANCA DEI GHIACCI.' },
   pFuoco: { n: "PIETRA DELL'ALBA DEL FUOCO", t: 'pietra', r: 3, c: '#ff5a3a', d: 'BRILLA DELLA LUCE ROSSA DEL VULCANO.' },
   // armi, armature e amuleti nuovi: nei negozi e nelle grotte nascoste
@@ -10855,7 +10903,7 @@ const NPC = {
   pescatore: { n: 'IL PESCATORE', look: { skin: '#e0a880', hat: '#d8b85a', shirt: '#4a7aa8', pants: '#6a5a3a', boots: '#3a3a3a', beard: '#c8c8d0', hairStyle: 'short', hair: '#c8c8d0' } },
   spirito: { n: 'SPIRITO DEL BOSCO', sc: 1.18, look: { skin: '#9af0b0', shirt: '#3aa860', robe: '#2a8a50', pants: '#2a8a50', boots: '#1e6a3a', antlers: '#f0e8d0', eyes: '#ffffff' } },
   ardea: { n: 'CAPITANO ARDEA', look: { skin: '#e8b890', helm: { c: '#c8d0dc', plume: '#c8342c' }, shirt: '#c8d0dc', plate: '#e8eef6', pauldron: '#c8d0dc', pants: '#5a6070', boots: '#3a3a44', cape: '#c8342c', weapon: { col: '#e8eef6', guard: '#c8a040' }, shield: '#c8342c', emblem: '#ffd23f' } },
-  nomade: { n: 'LA NOMADE', look: { skin: '#b07a50', hood: '#d8b878', robe: '#c89a5a', shirt: '#e0c080', pants: '#a87a4a', boots: '#6a4a2a' } },
+  nomade: { n: 'LA PELLEGRINA', look: { skin: '#b07a50', hood: '#d8b878', robe: '#c89a5a', shirt: '#e0c080', pants: '#a87a4a', boots: '#6a4a2a' } },
   eremita: { n: "L'EREMITA", look: { skin: '#e0b8a0', hood: '#8a8a9a', robe: '#6a6a7a', shirt: '#7a7a8a', pants: '#5a5a6a', boots: '#3a3a44', beard: '#e8e8f0', staff: '#8a6a4a' } },
   contadino: { n: 'IL CONTADINO', look: { skin: '#d89a70', hat: '#d8b85a', shirt: '#8aaa5a', pants: '#6a5a3a', boots: '#4a3a2a', hairStyle: 'short', hair: '#5a3a1a', weapon: { kind: 'spear' } } },
 };
@@ -10898,7 +10946,7 @@ const ATMO = [
   ['#bcd8ee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#c4dcee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#a8c8b4', '#4a8ac0', 240, 900, '#3a6aa0'], ['#c8d6e8', '#3a7ccc', 450, 1450, '#3a72b8'],
   ['#dce6f2', '#7aa4d4', 200, 860, '#5a8ac0'], ['#f0d8a8', '#5a9cdc', 400, 1300, '#3a8ab8'], ['#8a9a7a', '#4a5a4e', 70, 480, '#4a5e46'], ['#b8786a', '#4a2424', 190, 820, '#5a3a3a'],
   ['#ecc8a0', '#6a9ad0', 300, 1050, '#3a7ab0'], ['#ecdcb0', '#5aa0dc', 420, 1350, '#3a86c0'], ['#f0c8a0', '#5a94d8', 400, 1300, '#3a8ab8'], ['#a8d0b0', '#4a90b8', 180, 760, '#2a8a80'],
-  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'],
+  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'], ['#cfe0ee', '#4a94e0', 400, 1300, '#3a7ac8'],
 ].map(a => [hexf(a[0]), hexf(a[1]), a[2], a[3], hexf(a[4])]);
 
 // ---------- stato ----------
@@ -11058,6 +11106,12 @@ function buildStatics() {
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
   for (const k of ['crystal', 'icecrystal', 'lavarock']) S[k].lit = 1.15;
   setZ('ore', [A.rock(R, Z(22), Z(16), ['#3a3a44', '#5a5a66', '#7a7a88', '#9a9aa8'], ['#ff9a3a', '#ffd06a', '#e8eef6'])], 0.48, 3.5);
+  // le Colline di Solis: cipressi, ulivi, girasoli (con numeri loro: gli altri disegni restano identici)
+  { const R2 = rng(4711), CYP = ['#16382a', '#235238', '#3a7048'], OLV = ['#4a5a3a', '#66805a', '#8ea476', '#bccaa0'];
+    setZ('cipresso', [A.cypress(R2, Z(15), Z(60), CYP), A.cypress(R2, Z(13), Z(50), CYP), A.cypress(R2, Z(16), Z(66), CYP)], 0.46, 1.5);
+    setZ('ulivo', [A.oak(R2, Z(38), Z(40), OLV, A.TRUNK, 8), A.oak(R2, Z(34), Z(36), OLV, A.TRUNK, 7)], 0.42, 1.6);
+    set('girasole', [A.sunflower(0), A.sunflower(1)], 0.25, 0, true);
+    S.cipresso.sway = 1; S.ulivo.sway = 1; S.girasole.sway = 2; }
   // effetti
   const HD = (c, old) => { const r = atlas.add(c); r.f = old / c.width; return r; };
   SPR.puff = HD(A.puff(), 7);
@@ -11359,7 +11413,7 @@ function talkFolk(n, N) {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
       save.coins -= cost; startFade(() => sail(W.DOCKS[to[i]])); }); }
   if (id === 're') {
-    if (q.viaggio === 0) return say(id, ['EROE DI LUMEN! IL CAPITANO ARDEA MI HA RACCONTATO TUTTO DI TE.', 'IL DRAGO SI È SVEGLIATO, E LUMEN DA SOLA NON BASTERÀ. OLTRE IL PONTE DEI RE VIVONO POPOLI CHE UN TEMPO ERANO NOSTRI ALLEATI.', "PORTA IL MIO SIGILLO AI CINQUE SIGNORI: IL BORGOMASTRO DI CASTELROSSO, LA THANE DI ALTABRINA, L'EMIRA DI ZAFIRA, IL CAPITANO DI PORTO SERENO E LA DAMA DI FIORALBA.", 'IL PONTE È A EST, OLTRE IL DESERTO DI SOLIS. È UN VIAGGIO LUNGO: PRENDI QUESTE CENTO MONETE PER LOCANDE E TRAGHETTI.'], () => { q.viaggio = 1; save.coins += 100; trackQuest('viaggio'); toast("MISSIONE: L'ALLEANZA DELLE CITTÀ", '#ffd23f'); jingle(); });
+    if (q.viaggio === 0) return say(id, ['EROE DI LUMEN! IL CAPITANO ARDEA MI HA RACCONTATO TUTTO DI TE.', 'IL DRAGO SI È SVEGLIATO, E LUMEN DA SOLA NON BASTERÀ. OLTRE IL PONTE DEI RE VIVONO POPOLI CHE UN TEMPO ERANO NOSTRI ALLEATI.', "PORTA IL MIO SIGILLO AI CINQUE SIGNORI: IL BORGOMASTRO DI CASTELROSSO, LA THANE DI ALTABRINA, L'EMIRA DI ZAFIRA, IL CAPITANO DI PORTO SERENO E LA DAMA DI FIORALBA.", 'IL PONTE È A EST, OLTRE LE COLLINE DI SOLIS. È UN VIAGGIO LUNGO: PRENDI QUESTE CENTO MONETE PER LOCANDE E TRAGHETTI.'], () => { q.viaggio = 1; save.coins += 100; trackQuest('viaggio'); toast("MISSIONE: L'ALLEANZA DELLE CITTÀ", '#ffd23f'); jingle(); });
     if (q.viaggio === 1) return say(id, ['HAI PARLATO CON ' + allies() + ' SIGNORI SU CINQUE. LA MAPPA (SELECT) TI MOSTRA DOVE SI TROVA IL PROSSIMO.', 'NEI PORTI I TRAGHETTI TI RISPARMIANO GIORNI DI CAMMINO.']);
     if (q.viaggio === 2) return say(id, ['CINQUE GIURAMENTI! NON ACCADEVA DAI TEMPI DI RE AURELIO.', "QUANDO IL DRAGO SCENDERÀ DAL PICCO, LUMEN NON SARÀ SOLA. PRENDI LA STELLA DELL'ALLEANZA: L'HAI MERITATA.", 'E TRECENTO MONETE DAL TESORO DELLA ROCCA.'], () => { q.viaggio = 3; save.coins += 300; openLoot('alleanza'); });
     return say(id, ['LE CITTÀ SONO CON NOI. RIPOSA, EROE: IL GIORNO DEL DRAGO SI AVVICINA.']);
@@ -11420,7 +11474,7 @@ function talk(n) {
   if (id === 'nino') return say(id, ['BENVENUTO! MERCI DA TUTTA LUMEN, PREZZI ONESTI... QUASI.'], () => { shop = { sel: 0, top: 0, who: 'nino' }; });
   if (id === 'viandante') {
     const H = ['HO GIRATO TUTTA LUMEN. SAPEVI CHE SULL\'ISOLA DEL LAGO DI CRISTALLO C\'È UN ANTICO SANTUARIO?', "L'ACQUA DEL LAGO È PROFONDA... MA DALLA RIVA SUD-OVEST HO VISTO UN PUNTO DOVE SEMBRA PIÙ CHIARA.",
-      'IN CIMA AL PICCO DEL DRAGO C\'È UN TESORO. IL SENTIERO PARTE DALLA RIVA NORD DEL LAGO: È RIPIDO, MA SI SALE.', 'LE RUPI DEL GRIFONE, A NORD-EST, SEMBRANO IMPOSSIBILI DA SCALARE. MA DAL DESERTO, TRA LE ROCCE, QUALCUNO CI È RIUSCITO.',
+      'IN CIMA AL PICCO DEL DRAGO C\'È UN TESORO. IL SENTIERO PARTE DALLA RIVA NORD DEL LAGO: È RIPIDO, MA SI SALE.', 'LE RUPI DEL GRIFONE, A NORD-EST, SEMBRANO IMPOSSIBILI DA SCALARE. MA DALLE COLLINE DI SOLIS, TRA LE ROCCE, QUALCUNO CI È RIUSCITO.',
       "NEL CUORE DELLA PALUDE D'OMBRA BRILLA QUALCOSA. LE POZZE SONO BASSE: SI POSSONO GUADARE.", 'NEL CERCHIO DI PIETRE, A SUD-OVEST DEL BORGO, GLI ANTICHI LASCIAVANO DONI AGLI DEI.',
       'DIETRO AL GRANDE ALBERO DEL BOSCO, TRA LE RADICI, I BAMBINI DICONO DI AVER VISTO UN FORZIERE.',
       "NEL FITTO DEL BOSCO ANTICO, VERSO OVEST, C'È UNA GROTTA PIENA DI FUNGHI. I GOBLIN CI NASCONDONO IL LORO BOTTINO.",
@@ -11440,7 +11494,7 @@ function talk(n) {
   if (id === 'pescatore') return say(id, ['IL LAGO È PROFONDO E I PESCI SONO FURBI.', "L'ALTRO GIORNO HO VISTO DELLE PIETRE CHIARE SOTT'ACQUA, PARTIVANO DALLA STRADA A OVEST DI QUI E ANDAVANO VERSO L'ISOLA."]);
   if (id === 'spirito') {
     if (q.main === 0) return say(id, ['...NON SEI ANCORA PRONTO. PARLA PRIMA CON LA SAGGIA DEL BORGO.']);
-    if (q.main === 1) return say(id, ['...UN CUORE CORAGGIOSO. FINALMENTE.', "LE CINQUE PIETRE DELL'ALBA RIPOSANO NEI SANTUARI: NEL BOSCO, NEL DESERTO, TRA I GHIACCI, NEL VULCANO E SULL'ISOLA DEL LAGO.", 'OGNI SANTUARIO È CHIUSO DA UN SIGILLO CHE SOLO IL SANGUE DEI RE DI LUMEN SA SPEZZARE.', "VA' ALLA ROCCA, A SUD-EST DEL BORGO, E PARLA CON IL CAPITANO ARDEA. E PRENDI QUESTO CUORE DI CRISTALLO: TI DARÀ FORZA."], () => { q.main = 2; trackQuest('main'); openLoot('cuore'); });
+    if (q.main === 1) return say(id, ['...UN CUORE CORAGGIOSO. FINALMENTE.', "LE CINQUE PIETRE DELL'ALBA RIPOSANO NEI SANTUARI: NEL BOSCO, TRA LE ROVINE DI SOLIS, TRA I GHIACCI, NEL VULCANO E SULL'ISOLA DEL LAGO.", 'OGNI SANTUARIO È CHIUSO DA UN SIGILLO CHE SOLO IL SANGUE DEI RE DI LUMEN SA SPEZZARE.', "VA' ALLA ROCCA, A SUD-EST DEL BORGO, E PARLA CON IL CAPITANO ARDEA. E PRENDI QUESTO CUORE DI CRISTALLO: TI DARÀ FORZA."], () => { q.main = 2; trackQuest('main'); openLoot('cuore'); });
     if (q.main === 5) return say(id, ["...LE CINQUE PIETRE DELL'ALBA. LE SENTO CANTARE.", 'LA LUCE TORNA SULLE TERRE DI LUMEN: LE CREATURE SI CALMERANNO E I CAMPI TORNERANNO A FIORIRE.', 'MA ASCOLTA... SUL PICCO IL DRAGO SI È SVEGLIATO DEL TUTTO. HA SENTITO LA LUCE DELLE PIETRE, E LA VUOLE PER SÉ.', 'CON LUI SI SONO DESTATE LE CREATURE LEGGENDARIE DI LUMEN. PREPARATI, EROE: IL VIAGGIO NON È FINITO.', 'PRENDI QUESTE POZIONI E QUESTE MONETE. TI SERVIRANNO.'], () => { q.main = 6; save.pot += 3; save.coins += 200; toast('+3 POZIONI  +200 MONETE', '#ffd23f'); banner = { t: 'CAPITOLO 2 COMPLETATO', s: 'IL SEGUITO NEL CAPITOLO 3', life: 6, c: '#ffd23f' }; fanfare(); writeSave(); });
     if (q.main === 4) return say(id, ['LE PIETRE TI ASPETTANO NEI SANTUARI. IL PROSSIMO È IL ' + SANCT[nextSanct()] + '.']);
     if (q.main >= 6) return say(id, ['IL BOSCO È IN PACE, GRAZIE A TE. MA IL CIELO SOPRA IL PICCO... NON MI PIACE.']);
@@ -11452,18 +11506,18 @@ function talk(n) {
     if (q.main === 3 && save.c1t !== undefined && save.time - save.c1t < 90) return say(id, ['IL RE NON È ANCORA TORNATO. ESPLORA UN PO\' LUMEN E TORNA PIÙ TARDI: I SUOI MESSAGGERI SONO GIÀ IN VIAGGIO.']);
     if (q.main === 3) return say(id, ['FINALMENTE SEI QUI! IL RE È TORNATO DALLE TERRE DEL NORD: I SAPIENTI HANNO DECIFRATO LE RUNE DEI SANTUARI.', "I SIGILLI SI SPEZZANO UNO ALLA VOLTA, NELL'ORDINE IN CUI FURONO POSTI: IL BOSCO, IL LAGO, IL SOLE, IL GHIACCIO E PER ULTIMO IL FUOCO.", 'IL RE TI AFFIDA IL SUO SIGILLO: NEL RUBINO SCORRE IL SANGUE DEI RE DI LUMEN. APPOGGIALO ALLA PORTA DI UN SANTUARIO E LE RUNE SI APRIRANNO.', "DENTRO TROVERAI PICCOLE CHIAVI, UNA GRANDE CHIAVE E UN GUARDIANO. SCONFIGGILO, E LA PIETRA DELL'ALBA SARÀ TUA.", "IL PRIMO È IL SANTUARIO DEL BOSCO, NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE. VA', EROE. LUMEN CONTA SU DI TE."], () => { q.main = 4; openLoot('sigillo'); trackQuest('main'); banner = { t: 'CAPITOLO 2', s: 'I CINQUE SANTUARI', life: 5, c: '#ffd23f' }; writeSave(); });
     if (q.main >= 4 && q.viaggio === 0 && !save.flags.reHint) { save.flags.reHint = 1; return say(id, ['IL RE VUOLE VEDERTI: TI ASPETTA QUI NEL CORTILE, DAVANTI AL PORTONE DEL MASTIO.']); }
-    if (q.main === 4) { const nx = nextSanct(), H = { bosco: "È NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE.", lago: "È SULL'ISOLA IN MEZZO AL LAGO DI CRISTALLO: LE PIETRE CHIARE NELL'ACQUA PORTANO FIN LÀ.", sole: 'È TRA LE ROVINE DI SOLIS, NEL DESERTO A EST.', ghiaccio: 'È IN FONDO ALLA VALLE GELATA, LONTANO A NORD-OVEST.', fuoco: 'È SUL MONTE BRACE, A SUD-EST: LA SUA PORTA GUARDA IL CRATERE.' }; return say(id, ['IL PROSSIMO È IL ' + SANCT[nx] + '. ' + H[nx], "PIETRE DELL'ALBA RECUPERATE: " + gemsN() + ' SU 5.']); }
+    if (q.main === 4) { const nx = nextSanct(), H = { bosco: "È NEL BOSCO ANTICO, POCO A NORD DELL'ALBERO MADRE.", lago: "È SULL'ISOLA IN MEZZO AL LAGO DI CRISTALLO: LE PIETRE CHIARE NELL'ACQUA PORTANO FIN LÀ.", sole: 'È TRA LE ROVINE DI SOLIS, SULLE COLLINE A EST.', ghiaccio: 'È IN FONDO ALLA VALLE GELATA, LONTANO A NORD-OVEST.', fuoco: 'È SUL MONTE BRACE, A SUD-EST: LA SUA PORTA GUARDA IL CRATERE.' }; return say(id, ['IL PROSSIMO È IL ' + SANCT[nx] + '. ' + H[nx], "PIETRE DELL'ALBA RECUPERATE: " + gemsN() + ' SU 5.']); }
     if (q.main === 5) return say(id, ['LE CINQUE PIETRE! CHE IL RE TI BENEDICA. ORA PORTALE ALLO SPIRITO DEL BOSCO: SOLO LUI SA COSA FARNE.']);
     return say(id, ['IL DRAGO... I SAPIENTI DICONO CHE SI PREPARA QUALCOSA. RESTA PRONTO, EROE.']);
   }
-  if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE DUNE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
+  if (id === 'nomade') return say(id, ['LE ROVINE DI SOLIS CUSTODISCONO IL SANTUARIO DEL SOLE. GLI SCHELETRI LÀ DENTRO NON DORMONO MAI.', 'A NORD, OLTRE LE COLLINE, LE ROCCE SALGONO VERSO LE RUPI DEL GRIFONE. HO VISTO UN SENTIERO, MA NESSUNO TORNA A RACCONTARLO.']);
   if (id === 'eremita') return say(id, ["IL DRAGO... L'HO VISTO DA VICINO, UNA VOLTA. LE SUE SCAGLIE RESISTONO A TUTTO.", CLS.TXT.eremita[cls()], 'SE HAI FREDDO AI PIEDI, GUARDA DIETRO AL PUPAZZO DI NEVE.']);
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
   '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO E VALICO PER MARMOREA: A OVEST DEL LAGO',
   '2326,672': '↑ VETTA DEL DRAGO\n→ VALICO DEI GIGANTI: MARMOREA, LA CITTÀ DELLE CASCATE', '2652,160': 'VALLE DELLE CASCATE\n↑ MARMOREA   ↓ LAGO DI CRISTALLO', '2532,-486': 'MARMOREA\nLE RAMPE AI LATI DEL LAGO SALGONO ALLA GRANDE TERRAZZA',
-  '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ DESERTO DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
+  '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ COLLINE DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
@@ -11506,7 +11560,7 @@ const fanfare = () => { MU.duck(1.6); seq([523, 659, 784, 1047, 784, 1047, 1319,
 // ---------- musica: un brano per ogni luogo ----------
 const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI DI LUMEN': 'prati', 'CAMPI DORATI': 'campi', 'BOSCO ANTICO': 'bosco', "L'ALBERO MADRE": 'bosco',
   'LAGO DI CRISTALLO': 'lago', 'ISOLA DEL LAGO': 'lago', 'MONTI DEL DRAGO': 'monti', 'PICCO DEL DRAGO': 'monti', 'VETTA DEL DRAGO': 'monti', 'RUPI DEL GRIFONE': 'rupi',
-  'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'DESERTO DI SOLIS': 'deserto', 'ROVINE DI SOLIS': 'deserto', 'OASI DI SABBIA': 'deserto', "PALUDE D'OMBRA": 'palude',
+  'NIDO DEL GRIFONE': 'rupi', 'VALLE GELATA': 'gelo', 'COLLINE DI SOLIS': 'campi', 'ROVINE DI SOLIS': 'campi', 'FONTE DEI GIRASOLI': 'campi', "PALUDE D'OMBRA": 'palude',
   'MONTE BRACE': 'brace', 'CRATERE DEL BRACE': 'brace', 'COSTA DELLE CONCHIGLIE': 'costa', 'FARO DEL SUD': 'costa',
   // le terre nuove
   'CASTELROSSO': 'borgo:ambra', 'ALTABRINA': 'borgo:nord', 'LOCANDA DEL PONTE': 'campi', 'MEZZAVIA': 'campi', 'APPRODO DEL FARO': 'costa', 'APPRODO DEI PETALI': 'costa', 'PORTO SERENO': 'costa', 'ZAFIRA': 'deserto',

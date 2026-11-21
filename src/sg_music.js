@@ -375,7 +375,7 @@ const TRACKS = {}, bar1 = n => 'X' + '.'.repeat(n - 1);
     o: ['A', 'B', 'A2', 'B'] };
 }
 
-// Deserto di Solis: scala hijaz, ney, oud e darbuka (al secondo giro la zurna)
+// Il deserto (Dune del Sole, Terre Rosse, Zafira): scala hijaz, ney, oud e darbuka (al secondo giro la zurna)
 {
   const a = { c: 'E | F | E | Dm E',
     mel: 'f5/e5*4 f5*2 g#5*2 a5*4 g#5*2 f5*2 | f5*6 e5*2 f5*2 a5*2 c6*4 | b5*4 a5*2 g#5*2 f5*4 e5*4 | d5*4 f5*4 f5/e5*8',
