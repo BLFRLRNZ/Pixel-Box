@@ -139,6 +139,6 @@ function drawIcon(c, rows, pal, x, y, s, bg) {
 // ---------- schermo e tasti della console ----------
 const cv = $('scr'), ctx = cv.getContext('2d');
 let W = 320, H = 288, dpr = 1;
-const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, start: false, select: false };
+const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, m: false, start: false, select: false };
 const kbB = {}, tB = {};
 const PF = s => Math.max(6, Math.round(s)) + 'px "Press Start 2P", monospace';

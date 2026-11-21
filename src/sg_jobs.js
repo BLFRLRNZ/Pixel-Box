@@ -5,6 +5,9 @@
 //   consegna — portare qualcosa a una persona (paga lei, sul posto)
 //   raccolta — trovare q cose sparse in una zona (compaiono solo a incarico accettato)
 //   visita   — raggiungere un luogo
+// In più ogni bacheca espone una battuta di caccia (genere «selvaggina»): abbattere con l'arco q capi di selvaggina.
+// Sono gli incarichi di base: pagano meno, si possono rifare quante volte si vuole (pagata una, compare la prossima
+// del giro) e non contano per la cittadinanza onoraria né per lo sconto.
 // Tranne le consegne, la paga si riscuote alla bacheca. Chi sbriga tutti e quattro gli incarichi di una città
 // ne diventa cittadino onorario (un cuore di cristallo); e ogni incarico pagato vale uno sconto nelle sue botteghe.
 (() => {
@@ -106,8 +109,48 @@ const LIST = {
     boss: { n: 'IL RE DEI NEVAI', as: 'icewolf', x: 2640, z: -200, sc: 0.4, hp: 135, dmg: 6, sp: 44, r: 5, range: 10, tint: [0.86, 0.94, 1.06] },
     txt: "È BIANCO COME LA NEVE E GROSSO COME UN ORSO. DI NOTTE LO SI SENTE ULULARE FIN DALLA TERRAZZA. QUATTROCENTOVENTI MONETE A CHI LO FERMA." },
 };
-const CITY = {}; for (const id in LIST) { LIST[id].id = id; (CITY[LIST[id].c] = CITY[LIST[id].c] || []).push(id); }
+// ---------- le battute di caccia ----------
+const caccia = (id, c, n, by, game, pl, q, coins, where, txt, at) => { LIST[id] = { c, n, by, k: 'selvaggina', base: 1, game, pl, q, coins, where, at, txt: txt + " SERVE UN ARCO, E LA MIRA LIBERA." }; };
+const CERVI = ['cervo', 'cervoM'];
+caccia('hb1', 'borgo', 'CACCIA: CONIGLI PER LA LOCANDA', 'OSTESSA GEMMA, LOCANDA DEL GALLO', ['coniglio'], 'CONIGLI', 3, 30, "NEI PRATI TUTT'INTORNO AL BORGO",
+  "LO STUFATO DI CONIGLIO DEL GALLO NON SI FA DA SOLO. ME NE SERVONO TRE, PRESI NEI PRATI QUI ATTORNO: TRENTA MONETE.");
+caccia('hb2', 'borgo', 'CACCIA: CERVI DEI PRATI', 'I CACCIATORI DEL BORGO', CERVI, 'CERVI', 2, 45, 'NEI PRATI ATTORNO AL BORGO, LONTANO DALLE CASE',
+  "I CERVI SCAPPANO APPENA TI SENTONO: BISOGNA AVVICINARSI PIANO E TIRARE DA LONTANO. DUE CAPI VALGONO QUARANTACINQUE MONETE.");
+caccia('hr1', 'rocca', 'CACCIA: CONIGLI PER LE CUCINE', 'IL CUOCO DEL RE', ['coniglio'], 'CONIGLI', 5, 50, 'NEI PRATI ATTORNO ALLA ROCCA',
+  "LE CUCINE DEL RE VOGLIONO CINQUE CONIGLI PER IL BANCHETTO. I PRATI FUORI DALLE MURA NE SONO PIENI: CINQUANTA MONETE.");
+caccia('hr2', 'rocca', 'CACCIA: CERVI PER IL BANCHETTO', 'IL CUOCO DEL RE', CERVI, 'CERVI', 3, 65, 'NEI PRATI ATTORNO ALLA ROCCA',
+  "PER LA TAVOLA DI RE ALDRIC CI VUOLE CACCIAGIONE VERA. TRE CERVI DEI PRATI: SESSANTACINQUE MONETE.");
+caccia('hc1', 'castelrosso', "CACCIA: CERVI DEL BOSCO D'AMBRA", 'IL MACELLAIO DI CASTELROSSO', CERVI, 'CERVI', 4, 90, "NEL BOSCO D'AMBRA, ATTORNO ALLE MURA",
+  "D'AUTUNNO I CERVI DEL BOSCO D'AMBRA SONO GRASSI E LA CITTÀ HA FAME. QUATTRO CAPI: NOVANTA MONETE.");
+caccia('hc2', 'castelrosso', 'CACCIA: VOLPI NEI POLLAI', 'LE CONTADINE DEL BOSCO', ['volpe'], 'VOLPI', 2, 100, "NEL BOSCO D'AMBRA, ATTORNO ALLE MURA",
+  "OGNI NOTTE UNA GALLINA IN MENO. LE VOLPI DEL BOSCO D'AMBRA SONO FURBE E VANNO DA SOLE: DUE VOLPI, CENTO MONETE.");
+caccia('hc3', 'castelrosso', 'CACCIA: CINGHIALI TRA LE VIGNE', 'IL BORGOMASTRO ULDERICO', ['cinghiale'], 'CINGHIALI', 2, 130, "NEL BOSCO D'AMBRA: SONO POCHI E VANNO CERCATI",
+  "I CINGHIALI SCAVANO SOTTO LE VIGNE E LE ROVINANO. SONO POCHI E DIFFIDENTI: DUE CINGHIALI IN MENO VALGONO CENTOTRENTA MONETE DEL COMUNE.");
+caccia('ha1', 'altabrina', 'CACCIA: LEPRI BIANCHE', "L'OSTE DI ALTABRINA", ['lepreB'], 'LEPRI BIANCHE', 4, 100, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "SULLA NEVE LE LEPRI BIANCHE QUASI NON SI VEDONO: GUARDA DOVE SALTANO. QUATTRO LEPRI, CENTO MONETE.");
+caccia('ha2', 'altabrina', 'CACCIA: RENNE', 'I CONCIATORI', ['renna'], 'RENNE', 3, 120, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "CON LA PELLE DI RENNA SI FANNO GLI STIVALI CHE TENGONO CALDO TUTTO L'INVERNO. TRE RENNE: CENTOVENTI MONETE.");
+caccia('ha3', 'altabrina', 'CACCIA: VOLPI BIANCHE', 'LA PELLICCIAIA', ['volpeB'], 'VOLPI BIANCHE', 2, 140, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "LE VOLPI BIANCHE VANNO DA SOLE E SENTONO UN PASSO A CENTO METRI. DUE PELLICCE: CENTOQUARANTA MONETE.");
+caccia('hz1', 'zafira', "CACCIA: BISONTI DELL'ALTOPIANO", 'I CAROVANIERI', ['bisonte'], 'BISONTI', 3, 140, "SULL'ALTOPIANO ATTORNO A ZAFIRA",
+  "LA CAROVANA PARTE TRA TRE GIORNI E SERVE CARNE SECCA PER TUTTI. TRE BISONTI DELL'ALTOPIANO: CENTOQUARANTA MONETE.");
+caccia('hz2', 'zafira', 'CACCIA: VOLPI DELLE SABBIE', 'IL MERCANTE DI SPEZIE', ['fennec'], 'VOLPI DELLE SABBIE', 3, 130, "SULL'ALTOPIANO ATTORNO A ZAFIRA",
+  "LE VOLPI DELLE SABBIE ENTRANO NEI MAGAZZINI E SI MANGIANO I DATTERI. TRE VOLPI: CENTOTRENTA MONETE.");
+caccia('hp1', 'porto', 'CACCIA: CONIGLI PER LE NAVI', 'IL NOSTROMO', ['coniglio'], 'CONIGLI', 5, 70, 'NEI PRATI ALLE SPALLE DEL PORTO',
+  "IN MARE SI MANGIA PESCE TUTTI I GIORNI, E LA CIURMA BRONTOLA. CINQUE CONIGLI PER LA CAMBUSA: SETTANTA MONETE.");
+caccia('hp2', 'porto', 'CACCIA: CERVI DEI PRATI', "L'OSTE DEL PORTO", CERVI, 'CERVI', 3, 90, 'NEI PRATI ALLE SPALLE DEL PORTO',
+  "QUANDO ATTRACCA UNA NAVE, LA LOCANDA FINISCE LA CARNE IN UNA SERA. TRE CERVI: NOVANTA MONETE.");
+caccia('hf1', 'fioralba', 'CACCIA: CONIGLI TRA I CILIEGI', 'LA LOCANDIERA DEL TÈ', ['coniglio'], 'CONIGLI', 3, 90, 'TRA I CILIEGI ATTORNO ALLA CITTÀ',
+  "I CONIGLI ROSICCHIANO LE RADICI DEI CILIEGI GIOVANI. TRE CONIGLI, NOVANTA MONETE. MA GUAI A TOCCARE I CERVI SACRI: QUELLI NON SI CACCIANO.");
+caccia('hm1', 'marmorea', 'CACCIA: STAMBECCHI', 'I PASTORI DELLA VALLE', ['stambecco'], 'STAMBECCHI', 3, 150, 'NELLA VALLE DELLE CASCATE, SOTTO LA CITTÀ',
+  "GLI STAMBECCHI STANNO SUI PENDII PIÙ RIPIDI E NON SI LASCIANO AVVICINARE. TRE CAPI: CENTOCINQUANTA MONETE.", [2600, -170]);
+caccia('hm2', 'marmorea', 'CACCIA: LEPRI BIANCHE', "L'OSTESSA DEL CIGNO", ['lepreB'], 'LEPRI BIANCHE', 3, 130, 'NELLA VALLE DELLE CASCATE, SOTTO LA CITTÀ',
+  "AL CIGNO LA LEPRE SI CUOCE NEL VINO, PIANO, TUTTA LA NOTTE. ME NE SERVONO TRE: CENTOTRENTA MONETE.", [2600, -170]);
+caccia('hm3', 'marmorea', 'CACCIA: CERVI DELLA VALLE', "L'ARCONTE DELLE ACQUE", CERVI, 'CERVI', 3, 140, 'NELLA VALLE DELLE CASCATE, TRA I PINI',
+  "PER LA FESTA DELLE ACQUE CI VUOLE CACCIAGIONE. TRE CERVI DELLA VALLE: CENTOQUARANTA MONETE.", [2600, -170]);
+// gli incarichi veri e propri di ogni città, e a parte il giro delle sue battute di caccia
+const CITY = {}, HUNT = {}; for (const id in LIST) { const j = LIST[id]; j.id = id; ((j.base ? HUNT : CITY)[j.c] = (j.base ? HUNT : CITY)[j.c] || []).push(id); }
 // il nome di ogni città (per la bacheca, lo sconto, il diploma)
 const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA', marmorea: 'MARMOREA' };
-SG.jobs = { LIST, CITY, NOME };
+SG.jobs = { LIST, CITY, NOME, HUNT };
 })();

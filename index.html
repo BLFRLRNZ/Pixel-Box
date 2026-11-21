@@ -149,7 +149,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.7", "id": "2.7-ab53a4c6", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.8", "id": "2.8-e3d62dd2", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -291,7 +291,7 @@ function drawIcon(c, rows, pal, x, y, s, bg) {
 // ---------- schermo e tasti della console ----------
 const cv = $('scr'), ctx = cv.getContext('2d');
 let W = 320, H = 288, dpr = 1;
-const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, start: false, select: false };
+const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, m: false, start: false, select: false };
 const kbB = {}, tB = {};
 const PF = s => Math.max(6, Math.round(s)) + 'px "Press Start 2P", monospace';
 
@@ -9121,6 +9121,9 @@ SG.shop = { tilesOn, sprites, STILI, TIPI, piano, registra, insegna, fronte, bac
 //   consegna — portare qualcosa a una persona (paga lei, sul posto)
 //   raccolta — trovare q cose sparse in una zona (compaiono solo a incarico accettato)
 //   visita   — raggiungere un luogo
+// In più ogni bacheca espone una battuta di caccia (genere «selvaggina»): abbattere con l'arco q capi di selvaggina.
+// Sono gli incarichi di base: pagano meno, si possono rifare quante volte si vuole (pagata una, compare la prossima
+// del giro) e non contano per la cittadinanza onoraria né per lo sconto.
 // Tranne le consegne, la paga si riscuote alla bacheca. Chi sbriga tutti e quattro gli incarichi di una città
 // ne diventa cittadino onorario (un cuore di cristallo); e ogni incarico pagato vale uno sconto nelle sue botteghe.
 (() => {
@@ -9222,10 +9225,50 @@ const LIST = {
     boss: { n: 'IL RE DEI NEVAI', as: 'icewolf', x: 2640, z: -200, sc: 0.4, hp: 135, dmg: 6, sp: 44, r: 5, range: 10, tint: [0.86, 0.94, 1.06] },
     txt: "È BIANCO COME LA NEVE E GROSSO COME UN ORSO. DI NOTTE LO SI SENTE ULULARE FIN DALLA TERRAZZA. QUATTROCENTOVENTI MONETE A CHI LO FERMA." },
 };
-const CITY = {}; for (const id in LIST) { LIST[id].id = id; (CITY[LIST[id].c] = CITY[LIST[id].c] || []).push(id); }
+// ---------- le battute di caccia ----------
+const caccia = (id, c, n, by, game, pl, q, coins, where, txt, at) => { LIST[id] = { c, n, by, k: 'selvaggina', base: 1, game, pl, q, coins, where, at, txt: txt + " SERVE UN ARCO, E LA MIRA LIBERA." }; };
+const CERVI = ['cervo', 'cervoM'];
+caccia('hb1', 'borgo', 'CACCIA: CONIGLI PER LA LOCANDA', 'OSTESSA GEMMA, LOCANDA DEL GALLO', ['coniglio'], 'CONIGLI', 3, 30, "NEI PRATI TUTT'INTORNO AL BORGO",
+  "LO STUFATO DI CONIGLIO DEL GALLO NON SI FA DA SOLO. ME NE SERVONO TRE, PRESI NEI PRATI QUI ATTORNO: TRENTA MONETE.");
+caccia('hb2', 'borgo', 'CACCIA: CERVI DEI PRATI', 'I CACCIATORI DEL BORGO', CERVI, 'CERVI', 2, 45, 'NEI PRATI ATTORNO AL BORGO, LONTANO DALLE CASE',
+  "I CERVI SCAPPANO APPENA TI SENTONO: BISOGNA AVVICINARSI PIANO E TIRARE DA LONTANO. DUE CAPI VALGONO QUARANTACINQUE MONETE.");
+caccia('hr1', 'rocca', 'CACCIA: CONIGLI PER LE CUCINE', 'IL CUOCO DEL RE', ['coniglio'], 'CONIGLI', 5, 50, 'NEI PRATI ATTORNO ALLA ROCCA',
+  "LE CUCINE DEL RE VOGLIONO CINQUE CONIGLI PER IL BANCHETTO. I PRATI FUORI DALLE MURA NE SONO PIENI: CINQUANTA MONETE.");
+caccia('hr2', 'rocca', 'CACCIA: CERVI PER IL BANCHETTO', 'IL CUOCO DEL RE', CERVI, 'CERVI', 3, 65, 'NEI PRATI ATTORNO ALLA ROCCA',
+  "PER LA TAVOLA DI RE ALDRIC CI VUOLE CACCIAGIONE VERA. TRE CERVI DEI PRATI: SESSANTACINQUE MONETE.");
+caccia('hc1', 'castelrosso', "CACCIA: CERVI DEL BOSCO D'AMBRA", 'IL MACELLAIO DI CASTELROSSO', CERVI, 'CERVI', 4, 90, "NEL BOSCO D'AMBRA, ATTORNO ALLE MURA",
+  "D'AUTUNNO I CERVI DEL BOSCO D'AMBRA SONO GRASSI E LA CITTÀ HA FAME. QUATTRO CAPI: NOVANTA MONETE.");
+caccia('hc2', 'castelrosso', 'CACCIA: VOLPI NEI POLLAI', 'LE CONTADINE DEL BOSCO', ['volpe'], 'VOLPI', 2, 100, "NEL BOSCO D'AMBRA, ATTORNO ALLE MURA",
+  "OGNI NOTTE UNA GALLINA IN MENO. LE VOLPI DEL BOSCO D'AMBRA SONO FURBE E VANNO DA SOLE: DUE VOLPI, CENTO MONETE.");
+caccia('hc3', 'castelrosso', 'CACCIA: CINGHIALI TRA LE VIGNE', 'IL BORGOMASTRO ULDERICO', ['cinghiale'], 'CINGHIALI', 2, 130, "NEL BOSCO D'AMBRA: SONO POCHI E VANNO CERCATI",
+  "I CINGHIALI SCAVANO SOTTO LE VIGNE E LE ROVINANO. SONO POCHI E DIFFIDENTI: DUE CINGHIALI IN MENO VALGONO CENTOTRENTA MONETE DEL COMUNE.");
+caccia('ha1', 'altabrina', 'CACCIA: LEPRI BIANCHE', "L'OSTE DI ALTABRINA", ['lepreB'], 'LEPRI BIANCHE', 4, 100, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "SULLA NEVE LE LEPRI BIANCHE QUASI NON SI VEDONO: GUARDA DOVE SALTANO. QUATTRO LEPRI, CENTO MONETE.");
+caccia('ha2', 'altabrina', 'CACCIA: RENNE', 'I CONCIATORI', ['renna'], 'RENNE', 3, 120, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "CON LA PELLE DI RENNA SI FANNO GLI STIVALI CHE TENGONO CALDO TUTTO L'INVERNO. TRE RENNE: CENTOVENTI MONETE.");
+caccia('ha3', 'altabrina', 'CACCIA: VOLPI BIANCHE', 'LA PELLICCIAIA', ['volpeB'], 'VOLPI BIANCHE', 2, 140, 'SULLA NEVE ATTORNO AD ALTABRINA',
+  "LE VOLPI BIANCHE VANNO DA SOLE E SENTONO UN PASSO A CENTO METRI. DUE PELLICCE: CENTOQUARANTA MONETE.");
+caccia('hz1', 'zafira', "CACCIA: BISONTI DELL'ALTOPIANO", 'I CAROVANIERI', ['bisonte'], 'BISONTI', 3, 140, "SULL'ALTOPIANO ATTORNO A ZAFIRA",
+  "LA CAROVANA PARTE TRA TRE GIORNI E SERVE CARNE SECCA PER TUTTI. TRE BISONTI DELL'ALTOPIANO: CENTOQUARANTA MONETE.");
+caccia('hz2', 'zafira', 'CACCIA: VOLPI DELLE SABBIE', 'IL MERCANTE DI SPEZIE', ['fennec'], 'VOLPI DELLE SABBIE', 3, 130, "SULL'ALTOPIANO ATTORNO A ZAFIRA",
+  "LE VOLPI DELLE SABBIE ENTRANO NEI MAGAZZINI E SI MANGIANO I DATTERI. TRE VOLPI: CENTOTRENTA MONETE.");
+caccia('hp1', 'porto', 'CACCIA: CONIGLI PER LE NAVI', 'IL NOSTROMO', ['coniglio'], 'CONIGLI', 5, 70, 'NEI PRATI ALLE SPALLE DEL PORTO',
+  "IN MARE SI MANGIA PESCE TUTTI I GIORNI, E LA CIURMA BRONTOLA. CINQUE CONIGLI PER LA CAMBUSA: SETTANTA MONETE.");
+caccia('hp2', 'porto', 'CACCIA: CERVI DEI PRATI', "L'OSTE DEL PORTO", CERVI, 'CERVI', 3, 90, 'NEI PRATI ALLE SPALLE DEL PORTO',
+  "QUANDO ATTRACCA UNA NAVE, LA LOCANDA FINISCE LA CARNE IN UNA SERA. TRE CERVI: NOVANTA MONETE.");
+caccia('hf1', 'fioralba', 'CACCIA: CONIGLI TRA I CILIEGI', 'LA LOCANDIERA DEL TÈ', ['coniglio'], 'CONIGLI', 3, 90, 'TRA I CILIEGI ATTORNO ALLA CITTÀ',
+  "I CONIGLI ROSICCHIANO LE RADICI DEI CILIEGI GIOVANI. TRE CONIGLI, NOVANTA MONETE. MA GUAI A TOCCARE I CERVI SACRI: QUELLI NON SI CACCIANO.");
+caccia('hm1', 'marmorea', 'CACCIA: STAMBECCHI', 'I PASTORI DELLA VALLE', ['stambecco'], 'STAMBECCHI', 3, 150, 'NELLA VALLE DELLE CASCATE, SOTTO LA CITTÀ',
+  "GLI STAMBECCHI STANNO SUI PENDII PIÙ RIPIDI E NON SI LASCIANO AVVICINARE. TRE CAPI: CENTOCINQUANTA MONETE.", [2600, -170]);
+caccia('hm2', 'marmorea', 'CACCIA: LEPRI BIANCHE', "L'OSTESSA DEL CIGNO", ['lepreB'], 'LEPRI BIANCHE', 3, 130, 'NELLA VALLE DELLE CASCATE, SOTTO LA CITTÀ',
+  "AL CIGNO LA LEPRE SI CUOCE NEL VINO, PIANO, TUTTA LA NOTTE. ME NE SERVONO TRE: CENTOTRENTA MONETE.", [2600, -170]);
+caccia('hm3', 'marmorea', 'CACCIA: CERVI DELLA VALLE', "L'ARCONTE DELLE ACQUE", CERVI, 'CERVI', 3, 140, 'NELLA VALLE DELLE CASCATE, TRA I PINI',
+  "PER LA FESTA DELLE ACQUE CI VUOLE CACCIAGIONE. TRE CERVI DELLA VALLE: CENTOQUARANTA MONETE.", [2600, -170]);
+// gli incarichi veri e propri di ogni città, e a parte il giro delle sue battute di caccia
+const CITY = {}, HUNT = {}; for (const id in LIST) { const j = LIST[id]; j.id = id; ((j.base ? HUNT : CITY)[j.c] = (j.base ? HUNT : CITY)[j.c] || []).push(id); }
 // il nome di ogni città (per la bacheca, lo sconto, il diploma)
 const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA', marmorea: 'MARMOREA' };
-SG.jobs = { LIST, CITY, NOME };
+SG.jobs = { LIST, CITY, NOME, HUNT };
 })();
 
 // ===================== PIXEL SAGA · la fauna gentile =====================
@@ -9584,6 +9627,8 @@ const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_CO
 // in città entrano solo cani, gatti e uccellini (e i gabbiani dei porti): nessun altro ci nasce, ci cammina o ci atterra
 const STREET = [['passero', 3], ['gatto', 2.2], ['cane', 1.6], ['piccione', 1.2]];
 for (const k of ['cane', 'gatto', 'piccione', 'passero', 'gabbiano']) SPEC[k].city = 1;
+// la selvaggina: quello che una freccia può colpire (mai gli animali di casa, di fattoria o di città, né quelli sacri dei ciliegi)
+for (const k of ['coniglio', 'lepreB', 'cervo', 'cervoM', 'cinghiale', 'volpe', 'volpeB', 'stambecco', 'renna', 'bisonte', 'fennec', 'anatra']) SPEC[k].game = 1;
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
 const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14, 15]);
 
@@ -9926,6 +9971,33 @@ function create(env) {
     if (!night) { chirpT -= dt; if (chirpT <= 0) { chirpT = rr(5, 13); let nb = null, bd = 80; for (const a of list) if (a.S.k === 'bird' && a.st !== 'fly') { const d = Math.hypot(a.x - h.x, a.z - h.z); if (d < bd) { bd = d; nb = a; } }
       if (nb) { const f0 = nb.k === 'corvo' ? 620 : nb.k === 'gabbiano' ? 1300 : rr(2300, 3300), v = 0.011 * (1 - bd / 100), crow = nb.k === 'corvo'; for (let i = 0, n = crow ? 2 : 2 + Math.floor(rnd() * 3); i < n; i++) env.tone(f0 * rr(0.94, 1.08), crow ? 0.12 : 0.045, crow ? 'sawtooth' : 'sine', crow ? v * 0.6 : v, f0 * (crow ? 0.8 : rr(1.1, 1.3)), i * (crow ? 0.22 : 0.09)); } } }
   }
+  // --- la caccia
+  // che cosa c'è lungo il volo di una freccia (da un punto all'altro): la prima preda entro il raggio, a terra o poco sopra
+  function strike(x0, z0, x1, z1, r) {
+    const dx = x1 - x0, dz = z1 - z0, L2 = dx * dx + dz * dz || 1e-6; let best = null, bt = 2;
+    for (const a of list) {
+      if (!a.S.game || a.gone || a.st === 'soar' || a.st === 'vee' || a.st === 'leap') continue;
+      const t = clamp(((a.x - x0) * dx + (a.z - z0) * dz) / L2, 0, 1), px = x0 + dx * t, pz = z0 + dz * t, R = a.S.r * a.sc + r;
+      if ((a.x - px) ** 2 + (a.z - pz) ** 2 > R * R || t >= bt) continue;
+      if (a.y - (a.S.k === 'swim' ? 0 : gH(a.x, a.z)) > 8) continue;
+      best = a; bt = t;
+    }
+    return best;
+  }
+  // tutto il branco scappa da (hx, hz), anche se chi l'ha spaventato è lontano
+  function panic(g, hx, hz) {
+    g.alarm = Math.max(g.alarm, 5);
+    for (const a of g.m) {
+      if (a.gone) continue; const k = a.S.k;
+      if (a.st === 'soar' || a.st === 'vee' || a.st === 'flit' || a.st === 'leap' || a.st === 'fly') continue;
+      if (k === 'bird' || k === 'wade' || k === 'owl') takeoff(a, hx, hz, 130);
+      else if (k === 'hop' || k === 'dart' || k === 'crab') { a.st = 'flee'; a.n = 9; a.t = 0; }
+      else if (away(a, hx, hz, k === 'swim' ? 40 : rr(60, 90))) { a.st = 'flee'; a.t = rr(3, 5); }
+    }
+  }
+  function fell(a, hx, hz) { a.gone = true; panic(a.g, hx, hz); }
+  // una freccia caduta vicino: i branchi nel raggio scappano
+  function startle(x, z, r, hx, hz) { const done = new Set(); for (const a of list) if (!done.has(a.g) && a.S.fl && !a.gone && (a.x - x) ** 2 + (a.z - z) ** 2 < r * r) { done.add(a.g); panic(a.g, hx, hz); } }
   function splash(x, z, n) { for (let i = 0; i < n; i++) { const an = rnd() * TAU, v = rr(3, 9); env.fx({ k: 'drop', x, z, y: 0.3, vx: Math.cos(an) * v, vz: Math.sin(an) * v, vy: rr(9, 17), t: rr(0.5, 0.9), s: 0.3 }); } }
   // spavento: un colpo di spada, un incantesimo, un mostro...
   function scare(x, z, r) { for (const a of list) if (a.S.fl && (a.x - x) ** 2 + (a.z - z) ** 2 < r * r) a.g.alarm = Math.max(a.g.alarm, 2.5); }
@@ -9964,7 +10036,7 @@ function create(env) {
     for (const a of list) { if (a.st === 'leap' || a.st === 'soar' || a.st === 'vee' || a.S.k === 'swim' || !SP[a.k].ready) continue; if ((a.x - cam.x) ** 2 + (a.z - cam.z) ** 2 > 230 * 230) continue; env.pushShadow(a.x, a.z, a.S.r * a.sc * (a.air ? 0.7 : 1)); }
   }
   function reset() { list = []; flut = []; cells.clear(); skies.clear(); on = false; scanT = 0; }
-  const api = { init, update, draw, shadows, scare, reset, urban, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
+  const api = { init, update, draw, shadows, scare, strike, fell, startle, reset, urban, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
   return api;
 }
 
@@ -11267,6 +11339,8 @@ function buildStatics() {
   SPR.trap = atlas.add(A.pix(['.a.a.a.a.a.', '.babababab.', 'abbbbbbbbba', 'ab.ccccc.ba', 'abbbbbbbbba', '.babababab.', '.a.a.a.a.a.'], { a: '#e8eef6', b: '#6a6e78', c: '#3a2a20' }));
   SPR.star = atlas.add(A.pix(['..a..', '.aba.', 'abbba', '.aba.', '..a..'], { a: '#ffb02e', b: '#fff4b0' }));
   SPR.arrowfx = atlas.add(A.pix(['a', 'a', 'b', 'b', 'b', 'c'], { a: '#e8304a', b: '#c8a878', c: '#e8eef6' }));
+  SPR.mdot = atlas.add(A.pix(['aa', 'aa'], { a: '#ffffff' }));
+  SPR.mirino = atlas.add(A.pix(['...a...', '...a...', '.......', 'aa.b.aa', '.......', '...a...', '...a...'], { a: '#ffffff', b: '#ff5a4a' }));
   SPR.shot = SH; SPR.rockfx = SH.rock; SPR.icefx = SH.ice;
   // quello che si raccoglie per gli incarichi, e il punto esclamativo sopra le bacheche (giallo: c'è lavoro; verde: c'è una paga)
   SPR.pick = { fungo: atlas.add(A.pix(['...aaaa...', '..abaaba..', '.aaaaaaba.', '.abaaaaaa.', '.aaaabaaa.', '...cccc...', '....cc....', '....cc....', '...cccc...'], { a: '#e8304a', b: '#ffffff', c: '#f0e0c0' })),
@@ -11446,24 +11520,35 @@ function curTrack() {
 
 // ---------- incarichi delle bacheche ----------
 // save.jobs[id] = { s: 1 accettato | 2 compiuto, da riscuotere | 3 pagato, n: quanti finora, got: cose già raccolte }
-const JOBS = SG.jobs.LIST, JCITY = SG.jobs.CITY, JNOME = SG.jobs.NOME;
+const JOBS = SG.jobs.LIST, JCITY = SG.jobs.CITY, JNOME = SG.jobs.NOME, JHUNT = SG.jobs.HUNT;
 let picks = [];
 const jst = id => (save && save.jobs && save.jobs[id]) || null;
 const jobsDone = city => { let n = 0; for (const id in JOBS) if (JNOME[JOBS[id].c] === city) { const s = jst(id); if (s && s.s === 3) n++; } return n; };
 const boardOf = c => W.BOARDS.find(b => b.id === c);
 // 2: c'è una paga da riscuotere, 1: c'è un incarico ancora da prendere, 0: niente di nuovo
-const boardMark = c => { let m = 0; for (const id of JCITY[c] || []) { const s = jst(id); if (s && s.s === 2) return 2; if (!s) m = 1; } return m; };
-function jobAccept(id) { save.jobs[id] = { s: 1, n: 0 }; trackQuest('J:' + id); toast('INCARICO ACCETTATO: ' + JOBS[id].n, '#ffd23f'); jingle(); writeSave(); }
+const boardMark = c => { let m = 0; for (const id of JCITY[c] || []) { const s = jst(id); if (s && s.s === 2) return 2; if (!s) m = 1; } const hs = jst(huntOf(c)); return hs && hs.s === 2 ? 2 : m; };
+// la battuta di caccia di una città: quella in corso, oppure la prossima del giro (si possono rifare quante volte si vuole)
+const huntOf = c => { const L = JHUNT[c]; if (!L || !save) return null; return L.find(id => jst(id)) || L[((save.hunt && save.hunt[c]) || 0) % L.length]; };
+const boardIds = c => (JCITY[c] || []).concat(huntOf(c) ? [huntOf(c)] : []);
+function jobAccept(id) {
+  save.jobs[id] = { s: 1, n: 0 }; trackQuest('J:' + id); toast('INCARICO ACCETTATO: ' + JOBS[id].n, '#ffd23f'); jingle();
+  if (JOBS[id].k === 'selvaggina') toast(cls() !== 'arciere' ? "PER LA CACCIA SERVE UN ARCO: CHIEDI AL MAESTRO DELLA GILDA" : freeAim() ? 'AVVICINATI PIANO E TIRA DA LONTANO' : 'PER LA CACCIA USA LA MIRA LIBERA (IL MIRINO ACCANTO AL TASTO C)', '#7af0ff');
+  writeSave();
+}
 // l'incarico è compiuto: resta da riscuotere alla bacheca (le consegne invece le paga chi riceve)
 function jobReady(id) { const s = jst(id); if (!s || s.s !== 1) return; s.s = 2; banner = { t: 'INCARICO COMPIUTO', s: 'RISCUOTI ALLA BACHECA DI ' + JNOME[JOBS[id].c], life: 4, c: '#9af0b0' }; fanfare(); writeSave(); }
 function jobPay(id) {
   const s = jst(id), j = JOBS[id]; if (!s || s.s === 3) return; s.s = 3; save.coins += j.coins; toast('+' + j.coins + ' MONETE', '#ffd23f');
+  // le battute di caccia si rifanno: pagata una, la bacheca espone la prossima
+  if (j.base) { delete save.jobs[id]; (save.hunt = save.hunt || {})[j.c] = ((save.hunt[j.c] || 0) + 1) % 1000; if (save.track === 'J:' + id) save.track = null; seq([523, 659, 784], 0.08, 0.08); writeSave(); return; }
   if (j.gift) { if (j.gift[0] === 'pozione') save.pot += j.gift[1]; else save.eli = (save.eli || 0) + j.gift[1]; toast('+' + j.gift[1] + (j.gift[0] === 'pozione' ? ' POZIONI' : ' ELISIR'), '#ff8aa0'); }
   const n = jobsDone(JNOME[j.c]); toast('SCONTO A ' + JNOME[j.c] + ': ' + Math.min(20, n * 5) + '%', '#9af0b0'); seq([523, 659, 784, 1047], 0.08, 0.08);
   // tutti e quattro: cittadino onorario, e un cuore di cristallo in dono
   if (JCITY[j.c].every(k => jst(k) && jst(k).s === 3) && !save.flags['on_' + j.c]) { save.flags['on_' + j.c] = 1; openLoot('cuore'); loot.note = 'CITTADINO ONORARIO DI ' + JNOME[j.c] + '!'; }
   writeSave();
 }
+// una preda abbattuta: vale per le battute di caccia in corso (true se ha contato)
+function jobHunt(k) { let got = false; for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (!j || s.s !== 1 || j.k !== 'selvaggina' || !j.game.includes(k)) continue; got = true; s.n++; toast(j.pl + ': ' + Math.min(j.q, s.n) + '/' + j.q, '#9af0b0'); if (s.n >= j.q) jobReady(id); } return got; }
 function jobKill(type) { for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (!j || s.s !== 1 || j.k !== 'caccia' || j.foe !== type) continue; s.n++; toast(j.pl + ': ' + Math.min(j.q, s.n) + '/' + j.q, '#9af0b0'); if (s.n >= j.q) jobReady(id); } }
 // chi aspetta una consegna ringrazia e paga subito
 function jobTalk(nid) { for (const id in save.jobs) { const s = save.jobs[id], j = JOBS[id]; if (!j || s.s !== 1 || j.k !== 'consegna' || j.to !== nid) continue; say(nid, j.thanks, () => { jingle(); jobPay(id); }); return true; } return false; }
@@ -11479,6 +11564,7 @@ const jobLine = id => { const j = JOBS[id], s = jst(id) || { s: 0, n: 0 };
   if (s.s === 2) return 'COMPIUTO! RISCUOTI LA PAGA ALLA BACHECA DI ' + JNOME[j.c] + '.';
   if (s.s === 3) return 'COMPLETATO';
   if (j.k === 'caccia') return 'SCONFIGGI ' + j.q + ' ' + j.pl + ' (' + Math.min(j.q, s.n) + '/' + j.q + ').';
+  if (j.k === 'selvaggina') return "CACCIA CON L'ARCO " + j.q + ' ' + j.pl + ' (' + Math.min(j.q, s.n) + '/' + j.q + '): ' + j.where + '.';
   if (j.k === 'taglia') return 'SCONFIGGI ' + j.boss.n + ': ' + j.where + '.';
   if (j.k === 'consegna') return 'PORTA LA CONSEGNA A: ' + j.toN + '.';
   if (j.k === 'raccolta') return 'RACCOGLI ' + j.q + ' ' + j.label + ' (' + Math.min(j.q, s.n) + '/' + j.q + '): ' + j.where + '.';
@@ -11489,10 +11575,24 @@ function jobTarget(id, np) {
   if (s.s !== 1) return null;
   const nearest = L => { let best = null, bd = 1e12; for (const p of L) { const d = (p.x - hero.x) ** 2 + (p.z - hero.z) ** 2; if (d < bd) { bd = d; best = [p.x, p.z]; } } return best; };
   if (j.k === 'caccia') return nearest(camps.filter(c => c.type === j.foe));
+  if (j.k === 'selvaggina') return nearest(fauna.list.filter(a => j.game.includes(a.k) && !a.gone)) || huntGround(j);      // la preda più vicina, se ce n'è in vista; se no il terreno di caccia
   if (j.k === 'taglia') return nearest(camps.filter(c => c.job === id));
   if (j.k === 'consegna') return np(j.to);
   if (j.k === 'raccolta') return nearest(picks.filter(p => p.job === id && !(s.got && s.got[p.i])));
   return [j.x, j.z];
+}
+// il terreno di caccia di una battuta: il punto più vicino alla città dove quella selvaggina è di casa (si cerca una volta sola)
+function huntGround(j) {
+  if (j._at) return j._at;
+  if (j.at) return j._at = j.at;
+  const b = boardOf(j.c), L = SG.fauna.LAND; let best = null, bs = 0.02;
+  for (let r = 260; r <= 530; r += 90) for (let a = 0; a < TAU; a += 0.26) {
+    const x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r; if (x < 40 || z < W.Z0 + 40 || x > W.WS - 40 || z > W.WS - 40 || gH(x, z) < 1 || W.slope(x, z) > 0.45 || fauna.urban(x, z) || W.blocked(x, z, 3)) continue;
+    let w = 0, tot = 0; for (const [k, v] of L[W.biomeAt(x, z)] || []) { tot += v; if (j.game.includes(k)) w += v; }
+    const sc = tot ? w / tot - r * 0.00015 : 0;      // dove quella selvaggina è più di casa; a parità, più vicino alla città
+    if (sc > bs) { bs = sc; best = [x, z]; }
+  }
+  return j._at = best || [b.x, b.z];
 }
 // nemici con una taglia: il disegno di un nemico comune, ingrandito e tinto, e numeri tutti suoi
 for (const id in JOBS) { const j = JOBS[id], b = j.boss; if (!b) continue; const B = FOE[b.as]; FOE['J_' + id] = { n: b.n, k: B.k, as: b.as, sc: b.sc, hp: b.hp, dmg: b.dmg, sp: b.sp, aggro: 110, range: b.range, r: b.r, coins: [Math.round(j.coins * 0.1), Math.round(j.coins * 0.16)], elite: 1, tint: b.tint, job: id }; }
@@ -11727,6 +11827,7 @@ function openChest(c) {
 // ---------- telecamera ----------
 let camFix = null;   // (solo per le prove) telecamera ferma in un punto
 const CAM_D = 25, CAM_H = 11, LOOK_F = 9, LOOK_H = 6.5, FOVY = 0.95;
+let FOV = FOVY, aimK = 0;      // in mira il campo si stringe un poco: quello che è lontano si vede più grande
 // La visuale si gira trascinando un dito sullo schermo. Di lato gira intorno all'eroe, fino a vederlo di fronte:
 // quando lui riparte torna da sola alle sue spalle (i comandi restano quelli di sempre). In su e in giù si alza
 // e si abbassa, e l'altezza scelta resta. Due tocchi veloci rimettono tutto a posto.
@@ -11738,6 +11839,9 @@ function camBehind() { orb.a = 0; orb.back = false; orb.hold = 0; cam.yaw = hero
 const ctrl8 = () => !save || save.opt.ctrl !== 'c';
 const CAM_SEGUE = 1.5;   // quanto in fretta la visuale gira dietro l'eroe che va di lato (radianti al secondo)
 function camUpdate(dt) {
+  // in mira la visuale sta alle spalle dell'eroe, più vicina, e guarda lontano
+  aimK += ((hero.aim ? 1 : 0) - aimK) * Math.min(1, 9 * dt); if (aimK < 0.003) aimK = 0; FOV = FOVY * (1 - 0.24 * aimK);
+  if (hero.aim) { orb.a = 0; orb.back = false; cam.yaw += angDiff(hero.yaw, cam.yaw) * Math.min(1, 14 * dt); placeCam(false); return; }
   if (ctrl8()) {
     orb.a = 0;
     if (orb.id === null) {
@@ -11775,7 +11879,8 @@ function camPointer(type, x, y, id) {
     if (orb.moved < scrH * 0.025) return;                    // un tocco non è un trascinamento
     // il gesto è di lato oppure in su e giù: così girando la visuale non se ne cambia per sbaglio l'altezza (in diagonale vale tutto)
     if (!orb.ax) { const ax = Math.abs(orb.sx), ay = Math.abs(orb.sy); orb.ax = ax > ay * 1.25 ? 'h' : ay > ax * 1.25 ? 'v' : 'hv'; return; }
-    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; if (!ctrl8()) orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
+    if (orb.ax !== 'v' && hero.aim) hero.yaw += dx / Math.max(1, scrW) * 1.5;          // in mira il dito sposta la mira, piano
+    else if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; if (!ctrl8()) orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
     if (orb.ax !== 'h') { orb.p = Math.max(-1, Math.min(1, orb.p + dy / Math.max(1, scrH) * 2.2)); orb.pBack = false; }
     return;
   }
@@ -11790,15 +11895,15 @@ function placeCam(snap) {
   if (camFix) { Object.assign(cam, camFix); return; }
   const up = Math.max(0, orb.p), dn = D ? 0 : Math.max(0, -orb.p);
   if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), cd = 20 - up * 7, ex = hero.x - fx2 * cd, ez = hero.z - fz2 * cd, ey = Math.max(hero.y, -2) + 16 + up * 15, k = snap ? 1 : 0.25, lf = 8 * (1 - 0.6 * up); cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * lf; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * lf; return; }
-  const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = CAM_D - up * 7 - dn * 3;
+  const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = (CAM_D - up * 7 - dn * 3) * (1 - 0.3 * aimK);
   let d = CD * 0.24;
   for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CD * t, hero.z - fz * CD * t, 1.5)) break; d = CD * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
   let ey = hero.y + CAM_H + up * 24 - dn * 8.5;
   ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2, W.WL + 1.5);
-  const k = snap ? 1 : 0.25, lf = LOOK_F * (1 - 0.6 * up);
+  const k = snap ? 1 : 0.25, lf = LOOK_F * (1 - 0.6 * up) * (1 + 2.4 * aimK);
   cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k;
-  cam.tx = hero.x + fx * lf; cam.ty = hero.y + LOOK_H + dn * 5; cam.tz = hero.z + fz * lf;
+  cam.tx = hero.x + fx * lf; cam.ty = hero.y + LOOK_H + dn * 5 + 1.5 * aimK; cam.tz = hero.z + fz * lf;
 }
 
 // ---------- movimento con collisioni ----------
@@ -11859,6 +11964,10 @@ function heroUpdate(dt) {
       if (ix || iy) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
     } else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
   }
+  if (h.aim && !busy) {
+    const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); h.aimT = ix ? (h.aimT || 0) + dt : 0;
+    h.yaw += ix * (0.4 + Math.min(1, h.aimT / 0.7) * 1.3) * dt; ma = null; turn = 0; f = BTN.up ? 0.5 : BTN.down ? -0.4 : 0;
+  }
   heroTick(dt);                                    // energia, colpo caricato, guardia
   if (h.dash) { f = 0; turn = 0; ma = null; }
   if (ma === null) h.lev = 0;
@@ -11914,7 +12023,7 @@ function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x /
 // ogni mossa: quanto dura e quanto manca alla fine quando va a segno
 const ACT = { slash: [0.42, 0.27], spin: [0.52, 0.38], shot: [0.4, 0.28], pshot: [0.5, 0.38], stab: [0.26, 0.18], knives: [0.42, 0.3], bolt: [0.45, 0.31], orb: [0.55, 0.39], cast: [0.4, 0.28] };
 const ICE_T = [0.62, 0.95, 1.6], LIGHT_T = [1.6, 1.5, 0.9];
-let things = [], clsUI = null, clsPics = null, chip = null, btnC = null;
+let things = [], clsUI = null, clsPics = null, chip = null, chipM = null, btnC = null;
 function ringLite(x, z, r, k = 'spark', n = 14) { const gy = gH(x, z); for (let i = 0; i < n; i++) { const a = i / n * TAU; fx.push({ k, x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, y: gy + 2.5, vy: 5, t: 0.28, s: 0.3 }); } }
 function startAct(a, fn) { const h = hero; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
 const tough = e => FOE[e.type].champ || FOE[e.type].elite;
@@ -11981,9 +12090,27 @@ function boom(x, z, r, dmg, o = {}) {
 function shotEnd(s, hit) { if (!s.boom || s.ended) return; s.ended = true; boom(s.x, s.z, s.boom.r, s.boom.dmg, { burn: s.boom.burn, frz: s.boom.frz, ice: s.boom.ice, pow: s.pow, boss: s.bossD, skip: s.boomOnly ? null : hit }); }
 function shotWall(s) { if (!D) return; const i = Math.floor(s.x / DCS), j = Math.floor(s.z / DCS); if (dAt(i, j) === DT.CRACK) hitCrack(i, j); const p = D.pots.find(q => q.alive && Math.hypot(q.x - s.x, q.z - s.z) < 4.6); if (p) breakPot(p); }
 
+// L'arco ha due stili. Mira automatica: la freccia parte verso il nemico che hai davanti e lo insegue un poco.
+// Mira libera: tieni premuto A per tendere l'arco (la visuale si stringe, una linea mostra dove andrà la freccia), giri con la leva
+// o col dito, lasci per tirare; la freccia va dritta dove guardi e non cerca nessuno. È lo stile della caccia.
+const bowOn = () => !!save && cls() === 'arciere' && !!eqIt('arma');
+const freeAim = () => bowOn() && save.opt.mira === 'l';
+const AIM_R1 = 150, AIM_R2 = 225;     // fin dove arriva la freccia tirata subito e quella a corda tutta tesa
+function toggleAim() {
+  if (!bowOn() || !hero || hero.dead) return;
+  save.opt.mira = freeAim() ? 'a' : 'l'; hero.aim = false; hero.aDown = false; hero.chg = 0; tone(1046, 0.05);
+  toast(freeAim() ? 'MIRA LIBERA: TIENI A, GIRA, LASCIA PER TIRARE' : 'MIRA AUTOMATICA: LA FRECCIA CERCA IL NEMICO', '#7af0ff');
+}
+// lasciato A in mira libera: la freccia parte subito, dritta
+function aimRelease(full) {
+  const h = hero; h.free = true; startAct(full ? 'pshot' : 'shot'); h.hitDone = true; heroHit(h.act); h.free = false;
+  tone(full ? 220 : 300, full ? 0.12 : 0.06, 'triangle', full ? 0.05 : 0.035, full ? 110 : 170);
+  if (!D) fauna.scare(h.x, h.z, 20);
+}
 // A: il colpo della classe (senz'arma si va a pugni, come sempre)
 function heroAttack() {
   const h = hero; if (h.atk > 0 || inCasa() || h.dash || h.block || h.fall > 0) return;
+  if (freeAim()) { h.aim = true; h.aDown = true; h.aHold = 0; h.aimT = 0; h.chg = 0.02; tone(180, 0.09, 'triangle', 0.02, 260); return; }
   const c = cls(), a = !eqIt('arma') || c === 'cavaliere' ? 'slash' : c === 'arciere' ? 'shot' : c === 'furfante' ? 'stab' : 'bolt';
   startAct(a); h.aDown = true; h.aHold = 0; h.chg = 0;
   if (a === 'slash') { noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); }
@@ -12007,8 +12134,8 @@ function heroHit(a) {
   if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
   else if (a === 'spin') { meleeHit(15.5, 0, Math.round(att * 2), { all: true, boss: 2 }); ringLite(h.x, h.z, 9); ringLite(h.x, h.z, 14, 'glint', 10); if (beam) lightBeam(att); }
   else if (a === 'stab') { meleeHit(9.5, 0.3, Math.max(1, Math.round(att * 0.75)), { back: true, boss: 0.65 }); if (beam) lightBeam(att * 0.75); }
-  else if (a === 'shot') { const o = h.nextShot || {}; h.nextShot = null; heroShot('arrow', Object.assign({ dmg: Math.max(1, Math.round(att * 0.8)), bossD: 0.8, pierce: beam, tint: beam ? LIGHT_T : null }, o)); }
-  else if (a === 'pshot') { heroShot('arrow', { dmg: Math.max(2, Math.round(att * 1.8)), sp: 230, life: 0.85, pierce: true, pow: true, bossD: 1.6, big: 1.4, turn: 1.2, tint: beam ? LIGHT_T : null }); noise(0.08, 0.04); }
+  else if (a === 'shot') { const o = h.nextShot || {}; h.nextShot = null; heroShot('arrow', Object.assign({ dmg: Math.max(1, Math.round(att * 0.8)), bossD: 0.8, pierce: beam, tint: beam ? LIGHT_T : null }, o, h.free ? { noAim: true, turn: 0, sp: 190, life: AIM_R1 / 190 } : null)); }
+  else if (a === 'pshot') { heroShot('arrow', Object.assign({ dmg: Math.max(2, Math.round(att * 1.8)), sp: 230, life: 0.85, pierce: true, pow: true, bossD: 1.6, big: 1.4, turn: 1.2, tint: beam ? LIGHT_T : null }, h.free ? { noAim: true, turn: 0, sp: 250, life: AIM_R2 / 250 } : null)); noise(0.08, 0.04); }
   else if (a === 'knives') { const tg = aimShot(95); if (tg) h.yaw = Math.atan2(tg.z - h.z, tg.x - h.x); for (const da of [-0.19, 0, 0.19]) heroShot('knife', { noAim: true, da, dmg: Math.max(1, Math.round(att * 0.6)), sp: 185, life: 0.5, pow: true, bossD: 0.6, turn: 0, tg: null }); }
   else if (a === 'bolt') heroShot('bolt', { dmg: Math.max(1, Math.round(att * 0.85)), sp: 135, life: 0.8, turn: 5, bossD: 0.85, pierce: beam, tint: beam ? LIGHT_T : null });
   else if (a === 'orb') heroShot('orb', { dmg: Math.max(2, Math.round(att * 1.6)), sp: 120, life: 0.9, turn: 3, r: 3.2, pow: true, bossD: 1.6, big: 1.5, boom: { r: 11, dmg: Math.max(1, Math.round(att * 0.8)) } });
@@ -12021,7 +12148,12 @@ function heroTick(dt) {
   if (h.cdC > 0) h.cdC -= dt; if (h.guard > 0) h.guard -= dt; if (h.hid > 0) h.hid -= dt; if (h.enFl > 0) h.enFl -= dt;
   h.enT += dt; if (h.enT >= K.regen) { h.enT = 0; if (h.en < K.en && !h.block) h.en++; }
   if (h.en > K.en) h.en = K.en;
-  if (h.aDown) {
+  if (h.aim && (!h.aDown || !freeAim() || inCasa() || h.dash || h.fall > 0)) { h.aim = false; h.aDown = false; h.chg = 0; }
+  if (h.aim) {
+    // mira libera: l'arco si tende finché A resta premuto (la corda è tutta tesa dopo poco più di mezzo secondo)
+    if (BTN.a) { h.aHold += dt; const was = h.chg; h.chg = Math.min(1, Math.max(0.02, h.aHold / 0.65)); if (h.chg >= 1 && was < 1) { tone(1568, 0.06, 'square', 0.04); tone(2093, 0.1, 'square', 0.035, null, 0.06); vib(15); } }
+    else { const full = h.chg >= 1, ok = !(dialog || shop || loot || menu || mapOpen || fade) && h.atk <= 0; h.aim = false; h.aDown = false; h.chg = 0; if (ok) aimRelease(full); }
+  } else if (h.aDown) {
     if (BTN.a) {
       h.aHold += dt;
       if (eqIt('arma') && h.atk <= 0 && !h.dash && !inCasa()) {
@@ -12958,14 +13090,24 @@ function strike(z) {
 }
 
 // ---------- proiettili (statue, piante, guardiani, raggio della lama del sole) ----------
+// una preda colpita: cade, lascia la pelle (qualche moneta) e a volte un boccone che rimette in forze; conta per le battute di caccia
+function preda(a) {
+  const gy = Math.max(gH(a.x, a.z), W.WL), S = a.S;
+  puffAt(a.x, a.z, 7, gy + 1.5); for (let i = 0; i < 5; i++) fx.push({ k: 'glint', x: a.x + (Math.random() - 0.5) * 4, z: a.z + (Math.random() - 0.5) * 4, y: gy + 2 + Math.random() * 3, vy: 6 + Math.random() * 5, t: 0.4, s: 0.26 });
+  tone(520, 0.07, 'triangle', 0.05, 260); tone(784, 0.1, 'square', 0.03, null, 0.07); vib(25);
+  fauna.fell(a, hero.x, hero.z);
+  drops.push({ k: 'coin', v: Math.max(1, Math.round(S.r * a.sc * 2)) * (eqHas('luck') ? 2 : 1), x: a.x, z: a.z, y: gy + 2, vx: (Math.random() - 0.5) * 10, vz: (Math.random() - 0.5) * 10, vy: 18, t: 30 });
+  if (hero.hp < MAXHP() && Math.random() < 0.4) drops.push({ k: 'heart', x: a.x, z: a.z, y: gy + 2, vx: 0, vz: 0, vy: 22, t: 30 });
+  if (!jobHunt(a.k)) toast('PREDA: ' + S.n.toUpperCase(), '#9af0b0');
+}
 function poof(s) { s.dead = true; for (let i = 0; i < 3; i++) fx.push({ k: s.k === 'fire' ? 'ember' : s.k === 'bubble' ? 'drop' : 'spark', x: s.x, z: s.z, y: s.y, vy: 6 + Math.random() * 6, t: 0.3, s: 0.35 }); }
 function shotsUpdate(dt) {
   for (const s of shots) {
     if (s.dead) continue;
     // frecce e dardi dell'eroe piegano un poco verso il bersaglio
     if (s.cls && s.turn && s.tg && s.tg.st !== 'dead' && !s.tg.dead && !s.tg.hide) { const sp = Math.hypot(s.vx, s.vz); s.yaw += Math.max(-s.turn * dt, Math.min(s.turn * dt, angDiff(Math.atan2(s.tg.z - s.z, s.tg.x - s.x), s.yaw))); s.vx = Math.cos(s.yaw) * sp; s.vz = Math.sin(s.yaw) * sp; }
-    s.life -= dt; s.x += s.vx * dt; s.z += s.vz * dt;
-    if (s.life <= 0) { if (s.patch) hazards.push({ x: s.x, z: s.z, r: 6, warn: 0, life: 3.2, dmg: 2, k: 'fire' }); if (s.cls) shotEnd(s); s.dead = true; continue; }
+    s.px = s.x; s.pz = s.z; s.life -= dt; s.x += s.vx * dt; s.z += s.vz * dt;
+    if (s.life <= 0) { if (s.patch) hazards.push({ x: s.x, z: s.z, r: 6, warn: 0, life: 3.2, dmg: 2, k: 'fire' }); if (s.cls) shotEnd(s); if (s.k === 'arrow' && s.cls && !D) fauna.startle(s.x, s.z, 24, hero.x, hero.z); s.dead = true; continue; }
     if (s.from === 'hero' && D) { let hitX = false; for (const x of D.xtals) if (Math.hypot(x.x - s.x, x.z - s.z) < 5) { hitXtal(x); if (s.cls) shotEnd(s); poof(s); hitX = true; break; } if (hitX) continue; }
     let wall;
     if (D) wall = dBlocks(Math.floor(s.x / DCS), Math.floor(s.z / DCS), 'shot') || D.blocks.some(b => !b.gone && Math.abs(s.x - b.x) < 4.6 && Math.abs(s.z - b.z) < 4.6) || D.solids.some(o => (!o.on || o.on()) && Math.hypot(s.x - o.x, s.z - o.z) < o.r * 0.85);
@@ -12989,6 +13131,9 @@ function shotsUpdate(dt) {
         if (s.pierce) { (s.seen || (s.seen = new Set())).add(e); continue; }
         shotEnd(s, e); poof(s); break;
       }
+      // una freccia che incontra la selvaggina (e quella che le passa accanto fa scappare il branco)
+      if (!s.dead && !D && s.k === 'arrow') fauna.startle(s.x - Math.cos(s.yaw) * 10, s.z - Math.sin(s.yaw) * 10, 12, hero.x, hero.z);
+      if (!s.dead && !D && s.k === 'arrow') { const a = fauna.strike(s.px, s.pz, s.x, s.z, s.r + 0.6); if (a) { preda(a); if (!s.pierce) { poof(s); continue; } } }
       if (!s.dead && boss && !boss.hide && !boss.dead && boss.on && boss.st !== 'die' && !(s.seen && s.seen.has(boss)) && Math.hypot(boss.x - s.x, boss.z - s.z) < boss.r + s.r + 2) {
         if (!s.boomOnly && !(s.pow && classStun())) bossHit(boss.vuln ? (s.bossD || 1) : 0, true);
         if (s.pierce) (s.seen || (s.seen = new Set())).add(boss); else { shotEnd(s, boss); poof(s); }
@@ -13083,6 +13228,7 @@ function buildDynamicD() {
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : 1), 1.1);
   for (const s of shots) drawShot(s);
   drawThings();
+  drawAim();
 }
 function projectPt(x, y, z) {
   const m = VP, w = m[3] * x + m[7] * y + m[11] * z + m[15]; if (w <= 0.1) return null;
@@ -13093,7 +13239,7 @@ function renderDungeon() {
   gl.viewport(0, 0, W3, H3);
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const q = quake, qx = q ? (Math.random() - 0.5) * q * 2.4 : 0, qy = q ? (Math.random() - 0.5) * q * 2.4 : 0;
-  const proj = SG.M4.persp(FOVY, W3 / H3, 1.2, 420), view = SG.M4.look([cam.x + qx, cam.y + qy, cam.z], [cam.tx + qx, cam.ty + qy, cam.tz], [0, 1, 0]);
+  const proj = SG.M4.persp(FOV, W3 / H3, 1.2, 420), view = SG.M4.look([cam.x + qx, cam.y + qy, cam.z], [cam.tx + qx, cam.ty + qy, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const yaw = Math.atan2(cam.tz - cam.z, cam.tx - cam.x); RX = -Math.sin(yaw); RZ = Math.cos(yaw);
   dLights();
@@ -13220,6 +13366,28 @@ function drawHero(R) {
   const spin = h.atk > 0 && h.act === 'spin' ? (1 - h.atk / h.atkT) * TAU * 1.5 : 0, hop = h.dash && h.dash.k === 'balzo' ? Math.sin(Math.max(0, h.dash.t) / 0.25 * Math.PI) * 2.6 : 0;
   pushBB(h.x, h.y - 0.5 + hop, h.z, heroRects[heroAnim()][dirOf(h.x, h.z, h.yaw + spin)], R, 1, h.flash > 0 ? 0.7 : h.chg >= 1 ? (Math.floor(time * 12) % 2 ? 0.5 : 0.15) : h.chg > 0 ? h.chg * 0.2 : 0, h.hid > 0 ? [0.5, 0.52, 0.64] : null);
 }
+// la linea di mira: puntini fin dove arriva la freccia (o fino al primo ostacolo); se sulla linea c'è una preda o un nemico, diventa d'oro e lo segna
+function drawAim() {
+  const h = hero; if (!h || !h.aim || st !== 'play') return;
+  const R = h.chg >= 1 ? AIM_R2 : AIM_R1, ca = Math.cos(h.yaw), sa = Math.sin(h.yaw), P = [];
+  let gy = D ? 0 : Math.max(gH(h.x, h.z), W.WL), end = R;
+  for (let t = 3; t <= R; t += 3) {
+    const x = h.x + ca * t, z = h.z + sa * t; let wall;
+    if (D) wall = dBlocks(Math.floor(x / DCS), Math.floor(z / DCS), 'shot');
+    else { const g = Math.max(W.ground(x, z), W.WL); wall = g - gy > 5.5 || !!W.inBox(x, z, 0); if (!wall) gy = g; }
+    if (wall) { end = t; break; }
+    if (t >= 9 && t % 6 === 0) P.push([x, gy, z, t]);
+  }
+  // che cosa c'è sulla linea: la preda o il nemico più vicino
+  const ex = h.x + ca * end, ez = h.z + sa * end; let hit = null, hd = end;
+  const su = (x, z, r, y) => { const t = Math.max(0, Math.min(end, (x - h.x) * ca + (z - h.z) * sa)), d = Math.hypot(h.x + ca * t - x, h.z + sa * t - z); if (d < r && t < hd && t > 2) { hd = t; hit = [x, y, z]; } };
+  if (!D) { const a = fauna.strike(h.x + ca * 4, h.z + sa * 4, ex, ez, 2.8); if (a) su(a.x, a.z, a.S.r * a.sc + 2.9, a.y + a.S.H * 0.2 * a.sc); }
+  for (const e of foes) if (e.st !== 'dead' && (!D || e.room === D.room)) su(e.x, e.z, FOE[e.type].r + 2.2, e.y + 9);
+  const lit = hit ? 1.7 : 1.15, tint = hit ? [1.9, 1.5, 0.4] : null;
+  for (const p of P) { if (p[3] > hd) break; pushBB(p[0], p[1] + 1.3, p[2], SPR.mdot, 0.22 + p[3] * 0.0045, lit, 0, tint); }
+  if (hit) pushBB(hit[0], hit[1] + 2 + Math.sin(time * 9) * 0.4, hit[2], SPR.mirino, 0.3 + hd * 0.004, 1.8, 0, [1.9, 1.5, 0.4]);
+  else pushBB(ex, gy + 2.6, ez, SPR.mirino, 0.3 + end * 0.004, 1.3);
+}
 function drawShot(s) { const r = SPR.shot[s.k], dir = Array.isArray(r); pushBB(s.x, s.y - 1.5, s.z, dir ? r[dirOf(s.x, s.z, s.yaw)] : r, (dir ? 0.36 / SR : s.k === 'light' ? 0.6 : 0.42) * (s.big || 1), 1.2, 0, s.tint || undefined); }
 function drawThings() {
   for (const t of things) {
@@ -13270,7 +13438,7 @@ function render3D() {
   gl.viewport(0, 0, W3, H3);
   const fogC = FOGC, zenC = ZENC; for (let i = 0; i < 3; i++) { fogC[i] = atm.fog[i] + (day.hor[i] - atm.fog[i]) * day.horK; zenC[i] = atm.zen[i] + (day.zen[i] - atm.zen[i]) * day.zenK; }
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  const proj = SG.M4.persp(FOVY, W3 / H3, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
+  const proj = SG.M4.persp(FOV, W3 / H3, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const m = VP, row = i => [m[i], m[4 + i], m[8 + i], m[12 + i]], r0 = row(0), r1 = row(1), r2 = row(2), r3 = row(3);
   planes = [[1, r0], [-1, r0], [1, r1], [-1, r1], [-1, r2]].map(([s, r]) => [r3[0] + s * r[0], r3[1] + s * r[1], r3[2] + s * r[2], r3[3] + s * r[3]]);
@@ -13281,8 +13449,8 @@ function render3D() {
   // cielo
   gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
   let p = P.sky; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
-  const foc = (H3 / 2) / Math.tan(FOVY / 2);
-  gl.uniform2f(p.u.uRes, W3, H3); gl.uniform1f(p.u.uHor, H3 / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOVY / 2) * W3 / H3));
+  const foc = (H3 / 2) / Math.tan(FOV / 2);
+  gl.uniform2f(p.u.uRes, W3, H3); gl.uniform1f(p.u.uHor, H3 / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOV / 2) * W3 / H3));
   gl.uniform1f(p.u.uPanoH, H3 * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, zenC); gl.uniform3fv(p.u.uHorC, fogC);
   { // sole e luna: nascono a est, tramontano a ovest; si vedono solo quando sono bassi sull'orizzonte
     const hor = H3 / 2 - foc * Math.tan(pitch), td = day.tod, put = (u, az, el, r) => { const d = angDiff(az, yaw); if (el < -0.03 || Math.abs(d) > 1.35) gl.uniform3f(u, 0, 0, 0); else gl.uniform3f(u, W3 / 2 + foc * Math.tan(d), hor + foc * Math.tan(el) + r * 0.4, r); };
@@ -13407,6 +13575,7 @@ function buildDynamic() {
   for (const d of doors) if (!d.cave && near(d.x, d.z, 300)) pushBB(d.x, gH(d.x, d.z) + 10 + Math.sin(time * 2) * 0.6, d.z, SPR.rune, 0.45, 1.2 + Math.sin(time * 3) * 0.2, 0, save && sanctDone(d.id) ? [0.9, 1.35, 0.9] : save && save.q.main >= 4 && d.id === nextSanct() ? [1.7, 1.25, 0.35] : null);
   for (const s2 of shots) drawShot(s2);
   drawThings();
+  drawAim();
   for (const p of drops) pushBB(p.x, p.y, p.z, p.k === 'coin' ? SPR.coin : SPR.heart, 0.4, 1.15);
   for (const p of fx) pushBB(p.x, p.y, p.z, SPR[p.k], (p.s || 0.3) * (p.k === 'puff' ? 0.6 + p.t : p.k === 'smoke' ? 2.3 - p.t * 0.55 : 1), p.k === 'smoke' ? 0.98 : 1.1);
   for (const p of amb) { const L = SPR[p.k]; if (p.k === 'fly' && Math.sin(p.ph * 3 + p.v * 20) < -0.1) continue; pushBB(p.x, p.y, p.z, L[Math.floor(p.v * L.length) % L.length], p.k === 'dust' ? 0.4 : 0.3, p.k === 'fly' ? 1.4 : 1.02); }
@@ -13473,7 +13642,7 @@ function drawHUD() {
   }
   drawChip();
   if (help > 0) {
-    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(freeAim() ? ['A: PARLA, APRI', 'A TENUTO: TENDI E MIRA (LEVA O DITO)   LASCIA: TIRA', "C: BALZO ALL'INDIETRO"] : CC().help, bowOn() ? ['MIRINO ACCANTO A C: MIRA AUTOMATICA O LIBERA'] : [], ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
     panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
@@ -13494,7 +13663,7 @@ function drawEnergy(x, y) {
 }
 // il riquadro dell'abilità accanto al tasto C (un tocco la cambia) e la barra del colpo caricato
 function drawChip() {
-  chip = null;
+  chip = null; chipM = null;
   if (st !== 'play' || dialog || shop || loot || menu || mapOpen || inCasa() || !hero || hero.dead) return;
   const id = curSkill(), S = SKL[id], L = skillsOf(cls()), cw = 18, col = CC().col;
   const cx = btnC ? Math.round(btnC.x - cw - 4) : Wr - insetR - cw - 4, cy = btnC ? Math.round(btnC.y + btnC.w / 2 - cw / 2) : Hr - cw - 8;
@@ -13503,11 +13672,21 @@ function drawChip() {
   panel(cx, cy, cw, cw, hero.block ? '#ffffff' : ok ? col : '#5a6478'); hg.globalAlpha = ok ? 1 : 0.4; hg.drawImage(skIcon(id), cx + 3, cy + 3); hg.globalAlpha = 1;
   if (S.cost) T(String(S.cost), cx - 2, cy + 6, ok ? CC().enC : '#ff8f8f', 1, 'right');
   if (L.length > 1) for (let i = 0; i < L.length; i++) { hg.fillStyle = L[i] === id ? col : '#5a6478'; hg.fillRect(Math.round(cx + cw / 2 - L.length * 2) + i * 4, cy + cw + 1, 3, 2); }
+  // l'arciere ha un secondo riquadro, sopra: lo stile dell'arco (un tocco lo cambia). Mirino pieno: mira automatica; mirino aperto e dorato: mira libera
+  if (bowOn()) {
+    // la prima volta che compare, due parole su che cos'è
+    if (!save.flags.miraTip) { save.flags.miraTip = 1; toasts.push({ t: "L'ARCO HA DUE STILI: IL MIRINO ACCANTO AL TASTO C PASSA ALLA MIRA LIBERA (PER LA CACCIA)", c: '#ffd23f', life: 14 }); }
+    const my = cy - cw - 9, fr = freeAim(), c2 = fr ? '#ffd23f' : '#9aa6bd', mx = cx + 9, mc = my + 9;
+    chipM = { x: cx, y: my, w: cw, h: cw }; panel(cx, my, cw, cw, c2); hg.fillStyle = c2;
+    hg.fillRect(mx - 6, mc, 4, 1); hg.fillRect(mx + 3, mc, 4, 1); hg.fillRect(mx, mc - 6, 1, 4); hg.fillRect(mx, mc + 3, 1, 4);
+    if (!fr) { hg.fillRect(mx - 1, mc - 1, 3, 3); hg.fillRect(mx - 4, mc - 4, 2, 1); hg.fillRect(mx - 4, mc - 4, 1, 2); hg.fillRect(mx + 3, mc - 4, 2, 1); hg.fillRect(mx + 4, mc - 4, 1, 2); hg.fillRect(mx - 4, mc + 4, 2, 1); hg.fillRect(mx - 4, mc + 3, 1, 2); hg.fillRect(mx + 3, mc + 4, 2, 1); hg.fillRect(mx + 4, mc + 3, 1, 2); }
+    T(fr ? 'MIRA LIBERA' : 'MIRA AUTO', cx - 2, my + 6, c2, 1, 'right');
+  }
   if (hero.chg > 0) { const w = 34, x = Math.round(Wr / 2 - w / 2), y = Hr - 31, full = hero.chg >= 1; hg.fillStyle = '#0b0a12'; hg.fillRect(x - 1, y - 1, w + 2, 5); hg.fillStyle = full && Math.floor(time * 12) % 2 ? '#ffffff' : col; hg.fillRect(x, y, Math.round(w * hero.chg), 3); }
 }
-function chipHit(x, y) {
-  if (st !== 'play' || !chip || dialog || shop || loot || menu || mapOpen || fade) return false;
-  const hx = (x - OX) / K, hy = (y - OY) / K; return hx > chip.x - 5 && hx < chip.x + chip.w + 5 && hy > chip.y - 5 && hy < chip.y + chip.h + 5;
+function chipHit(x, y, c = chip) {
+  if (st !== 'play' || !c || dialog || shop || loot || menu || mapOpen || fade) return false;
+  const hx = (x - OX) / K, hy = (y - OY) / K; return hx > c.x - 5 && hx < c.x + c.w + 5 && hy > c.y - 4 && hy < c.y + c.h + 5;
 }
 function drawDialog() {
   const w = dialogW(), x = Math.round(Wr / 2 - w / 2), lines = dialog.lines[dialog.i], h = 14 + lines.length * 9 + (dialog.name ? 6 : 0), y = Hr - h - 6;
@@ -13558,14 +13737,14 @@ function drawShop() {
 }
 // la bacheca di una città: i quattro incarichi, e sotto il foglio di quello scelto
 function drawBoard() {
-  const b = shop.board, ids = JCITY[b.id] || [], w = Math.min(292, dialogW()), nl = Math.max(4, Math.min(6, Math.floor((Hr - 112) / 9))), h = 26 + ids.length * 13 + nl * 9 + 24, x = Math.round(Wr / 2 - w / 2), y = Math.max(3, Math.round(Hr / 2 - h / 2));
+  const b = shop.board, ids = boardIds(b.id), w = Math.min(292, dialogW()), nl = Math.max(4, Math.min(6, Math.floor((Hr - 60 - ids.length * 13) / 9))), h = 26 + ids.length * 13 + nl * 9 + 24, x = Math.round(Wr / 2 - w / 2), y = Math.max(3, Math.round(Hr / 2 - h / 2));
   panel(x, y, w, h); T('BACHECA DI ' + b.city, x + 8, y + 5, '#ffd23f');
   const sc = Math.min(20, jobsDone(b.city) * 5), on2 = save.flags['on_' + b.id]; T('SCONTO ' + sc + '%' + (on2 ? ' ♥' : ''), x + w - 8, y + 5, sc ? '#9af0b0' : '#5a6478', 1, 'right');
   ids.forEach((id, i) => {
     const j = JOBS[id], s2 = jst(id), k = s2 ? s2.s : 0, yy = y + 21 + i * 13, on = i === shop.sel;
     if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 12); }
     hg.fillStyle = '#0b0a12'; hg.fillRect(x + 7, yy, 6, 6); hg.fillStyle = ['#ffd23f', '#7ab8ff', '#5af07a', '#4a5468'][k]; hg.fillRect(x + 8, yy + 1, 4, 4);
-    T(j.n, x + 17, yy, k === 3 ? '#5a6478' : on ? '#ffffff' : '#c9d3e6');
+    T(j.n, x + 17, yy, k === 3 ? '#5a6478' : on ? '#ffffff' : j.base ? '#a8e0a0' : '#c9d3e6');
     if (k === 0) { hg.drawImage(ICOIN, x + w - 22, yy - 3); T(String(j.coins), x + w - 24, yy, '#ffd23f', 1, 'right'); }
     else T(k === 3 ? 'FATTO' : k === 2 ? 'PAGA!' : j.q ? Math.min(j.q, s2.n) + '/' + j.q : '...', x + w - 9, yy, k === 3 ? '#5a6478' : k === 2 ? '#5af07a' : '#7ab8ff', 1, 'right');
   });
@@ -13578,12 +13757,13 @@ function drawBoard() {
   T('B: CHIUDI', x + w - 8, y + h - 11, '#5a6478', 1, 'right');
 }
 function boardKey(name) {
-  const ids = JCITY[shop.board.id] || [];
+  const ids = boardIds(shop.board.id);
   if (name === 'up' || name === 'down') { shop.sel = (shop.sel + (name === 'down' ? 1 : ids.length - 1)) % ids.length; tone(1318, 0.03); return; }
   if (name === 'b' || name === 'start') { shop = null; tone(660, 0.04); return; }
   if (name !== 'a') return;
   const id = ids[shop.sel], s2 = jst(id);
   if (!s2) jobAccept(id); else if (s2.s === 2) jobPay(id); else tone(200, 0.1, 'square', 0.03);
+  shop.sel = Math.min(shop.sel, boardIds(shop.board.id).length - 1);
 }
 // riga con le statistiche di un oggetto
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
@@ -13628,7 +13808,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno', 'vib', 'comandi', 'salva', 'esci'];
+  return ['vol', 'mus', 'giorno', 'vib', 'comandi'].concat(bowOn() ? ['mira'] : [], ['salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -13667,7 +13847,7 @@ function drawMenu() {
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
@@ -13777,6 +13957,7 @@ function onKey(name) {
   }
   else if (name === 'c') heroSkill();
   else if (name === 'v') cycleSkill();
+  else if (name === 'm') toggleAim();
 }
 function menuKey(name) {
   const rows = menuRows();
@@ -13802,6 +13983,7 @@ function menuKey(name) {
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
+    else if (r === 'mira') toggleAim();
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
     else if (r === 'esci') { writeSave(); menu = null; leave(); }
   }
@@ -13841,7 +14023,7 @@ if (window.__SG_DEBUG) window.__sg = {
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
-  get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, jobs: { st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
+  get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
@@ -13898,7 +14080,7 @@ return {
   },
   button(name, down) { if (down) onKey(name); },
   // un tocco sul riquadro dell'abilità la cambia; tutto il resto dello schermo gira la visuale
-  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
+  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
 };
 })());
 
@@ -14015,7 +14197,7 @@ if (screen.orientation && screen.orientation.addEventListener) screen.orientatio
 const KEYS = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
   Digit2: 'up', Numpad2: 'up', Digit8: 'down', Numpad8: 'down', Digit4: 'left', Numpad4: 'left', Digit6: 'right', Numpad6: 'right',
-  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v',
+  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v', KeyM: 'm',
   Enter: 'start', KeyP: 'start', Escape: 'select', Backspace: 'select', ShiftRight: 'select'
 };
 addEventListener('keydown', e => { const n = KEYS[e.code]; if (!n) return; e.preventDefault(); audioUnlock(); if (!e.repeat) setKb(n, true); });

@@ -354,6 +354,8 @@ const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_CO
 // in città entrano solo cani, gatti e uccellini (e i gabbiani dei porti): nessun altro ci nasce, ci cammina o ci atterra
 const STREET = [['passero', 3], ['gatto', 2.2], ['cane', 1.6], ['piccione', 1.2]];
 for (const k of ['cane', 'gatto', 'piccione', 'passero', 'gabbiano']) SPEC[k].city = 1;
+// la selvaggina: quello che una freccia può colpire (mai gli animali di casa, di fattoria o di città, né quelli sacri dei ciliegi)
+for (const k of ['coniglio', 'lepreB', 'cervo', 'cervoM', 'cinghiale', 'volpe', 'volpeB', 'stambecco', 'renna', 'bisonte', 'fennec', 'anatra']) SPEC[k].game = 1;
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
 const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14, 15]);
 
@@ -696,6 +698,33 @@ function create(env) {
     if (!night) { chirpT -= dt; if (chirpT <= 0) { chirpT = rr(5, 13); let nb = null, bd = 80; for (const a of list) if (a.S.k === 'bird' && a.st !== 'fly') { const d = Math.hypot(a.x - h.x, a.z - h.z); if (d < bd) { bd = d; nb = a; } }
       if (nb) { const f0 = nb.k === 'corvo' ? 620 : nb.k === 'gabbiano' ? 1300 : rr(2300, 3300), v = 0.011 * (1 - bd / 100), crow = nb.k === 'corvo'; for (let i = 0, n = crow ? 2 : 2 + Math.floor(rnd() * 3); i < n; i++) env.tone(f0 * rr(0.94, 1.08), crow ? 0.12 : 0.045, crow ? 'sawtooth' : 'sine', crow ? v * 0.6 : v, f0 * (crow ? 0.8 : rr(1.1, 1.3)), i * (crow ? 0.22 : 0.09)); } } }
   }
+  // --- la caccia
+  // che cosa c'è lungo il volo di una freccia (da un punto all'altro): la prima preda entro il raggio, a terra o poco sopra
+  function strike(x0, z0, x1, z1, r) {
+    const dx = x1 - x0, dz = z1 - z0, L2 = dx * dx + dz * dz || 1e-6; let best = null, bt = 2;
+    for (const a of list) {
+      if (!a.S.game || a.gone || a.st === 'soar' || a.st === 'vee' || a.st === 'leap') continue;
+      const t = clamp(((a.x - x0) * dx + (a.z - z0) * dz) / L2, 0, 1), px = x0 + dx * t, pz = z0 + dz * t, R = a.S.r * a.sc + r;
+      if ((a.x - px) ** 2 + (a.z - pz) ** 2 > R * R || t >= bt) continue;
+      if (a.y - (a.S.k === 'swim' ? 0 : gH(a.x, a.z)) > 8) continue;
+      best = a; bt = t;
+    }
+    return best;
+  }
+  // tutto il branco scappa da (hx, hz), anche se chi l'ha spaventato è lontano
+  function panic(g, hx, hz) {
+    g.alarm = Math.max(g.alarm, 5);
+    for (const a of g.m) {
+      if (a.gone) continue; const k = a.S.k;
+      if (a.st === 'soar' || a.st === 'vee' || a.st === 'flit' || a.st === 'leap' || a.st === 'fly') continue;
+      if (k === 'bird' || k === 'wade' || k === 'owl') takeoff(a, hx, hz, 130);
+      else if (k === 'hop' || k === 'dart' || k === 'crab') { a.st = 'flee'; a.n = 9; a.t = 0; }
+      else if (away(a, hx, hz, k === 'swim' ? 40 : rr(60, 90))) { a.st = 'flee'; a.t = rr(3, 5); }
+    }
+  }
+  function fell(a, hx, hz) { a.gone = true; panic(a.g, hx, hz); }
+  // una freccia caduta vicino: i branchi nel raggio scappano
+  function startle(x, z, r, hx, hz) { const done = new Set(); for (const a of list) if (!done.has(a.g) && a.S.fl && !a.gone && (a.x - x) ** 2 + (a.z - z) ** 2 < r * r) { done.add(a.g); panic(a.g, hx, hz); } }
   function splash(x, z, n) { for (let i = 0; i < n; i++) { const an = rnd() * TAU, v = rr(3, 9); env.fx({ k: 'drop', x, z, y: 0.3, vx: Math.cos(an) * v, vz: Math.sin(an) * v, vy: rr(9, 17), t: rr(0.5, 0.9), s: 0.3 }); } }
   // spavento: un colpo di spada, un incantesimo, un mostro...
   function scare(x, z, r) { for (const a of list) if (a.S.fl && (a.x - x) ** 2 + (a.z - z) ** 2 < r * r) a.g.alarm = Math.max(a.g.alarm, 2.5); }
@@ -734,7 +763,7 @@ function create(env) {
     for (const a of list) { if (a.st === 'leap' || a.st === 'soar' || a.st === 'vee' || a.S.k === 'swim' || !SP[a.k].ready) continue; if ((a.x - cam.x) ** 2 + (a.z - cam.z) ** 2 > 230 * 230) continue; env.pushShadow(a.x, a.z, a.S.r * a.sc * (a.air ? 0.7 : 1)); }
   }
   function reset() { list = []; flut = []; cells.clear(); skies.clear(); on = false; scanT = 0; }
-  const api = { init, update, draw, shadows, scare, reset, urban, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
+  const api = { init, update, draw, shadows, scare, strike, fell, startle, reset, urban, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
   return api;
 }
 
