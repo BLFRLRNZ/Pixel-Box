@@ -327,7 +327,7 @@ function human(o, pose = {}) {
     for (const s of [1, -1]) E([ex - 0.15, s * 1.45, hc + 0.3], [0.7, 0.95, 1.05], EYE, null, 1, 0.3);
     E([ex + 0.1, 0, hc - 1.0], [0.4, 0.5, 0.5], EYE, null, 1, 0.3);
     E([ex - 0.6, 0, hc - 2.3], [0.6, 1.9, 0.45], '#3a3428', null, 1, 0.2);
-  } else for (const s of [1, -1]) E([ex - 0.05, s * 1.4, hc + 0.35], [0.5, 0.55, 0.9], o.eyes || EYE, null, o.eyes ? 1.35 : 1, 0.25);
+  } else if (!o.blank) for (const s of [1, -1]) E([ex - 0.05, s * 1.4, hc + 0.35], [0.5, 0.55, 0.9], o.eyes || EYE, null, o.eyes ? 1.35 : 1, 0.25);
   if (o.beard) E([fx + 2.4, 0, hc - 2.4], [1.75, 2.75, 2.2], o.beard);
   const hcol = o.hair, st = o.hairStyle;
   if (st === 'short' || st === 'bun' || st === 'tails' || st === 'long') {

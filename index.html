@@ -60,6 +60,16 @@
   #dpin .v{top:0;bottom:0;left:33.5%;width:33%}
   #dpin .c{position:absolute;left:41%;top:41%;width:18%;height:18%;border-radius:50%;background:radial-gradient(circle at 50% 35%,#16171b,#33363d)}
   #dpin .ar{position:absolute;color:#5d616b;font-size:10px;font-family:system-ui,sans-serif;transform:translate(-50%,-50%)}
+  /* la leva a 8 direzioni (Pixel Saga): un disco con otto tacche e un pomello che segue il pollice */
+  #dpo,#dpk{display:none}
+  body.otto #dpin .h,body.otto #dpin .v,body.otto #dpin .c,body.otto #dpin .ar{display:none}
+  body.otto #dpin{transform:none!important}
+  body.otto #dpo{display:block;position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 42%,#3b3e46,#1c1e23 72%);box-shadow:0 5px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 2px rgba(255,255,255,.06)}
+  body.otto #dpo i{position:absolute;left:50%;top:50%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #8a909c;margin:-4px 0 0 -5px}
+  body.otto #dpo i.d{border-left-width:4px;border-right-width:4px;border-bottom-width:6px;border-bottom-color:#6e7480;margin:-3px 0 0 -4px}
+  body.otto #dpk{display:block;position:absolute;left:50%;top:50%;width:40%;height:40%;border-radius:50%;transform:translate(-50%,-50%);transition:transform .05s;
+    background:radial-gradient(circle at 40% 32%,#7a7f8c,#41444c 60%,#2a2c32);box-shadow:0 4px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.3)}
+  body.full.otto #cl{opacity:.6}
   #cr{position:absolute;right:4%;top:6%;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75)}
   .bt{position:absolute;width:var(--bs);height:var(--bs);border-radius:50%;background:radial-gradient(circle at 35% 30%,#cf5a8d,#9c2459 58%,#7a1743);
     box-shadow:0 5px 0 #4f0d2b,inset 0 2px 0 rgba(255,255,255,.25);touch-action:none;cursor:pointer}
@@ -126,7 +136,7 @@
     <div id="brand">PIXEL<b>BOX</b></div>
     <div id="legend"></div>
     <div id="controls"><div id="ctrlin">
-      <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div>
+      <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div><div id="dpo"><i style="transform:rotate(0deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(45deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(90deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(135deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(180deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(225deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(270deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(315deg) translateY(calc(var(--dp)*-.41))"></i></div><div id="dpk"></div>
         <span class="ar" style="left:50%;top:16%">▲</span><span class="ar" style="left:50%;top:84%">▼</span>
         <span class="ar" style="left:16%;top:50%">◀</span><span class="ar" style="left:84%;top:50%">▶</span></div></div></div>
       <div id="cr"><div class="bt" id="bC"><span>C</span></div><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
@@ -139,7 +149,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.6.1", "id": "2.6.1-51ee008d", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.7", "id": "2.7-ab53a4c6", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4873,7 +4883,7 @@ function human(o, pose = {}) {
     for (const s of [1, -1]) E([ex - 0.15, s * 1.45, hc + 0.3], [0.7, 0.95, 1.05], EYE, null, 1, 0.3);
     E([ex + 0.1, 0, hc - 1.0], [0.4, 0.5, 0.5], EYE, null, 1, 0.3);
     E([ex - 0.6, 0, hc - 2.3], [0.6, 1.9, 0.45], '#3a3428', null, 1, 0.2);
-  } else for (const s of [1, -1]) E([ex - 0.05, s * 1.4, hc + 0.35], [0.5, 0.55, 0.9], o.eyes || EYE, null, o.eyes ? 1.35 : 1, 0.25);
+  } else if (!o.blank) for (const s of [1, -1]) E([ex - 0.05, s * 1.4, hc + 0.35], [0.5, 0.55, 0.9], o.eyes || EYE, null, o.eyes ? 1.35 : 1, 0.25);
   if (o.beard) E([fx + 2.4, 0, hc - 2.4], [1.75, 2.75, 2.2], o.beard);
   const hcol = o.hair, st = o.hairStyle;
   if (st === 'short' || st === 'bun' || st === 'tails' || st === 'long') {
@@ -6658,7 +6668,7 @@ function sprites(set, A, R) {
   set('anchor', [fit([Cy([0, 0, 0.6], [0, 0, 4], 0.22, IR), Cy([0, -0.9, 3.4], [0, 0.9, 3.4], 0.2, IR), Ca([0, -1.5, 1.2], [0, 0, 0.5], 0.24, IR), Ca([0, 1.5, 1.2], [0, 0, 0.5], 0.24, IR), El([0, 0, 4.3], [0.2, 0.5, 0.5], IR)], Math.PI - 1.2)], 0.2, 1);
   set('target', [fit([Cy([-0.3, 0, 3.2], [0.3, 0, 3.2], 2.2, '#f0ece0'), Cy([0.3, 0, 3.2], [0.36, 0, 3.2], 1.5, '#c8342c'), Cy([0.36, 0, 3.2], [0.42, 0, 3.2], 0.7, '#ffd23f'), Ca([0, -1.4, 0], [0, -0.6, 2], 0.2, WD), Ca([0, 1.4, 0], [0, 0.6, 2], 0.2, WD)], Math.PI - 0.3)], 0.2, 1.4);
   set('kingstatue', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -10, 0], c: '#8a867a' }, { t: 'b', b: [-8, 8, -8, 8, -11.5, -9.5], c: '#a8a498' }, ...A.human({ skin: '#b8b4a8', crown: '#d8c890', shirt: '#a8a498', plate: '#c0bcb0', pants: '#98948a', boots: '#8a867a', cape: '#98948a', beard: '#c0bcb0', weapon: { col: '#c8c4b8', guard: '#a8a498' }, shield: '#a8a498', emblem: '#c8c4b8' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
-  set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
+  set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea', blank: 1 }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);
 }
@@ -6683,7 +6693,7 @@ const STYLES = {
   sole: { walls: [TL.ADOBE, TL.ADOBE, 10, TL.WHITE], roofs: [TL.ADOBE, 10], rt: ['flat', 'flat', 'flat', 'dome'], h: [9, 16], wd: [16, 26], chim: 0, win: [TL.WIN_LATTICE], dr: [TL.DOOR_BLUE], aw: [TL.AWN_YELLOW, TL.AWN_BLUE, TL.CLOTH], cw: 10, cm: TL.MERL_SAND, tr: TL.TURQ, pave: 'b', trees: ['palm'], lamp: 'lamp', yard: ['jar', 'pot', 'crate'], flag: 1, ban: TL.BAN_BLUE },
   porto: { walls: [TL.WHITE, TL.WHITE, TL.OCHRE, TL.PINK, 0], roofs: [TL.ROOF_ORANGE, TL.ROOF_ORANGE, 4], rt: ['gable', 'hip'], h: [10, 19], wd: [15, 24], chim: 0.5, win: [8, TL.WIN_ARCH], dr: [7, TL.DOOR_BLUE], aw: [TL.AWN_BLUE, 13], cw: 9, cm: TL.MERL, tr: TL.ROOF_ORANGE, pave: 'g', trees: ['palm', 'oak'], lamp: 'lamp', yard: ['barrel', 'crate', 'anchor', 'pot'], flag: 2, ban: TL.BAN_BLUE },
   // la città dei monti: marmo bianco, tetti azzurri e verdi, cupole
-  marmo: { walls: [TL.MARBLE, TL.MARBLE, TL.WHITE, TL.MARBLE], roofs: [TL.ROOF_BLUE, TL.ROOF_TEAL, TL.ROOF_BLUE], rt: ['hip', 'gable', 'hip', 'dome'], h: [11, 18], wd: [16, 26], chim: 0.25, win: [TL.MARBLE_WIN, TL.MARBLE_WIN, TL.WIN_ARCH], dr: [TL.MARBLE_DOOR], aw: [TL.AWN_BLUE, TL.CLOTH], cw: TL.MARBLE, cm: TL.MERL, tr: TL.ROOF_BLUE, pave: 'b', trees: ['pine', 'birch'], lamp: 'lamp', yard: ['pot', 'pot', 'jar', 'bench'], flag: 2, ban: TL.BAN_BLUE },
+  marmo: { walls: [TL.MARBLE, TL.MARBLE, TL.MARBLE, TL.MARBLE], roofs: [TL.ROOF_BLUE, TL.ROOF_TEAL, TL.ROOF_BLUE], rt: ['hip', 'gable', 'hip', 'dome'], h: [11, 18], wd: [16, 26], chim: 0.25, win: [TL.MARBLE_WIN, TL.MARBLE_WIN, TL.WIN_ARCH], dr: [TL.MARBLE_DOOR], aw: [TL.AWN_BLUE, TL.CLOTH], cw: TL.MARBLE, cm: TL.MERL, tr: TL.ROOF_BLUE, pave: 'b', trees: ['cipresso', 'pine'], lamp: 'lamp', yard: ['pot', 'pot', 'jar', 'bench'], flag: 2, ban: TL.BAN_BLUE },
   fiore: { walls: [TL.WHITE, TL.PINK, 3, TL.TIMBER2], roofs: [TL.ROOF_PINK, TL.ROOF_DARK, TL.ROOF_PURPLE], rt: ['hip', 'gable'], h: [9, 14], wd: [16, 24], chim: 0.3, win: [TL.SHOJI, TL.WIN_PAPER], dr: [TL.DOOR_RED], aw: [], cw: 9, cm: TL.MERL, tr: TL.ROOF_PINK, pave: 'b', trees: ['cherry', 'cherrywhite', 'cherry'], lamp: 'lantern', yard: ['pot', 'pot', 'bench'], flag: 1, ban: TL.BAN_RED },
 };
 // ---------- abitanti: gli aspetti si condividono (uno sprite per tipo, non per persona) ----------
@@ -7337,30 +7347,31 @@ W.REG.push(
   [1750, -1280, 520, B.ALP, 'MONTI DEL CIELO', QUI], [2450, -1330, 520, B.ALP, 'GHIACCIAIO ETERNO', QUI], [3150, -1280, 520, B.ALP, "CRESTE D'ARGENTO", QUI],
   [2450, -1700, 420, B.ALP, 'GHIACCIAIO ETERNO', QUI]);
 // le cime: [x, z, altezza in più, raggio]
-W.PEAKS.push([2430, -1500, 620, 340], [1740, -800, 260, 290], [3090, -820, 270, 290], [2020, -130, 150, 230], [3080, -110, 140, 230], [1560, -1250, 180, 260], [3260, -1280, 40, 260]);
+W.PEAKS.push([2430, -1640, 620, 340], [1740, -800, 260, 290], [3090, -820, 270, 290], [2020, -130, 150, 230], [3080, -110, 140, 230], [1560, -1250, 180, 260], [3260, -1280, 40, 260]);
 // quelle che si vedono da tutto il mondo, come sagome oltre la foschia: [x, z, mezza larghezza]
-W.GIANTS = [[2430, -1500, 640], [3290, -1220, 520], [3080, -1584, 430], [1776, -904, 480], [3128, -900, 460], [1776, -1276, 420], [1512, -1324, 380], [2184, -124, 360], [1952, -92, 300], [2832, -288, 320]];
+W.GIANTS = [[2430, -1640, 640], [3290, -1220, 520], [3080, -1584, 430], [1776, -904, 480], [3128, -900, 460], [1776, -1276, 420], [1512, -1324, 380], [2184, -124, 360], [1952, -92, 300], [2832, -288, 320]];
 
 // ---------- Marmorea: le misure ----------
 // quattro piani, da sud a nord: il lago in fondo alla valle, la Grande Terrazza, la città, l'acropoli
 const XC = 2424, Y0 = 330, Y1 = 392, Y2 = 420, Y3 = 468;
 const ZF = -656,      // il parapetto della terrazza, sul vuoto
-  ZT = -776,          // il muro della città (in mezzo, la scalinata)
-  ZS1 = -824,         // in cima alla scalinata
-  ZN2 = -1024,        // il muro dell'acropoli
-  ZS2 = -1080,        // in cima alla seconda scalinata
-  ZB = -1208;         // il fondo dell'acropoli, sotto la parete
-const HW1 = 136, HW2 = 176, HW3 = 128, SW1 = 40, SW2 = 32, RA = 104, RB = 136, ZR = -560;   // mezze larghezze dei piani e delle scalinate; le due rampe dal lago
+  ZT = -800,          // il muro della città (in mezzo, la scalinata)
+  ZS1 = -848,         // in cima alla scalinata
+  ZN2 = -1096,        // il muro dell'acropoli
+  ZS2 = -1152,        // in cima alla seconda scalinata
+  ZB = -1312;         // il fondo dell'acropoli, sotto la parete
+const HW1 = 168, HW2 = 216, HW3 = 152, SW1 = 40, SW2 = 32, RA = 136, RB = 168, ZR = -560;   // mezze larghezze dei piani e delle scalinate; le due rampe dal lago
+const TZ = (ZF + ZT) / 2, CZ = -968, AZ = (ZS2 + ZB) / 2, ZG = ZS2 - 44;   // il centro della terrazza, della città e dell'acropoli
 // la valle: dal valico dietro i Monti del Drago fino al lago (stringendosi: la città resta chiusa tra le pareti)
 W.CARVE.push({ pts: [[2640, 150, 214, 1], [2610, -150, 246, 1], [2505, -420, 290, 0.95], [2450, -520, 322, 0.7], [XC, -580, Y0, 0.52]], w: 55, w2: 270 });
 // i gradoni scavati nella montagna
-W.SHAPERS.push({ box: [XC - 320, ZB - 64, XC + 320, -504], f(x, z, h) {
+W.SHAPERS.push({ box: [XC - 360, ZB - 64, XC + 360, -504], f(x, z, h) {
   const dx = Math.abs(x - XC);
   if (z > ZF) {   // davanti alla terrazza: la conca del lago e le due rampe che salgono ai suoi lati
     const k = sm(-512, -560, z); if (k <= 0) return h;
     const yr = lerp(Y0, Y1, c01((ZR - z) / (ZR - ZF)));
     let t;
-    if (dx < RA) t = Y0 - (dx <= 96 && z <= -576 ? 1.6 * sm(96, 86, dx) * sm(-576, -586, z) : 0);
+    if (dx < RA) t = Y0 - (dx <= RA - 8 && z <= -576 ? 1.6 * sm(RA - 8, RA - 18, dx) * sm(-576, -586, z) : 0);
     else if (dx <= RB) t = yr;
     else t = lerp(yr, Math.max(h, yr), sm(RB, RB + 64, dx));
     return lerp(h, t, k);
@@ -7378,24 +7389,34 @@ W.SHAPERS.push({ box: [XC - 320, ZB - 64, XC + 320, -504], f(x, z, h) {
 // ---------- strade, nomi, cartelli ----------
 W.ROADS.push(
   // dal sentiero del Picco del Drago, oltre il valico, giù nella valle e fino alla rampa di levante
-  { w: 8, pts: [[2308, 684], [2400, 668], [2500, 610], [2580, 520], [2625, 420], [2645, 300], [2640, 150], [2625, 0], [2605, -160], [2560, -300], [2505, -420], [2520, -500], [2544, -564]] },
-  { w: 7, pts: [[2520, -500], [2440, -532], [2330, -540], [2304, -564]] });
-W.PLACES.push([XC - 72, -716, 94, 'LA GRANDE TERRAZZA'], [XC + 72, -716, 94, 'LA GRANDE TERRAZZA'], [XC - 60, -1146, 100, 'ACROPOLI DELLE ACQUE'], [XC + 60, -1146, 100, 'ACROPOLI DELLE ACQUE'], [2632, 330, 70, 'VALICO DEI GIGANTI']);
-W.PROPS.push(['sign', 2326, 672], ['sign', 2652, 160], ['sign', 2532, -486]);
+  { w: 8, pts: [[2308, 684], [2400, 668], [2500, 610], [2580, 520], [2625, 420], [2645, 300], [2640, 150], [2625, 0], [2605, -160], [2560, -300], [2505, -420], [2530, -500], [XC + (RA + RB) / 2, ZR - 4]] },
+  { w: 7, pts: [[2530, -500], [2440, -534], [2300, -540], [XC - (RA + RB) / 2, ZR - 4]] });
+W.PLACES.push([XC - 88, TZ, 112, 'LA GRANDE TERRAZZA'], [XC + 88, TZ, 112, 'LA GRANDE TERRAZZA'], [XC - 72, AZ, 112, 'ACROPOLI DELLE ACQUE'], [XC + 72, AZ, 112, 'ACROPOLI DELLE ACQUE'], [2632, 330, 70, 'VALICO DEI GIGANTI']);
+W.PROPS.push(['sign', 2326, 672], ['sign', 2652, 160], ['sign', 2548, -486]);
 W.PAVE.push(['b', 'rect', XC - HW1, ZT, XC + HW1, ZF], ['b', 'rect', XC + RA, ZF, XC + RB, ZR + 6], ['b', 'rect', XC - RB, ZF, XC - RA, ZR + 6],
-  ['g', 'rect', XC - HW2, ZN2, XC + HW2, ZT - 8], ['b', 'rect', XC - SW1, ZS1 - 16, XC + SW1, ZT], ['b', 'rect', XC - SW2, ZS2, XC + SW2, ZN2 + 24], ['b', 'rect', XC - HW3, ZB, XC + HW3, ZN2 - 8],
-  // intarsi grigi sulla terrazza: il cerchio della fontana e la via di mezzo
-  ['g', 'disc', XC, -716, 30], ['b', 'disc', XC, -716, 25],
+  ['g', 'rect', XC - HW2, ZN2, XC + HW2, ZT - 8], ['b', 'rect', XC - SW1, ZS1 - 20, XC + SW1, ZT], ['b', 'rect', XC - SW2, ZS2, XC + SW2, ZN2 + 28], ['b', 'rect', XC - HW3, ZB, XC + HW3, ZN2 - 8],
+  // intarsi grigi: il cerchio della fontana, i tondi dei tempietti, la fascia lungo il belvedere
+  ['g', 'disc', XC, TZ, 32], ['b', 'disc', XC, TZ, 27], ['g', 'disc', XC - 110, ZF - 26, 15], ['g', 'disc', XC + 110, ZF - 26, 15], ['g', 'disc', XC - 70, ZS2 - 26, 14], ['g', 'disc', XC + 70, ZS2 - 26, 14],
   // la banchina del lago
   ['b', 'rect', XC - RB, ZR - 14, XC + RB, ZR + 6]);
-W.CLEAR.push([XC - HW2 - 20, ZB - 10, XC + HW2 + 20, -548]);
-W.FINE.push([XC - 420, ZB - 260, XC + 420, -440]);   // da lontano il rilievo qui resta preciso: i muri di marmo combaciano sempre con i gradoni
-// statue, panchine e lampioni sulla terrazza e sull'acropoli
+W.CLEAR.push([XC - HW2 - 24, ZB - 10, XC + HW2 + 24, -548]);
+W.FINE.push([XC - 280, ZB - 60, XC + 280, -514]);   // da lontano il rilievo qui resta preciso: i muri di marmo combaciano sempre con i gradoni
+W.URBAN.push([XC - HW2 - 12, ZB - 12, XC + HW2 + 12, ZR + 12]);   // lago, terrazza e acropoli sono città: niente stambecchi tra le colonne
+// statue, panchine, lampioni, cipressi e barche
 for (const s of [-1, 1]) {
-  W.PROPS.push(['ninfa', XC + s * 32, -748], ['ninfa', XC + s * 32, -684], ['bench', XC + s * 58, ZF - 9], ['bench', XC + s * 80, ZF - 9], ['lamp', XC + s * 46, ZF - 6], ['lamp', XC + s * 92, ZF - 6],
-    ['lamp', XC + s * 60, -716], ['bench', XC + s * 66, -706], ['bench', XC + s * 66, -726], ['pot', XC + s * 100, -716], ['pot', XC + s * 21, ZT + 22], ['lamp', XC + s * 100, ZT + 40],
-    ['ninfa', XC + s * 46, ZS2 - 62], ['pot', XC + s * 20, ZS2 - 8], ['lamp', XC + s * 60, ZS2 - 44], ['bench', XC + s * 58, ZS2 - 20], ['pine', XC + s * 112, ZS2 - 24], ['pine', XC + s * 112, ZS2 - 60]);
+  W.PROPS.push(['ninfa', XC + s * 32, TZ - 32], ['ninfa', XC + s * 32, TZ + 32], ['bench', XC + s * 60, ZF - 9], ['bench', XC + s * 30, ZF - 9], ['lamp', XC + s * 46, ZF - 6], ['lamp', XC + s * 86, ZF - 6],
+    ['lamp', XC + s * 46, TZ], ['bench', XC + s * 52, TZ - 14], ['bench', XC + s * 52, TZ + 14], ['pot', XC + s * 22, ZT + 24], ['lamp', XC + s * 122, ZT + 30],
+    ['ninfa', XC + s * 52, ZS2 - 70], ['pot', XC + s * 20, ZS2 - 8], ['lamp', XC + s * 70, ZN2 - 20], ['bench', XC + s * 58, ZN2 - 16], ['bench', XC + s * 82, ZN2 - 16], ['bench', XC + s * 56, ZS2 - 96], ['ninfa', XC + s * (HW2 - 26), CZ - 20], ['ninfa', XC + s * (HW2 - 26), CZ + 20]);
+  for (let z = ZT + 26; z < ZF - 44; z += 22) W.PROPS.push(['cipresso', XC + s * 122, z]);
+  for (let z = ZS2 - 20; z > ZB + 60; z -= 26) if (Math.abs(z - ZG) > 10) W.PROPS.push(['cipresso', XC + s * 118, z]);
 }
+W.PROPS.push(['boat', XC - 78, -604], ['boat', XC + 96, -618], ['boat', XC + 30, -590]);
+// il sagrato dietro l'arco e le piazzette davanti al palazzo, alle terme e ai ninfei
+for (const s of [-1, 1]) W.PROPS.push(['cipresso', XC + s * 40, ZS1 - 30], ['bench', XC + s * 30, ZS1 - 26], ['lamp', XC + s * 16, ZS1 - 24],
+  ['cipresso', XC - 116 + s * 28, CZ - 24], ['pot', XC - 116 + s * 9, CZ - 28], ['cipresso', XC + 118 + s * 28, CZ - 23], ['pot', XC + 118 + s * 9, CZ - 27],
+  ['bench', XC + s * (HW2 - 44), CZ - 24], ['bench', XC + s * (HW2 - 44), CZ + 24], ['lamp', XC + s * (HW2 - 48), CZ - 13], ['lamp', XC + s * (HW2 - 48), CZ + 13],
+  // il camminamento in cima al muro, tra i campanili e il bordo
+  ['bench', XC + s * 62, ZT - 16], ['lamp', XC + s * 70, ZT - 15], ['cipresso', XC + s * 100, ZT - 34], ['bench', XC + s * 116, ZT - 16], ['cipresso', XC + s * 132, ZT - 34], ['lamp', XC + s * 146, ZT - 15], ['bench', XC + s * 160, ZT - 16], ['cipresso', XC + s * 176, ZT - 34]);
 
 // ---------- pezzi di marmo ----------
 const mesh = () => W.mesh;
@@ -7474,129 +7495,220 @@ const asta = (x, z, y, h) => { box(x - 0.28, z - 0.28, x + 0.28, z + 0.28, y, y 
 // vaso di marmo con un alberello
 const vaso = (x, z, y, b) => { prism(x, z, 2.2, y - 1, y + 2.4, TL.MARBLE, 8); W.addBox(x - 1.8, z - 1.8, x + 1.8, z + 1.8, y + 2.4, b); };
 
+// tempietto rotondo: otto colonne, l'anello col fregio e la cupola
+function tholos(x, z, y, r, b) {
+  prism(x, z, r + 3, y - 2, y + 1, TL.MARBLE, 8);
+  for (let k = 0; k < 8; k++) { const a = (k + 0.5) / 8 * TAU; colonna(x + Math.cos(a) * r, z + Math.sin(a) * r, y + 1, 15, 1.3); }
+  prism(x, z, r + 2, y + 16, y + 19.4, TL.FRIEZE, 8); dome(x, z, r + 1.6, y + 19.4, TL.TURQ);
+  // al centro, il tripode con la fiamma azzurra
+  prism(x, z, 2.4, y + 1, y + 4.6, TL.MARBLE, 8); prism(x, z, 1.7, y + 4.6, y + 5.3, TL.GOLD, 8);
+  W.glows.push([x, y + 7.4, z, 8, 0.55, 0.85, 1, 1]); W.addBox(x - r - 2, z - r - 2, x + r + 2, z + r + 2, y + 19, b);
+}
+// propilei in cima alla scalinata: due piloni larghi quanto i gradini, quattro colonne in mezzo, l'architrave col fregio e il tetto
+function arco(x, z, y, b) {
+  const A = SW1 + 1, E = SW1 + 10;
+  for (const s of [-1, 1]) {
+    const x0 = Math.min(x + s * A, x + s * E), x1 = Math.max(x + s * A, x + s * E);
+    box(x0, z - 4, x1, z + 4, y - 2, y + 23, TL.MARBLE); W.addBox(x0, z - 4, x1, z + 4, y + 23, b);
+    for (const dz of [-5.6, 5.6]) colonna(x + s * (A - 2.4), z + dz, y, 20, 1.3);
+    for (const dz of [-3.2, 3.2]) colonna(x + s * 14, z + dz, y, 23, 1.6, b);
+    W.glows.push([x + s * (A - 2.4), y + 22, z + 5.6, 6, 0.7, 0.88, 1, 0]);
+  }
+  box(x - E - 2, z - 5, x + E + 2, z + 5, y + 23, y + 30, TL.MARBLE); fregio(x - E - 2, z - 5, x + E + 2, z + 5, y + 24, y + 29);
+  gable(x - E - 2, z - 5, x + E + 2, z + 5, y + 30, 9, TL.ROOF_BLUE, TL.MARBLE, 1.4); asta(x, z, y + 39, 9);
+  for (const s of [-1, 1]) box(x + s * (E + 1) - 0.9, z - 0.9, x + s * (E + 1) + 0.9, z + 0.9, y + 30, y + 34, TL.GOLD);
+}
+// ninfeo in fondo alla via: un muro di marmo contro la roccia con le arcate, la nicchia e la sua cascata. s: +1 a levante (guarda a ovest), -1 a ponente
+function ninfeo(x, z, y, s, b) {
+  const xa = Math.min(x, x + s * 12), xb = Math.max(x, x + s * 12), xf = x - s * 0.08, hw = 34;
+  box(xa, z - hw, xb, z + hw, y - 2, y + 24, TL.MARBLE); box(xa - (s > 0 ? 1 : 0), z - hw - 1, xb + (s < 0 ? 1 : 0), z + hw + 1, y + 24, y + 26, TL.MARBLE); fregio(xa, z - hw, xb, z + hw, y + 19.6, y + 24);
+  box(xa, z - 10, xb, z + 10, y + 26, y + 34, TL.MARBLE); gable(xa, z - 10, xb, z + 10, y + 34, 6, TL.ROOF_BLUE, TL.MARBLE, 1.2);
+  // le arcate ai lati della nicchia e la nicchia scura
+  for (const [za, zb] of [[z - hw + 2, z - 11], [z + 11, z + hw - 2]]) { const n = Math.max(1, Math.round((zb - za) / 11)); if (s > 0) quad([xf, y, zb], [xf, y, za], [xf, y + 13, za], [xf, y + 13, zb], TL.ARCH_M, n, 1); else quad([xf, y, za], [xf, y, zb], [xf, y + 13, zb], [xf, y + 13, za], TL.ARCH_M, n, 1); }
+  if (s > 0) quad([xf, y, z + 8], [xf, y, z - 8], [xf, y + 22, z - 8], [xf, y + 22, z + 8], TL.ARCH_M, 1, 1); else quad([xf, y, z - 8], [xf, y, z + 8], [xf, y + 22, z + 8], [xf, y + 22, z - 8], TL.ARCH_M, 1, 1);
+  // l'acqua che scende nella nicchia e la vasca
+  const xw = x - s * 1.4;
+  flusso(4, () => { if (s > 0) quad([xw, y + 1, z + 4.5], [xw, y + 1, z - 4.5], [xw, y + 19, z - 4.5], [xw, y + 19, z + 4.5], TL.FALL, 1.1, 1.8); else quad([xw, y + 1, z - 4.5], [xw, y + 1, z + 4.5], [xw, y + 19, z + 4.5], [xw, y + 19, z - 4.5], TL.FALL, 1.1, 1.8); });
+  vasca(Math.min(x - s * 3, x - s * 15), z - 9, Math.max(x - s * 3, x - s * 15), z + 9, y, b, 1.3);
+  W.falls.push([x - s * 3, y + 1.2, z, 9, 0, 0.9]); W.addBox(xa, z - hw, xb, z + hw, y + 24, b);
+  W.glows.push([x - s * 6, y + 8, z, 9, 0.6, 0.86, 1, 0]);
+}
+
 // ---------- il lago e il fronte della terrazza ----------
 const PARTI = {
   fronte(b, g) {
     // i gradoni rivestiti di marmo, dal lago al parapetto, e i fianchi delle rampe
     riveste(g, XC - RB, ZF - 8, XC + RB, ZR + 8);
     // il lago ai piedi del muro
-    flusso(5, () => quad([XC - 100, Y0 - 0.55, -572], [XC + 100, Y0 - 0.55, -572], [XC + 100, Y0 - 0.55, ZF + 6], [XC - 100, Y0 - 0.55, ZF + 6], TL.POOLW, 25, 10));
+    flusso(5, () => quad([XC - RA + 2, Y0 - 0.55, -572], [XC + RA - 2, Y0 - 0.55, -572], [XC + RA - 2, Y0 - 0.55, ZF + 6], [XC - RA + 2, Y0 - 0.55, ZF + 6], TL.POOLW, 33, 10));
     // speroni e arcate lungo il muro, a filo dell'acqua
-    for (const s of [-1, 1]) { sperone(XC + s * 34, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6); sperone(XC + s * 92, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6, 3); arcate(XC + s * 18, XC + s * 31, ZF + 8, Y0 - 0.6, 13); arcate(XC + s * 73, XC + s * 88.5, ZF + 8, Y0 - 0.6, 13); arcate(XC + s * 37, XC + s * 51, ZF + 8, Y0 - 0.6, 13); }
+    for (const s of [-1, 1]) {
+      sperone(XC + s * 42, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6); sperone(XC + s * 110, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6, 3);
+      for (const [a, c] of [[18, 39], [45, 70], [86, 107], [113, RA - 9]]) arcate(XC + s * (s > 0 ? a : c), XC + s * (s > 0 ? c : a), ZF + 8, Y0 - 0.6, 13);
+    }
     // tre cascate: due dai doccioni, una larga sotto il belvedere
-    cascata(XC - 62, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC + 62, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC, ZF, ZF + 14, Y1 - 1, Y0 - 0.6, 26, 2.4);
+    cascata(XC - 78, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC + 78, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC, ZF, ZF + 14, Y1 - 1, Y0 - 0.6, 26, 2.4);
     // il parapetto sul vuoto (aperto dove arrivano le rampe) e la cornice col fregio
     box(XC - RA + 1, ZF - 2.6, XC + RA - 1, ZF + 0.5, Y1 - 4.4, Y1 + 0.3, TL.MARBLE); fregio(XC - RA + 1, ZF - 2.6, XC + RA - 1, ZF + 0.5, Y1 - 4.2, Y1 - 0.2);
     for (const s of [-1, 1]) {
       balaustra(XC + s * 13, ZF - 1.4, XC + s * (RA - 2), ZF - 1.4, Y1 + 0.3, Y1 + 0.3, b);
-      // le rampe: balaustra verso il lago e due lampioni di marmo all'imbocco
+      // le rampe: balaustra verso il lago, due colonne con la fiamma all'imbocco e in cima
       balaustra(XC + s * (RA - 1.5), ZF - 1.4, XC + s * (RA - 1.5), ZR + 2, Y1 + 0.3, Y0 + 1.6, b);
-      for (const zz of [ZR + 2, ZF - 1.4]) { const yy = g(XC + s * (RB - 2), zz); colonna(XC + s * (RA - 1.5), zz, zz > ZF ? Y0 : Y1, 9, 1.1); W.glows.push([XC + s * (RA - 1.5), (zz > ZF ? Y0 : Y1) + 10.4, zz, 5, 0.75, 0.9, 1, 0]); }
+      for (const zz of [ZR + 2, ZF - 1.4]) { const yy = zz > ZF ? Y0 : Y1; colonna(XC + s * (RA - 1.5), zz, yy, 9, 1.1); W.glows.push([XC + s * (RA - 1.5), yy + 10.4, zz, 5, 0.75, 0.9, 1, 0]); }
+      asta(XC + s * 13, ZF - 1.4, Y1 + 4, 15); asta(XC + s * (RA - 2), ZF - 1.4, Y1 + 4, 11);
     }
-    // il belvedere sopra la grande cascata, con le due bandiere
+    // il belvedere sopra la grande cascata
     balaustra(XC - 13, ZF - 1.4, XC + 13, ZF - 1.4, Y1 + 0.3, Y1 + 0.3, b);
-    for (const s of [-1, 1]) { asta(XC + s * 13, ZF - 1.4, Y1 + 4, 15); asta(XC + s * (RA - 2), ZF - 1.4, Y1 + 4, 11); }
   },
   // ---------- la Grande Terrazza ----------
   terrazza(b, g) {
-    // i due portici lungo i fianchi
-    for (const s of [-1, 1]) portico(XC + s * 112, XC + s * 126, ZT + 16, ZF - 14, Y1, b);
-    // la fontana al centro, in una vasca ottagonale
-    prism(XC, -716, 19, Y1 - 2, Y1 + 1.5, TL.MARBLE, 8);
-    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 17.6, Y1 + 0.9, -716 + Math.sin(k / 8 * TAU) * 17.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 3, 3); });
-    prism(XC, -716, 3, Y1, Y1 + 7, TL.MARBLE, 8); prism(XC, -716, 8.5, Y1 + 6.4, Y1 + 7.8, TL.MARBLE, 8);
-    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 7.6, Y1 + 7.9, -716 + Math.sin(k / 8 * TAU) * 7.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 2, 2); });
-    prism(XC, -716, 1.5, Y1 + 7.8, Y1 + 14, TL.MARBLE, 8); prism(XC, -716, 4, Y1 + 13.4, Y1 + 14.4, TL.MARBLE, 8); prism(XC, -716, 0.8, Y1 + 14.4, Y1 + 17, TL.GOLD, 8);
-    W.addBox(XC - 17, -733, XC + 17, -699, Y1 + 1.5, b); W.sprays.push([XC, Y1 + 17.2, -716, 8], [XC, Y1 + 8.5, -716, 16]);
-    // il muro della città: marmo sui gradoni, la scalinata, due cascate nelle loro vasche
-    riveste(g, XC - HW1, ZS1 - 8, XC - SW1, ZT + 8); riveste(g, XC + SW1, ZS1 - 8, XC + HW1, ZT + 8); riveste(g, XC - SW1, ZS1, XC + SW1, ZT, TL.STEPS, 2);   // (oltre la terrazza il gradone resta di roccia)
     for (const s of [-1, 1]) {
-      cascata(XC + s * 92, ZT - 8, ZT + 5, Y2, Y1 + 0.8, 10, 1.1); vasca(XC + s * 92 - 9, ZT + 1.5, XC + s * 92 + 9, ZT + 14, Y1, b);
+      // i portici lungo i fianchi (chi sale dalla rampa ci arriva sotto) e i tempietti rotondi ai lati del belvedere
+      portico(XC + s * (HW1 - 24), XC + s * (HW1 - 10), ZT + 22, ZF - 34, Y1, b);
+      tholos(XC + s * 110, ZF - 26, Y1, 9, b);
+      // due vasche lunghe ai lati della fontana
+      vasca(XC + s * 88 - 9, TZ - 30, XC + s * 88 + 9, TZ + 30, Y1, b, 1.2); W.sprays.push([XC + s * 88, Y1 + 2.4, TZ - 16, 5], [XC + s * 88, Y1 + 2.4, TZ + 16, 5]);
+    }
+    // la fontana al centro, in una vasca ottagonale
+    prism(XC, TZ, 21, Y1 - 2, Y1 + 1.5, TL.MARBLE, 8);
+    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 19.6, Y1 + 0.9, TZ + Math.sin(k / 8 * TAU) * 19.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 3, 3); });
+    prism(XC, TZ, 3.2, Y1, Y1 + 7, TL.MARBLE, 8); prism(XC, TZ, 9.5, Y1 + 6.4, Y1 + 7.8, TL.MARBLE, 8);
+    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 8.6, Y1 + 7.9, TZ + Math.sin(k / 8 * TAU) * 8.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 2, 2); });
+    prism(XC, TZ, 1.6, Y1 + 7.8, Y1 + 15, TL.MARBLE, 8); prism(XC, TZ, 4.4, Y1 + 14.4, Y1 + 15.4, TL.MARBLE, 8); prism(XC, TZ, 0.9, Y1 + 15.4, Y1 + 19, TL.GOLD, 8);
+    W.addBox(XC - 19, TZ - 19, XC + 19, TZ + 19, Y1 + 1.5, b); W.sprays.push([XC, Y1 + 19.2, TZ, 9], [XC, Y1 + 8.5, TZ, 18]);
+    // il muro della città: marmo sui gradoni (oltre la terrazza il gradone resta di roccia), la scalinata, due cascate nelle loro vasche
+    riveste(g, XC - HW1, ZS1 - 8, XC - SW1, ZT + 8); riveste(g, XC + SW1, ZS1 - 8, XC + HW1, ZT + 8); riveste(g, XC - SW1, ZS1, XC + SW1, ZT, TL.STEPS, 2);
+    for (const s of [-1, 1]) {
+      cascata(XC + s * 100, ZT - 8, ZT + 5, Y2, Y1 + 0.8, 10, 1.1); vasca(XC + s * 100 - 9, ZT + 1.5, XC + s * 100 + 9, ZT + 14, Y1, b);
       // parapetti in cima al muro e lungo la scalinata
       const xa = XC + s * (SW1 + 9.4), xb = XC + s * (HW1 + 2);
       box(Math.min(xa, xb), ZT - 10.6, Math.max(xa, xb), ZT - 7.4, Y2 - 4.4, Y2 + 0.3, TL.MARBLE); fregio(Math.min(xa, xb), ZT - 10.6, Math.max(xa, xb), ZT - 7.4, Y2 - 4.2, Y2 - 0.2);
-      balaustra(xa, ZT - 9.4, XC + s * 85, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b); balaustra(XC + s * 99, ZT - 9.4, xb, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b);
-      balaustra(xa, ZT - 9.4, xa, ZS1 - 2, Y2 + 0.3, Y2 + 0.3, b);
+      balaustra(xa, ZT - 9.4, XC + s * 93, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b); balaustra(XC + s * 107, ZT - 9.4, xb, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b);
+      balaustra(xa, ZT - 9.4, xa, ZS1 - 6, Y2 + 0.3, Y2 + 0.3, b);
       // speroni e arcate ai piedi del muro
-      for (const xx of [66, 120]) sperone(XC + s * xx, ZT - 8, ZT, Y1 - 1, Y2 - 4.6, 2.4);
-      arcate(XC + s * 70, XC + s * 81, ZT, Y1, 10, b); arcate(XC + s * 103, XC + s * 116.5, ZT, Y1, 10, b);
+      for (const xx of [70, 130]) sperone(XC + s * xx, ZT - 8, ZT, Y1 - 1, Y2 - 4.6, 2.4);
+      for (const [a, c] of [[52, 67], [73, 89], [111, 127], [133, HW1 - 30]]) arcate(XC + s * (s > 0 ? a : c), XC + s * (s > 0 ? c : a), ZT, Y1, 10, b);
       // due colonne con la fiamma azzurra ai piedi della scalinata
       colonna(XC + s * (SW1 + 5), ZT + 6, Y1, 13, 1.7, b); W.glows.push([XC + s * (SW1 + 5), Y1 + 15, ZT + 6, 7, 0.7, 0.88, 1, 0]);
-      // vasi con gli alberelli
-      for (const zz of [ZF - 14, -700, -732, ZT + 26]) vaso(XC + s * 100, zz, Y1, b);
+      // in cima al muro, ai lati della scalinata: i due campanili
+      TN.tower(XC + s * 84, ZT - 30, 7.5, Y2 - 2, Y2 + 54, TL.MARBLE, { roof: TL.ROOF_BLUE, rh: 17, win: TL.MARBLE_WIN, b, flag: 2 });
+      prism(XC + s * 84, ZT - 30, 8.1, Y2 + 33, Y2 + 36.4, TL.FRIEZE, 8); prism(XC + s * 84, ZT - 30, 8.6, Y2 - 2, Y2 + 3, TL.MARBLE, 8);
     }
+    // i propilei, in cima alla scalinata
+    arco(XC, ZS1 - 10, Y2, b);
   },
+  // ---------- i ninfei in fondo alla via maestra ----------
+  ninfei(b, g) { for (const s of [-1, 1]) ninfeo(XC + s * (HW2 - 6), CZ, Y2, s, b); },
   // ---------- l'acropoli ----------
   acropoli(b, g) {
     // il muro e la scalinata
     riveste(g, XC - HW3, ZS2 - 8, XC - SW2, ZN2 + 8); riveste(g, XC + SW2, ZS2 - 8, XC + HW3, ZN2 + 8); riveste(g, XC - SW2, ZS2, XC + SW2, ZN2, TL.STEPS, 2);
     for (const s of [-1, 1]) {
-      const xa = XC + s * (SW2 + 9.4), xb = XC + s * HW3;
+      const xa = XC + s * (SW2 + 9.4), xb = XC + s * HW3, cx = XC + s * 100;
       box(Math.min(xa, xb), ZN2 - 10.6, Math.max(xa, xb), ZN2 - 7.4, Y3 - 4.4, Y3 + 0.3, TL.MARBLE); fregio(Math.min(xa, xb), ZN2 - 10.6, Math.max(xa, xb), ZN2 - 7.4, Y3 - 4.2, Y3 - 0.2);
-      balaustra(xa, ZN2 - 9.4, XC + s * 77, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b); balaustra(XC + s * 91, ZN2 - 9.4, xb, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b);
+      balaustra(xa, ZN2 - 9.4, XC + s * 93, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b); balaustra(XC + s * 107, ZN2 - 9.4, xb, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b);
       balaustra(xa, ZN2 - 9.4, xa, ZS2 - 2, Y3 + 0.3, Y3 + 0.3, b);
-      for (const xx of [56, 108]) sperone(XC + s * xx, ZN2 - 8, ZN2, Y2 - 1, Y3 - 4.6, 2.6);
-      arcate(XC + s * 36, XC + s * 53, ZN2, Y2, 12, b); arcate(XC + s * 59, XC + s * 73, ZN2, Y2, 12, b); arcate(XC + s * 95, XC + s * 105, ZN2, Y2, 12, b); arcate(XC + s * 111, XC + s * 127, ZN2, Y2, 12, b);
+      for (const xx of [62, 126]) sperone(XC + s * xx, ZN2 - 8, ZN2, Y2 - 1, Y3 - 4.6, 2.6);
+      for (const [a, c] of [[36, 59], [65, 89], [111, 123], [129, HW3 - 2]]) arcate(XC + s * (s > 0 ? a : c), XC + s * (s > 0 ? c : a), ZN2, Y2, 12, b);
       // le sorgenti: l'acqua scende dalla parete, riempie la vasca, corre nel canale e cade verso la città
-      const cx = XC + s * 84;
       riveste(g, cx - 16, ZB - 64, cx + 16, ZB, TL.FALL, 3, 4); W.falls.push([cx, Y3 + 1.2, ZB + 3, 30, 1, 2.2]);
-      vasca(cx - 26, ZB + 2, cx + 26, ZB + 40, Y3, b, 1.5);
-      for (const q of [-1, 1]) box(cx + q * 5 - 0.8, ZB + 41.6, cx + q * 5 + 0.8, ZN2 - 8, Y3 - 2, Y3 + 1.5, TL.MARBLE);
-      flusso(4, () => quad([cx - 4.2, Y3 + 1, ZN2 - 8], [cx + 4.2, Y3 + 1, ZN2 - 8], [cx + 4.2, Y3 + 1, ZB + 41.6], [cx - 4.2, Y3 + 1, ZB + 41.6], TL.FALL, 1, (ZN2 - 8 - ZB - 41.6) / 12));
-      W.addBox(cx - 5.8, ZB + 41.6, cx + 5.8, ZN2 - 8, Y3 + 1.5, b);
+      vasca(cx - 28, ZB + 2, cx + 28, ZB + 46, Y3, b, 1.5);
+      // (a metà il canale passa sotto una lastra: di lì si attraversa verso il portico)
+      for (const [za, zb] of [[ZB + 47.6, ZG - 6], [ZG + 6, ZN2 - 8]]) {
+        for (const q of [-1, 1]) box(cx + q * 5 - 0.8, za, cx + q * 5 + 0.8, zb, Y3 - 2, Y3 + 1.5, TL.MARBLE);
+        flusso(4, () => quad([cx - 4.2, Y3 + 1, zb], [cx + 4.2, Y3 + 1, zb], [cx + 4.2, Y3 + 1, za], [cx - 4.2, Y3 + 1, za], TL.FALL, 1, (zb - za) / 12));
+        W.addBox(cx - 5.8, za, cx + 5.8, zb, Y3 + 1.5, b);
+      }
+      for (const q of [-1, 1]) box(cx - 5.8, ZG + q * 6.6 - 0.6, cx + 5.8, ZG + q * 6.6 + 0.6, Y3 - 2, Y3 + 2.4, TL.MARBLE);
+      boxTop(cx - 7, ZG - 6, cx + 7, ZG + 6, Y3 + 0.1, TL.MARBLE);
       cascata(cx, ZN2 - 8, ZN2 + 5, Y3 + 0.9, Y2 + 0.8, 8.4, 1.3); vasca(cx - 9, ZN2 + 1.5, cx + 9, ZN2 + 15, Y2, b);
-      // colonne votive lungo il viale
-      for (const zz of [ZS2 - 10, ZS2 - 30]) { colonna(XC + s * 44, zz, Y3, 14, 1.6, b); W.glows.push([XC + s * 44, Y3 + 16, zz, 7, 0.7, 0.88, 1, 0]); }
+      // il tempietto rotondo, le colonne votive lungo il viale, il portico lungo il bordo
+      tholos(XC + s * 70, ZS2 - 26, Y3, 8.5, b);
+      for (const zz of [ZS2 - 10, ZS2 - 34]) { colonna(XC + s * 40, zz, Y3, 14, 1.6, b); W.glows.push([XC + s * 40, Y3 + 16, zz, 7, 0.7, 0.88, 1, 0]); }
+      portico(XC + s * (HW3 - 22), XC + s * (HW3 - 10), ZB + 62, ZS2 - 16, Y3, b, 15);
     }
     // il Tempio delle Acque: gradini, un giro di colonne, la cella, il frontone e l'acroterio d'oro
-    const tx0 = XC - 30, tx1 = XC + 30, tz0 = ZB + 14, tz1 = ZS2 - 46, ty = Y3 + 3.2, hc = 24;
+    const tx0 = XC - 32, tx1 = XC + 32, tz0 = ZB + 20, tz1 = ZS2 - 58, ty = Y3 + 3.2, hc = 26;
     for (let k = 0; k < 3; k++) box(tx0 - 6 + k * 2, tz0 - 6 + k * 2, tx1 + 6 - k * 2, tz1 + 6 - k * 2, Y3 - 2, Y3 + 1.2 + k, TL.MARBLE);
     W.addBox(tx0 - 5, tz0 - 5, tx1 + 5, tz1 + 5, ty, b);
-    for (let k = 0; k < 6; k++) { const x = tx0 + (tx1 - tx0) * k / 5; colonna(x, tz1, ty, hc, 1.9); colonna(x, tz0, ty, hc, 1.9); }
-    for (let k = 1; k < 8; k++) { const z = tz0 + (tz1 - tz0) * k / 8; colonna(tx0, z, ty, hc, 1.9); colonna(tx1, z, ty, hc, 1.9); }
-    box(tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, ty, ty + hc, TL.MARBLE); onWall('s', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, XC, ty, 11, 17, TL.MARBLE_DOOR, 2);
-    for (const s of [-1, 1]) onWall(s < 0 ? 'w' : 'e', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, (tz0 + tz1) / 2 - 2, ty + 7, 6, 10, TL.MARBLE_WIN, true);
+    for (let k = 0; k < 6; k++) { const x = tx0 + (tx1 - tx0) * k / 5; colonna(x, tz1, ty, hc, 2); colonna(x, tz0, ty, hc, 2); }
+    for (let k = 1; k < 8; k++) { const z = tz0 + (tz1 - tz0) * k / 8; colonna(tx0, z, ty, hc, 2); colonna(tx1, z, ty, hc, 2); }
+    box(tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 13, ty, ty + hc, TL.MARBLE); onWall('s', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 13, XC, ty, 12, 18, TL.MARBLE_DOOR, 2);
+    for (const s of [-1, 1]) for (const dz of [-16, 8]) onWall(s < 0 ? 'w' : 'e', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 13, (tz0 + tz1) / 2 + dz, ty + 7, 6, 10, TL.MARBLE_WIN, true);
     const et = ty + hc; box(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et, et + 4.4, TL.MARBLE); fregio(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et + 0.2, et + 4.2);
-    gable(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et + 4.4, 13, TL.ROOF_BLUE, TL.MARBLE, 1.8);
-    decal(XC, et + 6.2, tz1 + 3, 1, 0, 9, 9, TL.CREST, false, 0.3);
-    for (const [ax, az] of [[XC, tz1 + 3], [XC, tz0 - 3]]) { box(ax - 0.9, az - 0.9, ax + 0.9, az + 0.9, et + 17, et + 22, TL.GOLD); }
-    asta(XC, tz1 + 3, et + 22, 9);
-    for (const sx of [-1, 1]) for (const az of [tz1 + 3, tz0 - 3]) box(XC + sx * 33 - 0.8, az - 0.8, XC + sx * 33 + 0.8, az + 0.8, et + 4.4, et + 8, TL.GOLD);
-    W.glows.push([XC, ty + 9, tz1 - 11, 10, 0.6, 0.85, 1, 0]);
+    gable(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et + 4.4, 14, TL.ROOF_BLUE, TL.MARBLE, 1.8);
+    decal(XC, et + 6.6, tz1 + 3, 1, 0, 10, 10, TL.CREST, false, 0.3);
+    for (const [ax, az] of [[XC, tz1 + 3], [XC, tz0 - 3]]) box(ax - 0.9, az - 0.9, ax + 0.9, az + 0.9, et + 18, et + 23, TL.GOLD);
+    asta(XC, tz1 + 3, et + 23, 9);
+    for (const sx of [-1, 1]) for (const az of [tz1 + 3, tz0 - 3]) box(XC + sx * 35 - 0.8, az - 0.8, XC + sx * 35 + 0.8, az + 0.8, et + 4.4, et + 8, TL.GOLD);
+    W.glows.push([XC, ty + 9, tz1 - 12, 10, 0.6, 0.85, 1, 0]);
     // il braciere azzurro davanti al tempio
-    prism(XC, ZS2 - 22, 3.4, Y3 - 1, Y3 + 3, TL.MARBLE, 8); prism(XC, ZS2 - 22, 2.4, Y3 + 3, Y3 + 3.6, TL.GOLD, 8); W.addBox(XC - 3, ZS2 - 25, XC + 3, ZS2 - 19, Y3 + 3, b); W.glows.push([XC, Y3 + 6, ZS2 - 22, 9, 0.55, 0.85, 1, 1]);
+    prism(XC, ZS2 - 28, 3.6, Y3 - 1, Y3 + 3, TL.MARBLE, 8); prism(XC, ZS2 - 28, 2.6, Y3 + 3, Y3 + 3.6, TL.GOLD, 8); W.addBox(XC - 3.2, ZS2 - 31.2, XC + 3.2, ZS2 - 24.8, Y3 + 3, b); W.glows.push([XC, Y3 + 6, ZS2 - 28, 9, 0.55, 0.85, 1, 1]);
   },
 };
 W.builders.marmo = (b, g) => PARTI[b.part](b, g);
-W.BUILD.push({ k: 'marmo', part: 'fronte', x: XC, z: -600 }, { k: 'marmo', part: 'terrazza', x: XC - 400, z: -730 }, { k: 'marmo', part: 'acropoli', x: XC + 400, z: -1140 });
+W.BUILD.push({ k: 'marmo', part: 'fronte', x: XC, z: -600 }, { k: 'marmo', part: 'terrazza', x: XC - 400, z: TZ }, { k: 'marmo', part: 'acropoli', x: XC + 400, z: AZ }, { k: 'marmo', part: 'ninfei', x: XC + 800, z: CZ });
+
+// ---------- i palazzi della città (li piazza il geometra, come gli altri edifici speciali) ----------
+const rettangolo = sp => [sp.x - sp.w / 2, sp.z - sp.d / 2, sp.x + sp.w / 2, sp.z + sp.d / 2];
+// il Palazzo dell'Arconte: portico a colonne col frontone, tetto azzurro e cupola
+C.SPECIAL.palazzo = (sp, g, S, b) => {
+  const [x0, z0, x1, z1] = rettangolo(sp), y0 = TN.g0(g, x0, z0, x1, z1), top = y0 + 21;
+  walls(x0, z0, x1, z1, y0 - 3, top, TL.MARBLE); fregio(x0, z0, x1, z1, top - 4, top); hip(x0, z0, x1, z1, top, 6.5, TL.ROOF_BLUE, 1.4);
+  prism(sp.x, sp.z, 9, top + 3, top + 9, TL.MARBLE, 8); prism(sp.x, sp.z, 9.5, top + 8.2, top + 9.4, TL.FRIEZE, 8); dome(sp.x, sp.z, 9.2, top + 9.4, TL.TURQ); W.flags.push([sp.x, top + 21.6, sp.z, 2]);
+  // il portico davanti (a sud): sei colonne, architrave e frontone
+  const pz = z1 + 7, pw = Math.min(sp.w / 2 - 4, 22);
+  for (let k = 0; k < 6; k++) colonna(sp.x - pw + pw * 2 * k / 5, pz, y0, 16, 1.5, b);
+  box(sp.x - pw - 2.4, z1, sp.x + pw + 2.4, pz + 2.4, y0 + 16, y0 + 19.4, TL.MARBLE); fregio(sp.x - pw - 2.4, z1, sp.x + pw + 2.4, pz + 2.4, y0 + 16.2, y0 + 19.2);
+  gable(sp.x - pw - 2.4, z1 - 0.2, sp.x + pw + 2.4, pz + 2.4, y0 + 19.4, 7, TL.ROOF_BLUE, TL.MARBLE, 1.2);
+  onWall('s', x0, z0, x1, z1, sp.x, y0, 9, 13, TL.MARBLE_DOOR, 2); for (const dx of [-17, 17]) onWall('s', x0, z0, x1, z1, sp.x + dx, y0 + 5, 5, 9, TL.MARBLE_WIN, true);
+  for (const sd of ['w', 'e', 'n']) for (const q of [-0.28, 0.28]) onWall(sd, x0, z0, x1, z1, (sd === 'n' ? sp.x + q * sp.w : sp.z + q * sp.d), y0 + 5, 5, 9, TL.MARBLE_WIN, true);
+  for (const dx of [-pw + 4.4, pw - 4.4]) decal(sp.x + dx, y0 + 4, z1, 1, 0, 4, 11, TL.BAN_BLUE, false, 0.25);
+  W.addBox(x0, z0, x1, z1, top, b); W.glows.push([sp.x, y0 + 8, pz - 2, 9, 0.7, 0.88, 1, 0]);
+};
+// le Terme: sala bassa di marmo, una grande cupola e quattro piccole, il vapore che sale
+C.SPECIAL.terme = (sp, g, S, b) => {
+  const [x0, z0, x1, z1] = rettangolo(sp), y0 = TN.g0(g, x0, z0, x1, z1), top = y0 + 13;
+  walls(x0, z0, x1, z1, y0 - 3, top, TL.MARBLE); walls(x0, z0, x1, z1, top, top + 2.2, TL.MARBLE); fregio(x0, z0, x1, z1, top - 2.2, top + 2.2); boxTop(x0 + 0.01, z0 + 0.01, x1 - 0.01, z1 - 0.01, top + 0.6, TL.MARBLE);
+  prism(sp.x, sp.z, Math.min(sp.w, sp.d) * 0.3 + 0.8, top + 0.6, top + 4, TL.MARBLE, 8); dome(sp.x, sp.z, Math.min(sp.w, sp.d) * 0.3, top + 4, TL.TURQ);
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dome(sp.x + sx * (sp.w / 2 - 7), sp.z + sz * (sp.d / 2 - 7), 4.6, top + 0.6, TL.ROOF_BLUE);
+  onWall('s', x0, z0, x1, z1, sp.x, y0, 9, 11, TL.MARBLE_DOOR, 2);
+  for (const sd of ['s', 'n']) for (const dx of [-18, -9, 9, 18]) if (Math.abs(dx) < sp.w / 2 - 5) onWall(sd, x0, z0, x1, z1, sp.x + dx, y0 + (sd === 's' && Math.abs(dx) < 8 ? 99 : 0), 8, 10, TL.ARCH_M, false);
+  for (const sd of ['w', 'e']) for (const dz of [-12, 0, 12]) if (Math.abs(dz) < sp.d / 2 - 5) onWall(sd, x0, z0, x1, z1, sp.z + dz, y0, 8, 10, TL.ARCH_M, false);
+  W.addBox(x0, z0, x1, z1, top, b); W.smokes.push([sp.x, top + 4 + Math.min(sp.w, sp.d) * 0.3, sp.z], [sp.x + sp.w / 2 - 7, top + 6, sp.z - sp.d / 2 + 7]); W.glows.push([sp.x, y0 + 7, z1 + 3, 8, 1, 0.82, 0.5, 0]);
+};
 
 // ---------- la città ----------
-C.city({ id: 'marmorea', guild: true, name: 'MARMOREA', x: XC, z: -922, w: 336, d: 164, y: Y2, style: 'marmo', open: true, noTerra: true, plaza: { w: 78, d: 60 }, board: [22, 15],
+C.city({ id: 'marmorea', guild: true, name: 'MARMOREA', x: XC, z: CZ, w: 416, d: 216, y: Y2, style: 'marmo', open: true, noTerra: true, plaza: { w: 86, d: 64 }, board: [24, 16],
+  specials: [['palazzo', -116, -52, 60, 42, 's'], ['terme', 118, -50, 56, 40, 's']],
+  // spazi che restano liberi: il camminamento in cima al muro, il sagrato dietro i propilei, le due piazzette davanti al palazzo e alle terme, quelle dei ninfei
+  reserve: [[-208, 94, 208, 108], [-46, 82, 46, 108], [-150, -31, -82, -11], [84, -30, 152, -11], [162, -30, 208, 30], [-208, -30, -162, 30]],
   shops: [['cigno', 'locanda', 'LOCANDA DEL CIGNO', 's1', { fw: 32, fd: 21, h: 17, roof: TL.ROOF_TEAL }], ['marmo_armi', 'armeria', "L'ARMERIA DELLE CASCATE", 's2', { roof: TL.ROOF_BLUE }],
     ['marmo_erbe', 'erboristeria', 'LA FONTE DEI RIMEDI', 'n1', { roof: TL.ROOF_TEAL }], ['marmo_gemme', 'orafo', "L'ORAFO DEL GHIACCIAIO", 'n2', { roof: TL.ROOF_BLUE }]],
   people: [
-    ['saggio', "L'ARCONTE DELLE ACQUE", ['BENVENUTO A MARMOREA, VIANDANTE. POCHI SALGONO FIN QUASSÙ: IL VALICO DEI GIGANTI SPAVENTA PIÙ DEI LUPI.', "L'ACQUA CHE VEDI CADERE NASCE DAL GHIACCIAIO ETERNO. FINCHÉ SCORRE, LA CITTÀ VIVE.", 'SALI ALLA TERRAZZA AL TRAMONTO: DA LÌ SI VEDE TUTTA LA VALLE, E NEI GIORNI LIMPIDI PERFINO IL LAGO DI LUMEN.'], [12, -190, Math.PI / 2], { id: 'arconte' }],
+    ['saggio', "L'ARCONTE DELLE ACQUE", ['BENVENUTO A MARMOREA, VIANDANTE. POCHI SALGONO FIN QUASSÙ: IL VALICO DEI GIGANTI SPAVENTA PIÙ DEI LUPI.', "L'ACQUA CHE VEDI CADERE NASCE DAL GHIACCIAIO ETERNO. FINCHÉ SCORRE, LA CITTÀ VIVE.", 'SALI ALLA TERRAZZA AL TRAMONTO: DA LÌ SI VEDE TUTTA LA VALLE, E NEI GIORNI LIMPIDI PERFINO IL LAGO DI LUMEN.'], [12, ZS2 - 40 - CZ, Math.PI / 2], { id: 'arconte' }],
     ['ostessa', 'OSTESSA DEL CIGNO', ['AL CIGNO SI DORME COL RUMORE DELLE CASCATE. I FORESTIERI DICONO CHE È IL SONNO PIÙ BELLO DELLA LORO VITA.'], 'in:cigno', { role: 'inn', cost: 16 }],
     ['montanaro', 'LA GUIDA DEL GHIACCIAIO', ['SOPRA LA CITTÀ NON CI SONO STRADE: SOLO NEVE, ROCCIA E VENTO. MA LUNGO LA VALLE, TRA I PINI, QUALCUNO HA NASCOSTO PIÙ DI UN FORZIERE.'], 'in:cigno:ospite1'],
     ['mercante', 'IL MERCANTE DI LUMEN', ['HO PORTATO DUE MULI DI STOFFE FIN QUI. AL RITORNO LI CARICO DI MARMO: A BORGO AURORA NON HANNO MAI VISTO UNA PIETRA COSÌ BIANCA.'], 'in:cigno:ospite2'],
     ['lanciere', "L'ARMAIOLA DELLE CASCATE", ["L'ACCIAIO TEMPRATO NELL'ACQUA DEL GHIACCIAIO NON SI SPEZZA. PROVA A PIEGARLO, SE NON MI CREDI."], 'in:marmo_armi', { role: 'shop', shop: 'marmo_armi' }],
     ['monaco', 'IL CUSTODE DELLA FONTE', ["L'ACQUA DELLA FONTE GUARISCE. IO CI AGGIUNGO SOLO LE ERBE GIUSTE E UN PO' DI PAZIENZA."], 'in:marmo_erbe', { role: 'shop', shop: 'marmo_erbe' }],
     ['dama2', "L'ORAFA", ["SOTTO IL GHIACCIO SI TROVANO PIETRE CHE NON HANNO NOME. IO LE LEGO NELL'ARGENTO E GLIENE DO UNO."], 'in:marmo_gemme', { role: 'shop', shop: 'marmo_gemme' }],
-    ['guardia', 'LA SENTINELLA', ["DALLA GRANDE TERRAZZA SI VEDE CHI ARRIVA UN'ORA PRIMA CHE BUSSI. NON CHE BUSSI MAI NESSUNO.", "LE DUE RAMPE AI LATI DEL LAGO SONO L'UNICA VIA PER SALIRE. CHI HA COSTRUITO LA CITTÀ SAPEVA IL FATTO SUO."], [70, 252, -Math.PI / 2]],
+    ['guardia', 'LA SENTINELLA', ["DALLA GRANDE TERRAZZA SI VEDE CHI ARRIVA UN'ORA PRIMA CHE BUSSI. NON CHE BUSSI MAI NESSUNO.", "LE DUE RAMPE AI LATI DEL LAGO SONO L'UNICA VIA PER SALIRE. CHI HA COSTRUITO LA CITTÀ SAPEVA IL FATTO SUO."], [70, ZF - 12 - CZ, -Math.PI / 2]],
     ['dama', 'LA SCULTRICE', ["OGNI COLONNA DELLA CITTÀ È STATA TAGLIATA DALLA MONTAGNA QUI DIETRO. LA MONTAGNA NON SE N'È NEMMENO ACCORTA."], 'p', { walk: 1 }],
-    ['bimbo', 'LA PICCOLA NIVE', ['HO CONTATO LE CASCATE: SONO NOVE! LA PIÙ GRANDE È QUELLA SOTTO IL BELVEDERE: DA VICINO BAGNA TUTTI.'], 'p', { walk: 1 }],
+    ['bimbo', 'LA PICCOLA NIVE', ['HO CONTATO LE CASCATE: SONO UNDICI, CON LE DUE DEI NINFEI IN FONDO ALLA VIA! LA PIÙ GRANDE È QUELLA SOTTO IL BELVEDERE: DA VICINO BAGNA TUTTI.'], 'p', { walk: 1 }],
     ['borghese', "IL MAESTRO D'ACQUE", ["L'ACQUA SCENDE DALLE SORGENTI DELL'ACROPOLI, PASSA SOTTO LA CITTÀ E CADE DALLA TERRAZZA NEL LAGO. NON SE NE PERDE UNA GOCCIA."], 'd'],
     ['donna', 'LA LAVANDAIA', ["D'INVERNO IL LAGO GELA E I BAMBINI CI SCIVOLANO SOPRA. LE CASCATE NO: QUELLE NON SI FERMANO MAI."], 'd', { walk: 1 }],
-    ['monaco', 'IL PELLEGRINO', ['SONO SALITO DAL BORGO A PIEDI PER VEDERE IL TEMPIO DELLE ACQUE. HO LE VESCICHE, MA NE VALEVA LA PENA.'], [-22, -172, Math.PI / 2]],
-    ['saggio', 'IL VECCHIO DELLA TERRAZZA', ['DA GIOVANE HO VISTO IL DRAGO VOLARE SOPRA IL PICCO, LAGGIÙ IN FONDO. DA QUASSÙ SEMBRAVA UNA RONDINE.'], [-40, 250, -Math.PI / 2]],
+    ['monaco', 'IL PELLEGRINO', ['SONO SALITO DAL BORGO A PIEDI PER VEDERE IL TEMPIO DELLE ACQUE. HO LE VESCICHE, MA NE VALEVA LA PENA.'], [-24, ZS2 - 18 - CZ, Math.PI / 2]],
+    ['saggio', 'IL VECCHIO DELLA TERRAZZA', ['DA GIOVANE HO VISTO IL DRAGO VOLARE SOPRA IL PICCO, LAGGIÙ IN FONDO. DA QUASSÙ SEMBRAVA UNA RONDINE.'], [-40, ZF - 10 - CZ, -Math.PI / 2]],
+    ['dama2', 'LA GIARDINIERA', ['I CIPRESSI DELLA TERRAZZA VENGONO DALLE COLLINE DI SOLIS. QUASSÙ CRESCONO PIANO, MA NON LI PIEGA NEMMENO LA TORMENTA.'], [-112, TZ + 8 - CZ, 0]],
+    ['borghese', 'IL CUSTODE DELLE TERME', ["L'ACQUA DELLE TERME SGORGA CALDA DA SOTTO IL GHIACCIAIO. NESSUNO SA PERCHÉ, E NESSUNO SI LAMENTA."], [118, -18, Math.PI / 2]],
+    ['guardia', "LA GUARDIA DELL'ARCONTE", ["IL PALAZZO DELL'ARCONTE È APERTO A TUTTI NEI GIORNI DI FESTA. OGGI NO: OGGI SI LAVORA."], [-116, -18, Math.PI / 2]],
   ] });
-
-W.URBAN.push([XC - HW2 - 12, ZB - 12, XC + HW2 + 12, ZR + 12]);   // lago, terrazza e acropoli sono città: niente stambecchi tra le colonne
 
 // ---------- tane, tesori ----------
 W.CAMPS.push([2660, 40, 'wolf', 3, 90], [2560, -160, 'icewolf', 3, 90], [2470, -455, 'bat', 3, 80], [2655, 250, 'icewolf', 2, 80]);
 W.NOOKS.push([2668, -52, 'rocce'], [2470, -380, 'rocce']);
-W.CHESTS.push(['n01', 2668, -52, 'monete:220', 1], ['n02', XC, ZB + 6, 'cuore', 2], ['n03', 2470, -380, 'elisir', 1]);
+W.CHESTS.push(['n01', 2668, -52, 'monete:220', 1], ['n02', XC, ZB + 7, 'cuore', 2], ['n03', 2470, -380, 'elisir', 1]);
 // a Borgo Aurora un mercante racconta della città di marmo: chi giocava già sa dove andare
 C.folk('mercante', 'IL MERCANTE DI MARMO', 1972, 2694, -0.9, ['VENGO DA MARMOREA, LA CITTÀ DELLE CASCATE. NON LA CONOSCI? È LASSÙ, TRA I GIGANTI DI NEVE CHE VEDI A NORD.', 'SI SALE DAL SENTIERO DEL PICCO DEL DRAGO: A METÀ STRADA UN CARTELLO INDICA IL VALICO DEI GIGANTI. DA LÌ È TUTTA VALLE, FINO AL LAGO.', 'PORTATI UN MANTELLO. E OCCHI BUONI: UNA CITTÀ COSÌ NON L\'HAI MAI VISTA.'], { id: 'mercante_marmo' });
 
@@ -11285,6 +11397,9 @@ function startGame(fresh) {
   // ...e che a nord sono nati i grandi monti
   if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
   save.flags.nordTip = 1;
+  // ...e che i comandi sono cambiati
+  if (!fresh && !save.flags.levaTip) toasts.push({ t: 'NOVITÀ: LEVA A 8 DIREZIONI (PER I COMANDI DI PRIMA: START, OPZIONI)', c: '#7af0ff', life: 14 });
+  save.flags.levaTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -11619,7 +11734,21 @@ const CAM_D = 25, CAM_H = 11, LOOK_F = 9, LOOK_H = 6.5, FOVY = 0.95;
 const orb = { a: 0, p: 0, id: null, x: 0, y: 0, moved: 0, sx: 0, sy: 0, ax: '', t0: 0, tap: -9, tx: 0, ty: 0, hold: 0, back: false, pBack: false };
 let scrW = 800, scrH = 400;
 function camBehind() { orb.a = 0; orb.back = false; orb.hold = 0; cam.yaw = hero.yaw; placeCam(true); }
+// i comandi: a 8 direzioni (la leva porta l'eroe dove punta, la visuale lo segue piano) oppure quelli classici (sinistra e destra lo fanno ruotare)
+const ctrl8 = () => !save || save.opt.ctrl !== 'c';
+const CAM_SEGUE = 1.5;   // quanto in fretta la visuale gira dietro l'eroe che va di lato (radianti al secondo)
 function camUpdate(dt) {
+  if (ctrl8()) {
+    orb.a = 0;
+    if (orb.id === null) {
+      // due tocchi: la visuale torna alle spalle dell'eroe
+      if (orb.back) { const d = angDiff(hero.yaw, cam.yaw); cam.yaw += d * Math.min(1, 9 * dt); if (Math.abs(d) < 0.02) orb.back = false; }
+      // l'eroe va di lato o in diagonale: la visuale gli gira dietro piano (più è di lato, più gira); se viene verso lo schermo resta dov'è
+      else if (hero.moving && !hero.dash) cam.yaw += Math.sin(hero.lev || 0) * CAM_SEGUE * dt;
+      if (orb.pBack) { orb.p *= Math.exp(-dt * 10); if (Math.abs(orb.p) < 0.012) { orb.p = 0; orb.pBack = false; } }
+    }
+    placeCam(false); return;
+  }
   if (orb.id === null) {
     if (orb.a !== 0) {
       // l'eroe cammina o gira: dopo un attimo la visuale torna dietro di lui
@@ -11646,14 +11775,14 @@ function camPointer(type, x, y, id) {
     if (orb.moved < scrH * 0.025) return;                    // un tocco non è un trascinamento
     // il gesto è di lato oppure in su e giù: così girando la visuale non se ne cambia per sbaglio l'altezza (in diagonale vale tutto)
     if (!orb.ax) { const ax = Math.abs(orb.sx), ay = Math.abs(orb.sy); orb.ax = ax > ay * 1.25 ? 'h' : ay > ax * 1.25 ? 'v' : 'hv'; return; }
-    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
+    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; if (!ctrl8()) orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
     if (orb.ax !== 'h') { orb.p = Math.max(-1, Math.min(1, orb.p + dy / Math.max(1, scrH) * 2.2)); orb.pBack = false; }
     return;
   }
   orb.id = null;
   if (save && !mapOpen) save.opt.cam = Math.round(orb.p * 100) / 100;      // l'altezza preferita si ricorda
   if (type === 'up' && !mapOpen && orb.moved < scrH * 0.025 && time - orb.t0 < 0.3) {
-    if (time - orb.tap < 0.42 && Math.hypot(x - orb.tx, y - orb.ty) < scrH * 0.2) { if (orb.a !== 0) orb.back = true; orb.pBack = true; orb.tap = -9; if (save) save.opt.cam = 0; tone(880, 0.03, 'square', 0.02); }
+    if (time - orb.tap < 0.42 && Math.hypot(x - orb.tx, y - orb.ty) < scrH * 0.2) { if (orb.a !== 0 || ctrl8()) orb.back = true; orb.pBack = true; orb.tap = -9; if (save) save.opt.cam = 0; tone(880, 0.03, 'square', 0.02); }
     else { orb.tap = time; orb.tx = x; orb.ty = y; }
   }
 }
@@ -11722,18 +11851,26 @@ function heroUpdate(dt) {
     return;
   }
   const busy = dialog || shop || loot || menu || mapOpen || fade;
-  let f = 0, turn = 0;
-  if (!busy) { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+  let f = 0, turn = 0, ma = null;
+  if (!busy) {
+    if (ctrl8()) {
+      // comandi a 8 direzioni: l'eroe va dove punta la leva, rispetto alla visuale (su = avanti, giù = verso di te), e si volta da solo
+      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0);
+      if (ix || iy) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
+    } else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+  }
   heroTick(dt);                                    // energia, colpo caricato, guardia
-  if (h.dash) { f = 0; turn = 0; }
-  h.yaw += turn * 2.45 * dt;
+  if (h.dash) { f = 0; turn = 0; ma = null; }
+  if (ma === null) h.lev = 0;
+  if (ma !== null) h.yaw += angDiff(ma, h.yaw) * Math.min(1, 16 * dt); else h.yaw += turn * 2.45 * dt;
+  const mdir = ma !== null ? ma : h.yaw;           // dove si va: con la leva, subito nella direzione premuta
   const cell = D ? dCellAt(h.x, h.z) : -1;
   h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.WL - 0.35;
   const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
   let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
-  const dx = Math.cos(h.yaw) * f * sp * dt, dz = Math.sin(h.yaw) * f * sp * dt;
+  const dx = Math.cos(mdir) * f * sp * dt, dz = Math.sin(mdir) * f * sp * dt;
   if (h.dash) dashStep(dt);
   else if (D && cell === DT.ICE) {
     // sul ghiaccio si scivola
@@ -13336,7 +13473,7 @@ function drawHUD() {
   }
   drawChip();
   if (help > 0) {
-    const L = ['CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
     panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
@@ -13491,7 +13628,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno', 'vib', 'salva', 'esci'];
+  return ['vol', 'mus', 'giorno', 'vib', 'comandi', 'salva', 'esci'];
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -13530,7 +13667,7 @@ function drawMenu() {
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
@@ -13664,6 +13801,7 @@ function menuKey(name) {
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
+    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
     else if (r === 'esci') { writeSave(); menu = null; leave(); }
   }
@@ -13708,7 +13846,9 @@ if (window.__SG_DEBUG) window.__sg = {
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
 return {
-  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, aspect: 0,
+  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true,
+  // la leva serve a scegliere una voce (menu, bottega, dialogo, mappa, titolo) e non a camminare?
+  padMenu: () => st !== 'play' || !!(dialog || shop || loot || menu || mapOpen || clsUI), aspect: 0,
   keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['C', 'abilità'], ['START', 'menu']],
   icon(c, x, y, s) {
     drawIcon(c, ['cccccccccccccccc', 'cccccccwwccccccc', 'ccwwccccccccsccc', 'ccccccccccccsccc', 'ccccccrrcccssscc', 'cccccrrrrccsscwc', 'ccccrrrrrrccsccc', 'cccrryrryrrccscc', 'ccrrrrrrrrrrcgcc', 'ggggmmmmmmgggggg', 'gggmmdddmmgggggg', 'ggggmmdmmgggtggg', 'gtggggggggggtttg', 'tttggggggggggtgg', 'gtgggggbbgggggtg', 'ggggggbbbbgggggg'],
@@ -13779,6 +13919,7 @@ function layoutFor(g) {
   con.classList.remove('fit'); lg.className = ''; box.style.height = ''; bz.style.width = '';
   document.body.classList.toggle('full', !!(g && g.full));
   document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
+  document.body.classList.toggle('otto', !!(g && g.pad8));    // la leva a 8 direzioni al posto della croce
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -13829,15 +13970,20 @@ const setT = (n, v) => { tB[n] = v; syncBtn(n); };
 const dpadEl = $('dpad'), dptr = new Map();
 function dpadDir(e) {
   const r = dpadEl.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-  if (Math.hypot(dx, dy) < r.width * 0.11) return { x: 0, y: 0 };
+  const otto = document.body.classList.contains('otto');
+  if (Math.hypot(dx, dy) < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0 };
   let deg = Math.atan2(dy, dx) * 180 / Math.PI; if (deg < 0) deg += 360;
   const axis = Math.round(deg / 90) * 90, dev = Math.abs(deg - axis);
-  if (dev > 30) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
+  // la leva: otto spicchi uguali (ma davanti a un menu o a un elenco le diagonali si stringono, per non sbagliare voce); la croce: le diagonali sono più strette
+  const elenco = otto && mode === 'game' && cur && cur.padMenu && cur.padMenu();
+  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
   const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)) };
 }
 function syncDpad() {
   let d = { x: 0, y: 0 }; for (const v of dptr.values()) d = v;
   setT('left', d.x < 0); setT('right', d.x > 0); setT('up', d.y < 0); setT('down', d.y > 0);
+  // il pomello della leva segue il pollice
+  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
 }
 dpadEl.addEventListener('pointerdown', e => { e.preventDefault(); audioUnlock(); try { dpadEl.setPointerCapture(e.pointerId); } catch (_) {} dptr.set(e.pointerId, dpadDir(e)); syncDpad(); });
 dpadEl.addEventListener('pointermove', e => { if (dptr.has(e.pointerId)) { dptr.set(e.pointerId, dpadDir(e)); syncDpad(); } });

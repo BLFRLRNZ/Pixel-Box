@@ -15,6 +15,7 @@ function layoutFor(g) {
   con.classList.remove('fit'); lg.className = ''; box.style.height = ''; bz.style.width = '';
   document.body.classList.toggle('full', !!(g && g.full));
   document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
+  document.body.classList.toggle('otto', !!(g && g.pad8));    // la leva a 8 direzioni al posto della croce
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -65,15 +66,20 @@ const setT = (n, v) => { tB[n] = v; syncBtn(n); };
 const dpadEl = $('dpad'), dptr = new Map();
 function dpadDir(e) {
   const r = dpadEl.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-  if (Math.hypot(dx, dy) < r.width * 0.11) return { x: 0, y: 0 };
+  const otto = document.body.classList.contains('otto');
+  if (Math.hypot(dx, dy) < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0 };
   let deg = Math.atan2(dy, dx) * 180 / Math.PI; if (deg < 0) deg += 360;
   const axis = Math.round(deg / 90) * 90, dev = Math.abs(deg - axis);
-  if (dev > 30) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
+  // la leva: otto spicchi uguali (ma davanti a un menu o a un elenco le diagonali si stringono, per non sbagliare voce); la croce: le diagonali sono più strette
+  const elenco = otto && mode === 'game' && cur && cur.padMenu && cur.padMenu();
+  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
   const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)) };
 }
 function syncDpad() {
   let d = { x: 0, y: 0 }; for (const v of dptr.values()) d = v;
   setT('left', d.x < 0); setT('right', d.x > 0); setT('up', d.y < 0); setT('down', d.y > 0);
+  // il pomello della leva segue il pollice
+  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
 }
 dpadEl.addEventListener('pointerdown', e => { e.preventDefault(); audioUnlock(); try { dpadEl.setPointerCapture(e.pointerId); } catch (_) {} dptr.set(e.pointerId, dpadDir(e)); syncDpad(); });
 dpadEl.addEventListener('pointermove', e => { if (dptr.has(e.pointerId)) { dptr.set(e.pointerId, dpadDir(e)); syncDpad(); } });

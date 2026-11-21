@@ -492,6 +492,9 @@ function startGame(fresh) {
   // ...e che a nord sono nati i grandi monti
   if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
   save.flags.nordTip = 1;
+  // ...e che i comandi sono cambiati
+  if (!fresh && !save.flags.levaTip) toasts.push({ t: 'NOVITÀ: LEVA A 8 DIREZIONI (PER I COMANDI DI PRIMA: START, OPZIONI)', c: '#7af0ff', life: 14 });
+  save.flags.levaTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -826,7 +829,21 @@ const CAM_D = 25, CAM_H = 11, LOOK_F = 9, LOOK_H = 6.5, FOVY = 0.95;
 const orb = { a: 0, p: 0, id: null, x: 0, y: 0, moved: 0, sx: 0, sy: 0, ax: '', t0: 0, tap: -9, tx: 0, ty: 0, hold: 0, back: false, pBack: false };
 let scrW = 800, scrH = 400;
 function camBehind() { orb.a = 0; orb.back = false; orb.hold = 0; cam.yaw = hero.yaw; placeCam(true); }
+// i comandi: a 8 direzioni (la leva porta l'eroe dove punta, la visuale lo segue piano) oppure quelli classici (sinistra e destra lo fanno ruotare)
+const ctrl8 = () => !save || save.opt.ctrl !== 'c';
+const CAM_SEGUE = 1.5;   // quanto in fretta la visuale gira dietro l'eroe che va di lato (radianti al secondo)
 function camUpdate(dt) {
+  if (ctrl8()) {
+    orb.a = 0;
+    if (orb.id === null) {
+      // due tocchi: la visuale torna alle spalle dell'eroe
+      if (orb.back) { const d = angDiff(hero.yaw, cam.yaw); cam.yaw += d * Math.min(1, 9 * dt); if (Math.abs(d) < 0.02) orb.back = false; }
+      // l'eroe va di lato o in diagonale: la visuale gli gira dietro piano (più è di lato, più gira); se viene verso lo schermo resta dov'è
+      else if (hero.moving && !hero.dash) cam.yaw += Math.sin(hero.lev || 0) * CAM_SEGUE * dt;
+      if (orb.pBack) { orb.p *= Math.exp(-dt * 10); if (Math.abs(orb.p) < 0.012) { orb.p = 0; orb.pBack = false; } }
+    }
+    placeCam(false); return;
+  }
   if (orb.id === null) {
     if (orb.a !== 0) {
       // l'eroe cammina o gira: dopo un attimo la visuale torna dietro di lui
@@ -853,14 +870,14 @@ function camPointer(type, x, y, id) {
     if (orb.moved < scrH * 0.025) return;                    // un tocco non è un trascinamento
     // il gesto è di lato oppure in su e giù: così girando la visuale non se ne cambia per sbaglio l'altezza (in diagonale vale tutto)
     if (!orb.ax) { const ax = Math.abs(orb.sx), ay = Math.abs(orb.sy); orb.ax = ax > ay * 1.25 ? 'h' : ay > ax * 1.25 ? 'v' : 'hv'; return; }
-    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
+    if (orb.ax !== 'v') { const da = dx / Math.max(1, scrW) * 3.8; if (!ctrl8()) orb.a = angDiff(orb.a + da, 0); cam.yaw += da; orb.back = false; orb.hold = 0; }
     if (orb.ax !== 'h') { orb.p = Math.max(-1, Math.min(1, orb.p + dy / Math.max(1, scrH) * 2.2)); orb.pBack = false; }
     return;
   }
   orb.id = null;
   if (save && !mapOpen) save.opt.cam = Math.round(orb.p * 100) / 100;      // l'altezza preferita si ricorda
   if (type === 'up' && !mapOpen && orb.moved < scrH * 0.025 && time - orb.t0 < 0.3) {
-    if (time - orb.tap < 0.42 && Math.hypot(x - orb.tx, y - orb.ty) < scrH * 0.2) { if (orb.a !== 0) orb.back = true; orb.pBack = true; orb.tap = -9; if (save) save.opt.cam = 0; tone(880, 0.03, 'square', 0.02); }
+    if (time - orb.tap < 0.42 && Math.hypot(x - orb.tx, y - orb.ty) < scrH * 0.2) { if (orb.a !== 0 || ctrl8()) orb.back = true; orb.pBack = true; orb.tap = -9; if (save) save.opt.cam = 0; tone(880, 0.03, 'square', 0.02); }
     else { orb.tap = time; orb.tx = x; orb.ty = y; }
   }
 }
@@ -929,18 +946,26 @@ function heroUpdate(dt) {
     return;
   }
   const busy = dialog || shop || loot || menu || mapOpen || fade;
-  let f = 0, turn = 0;
-  if (!busy) { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+  let f = 0, turn = 0, ma = null;
+  if (!busy) {
+    if (ctrl8()) {
+      // comandi a 8 direzioni: l'eroe va dove punta la leva, rispetto alla visuale (su = avanti, giù = verso di te), e si volta da solo
+      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0);
+      if (ix || iy) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
+    } else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+  }
   heroTick(dt);                                    // energia, colpo caricato, guardia
-  if (h.dash) { f = 0; turn = 0; }
-  h.yaw += turn * 2.45 * dt;
+  if (h.dash) { f = 0; turn = 0; ma = null; }
+  if (ma === null) h.lev = 0;
+  if (ma !== null) h.yaw += angDiff(ma, h.yaw) * Math.min(1, 16 * dt); else h.yaw += turn * 2.45 * dt;
+  const mdir = ma !== null ? ma : h.yaw;           // dove si va: con la leva, subito nella direzione premuta
   const cell = D ? dCellAt(h.x, h.z) : -1;
   h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.WL - 0.35;
   const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
   let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
-  const dx = Math.cos(h.yaw) * f * sp * dt, dz = Math.sin(h.yaw) * f * sp * dt;
+  const dx = Math.cos(mdir) * f * sp * dt, dz = Math.sin(mdir) * f * sp * dt;
   if (h.dash) dashStep(dt);
   else if (D && cell === DT.ICE) {
     // sul ghiaccio si scivola
@@ -2543,7 +2568,7 @@ function drawHUD() {
   }
   drawChip();
   if (help > 0) {
-    const L = ['CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(CC().help, ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
     panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
@@ -2698,7 +2723,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno', 'vib', 'salva', 'esci'];
+  return ['vol', 'mus', 'giorno', 'vib', 'comandi', 'salva', 'esci'];
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -2737,7 +2762,7 @@ function drawMenu() {
     T('A: SEGUI QUESTA MISSIONE', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     rows.forEach((k, i) => { const yy = top + 4 + i * 14, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 13); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
     T('TEMPO DI GIOCO ' + hm + ':' + String(mm).padStart(2, '0'), x + 8, y + h - 24, '#8a96aa', 1, 'left', null);
@@ -2871,6 +2896,7 @@ function menuKey(name) {
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
+    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
     else if (r === 'esci') { writeSave(); menu = null; leave(); }
   }
@@ -2915,7 +2941,9 @@ if (window.__SG_DEBUG) window.__sg = {
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
 return {
-  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, aspect: 0,
+  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true,
+  // la leva serve a scegliere una voce (menu, bottega, dialogo, mappa, titolo) e non a camminare?
+  padMenu: () => st !== 'play' || !!(dialog || shop || loot || menu || mapOpen || clsUI), aspect: 0,
   keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['C', 'abilità'], ['START', 'menu']],
   icon(c, x, y, s) {
     drawIcon(c, ['cccccccccccccccc', 'cccccccwwccccccc', 'ccwwccccccccsccc', 'ccccccccccccsccc', 'ccccccrrcccssscc', 'cccccrrrrccsscwc', 'ccccrrrrrrccsccc', 'cccrryrryrrccscc', 'ccrrrrrrrrrrcgcc', 'ggggmmmmmmgggggg', 'gggmmdddmmgggggg', 'ggggmmdmmgggtggg', 'gtggggggggggtttg', 'tttggggggggggtgg', 'gtgggggbbgggggtg', 'ggggggbbbbgggggg'],

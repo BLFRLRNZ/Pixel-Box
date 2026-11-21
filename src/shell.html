@@ -52,6 +52,16 @@
   #dpin .v{top:0;bottom:0;left:33.5%;width:33%}
   #dpin .c{position:absolute;left:41%;top:41%;width:18%;height:18%;border-radius:50%;background:radial-gradient(circle at 50% 35%,#16171b,#33363d)}
   #dpin .ar{position:absolute;color:#5d616b;font-size:10px;font-family:system-ui,sans-serif;transform:translate(-50%,-50%)}
+  /* la leva a 8 direzioni (Pixel Saga): un disco con otto tacche e un pomello che segue il pollice */
+  #dpo,#dpk{display:none}
+  body.otto #dpin .h,body.otto #dpin .v,body.otto #dpin .c,body.otto #dpin .ar{display:none}
+  body.otto #dpin{transform:none!important}
+  body.otto #dpo{display:block;position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 42%,#3b3e46,#1c1e23 72%);box-shadow:0 5px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 2px rgba(255,255,255,.06)}
+  body.otto #dpo i{position:absolute;left:50%;top:50%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #8a909c;margin:-4px 0 0 -5px}
+  body.otto #dpo i.d{border-left-width:4px;border-right-width:4px;border-bottom-width:6px;border-bottom-color:#6e7480;margin:-3px 0 0 -4px}
+  body.otto #dpk{display:block;position:absolute;left:50%;top:50%;width:40%;height:40%;border-radius:50%;transform:translate(-50%,-50%);transition:transform .05s;
+    background:radial-gradient(circle at 40% 32%,#7a7f8c,#41444c 60%,#2a2c32);box-shadow:0 4px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.3)}
+  body.full.otto #cl{opacity:.6}
   #cr{position:absolute;right:4%;top:6%;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75)}
   .bt{position:absolute;width:var(--bs);height:var(--bs);border-radius:50%;background:radial-gradient(circle at 35% 30%,#cf5a8d,#9c2459 58%,#7a1743);
     box-shadow:0 5px 0 #4f0d2b,inset 0 2px 0 rgba(255,255,255,.25);touch-action:none;cursor:pointer}
@@ -118,7 +128,7 @@
     <div id="brand">PIXEL<b>BOX</b></div>
     <div id="legend"></div>
     <div id="controls"><div id="ctrlin">
-      <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div>
+      <div id="cl"><div id="dpad"><div id="dpin"><div class="h"></div><div class="v"></div><div class="c"></div><div id="dpo"><i style="transform:rotate(0deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(45deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(90deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(135deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(180deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(225deg) translateY(calc(var(--dp)*-.41))"></i><i style="transform:rotate(270deg) translateY(calc(var(--dp)*-.41))"></i><i class="d" style="transform:rotate(315deg) translateY(calc(var(--dp)*-.41))"></i></div><div id="dpk"></div>
         <span class="ar" style="left:50%;top:16%">▲</span><span class="ar" style="left:50%;top:84%">▼</span>
         <span class="ar" style="left:16%;top:50%">◀</span><span class="ar" style="left:84%;top:50%">▶</span></div></div></div>
       <div id="cr"><div class="bt" id="bC"><span>C</span></div><div class="bt" id="bB"><span>B</span></div><div class="bt" id="bA"><span>A</span></div></div>
