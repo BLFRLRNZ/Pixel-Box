@@ -318,6 +318,7 @@ function buildStatics() {
   set('heather', [A.tuft(['#7a3a7a', '#b05aa8'], 12, 9), A.tuft(['#6a4a8a', '#9a6ac0'], 10, 8)], 0.2, 0, true);
   setZ('tomb', [A.rock(R, Z(8), Z(13), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae']), A.rock(R, Z(10), Z(10), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae'])], 0.4, 1.5);
   SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35]; S.braciereV.glow = [4.6, 7, 0.36, 0.72, 0.44]; S.runa.glow = [2.3, 3.5, 0.3, 0.6, 0.4];
+  S.braciereB.glow = [4.6, 6, 0.24, 0.48, 0.64]; S.braciereO.glow = [4.6, 6.5, 0.66, 0.5, 0.24]; S.braciereI.glow = [4.6, 6, 0.28, 0.48, 0.64]; S.braciereR.glow = [4.6, 6.5, 0.7, 0.32, 0.14];
   // il vento muove alberi (poco) ed erba (di più); cristalli e lava brillano
   for (const k of ['oak', 'oakbig', 'birch', 'pine', 'snowpine', 'palm', 'willow', 'deadtree', 'burnt', 'oakred', 'oakgold', 'birchgold', 'acacia', 'jungle', 'cherry', 'cherrywhite']) S[k].sway = 1;
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
@@ -769,7 +770,12 @@ const SIGNS = {
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
-const PROPTXT = { custode: 'UN CUSTODE DEL BOSCO SCOLPITO NELLA PIETRA: IL CAPPUCCIO, LE CORNA DI CERVO, IL BASTONE. IL MUSCHIO GLI SALE FINO ALLE GINOCCHIA.', cervopietra: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «ENTRA IN PACE, ESCI PIÙ FORTE».', cervopietra2: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «CHI HA RADICI NON TEME IL VENTO».', runa: 'UNA PIETRA CON UNA RUNA CHE BRILLA DI VERDE. È TIEPIDA AL TATTO.', ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
+const PROPTXT = { cignopietra: 'UN CIGNO DI MARMO, IL COLLO PIEGATO VERSO IL LAGO. SUL BASAMENTO: «CHI È LIMPIDO, PASSA».', cignopietra2: 'UN CIGNO DI MARMO. QUALCUNO GLI HA LASCIATO UNA NINFEA TRA LE ALI.',
+  leonepietra: 'UN LEONE DI ARENARIA SIEDE AL SOLE DA MILLE ANNI. SUL BASAMENTO: «LA LUCE NON TEME NESSUNO».', leonepietra2: 'UN LEONE DI ARENARIA. LA CRINIERA È CONSUMATA DAL VENTO, GLI OCCHI NO.',
+  lupopietra: 'UN LUPO DI PIETRA, IL MUSO AL VENTO DEL NORD. SUL BASAMENTO: «IL FREDDO TEMPRA».', lupopietra2: 'UN LUPO DI PIETRA COPERTO DI BRINA. SEMBRA IN ASCOLTO.',
+  custodeS: 'UN RE DEL SOLE SCOLPITO NELLA PIETRA DORATA: LA CORONA, LA BARBA, IL GLOBO ACCESO IN CIMA AL BASTONE.', custodeG: 'UN CUSTODE DEI GHIACCI: IL CAPPUCCIO CALATO, LA BARBA BIANCA DI BRINA, UN BASTONE CHE NON SI SCIOGLIE MAI.',
+  custodeF: 'UN GUERRIERO DI BASALTO, ELMO E CORNA. NELLE CREPE DELLA PIETRA, IN FONDO, QUALCOSA BRILLA ANCORA.',
+  custode: 'UN CUSTODE DEL BOSCO SCOLPITO NELLA PIETRA: IL CAPPUCCIO, LE CORNA DI CERVO, IL BASTONE. IL MUSCHIO GLI SALE FINO ALLE GINOCCHIA.', cervopietra: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «ENTRA IN PACE, ESCI PIÙ FORTE».', cervopietra2: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «CHI HA RADICI NON TEME IL VENTO».', runa: 'UNA PIETRA CON UNA RUNA CHE BRILLA DI VERDE. È TIEPIDA AL TATTO.', ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO. NELLA CAVITÀ BATTE UNA LUCE, PIANO, COME UN CUORE.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 // quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
@@ -1532,7 +1538,7 @@ function findTarget() {
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);

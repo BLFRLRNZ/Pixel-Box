@@ -14,7 +14,9 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179,
   // l'Albero Madre e il Santuario del Bosco
   BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
-  BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199 };
+  BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199,
+  // gli altri santuari: otto riquadri a tema (muro, colonna, fregio, portale, stemma, rune, pendagli, stendardo) a partire da questi numeri
+  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -116,6 +118,52 @@ function tilesOn(c, R) {
     // lo stemma del santuario: scudo verde con l'albero d'oro
     at(TL.CREST_G, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : '#1f5a30', x, y, 1, 1); } P('#e8c24a', 15, 13, 2, 11); disc('#e8c24a', 16, 11, 5); disc('#fff4b0', 14.5, 9.5, 1.5); disc('#c8a02a', 18, 12.5, 1.6); P('#e8c24a', 12, 23, 8, 1); });
     at(TL.MOSS, () => { for (let x = 0; x < T; x++) { const n = 3 + q(9) + Math.round(6 * Math.abs(Math.sin(x * 0.5))); for (let y = 0; y < n; y++) P(Q() < 0.5 ? '#3f7434' : Q() < 0.6 ? '#4f8a3c' : '#6aa84c', x, y, 1, 1); } });
+  }
+  // ---------- gli ingressi degli altri santuari: per ogni tema otto riquadri (muro, colonna, fregio, portale, stemma, rune, pendagli, stendardo) ----------
+  { const Q = rng(9092), q = n => Q() * n | 0;
+    // emblemi in un quadrato di 12: la goccia del lago, il sole, il fiocco di neve, la fiamma
+    const emb = (k, cx, cy, c1, c2) => {
+      if (k === 'goccia') { P(c1, cx - 1, cy - 6, 2, 3); P(c1, cx - 2, cy - 3, 4, 2); P(c1, cx - 3, cy - 1, 6, 2); disc(c1, cx, cy + 2, 3.7); P(c2, cx - 2, cy, 1, 3); }
+      else if (k === 'sole') { disc(c1, cx, cy, 3.4); disc(c2, cx, cy, 1.7); for (const [dx, dy, w, h] of [[-1, -7, 2, 2], [-1, 5, 2, 2], [-7, -1, 2, 2], [5, -1, 2, 2], [-5, -5, 1, 1], [-6, -6, 1, 1], [4, -5, 1, 1], [5, -6, 1, 1], [-5, 4, 1, 1], [-6, 5, 1, 1], [4, 4, 1, 1], [5, 5, 1, 1]]) P(c1, cx + dx, cy + dy, w, h); }
+      else if (k === 'fiocco') { P(c1, cx - 1, cy - 6, 2, 12); P(c1, cx - 6, cy - 1, 12, 2); for (let d = 1; d <= 4; d++) for (const [a, b] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) P(c1, cx - (a < 0 ? 1 : 0) + a * d - (a > 0 ? 1 : 0), cy - (b < 0 ? 1 : 0) + b * d - (b > 0 ? 1 : 0), 1, 1); for (const [dx, dy] of [[-3, -6], [2, -6], [-3, 5], [2, 5], [-6, -3], [-6, 2], [5, -3], [5, 2]]) P(c1, cx + dx, cy + dy, 1, 1); P(c2, cx - 1, cy - 1, 2, 2); }
+      else { P(c1, cx - 1, cy - 7, 1, 2); P(c1, cx - 1, cy - 5, 2, 2); P(c1, cx - 2, cy - 3, 4, 2); P(c1, cx - 3, cy - 1, 6, 4); P(c1, cx - 2, cy + 3, 4, 2); P(c2, cx - 1, cy - 1, 2, 4); P(c2, cx, cy - 3, 1, 2); }
+    };
+    const runa = G => { const ln = (x, y, w, h) => { P(G[1], x, y, w, h); P(G[0], x, y, Math.max(1, w - 1), Math.max(1, h - 1)); }; ln(6, 3, 2, 10); ln(6, 3, 7, 2); ln(11, 3, 2, 6); ln(20, 3, 2, 10); ln(16, 7, 10, 2); ln(7, 19, 8, 2); ln(7, 19, 2, 9); ln(13, 23, 2, 5); ln(20, 18, 2, 10); ln(24, 18, 2, 10); ln(20, 22, 6, 2); };
+    const tema = (i0, p) => {
+      at(i0, () => { bricks(p.wall[0], p.wall[1], 16, 8); p.spk(0); });
+      at(i0 + 1, () => { P(p.fl[0], 0, 0, T, T); for (let x = 0; x < T; x += 4) { P(p.fl[1], x, 0, 1, T); P(p.fl[2], x + 1, 0, 1, T); P(sh(p.fl[0], 0.9), x + 3, 0, 1, T); } p.spk(1); });
+      at(i0 + 2, () => { P(p.fr[0], 0, 0, T, T); P(p.fr[3], 0, 2, T, 2); P(p.fr[3], 0, T - 4, T, 2); P(p.fr[1], 0, 7, T, 18); for (let x = 0; x < T; x += 16) emb(p.emb, x + 8, 16, p.fr[2], p.fr[3]); P(sh(p.fr[0], 0.7), 0, 0, T, 1); P(sh(p.fr[0], 0.7), 0, T - 1, T, 1); });
+      at(i0 + 3, () => { for (let y = 0; y < T; y++) for (let x = 2; x < 30; x++) { const cx = x + 0.5 - 16, d = y < 13 ? Math.hypot(cx, y + 0.5 - 13) : Math.abs(cx); if (d > 14) continue; P(d > 11.4 ? (Math.floor((y < 13 ? Math.atan2(13 - y, cx) * 5 : y / 4)) % 2 ? p.door[0] : p.door[1]) : (x === 15 || x === 16) ? p.door[3] : ((x + (y >> 3)) % 5 === 0 ? p.door[3] : p.door[2]), x, y, 1, 1); }
+        emb(p.emb, 16, 12, p.door[4], '#ffffff'); P(p.door[4], 12, 21, 1, 3); P(p.door[4], 19, 21, 1, 3); P(p.door[4], 11, 27, 10, 1); });
+      at(i0 + 4, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : p.crest[0], x, y, 1, 1); } emb(p.emb, 16, 14, p.crest[1], p.crest[2]); });
+      at(i0 + 5, () => runa(p.rune));
+      at(i0 + 6, () => p.drip());
+      at(i0 + 7, () => ban(p.ban[0], p.ban[1]));
+    };
+    const punte = (cols, lmin, lmax) => { for (let x = 0; x < T; x += 4) { const n = lmin + q(lmax - lmin); for (let y = 0; y < n; y++) { const w = y < n * 0.45 ? 3 : y < n * 0.8 ? 2 : 1; P(cols[y < 2 ? 2 : (x + y) % 2], x + (3 - w >> 1), y, w, 1); } } };
+    // il Lago: marmo azzurrino con le alghe al piede, rivoli d'acqua
+    tema(TL.TEMA.lago, { emb: 'goccia', wall: ['#dfe7f0', '#a9b7c8'], fl: ['#eef2f8', '#b8c6d8', '#ffffff'], fr: ['#dfe7f0', '#1f6a9a', '#bfe9ff', '#e8c24a'], door: ['#eef2f8', '#d5deea', '#1d5c8c', '#123f63', '#bfe9ff'], crest: ['#1a5a8a', '#bfe9ff', '#ffffff'], rune: ['#aef2ff', '#4fd0f0'], ban: ['#1f6a9a', '#e8f6ff'],
+      spk: c => { for (let k = 0; k < (c ? 18 : 34); k++) P(Q() < 0.5 ? '#3f9aa8' : '#2f7f96', q(T), T - 1 - q(8), 1 + q(2), 1); for (let k = 0; k < 6; k++) { let x = q(T), y = q(T); for (let n = 0; n < 6; n++) { P('rgba(120,150,190,.5)', x, y, 1, 1); x = (x + 1) % T; if (Q() < 0.5) y = (y + 1) % T; } } },
+      drip: () => { for (let x = 1; x < T; x += 3) { const n = 8 + q(23); for (let y = 0; y < n; y++) P(y % 5 === 4 ? '#eaf8ff' : (x + y) % 2 ? '#8fd0f6' : '#58aee8', x, y, 1, 1); } } });
+    // il Sole: arenaria dorata, catenelle con i dischi d'oro
+    tema(TL.TEMA.sole, { emb: 'sole', wall: ['#dcb873', '#a8834a'], fl: ['#e6c88a', '#b89456', '#f6e2b0'], fr: ['#dcb873', '#a8321e', '#ffd95a', '#f0c030'], door: ['#ecd296', '#d6b46e', '#7a4a1c', '#5a3410', '#ffd23f'], crest: ['#b8361e', '#ffd95a', '#fff6c0'], rune: ['#fff0a0', '#ffc030'], ban: ['#b8361e', '#ffd23f'],
+      spk: c => { for (let k = 0; k < (c ? 20 : 44); k++) P(Q() < 0.5 ? '#c49d5a' : Q() < 0.5 ? '#f0d79a' : '#b88e4c', q(T), q(T), 1 + q(2), 1); },
+      drip: () => { for (const x of [4, 15, 26]) { const n = 9 + q(13); for (let y = 0; y < n; y += 2) P('#e8c24a', x, y, 1, 1); disc('#ffd23f', x + 0.5, n + 2.5, 2.6); P('#fff6c0', x - 1, n + 1, 1, 1); } } });
+    // il Ghiaccio: pietra azzurra con la neve sui conci, ghiaccioli
+    tema(TL.TEMA.ghiaccio, { emb: 'fiocco', wall: ['#9fb4cc', '#6a7f9a'], fl: ['#cfe2f4', '#8fb0d0', '#f4fbff'], fr: ['#aebfd4', '#2a4a7a', '#e6f6ff', '#d4e2f0'], door: ['#d8e6f4', '#b6cbe0', '#3d5f8f', '#2a4670', '#e6f6ff'], crest: ['#2a4a7a', '#e6f6ff', '#ffffff'], rune: ['#d8f8ff', '#7fd8ff'], ban: ['#2a4a7a', '#e6f6ff'],
+      spk: c => { if (!c) for (let y = 0; y < T; y += 8) for (let x = 0; x < T; x += 4) if (Q() < 0.55) P('#f4fbff', x, y + 1, 2 + q(3), 1); for (let k = 0; k < (c ? 14 : 22); k++) P('#e6f6ff', q(T), q(c ? 10 : T), 1, 1); },
+      drip: () => punte(['#bfe6ff', '#eaf8ff', '#ffffff'], 7, 27) });
+    // il Fuoco: basalto scuro con le crepe di brace, colature di lava
+    tema(TL.TEMA.fuoco, { emb: 'fiamma', wall: ['#4b4046', '#221a20'], fl: ['#5a4c52', '#2e2428', '#7a6a70'], fr: ['#4b4046', '#1a1014', '#ff7a2a', '#e8a020'], door: ['#6a5a60', '#54464c', '#2a1a1c', '#1a0e10', '#ff8a2a'], crest: ['#2a1216', '#ff8a2a', '#ffe08a'], rune: ['#ffc060', '#ff5a1a'], ban: ['#8a1a14', '#ffb02a'],
+      spk: c => { for (let k = 0; k < (c ? 2 : 4); k++) { let x = q(T), y = q(T); for (let n = 0; n < 7; n++) { P(n % 3 ? '#c8401a' : '#ff8a2a', x, y, 1, 1); y = (y + 1) % T; if (Q() < 0.6) x = (x + (Q() < 0.5 ? 1 : T - 1)) % T; } } for (let k = 0; k < 12; k++) P('#3a3036', q(T), q(T), 2, 1); },
+      drip: () => punte(['#ff7a1a', '#ffb02a', '#fff08a'], 6, 24) });
+    // lava che scorre, lastre di ghiaccio e di basalto, cristallo di ghiaccio
+    at(TL.LAVA, () => { P('#e8501a', 0, 0, T, T); for (let x = 0; x < T; x++) { const c = Q(); if (c < 0.3) P('#ffb02a', x, 0, 1, T); else if (c < 0.4) P('#b8300e', x, 0, 1, T); } for (let k = 0; k < 30; k++) { const x = q(T), y = q(T), n = 3 + q(8); for (let i = 0; i < n; i++) P(k % 4 ? '#fff08a' : '#7a1a0a', x, (y + i) % T, 1, 1); } });
+    at(TL.SLAB_ICE, () => { bricks('#b8c8d8', '#8a9aac', 16, 16); for (let k = 0; k < 9; k++) disc(Q() < 0.5 ? '#f4fbff' : '#dcecf8', q(T), q(T), 1.5 + Q() * 2.5); });
+    at(TL.SLAB_FIRE, () => { bricks('#4a4248', '#241e24', 16, 16); for (let k = 0; k < 10; k++) P(Q() < 0.5 ? '#c8401a' : '#ff8a2a', q(T), q(T), 1, 1); });
+    at(TL.CRYSTAL, () => { P('#b06af0', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#f0d8ff' : '#7a3ac8', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
+    at(TL.RUNE_V, () => runa(['#f0d0ff', '#c070ff']));
+    at(TL.ICE, () => { P('#bfe6ff', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#ffffff' : '#8fd0f6', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
   }
   return c;
 }
@@ -322,6 +370,33 @@ function sprites(set, A, R) {
     set('braciereV', [fit([Kc([0, 0, 0], [0, 0, 0.5], 1.05, 0.75, ST2), Cy([0, 0, 0.5], [0, 0, 2.5], 0.38, ST), Kc([0, 0, 2.5], [0, 0, 3.4], 0.42, 1.3, ST3), Cy([0, 0, 3.4], [0, 0, 3.6], 1.36, ST2), El([0, 0, 4.2], [0.95, 0.95, 1.05], '#3fe07a', 1.6), El([0, 0, 4.7], [0.6, 0.6, 0.95], '#b8ffc8', 1.8), El([0.2, 0.1, 5.4], [0.3, 0.3, 0.6], '#eafff0', 1.9)], Math.PI - 0.4)], 0.2, 1.3);
     // pietra con la runa accesa
     set('runa', [fit([Kc([0, 0, 0], [0, 0, 4.2], 1.3, 0.85, ST2), El([0, 0, 4.2], [0.85, 0.85, 0.55], ST), Bx([0.8, 1.3, -0.17, 0.17, 1.1, 3.3], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.6, 0.6, 2.6, 2.95], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.5, 0.5, 1.5, 1.85], '#5cf08a', 1.7), El([0.3, 0.6, 0.35], [0.6, 0.5, 0.35], MO), El([-0.4, -0.7, 0.3], [0.55, 0.55, 0.3], MO)], Math.PI - 0.5)], 0.2, 1.4);
+  }
+  // ---------- le statue e i bracieri degli altri santuari ----------
+  { const FM = SG.fauna && SG.fauna.model;
+    // pietre: [corpo, ombra, luce, fascia sul basamento]
+    const PIETRA = { lago: ['#e2e8f0', '#c3cddb', '#f8fafc', '#3f9ab8'], sole: ['#d9b877', '#b8955a', '#ecd49a', '#e8c24a'], ghiaccio: ['#b4c8dc', '#8fa8c2', '#e4f0fa', '#f4fbff'], fuoco: ['#5e5258', '#453b41', '#7a6c72', '#c8501a'] };
+    // una statua di animale sul basamento, in due copie che si guardano (la seconda finisce con «2»)
+    const statua = (key, tema, parts, hl, hw, top = 27, low) => { const [c, c2, c3, f] = PIETRA[tema];
+      const ped = low ? [{ t: 'b', b: [-hl, hl, -hw, hw, -2.6, 0], c: c2 }, { t: 'b', b: [-hl - 0.8, hl + 0.8, -hw - 0.8, hw + 0.8, -1.2, 0], c: c3 }]
+        : [{ t: 'b', b: [-hl, hl, -hw, hw, -12, 0], c: c2 }, { t: 'b', b: [-hl - 1.2, hl + 1.2, -hw - 1.2, hw + 1.2, -13.4, -11.6], c: c3 }, { t: 'b', b: [-hl - 1.2, hl + 1.2, -hw - 1.2, hw + 1.2, -1.5, 0], c: c3 }, { t: 'b', b: [-hl - 0.1, hl + 0.1, -hw - 0.1, hw + 0.1, -11.2, -9.8], c: f }];
+      for (const fl of [1, -1]) set(key + (fl > 0 ? '' : '2'), [A.figure([...ped, ...parts],
+        fl > 0 ? Math.PI * 0.72 : Math.PI * 1.28, Math.round(70 * A.SR), Math.round((top + (low ? 2.6 : 10.8)) * A.SR), { base: Math.round(top * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 5.5); };
+    if (FM) {
+      { const [c, c2, c3] = PIETRA.lago; statua('cignopietra', 'lago', FM.bird({ s: 1.75, c, c2, c3, len: 3.9, wid: 2.6, hgt: 2.3, neck: 4.4, nt: 0.72, scurve: 1, na: 1.45, head: 1.3, beak: [1.5, c2, 0.5], legC: c2, legs: 1.4, tail: 1.9, tailUp: 0.6, wing: 5 }, {}), 9, 6.2, 21); }
+      { const [c, c2, c3] = PIETRA.sole; statua('leonepietra', 'sole', FM.quad({ s: 1.5, c, c2: c, leg: c2, paw: c2, len: 6, wid: 2.9, hgt: 3, ll: 4.8, lr: 1.15, nl: 2.3, na: 0.9, nt: 2.5, head: [2.6, 2.4, 2.3], sn: [1.2, c3], ear: ['round', 1.3, c], tail: ['hang', 6, c2], mane: [c2, 2.9], chest: 1.12, eyeC: c2, nose: c2 }, { sit: 1 }), 11.5, 6.4, 25); }
+      { const [c, c2, c3] = PIETRA.ghiaccio; statua('lupopietra', 'ghiaccio', FM.quad(Object.assign({}, FM.FOX, { s: 1.75, c, c2: c3, leg: c2, sn: [1.9, c3], ear: ['point', 2.4, c2], tail: ['bushy', 6.4, c], tuft: c3, eyeC: c2, nose: c2 }), { sit: 1, look: 0.3 }), 10.5, 6, 24); }
+      { const [c, c2, c3] = PIETRA.fuoco; statua('salamandrapietra', 'fuoco', FM.lizard({ c: '#8c7c82', c2: '#d8581c', crest: '#ffa02a', s: 1.95 }, { leg: 0.35 }), 15.5, 6.8, 13, 1); }
+    }
+    // i custodi: lo stesso druido del bosco, vestito e scolpito secondo il luogo
+    const custode = (key, tema, o) => { const [c, c2, c3, f] = PIETRA[tema];
+      set(key, [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -13, 0], c: c2 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -14.5, -12.5], c: c3 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -1.6, 0], c: c3 }, { t: 'b', b: [-7.1, 7.1, -7.1, 7.1, -12.4, -10.6], c: f },
+        ...A.human(Object.assign({ skin: c3, robe: c, shirt: c, pants: c2, boots: c2, cape: c2, staff: c2, blank: 1 }, o(c, c2, c3)), { armR: 0.2, armL: 0.1 })], Math.PI, Math.round(46 * A.SR), Math.round(39.8 * A.SR), { base: Math.round(28 * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 3.6); };
+    custode('custodeS', 'sole', (c, c2, c3) => ({ crown: c3, beard: c3, orb: '#ffd95a' }));
+    custode('custodeG', 'ghiaccio', (c, c2, c3) => ({ hood: c, beard: c3, orb: '#bff0ff' }));
+    custode('custodeF', 'fuoco', (c, c2, c3) => ({ helm: { c: c2, plume: c3 }, horns: c3, orb: '#ff8a2a' }));
+    // i bracieri: stessa coppa di pietra, fiamma del colore del luogo
+    const brac = (key, tema, f) => { const [c, c2, c3] = PIETRA[tema]; set(key, [fit([Kc([0, 0, 0], [0, 0, 0.5], 1.05, 0.75, c2), Cy([0, 0, 0.5], [0, 0, 2.5], 0.38, c), Kc([0, 0, 2.5], [0, 0, 3.4], 0.42, 1.3, c3), Cy([0, 0, 3.4], [0, 0, 3.6], 1.36, c2), El([0, 0, 4.2], [0.95, 0.95, 1.05], f[0], 1.6), El([0, 0, 4.7], [0.6, 0.6, 0.95], f[1], 1.8), El([0.2, 0.1, 5.4], [0.3, 0.3, 0.6], f[2], 1.9)], Math.PI - 0.4)], 0.2, 1.3); };
+    brac('braciereB', 'lago', ['#3fb8e8', '#b8ecff', '#f0fbff']); brac('braciereO', 'sole', ['#ff9a1a', '#ffd95a', '#fff6c0']); brac('braciereI', 'ghiaccio', ['#6ac8ff', '#d0f2ff', '#ffffff']); brac('braciereR', 'fuoco', ['#ff4a1a', '#ffa02a', '#ffe88a']);
   }
   set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea', blank: 1 }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
