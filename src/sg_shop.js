@@ -122,6 +122,7 @@ const STILI = {
   sole: { floor: TL.COTTO, wall: TL.ADOBE, base: TL.ZOCC_S, rug: TL.TAPPETO, bed: TL.LETTO, lume: [1, 0.8, 0.44] },
   porto: { floor: TL.ASSI, wall: TL.INTON, base: TL.ZOCC_B, rug: TL.TAPPETO2, bed: TL.LETTO2, lume: [1, 0.8, 0.5] },
   fiore: { floor: TL.TATAMI, wall: TL.CARTA, base: TL.ZOCC_T, rug: TL.TAPPETO, bed: TL.LETTO, lume: [1, 0.76, 0.5] },
+  marmo: { floor: TL.LASTRE, wall: TL.INTON, base: TL.ZOCC_B, rug: TL.TAPPETO2, bed: TL.LETTO2, lume: [0.92, 0.9, 0.96] },
 };
 // tipi di bottega: insegna, riquadro dietro al banco, tendone
 const TIPI = {

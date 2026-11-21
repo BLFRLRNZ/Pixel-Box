@@ -163,7 +163,7 @@ const ATMO = [
   ['#bcd8ee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#c4dcee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#a8c8b4', '#4a8ac0', 240, 900, '#3a6aa0'], ['#c8d6e8', '#3a7ccc', 450, 1450, '#3a72b8'],
   ['#dce6f2', '#7aa4d4', 200, 860, '#5a8ac0'], ['#f0d8a8', '#5a9cdc', 400, 1300, '#3a8ab8'], ['#8a9a7a', '#4a5a4e', 70, 480, '#4a5e46'], ['#b8786a', '#4a2424', 190, 820, '#5a3a3a'],
   ['#ecc8a0', '#6a9ad0', 300, 1050, '#3a7ab0'], ['#ecdcb0', '#5aa0dc', 420, 1350, '#3a86c0'], ['#f0c8a0', '#5a94d8', 400, 1300, '#3a8ab8'], ['#a8d0b0', '#4a90b8', 180, 760, '#2a8a80'],
-  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'],
+  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'],
 ].map(a => [hexf(a[0]), hexf(a[1]), a[2], a[3], hexf(a[4])]);
 
 // ---------- stato ----------
@@ -173,6 +173,7 @@ let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], dro
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
 const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
+let GIANTS = []; const PKS = new Float32Array(40);
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
 let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 427, H3 = 240, K3 = 1, OX3 = 0, OY3 = 0;
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
@@ -208,12 +209,13 @@ function writeSave() {
   if (!save || !hero) return;
   if (D) { save.x = D.outX; save.z = D.outZ; save.yaw = D.outYaw; dsave(D.id).seen = b64(D.seen); } else { save.x = hero.x; save.z = hero.z; save.yaw = hero.yaw; }
   save.hp = hero.hp; save.time = Math.round(save.time);
-  save.seen = b64(seen);
+  save.seen = b64(seen.subarray(MGN * MG)); save.seenN = b64(seen.subarray(0, MGN * MG));
   try { localStorage.setItem(SAVEKEY, JSON.stringify(save)); } catch (e) {}
 }
-const MG = 128, seen = new Uint8Array(MG * MG), LAND = new Uint8Array(MG * MG);
+// la mappa esplorata: caselle di 64 unità. Le prime MGN righe sono le terre a nord (z negativa), aggiunte dopo: nei salvataggi stanno a parte (seenN)
+const MG = 128, MGN = SG.world.ZN / 64, MGZ = MG + MGN, seen = new Uint8Array(MG * MGZ), LAND = new Uint8Array(MG * MGZ);
 // i salvataggi di prima del grande viaggio ricordano solo l'isola di Lumen (64x64 caselle)
-function loadSeen(str) { seen.fill(0); if (!str) return; if (str.length > 700) return unb64(str, seen); const o = new Uint8Array(4096); unb64(str, o); for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) seen[j * MG + i] = o[j * 64 + i]; }
+function loadSeen(str, strN) { seen.fill(0); if (strN) unb64(strN, seen.subarray(0, MGN * MG)); if (!str) return; if (str.length > 700) return unb64(str, seen.subarray(MGN * MG)); const o = new Uint8Array(4096); unb64(str, o); for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) seen[(j + MGN) * MG + i] = o[j * 64 + i]; }
 function b64(u) { let s = ''; for (let i = 0; i < u.length; i += 8) { let b = 0; for (let k = 0; k < 8; k++) if (u[i + k]) b |= 1 << k; s += String.fromCharCode(b); } return btoa(s); }
 function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length; i++) { const b = s.charCodeAt(i); for (let k = 0; k < 8; k++) u[i * 8 + k] = (b >> k) & 1; } } catch (e) {} }
 
@@ -426,7 +428,7 @@ function* loader() {
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
-  SHORE = G.texture({ w: W.N, h: W.N, data: W.shore }, { linear: true, lum: true }); W.shore = null;
+  SHORE = G.texture({ w: W.N, h: W.NZ, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
   W.upload(G);
@@ -455,12 +457,14 @@ function setupWorld() {
   for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
   doors = W.lights.filter(l => l.id);
   SG.shop.registra(); botteghe = Object.values(W.SHOPS).filter(b => b.x !== undefined);      // le botteghe con la loro soglia
-  for (let j = 0; j < MG; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
+  for (let j = 0; j < MGZ; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, (j - MGN) * 64 + 32) > 0 ? 1 : 0;
+  // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
+  GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
-  else loadSeen(save.seen || '');
+  else loadSeen(save.seen || '', save.seenN || '');
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0,
     act: 'slash', atkT: 0.42, en: MAXEN(), enT: 0, enFl: 0, chg: 0, aDown: false, aHold: 0, cdC: 0, dash: null, block: false, guard: 0, hid: 0, nextShot: null, castFn: null };
@@ -479,6 +483,9 @@ function startGame(fresh) {
   // ...e che nelle città ci sono botteghe in cui entrare e bacheche con gli incarichi
   if (!fresh && !save.flags.cityTip) toasts.push({ t: 'NOVITÀ: BOTTEGHE, LOCANDE E BACHECHE NELLE CITTÀ', c: '#ffd23f', life: 11 });
   save.flags.cityTip = 1;
+  // ...e che a nord sono nati i grandi monti
+  if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
+  save.flags.nordTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -719,12 +726,13 @@ function talk(n) {
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
-  '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO: IL SENTIERO GIRA A OVEST DEL LAGO',
+  '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO E VALICO PER MARMOREA: A OVEST DEL LAGO',
+  '2326,672': '↑ VETTA DEL DRAGO\n→ VALICO DEI GIGANTI: MARMOREA, LA CITTÀ DELLE CASCATE', '2652,160': 'VALLE DELLE CASCATE\n↑ MARMOREA   ↓ LAGO DI CRISTALLO', '2532,-486': 'MARMOREA\nLE RAMPE AI LATI DEL LAGO SALGONO ALLA GRANDE TERRAZZA',
   '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ DESERTO DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
-const PROPTXT = { well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
+const PROPTXT = { ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 // quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
@@ -746,6 +754,9 @@ const SHOPS = {
   porto: { title: "L'EMPORIO DELL'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
   fiore: { title: 'LA SERRA DELLA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
   dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['acciaio', 420]] },
+  marmo_armi: { title: "L'ARMERIA DELLE CASCATE", list: [['elmoFerro', 150], ['torre', 270], ['scaglie', 350], ['acciaio', 430], ['martello', 520]] },
+  marmo_erbe: { title: 'LA FONTE DEI RIMEDI', list: [['pozione', 22], ['elisir', 105]] },
+  marmo_gemme: { title: "L'ORAFO DEL GHIACCIAIO", list: [['talismano', 90], ['anello2', 260], ['anelloForza', 420], ['piuma', 520]] },
 };
 // lo sconto di una bottega: la città ricorda chi ha sbrigato i suoi incarichi (5% per incarico, fino al 20%)
 const shopCity = who => SHOPS[who].city || (W.SHOPS[who] || {}).city || '';
@@ -766,7 +777,10 @@ const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI D
   'CASTELROSSO': 'borgo:ambra', 'ALTABRINA': 'borgo:nord', 'LOCANDA DEL PONTE': 'campi', 'MEZZAVIA': 'campi', 'APPRODO DEL FARO': 'costa', 'APPRODO DEI PETALI': 'costa', 'PORTO SERENO': 'costa', 'ZAFIRA': 'deserto',
   'FIORALBA': 'fiore', 'COLLINE DEI CILIEGI': 'fiore', 'PONTE DEI RE': 'title', 'PONTE DELLE LANTERNE': 'costa', 'PIANA DEI VENTI': 'rupi', 'MONTI DI FERRO': 'monti', 'ALTOPIANO BIANCO': 'gelo', "BOSCO D'AMBRA": 'bosco',
   'TERRE ROSSE': 'deserto', 'DUNE DEL SOLE': 'deserto', 'PIANA DI MEZZO': 'prati', 'BAIA DI ZAFFIRO': 'costa', 'SELVA SMERALDO': 'selva', 'TEMPIO DELLA LAGUNA': 'selva', 'DELTA DELLE NEBBIE': 'palude', 'CAPO DELLE LANTERNE': 'prati',
-  'BRUGHIERA NERA': 'palude', "TORRE DELL'ECLISSE": 'grotta:gelo', 'DENTI DEL SUD': 'monti' };
+  'BRUGHIERA NERA': 'palude', "TORRE DELL'ECLISSE": 'grotta:gelo', 'DENTI DEL SUD': 'monti',
+  // i grandi monti del nord
+  'VALICO DEI GIGANTI': 'monti', 'SOGLIA DEI GIGANTI': 'monti', 'MONTI DEL CIELO': 'monti', "CRESTE D'ARGENTO": 'monti', 'GHIACCIAIO ETERNO': 'gelo', 'VALLE DELLE CASCATE': 'lago',
+  'MARMOREA': 'rocca', 'LA GRANDE TERRAZZA': 'rocca', 'ACROPOLI DELLE ACQUE': 'lago' };
 const MUS_DUN = { bosco: 'santuario:bosco', lago: 'santuario:lago', sole: 'tempio:sole', ghiaccio: 'santuario:ghiaccio', fuoco: 'tempio:fuoco' };
 let musQuiet = 0;
 try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
@@ -862,7 +876,7 @@ function placeCam(snap) {
 // ---------- movimento con collisioni ----------
 function canStand(e, nx, nz, r, steep) {
   if (D) return dCanStand(e, nx, nz, r);
-  if (nx < 10 || nz < 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
+  if (nx < 10 || nz < W.Z0 + 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.WL - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
@@ -958,7 +972,7 @@ function heroUpdate(dt) {
   // amuleti che curano
   if (eqHas('regen') && h.hp < MAXHP()) { h.regenT += dt; if (h.regenT > 8) { h.regenT = 0; h.hp++; } }
 }
-function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEX - 1, Math.floor(z / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
+function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEXZ - 1, Math.floor((z - W.Z0) / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
 
 // ---------- classi: colpi, colpo caricato, abilità ----------
 // ogni mossa: quanto dura e quanto manca alla fine quando va a segno
@@ -1391,6 +1405,11 @@ function ambUpdate(dt) {
   // fumo dei camini e zampilli delle fontane vicine
   for (const s of W.smokes) if (Math.abs(s[0] - hero.x) < 240 && Math.abs(s[2] - hero.z) < 240 && Math.random() < dt * 1.1) fx.push({ k: 'smoke', x: s[0], y: s[1], z: s[2], vx: 1.6 + Math.random(), vz: 1.2, vy: 4 + Math.random() * 2, t: 2.4, s: 0.36 });
   for (const s of W.sprays) if (Math.abs(s[0] - hero.x) < 160 && Math.abs(s[2] - hero.z) < 160 && Math.random() < dt * 26) { const a = Math.random() * TAU, v = 2.5 + Math.random() * 2.5; fx.push({ k: 'drop', x: s[0], y: s[1], z: s[2], vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 9 + Math.random() * 3, t: 0.95, s: 0.3 }); }
+  // ai piedi delle cascate: spruzzi e nuvole d'acqua. [x, y, z, larghezza, lungo x?, forza]
+  for (const s of W.falls) if (Math.abs(s[0] - hero.x) < 330 && Math.abs(s[2] - hero.z) < 330) {
+    if (Math.random() < dt * 5 * s[5]) { const o = (Math.random() - 0.5) * s[3], a = Math.random() * TAU, v = 1.5 + Math.random() * 3; fx.push({ k: 'drop', x: s[0] + (s[4] ? o : 0), y: s[1] + 0.3, z: s[2] + (s[4] ? 0 : o), vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 7 + Math.random() * 7, t: 0.75, s: 0.34 }); }
+    if (Math.random() < dt * 2.2 * s[5]) { const o = (Math.random() - 0.5) * s[3]; fx.push({ k: 'puff', x: s[0] + (s[4] ? o : 0), y: s[1] + 1 + Math.random() * 2, z: s[2] + (s[4] ? 0 : o), vx: (Math.random() - 0.5) * 2, vz: (Math.random() - 0.5) * 2, vy: 2.2 + Math.random() * 1.5, t: 0.9, s: 0.5 + Math.random() * 0.4 }); }
+  }
   // polvere sotto i piedi quando si corre, schizzi nell'acqua bassa
   if (hero.moving && !D) { hero.dustT = (hero.dustT || 0) - dt; if (hero.dustT <= 0) { hero.dustT = BTN.b ? 0.16 : 0.34; if (hero.wade) fx.push({ k: 'drop', x: hero.x + (Math.random() - 0.5) * 2, y: 0.3, z: hero.z + (Math.random() - 0.5) * 2, vy: 7, t: 0.45, s: 0.3 }); else if (BTN.b) fx.push({ k: 'puff', x: hero.x - Math.cos(hero.yaw) * 1.5, y: hero.y + 0.4, z: hero.z - Math.sin(hero.yaw) * 1.5, vy: 2.5, t: 0.45, s: 0.3 }); } }
 }
@@ -1486,7 +1505,7 @@ function playUpdate(dt) {
   if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
   // mappa esplorata
   seenT -= dt;
-  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64); for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MG && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
+  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64) + MGN; for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MGZ && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
   }
   if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
   for (const t of toasts) t.life -= dt; toasts = toasts.filter(t => t.life > 0);
@@ -2335,12 +2354,19 @@ function render3D() {
     put(p.u.uSun, sa, td > 5.5 && td < 19.5 ? se : -1, Math.max(6, H3 * 0.045)); put(p.u.uMoon, ma, tm < 11 ? me : -1, Math.max(5, H3 * 0.034));
     const low = Math.max(0, Math.min(1, se / 0.5)); gl.uniform3f(p.u.uSunC, 1, 0.72 + 0.26 * low, 0.36 + 0.5 * low); gl.uniform1f(p.u.uStars, day.stars); gl.uniform3fv(p.u.uPanoC, day.pano);
   }
+  { // i giganti del nord: da lontano il rilievo vero è oltre la foschia, e le cime si disegnano come sagome sul cielo
+    const hor = H3 / 2 - foc * Math.tan(pitch), L = [];
+    for (const g of GIANTS) { const dx = g[0] - cam.x, dz = g[1] - cam.z, d = Math.hypot(dx, dz), a = Math.max(0, Math.min(1, (d - (atm.far - 250)) / 550)), dd = angDiff(Math.atan2(dz, dx), yaw), cd = Math.cos(dd);
+      if (a > 0 && Math.abs(dd) < 1.25 && g[2] > cam.y) L.push([d, W3 / 2 + foc * Math.tan(dd), hor + foc * (g[2] - cam.y) / (d * cd), foc * g[3] / (d * cd), a]); }
+    L.sort((p, q) => q[0] - p[0]); PKS.fill(0); L.slice(-10).forEach((k, i) => { PKS[i * 4] = k[1]; PKS[i * 4 + 1] = k[2]; PKS[i * 4 + 2] = k[3]; PKS[i * 4 + 3] = k[4]; });
+    gl.uniform4fv(p.u.uPk, PKS);
+  }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PANO); gl.uniform1i(p.u.uPano, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
   // terreno
   p = P.terrain; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform1f(p.u.uInvWS, 1 / W.WS);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0);
   gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
@@ -2352,13 +2378,13 @@ function render3D() {
     if (d > far + W.CS * 0.75) continue;
     if (!boxVisible(c.cx - W.CS / 2, c.lo - 2, c.cz - W.CS / 2, c.cx + W.CS / 2, c.hi + 30, c.cz + W.CS / 2)) continue;
     vis.push([c, d]); W.need(c, frameN);
-    const L = W.lod[d < 520 ? 0 : d < 950 ? 1 : 2];
+    const L = W.lod[d < 520 || (c.fine && d < 1350) ? 0 : d < 950 ? 1 : 2];
     gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); setWL(p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
@@ -2400,7 +2426,7 @@ function render3D() {
   // acqua
   p = P.water; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform1f(p.u.uY, W.WL); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform3fv(p.u.uWat, atm.wat);
-  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uInvWS, 1 / W.WS); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
+  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, SHORE); gl.uniform1i(p.u.uShore, 1);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -2627,7 +2653,7 @@ function boardKey(name) {
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
 // la mappa è una finestra sul mondo: una zona (4096 unità) oppure tutto. La croce la sposta, A cambia ingrandimento
 const mapV = { x: 2048, z: 2048, span: 4096 };
-function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(h, Math.min(W.WS - h, mapV.z)); }
+function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(W.Z0 + h, Math.min(W.WS - h, mapV.z)); }
 const mapMe = () => inCasa() ? { x: D.outX, z: D.outZ, yaw: D.outYaw } : hero;
 function openMap() { mapOpen = true; if (hero && (!D || D.def.casa)) { const m = mapMe(); mapV.span = 4096; mapV.x = m.x; mapV.z = m.z; clampMap(); } }
 function drawMap() {
@@ -2637,10 +2663,10 @@ function drawMap() {
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
   T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
   const mk2 = W.mapImg.width / W.WS;
-  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, wz0 * mk2, span * mk2, span * mk2, x0, y0, S, S);
+  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, (wz0 - W.Z0) * mk2, span * mk2, span * mk2, x0, y0, S, S);
   const i0 = Math.floor(wx0 / 64), j0 = Math.floor(wz0 / 64), nc = Math.ceil(span / 64);
   for (let j = j0; j <= j0 + nc; j++) for (let i = i0; i <= i0 + nc; i++) {
-    if (i < 0 || j < 0 || i >= MG || j >= MG || seen[j * MG + i]) continue;
+    if (i < 0 || j < -MGN || i >= MG || j >= MG || seen[(j + MGN) * MG + i]) continue;
     const ax = Math.max(x0, Math.floor(x0 + (i * 64 - wx0) * k)), ay = Math.max(y0, Math.floor(y0 + (j * 64 - wz0) * k)), bx = Math.min(x0 + S, Math.ceil(x0 + (i * 64 + 64 - wx0) * k)), by = Math.min(y0 + S, Math.ceil(y0 + (j * 64 + 64 - wz0) * k));
     if (bx > ax && by > ay) { hg.fillStyle = (i + j) % 2 ? '#2a2638' : '#24202f'; hg.fillRect(ax, ay, bx - ax, by - ay); }
   }
@@ -2649,7 +2675,7 @@ function drawMap() {
     if (!inV(x, z)) { if (!edge) return; x = Math.max(wx0, Math.min(wx0 + span, x)); z = Math.max(wz0, Math.min(wz0 + span, z)); }
     hg.fillStyle = '#0b0a12'; hg.fillRect(PX(x) - s, PZ(z) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(PX(x) - s + 1, PZ(z) - s + 1, s * 2 - 1, s * 2 - 1);
   };
-  const isSeen = (x, z) => seen[Math.min(MG - 1, Math.floor(z / 64)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
+  const isSeen = (x, z) => seen[Math.max(0, Math.min(MGZ - 1, Math.floor(z / 64) + MGN)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
   for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r >= 2 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);

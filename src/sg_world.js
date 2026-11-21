@@ -3,7 +3,8 @@
 // Le terre nuove (il continente a est e le terre del sud) si aggiungono in sg_lands.js; città e castelli in sg_town.js.
 // Le forme sono decise dalle tabelle; il rumore aggiunge solo i dettagli, sempre uguali (seme fisso).
 (() => {
-const WS = 8192, N = 1024, CELL = WS / N, V = N + 1, TEX = 2048, TC = WS / TEX, WL = 0, CH = 32, CS = WS / CH, OLD = 4096;
+// il mondo è largo WS (x da 0 a WS) e si allunga a nord di ZN: z va da Z0 = -ZN a WS (le terre di prima restano dove sono)
+const WS = 8192, ZN = 2048, Z0 = -ZN, WSZ = WS + ZN, N = 1024, CELL = WS / N, NZ = WSZ / CELL, V = N + 1, VZ = NZ + 1, TEX = 2048, TC = WS / TEX, TEXZ = WSZ / TC, WL = 0, CH = 32, CS = WS / CH, CHZ = WSZ / CS, OLD = 4096;
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -19,9 +20,10 @@ function fbm(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i 
 function ridge(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++) { const r = 1 - Math.abs(vn(x * f + i * 31.7, y * f) * 2 - 1); s += a * r * r; n += a; a *= 0.5; f *= 2.1; } return s / n; }
 
 // ---------- disegno del mondo ----------
-const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13 };
-const NB = 14;
-const COAST = [[520, 420], [900, 230], [1400, 170], [1900, 200], [2400, 130], [2950, 200], [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
+const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14 };
+const NB = 15;
+const COAST = [[520, 420], [900, 230], [1150, 150], [1120, -250], [1020, -700], [1160, -1150], [1500, -1520], [2000, -1760], [2500, -1840], [3000, -1760], [3400, -1480], [3640, -1050], [3700, -550], [3620, -120], [3500, 120],
+  [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
   [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880], [1150, 3740], [750, 3480], [430, 3100], [260, 2650], [200, 2150], [260, 1650], [190, 1150], [300, 750]];
 // [x, z, raggio, bioma, nome]
 const REG = [
@@ -142,6 +144,9 @@ const PLACES = [[2000, 2650, 200, 'BORGO AURORA'], [2760, 2960, 300, 'ROCCA DI L
   [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'OASI DI SABBIA'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
 // altre tabelle che le terre nuove e le città possono allungare
 const COASTS = [COAST], RIVERS = [RIVER];
+const FINE = [];                                   // zone dove il rilievo resta preciso anche da lontano: [x0, z0, x1, z1]
+const SHAPERS = [];                                // forme a mano sul rilievo finito: { box: [x0, z0, x1, z1], f(x, z, h) → nuova quota } (i gradoni della città dei monti)
+const CARVE = [];                                  // valli scavate nei monti: { pts: [[x, z, quota]...], w (fondo piatto), w2 (dove la valle finisce) }
 const PEAKS = [[2300, 440, 210, 290]];           // cime isolate: [x, z, altezza, raggio]
 const VOLC = [3350, 3150];
 const TERRA = [];                                  // opere sul terreno: { x0, z0, x1, z1, y, mode } (ponti, moli, bacini, terrazze)
@@ -153,7 +158,7 @@ const CLEAR = [];
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
 
 // ---------- griglie larghe (un punto ogni 32 unità): distanza dalla costa e pesi dei biomi ----------
-const CG = 32, CGN = WS / CG, CGV = CGN + 1;
+const CG = 32, CGN = WS / CG, CGV = CGN + 1, CGNZ = WSZ / CG, CGVZ = CGNZ + 1;
 let SDc = null, BWc = null;
 function polySD(P, x, z) {
   let inside = false, md = 1e18;
@@ -167,12 +172,12 @@ function polySD(P, x, z) {
 }
 function warp(x, z, o) { o[0] = x + (fbm(x / 640, z / 640, 3) - 0.5) * 460; o[1] = z + (fbm(x / 640 + 41, z / 640 + 13, 3) - 0.5) * 460; }
 function* prepCoarse() {
-  SDc = new Float32Array(CGV * CGV); BWc = new Float32Array(CGV * CGV * NB);
+  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB);
   const BB = COASTS.map(P => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const [x, z] of P) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; });
   const wp = [0, 0];
-  for (let j = 0; j < CGV; j++) {
+  for (let j = 0; j < CGVZ; j++) {
     for (let i = 0; i < CGV; i++) {
-      const x = i * CG, z = j * CG, k = j * CGV + i, o = k * NB; let best = -1e9;
+      const x = i * CG, z = Z0 + j * CG, k = j * CGV + i, o = k * NB; let best = -1e9;
       for (let p = 0; p < COASTS.length; p++) {
         const b = BB[p], ox = Math.max(b[0] - x, 0, x - b[2]), oz = Math.max(b[1] - z, 0, z - b[3]);
         if (ox + oz > 0 && -Math.hypot(ox, oz) <= best) continue;
@@ -181,19 +186,19 @@ function* prepCoarse() {
       SDc[k] = best;
       if (best < -420) { BWc[o] = 1; continue; }
       warp(x, z, wp); let tot = 0;
-      for (const r of REG) { const w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); BWc[o + r[3]] += w; tot += w; }
+      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
       if (tot > 1e-200) for (let b = 0; b < NB; b++) BWc[o + b] /= tot; else { for (let b = 0; b < NB; b++) BWc[o + b] = 0; BWc[o] = 1; }
     }
-    if (j % 32 === 0) yield j / CGV;
+    if (j % 32 === 0) yield j / CGVZ;
   }
 }
 function sdAt(x, z) {
-  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGN - 0.001, z / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * CGV + i;
+  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGNZ - 0.001, (z - Z0) / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * CGV + i;
   return (SDc[k] * (1 - u) + SDc[k + 1] * u) * (1 - v) + (SDc[k + CGV] * (1 - u) + SDc[k + CGV + 1] * u) * v;
 }
 function coastDist(x, z) { return sdAt(x, z) + (fbm(x / 320, z / 320, 3) - 0.5) * 170; }
 function biomeW(x, z, out) {
-  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGN - 0.001, z / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j;
+  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGNZ - 0.001, (z - Z0) / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j;
   const a = (j * CGV + i) * NB, b = a + NB, c = a + CGV * NB, d = c + NB, wa = (1 - u) * (1 - v), wb = u * (1 - v), wc = (1 - u) * v, wd = u * v;
   for (let q = 0; q < NB; q++) out[q] = BWc[a + q] * wa + BWc[b + q] * wb + BWc[c + q] * wc + BWc[d + q] * wd;
   return out;
@@ -225,6 +230,8 @@ function biomeH(b, x, z) {
     case B.JUNGLE: return 12 + 30 * fbm(x / 380, z / 380, 4) + 8 * fbm(x / 90, z / 90, 2);
     case B.BLOSSOM: return 20 + 44 * fbm(x / 460, z / 460, 4) + 6 * fbm(x / 100, z / 100, 2);
     case B.MOOR: return 10 + 22 * fbm(x / 420, z / 420, 3) + 12 * Math.pow(ridge(x / 300, z / 300, 3), 2);
+    // i grandi monti del nord: salgono a poco a poco verso settentrione, con creste sempre più alte
+    case B.ALP: { const up = smooth(280, -1050, z), rg = Math.pow(ridge(x / 880 + 3.1, z / 880 + 7.7, 5), 1.45); return 150 + 300 * up + (230 + 470 * up) * rg + 26 * fbm(x / 150, z / 150, 3); }
     default: return 20 + 10 * fbm(x / 200, z / 200, 2);
   }
 }
@@ -259,6 +266,15 @@ function height0(x, z) {
       h = lerp(bed, h, smooth(w * 0.3, w * 0.95, d));
     }
   }
+  // le valli scavate: un fondo quasi piano che sale lungo il percorso, e i fianchi che tornano alla montagna
+  for (const cv of CARVE) {
+    const bx = cv.box || (cv.box = boxOf(cv.pts, cv.w2));
+    if (x < bx[0] || x > bx[2] || z < bx[1] || z > bx[3]) continue;
+    let md = 1e9, fy = 0, wm = 1;   // il quarto numero di ogni punto: quanto è larga lì la valle (1 = tutta)
+    for (let i = 0; i < cv.pts.length - 1; i++) { const a = cv.pts[i], b = cv.pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))), d = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); if (d < md) { md = d; fy = a[2] + (b[2] - a[2]) * t; const ma = a[3] === undefined ? 1 : a[3], mb = b[3] === undefined ? 1 : b[3]; wm = ma + (mb - ma) * t; } }
+    const w = cv.w * wm, w2 = cv.w2 * wm;
+    if (md < w2) { const k = smooth(w, w2, md + (fbm(x / 70, z / 70, 2) - 0.5) * 50 * wm), fl = fy + 5 * fbm(x / 60, z / 60, 2); h = lerp(lerp(fl, Math.min(h, fl), smooth(w, w * 2.5, md)), h, k * k); }
+  }
   // la costa
   if (cd < 0) h = Math.max(-42, Math.min(h, -3 + cd * 0.08));
   else if (cd < 170) h = lerp(lerp(-3, 3.5, smooth(0, 40, cd)), h, smooth(30, 170, cd));
@@ -268,18 +284,18 @@ function height0(x, z) {
 
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, N, CELL, V, TEX, WL, CH, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, CARVE, SHAPERS, FINE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
-  const fx = x / CELL, fz = z / CELL, i = Math.floor(fx), j = Math.floor(fz);
-  if (i < 0 || j < 0 || i >= N || j >= N) return -40;
+  const fx = x / CELL, fz = (z - Z0) / CELL, i = Math.floor(fx), j = Math.floor(fz);
+  if (i < 0 || j < 0 || i >= N || j >= NZ) return -40;
   const u = fx - i, v = fz - j, k = j * V + i, H = W.H, h00 = H[k], h10 = H[k + 1], h01 = H[k + V], h11 = H[k + V + 1];
   return u > v ? h00 + (h10 - h00) * u + (h11 - h10) * v : h00 + (h11 - h01) * u + (h01 - h00) * v;
 };
-W.slope = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(N, Math.round(z / CELL))); return W.SL[j * V + i]; };
-W.biomeAt = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(N, Math.round(z / CELL))); return W.biome[j * V + i]; };
-W.roadAt = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEX - 1, Math.floor(z / TC))); return W.road[j * TEX + i] / 255; };
+W.slope = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.SL[j * V + i]; };
+W.biomeAt = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.biome[j * V + i]; };
+W.roadAt = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))); return W.road[j * TEX + i] / 255; };
 const WP = [0, 0];
 W.placeName = (x, z) => {
   for (const p of PLACES) if (Math.hypot(x - p[0], z - p[1]) < p[2]) return p[3];
@@ -292,35 +308,35 @@ W.placeName = (x, z) => {
 W.atmo = (x, z) => biomeW(x, z, BW);
 
 // collisioni: cerchi (alberi, rocce) e scatole (edifici), ognuni nella loro griglia
-const GC = 32, GN = WS / GC, BGC = 64, BGN = WS / BGC;
-W.addCircle = (x, z, r) => { const i = Math.floor(x / GC), j = Math.floor(z / GC); if (i < 0 || j < 0 || i >= GN || j >= GN) return; const k = j * GN + i; (W.colliders[k] || (W.colliders[k] = [])).push([x, z, r]); };
+const GC = 32, GN = WS / GC, GNZ = WSZ / GC, BGC = 64, BGN = WS / BGC, BGNZ = WSZ / BGC;
+W.addCircle = (x, z, r) => { const i = Math.floor(x / GC), j = Math.floor((z - Z0) / GC); if (i < 0 || j < 0 || i >= GN || j >= GNZ) return; const k = j * GN + i; (W.colliders[k] || (W.colliders[k] = [])).push([x, z, r]); };
 W.addBox = (x0, z0, x1, z1, top, b) => {
   const bx = [x0, z0, x1, z1, top, b]; W.boxes.push(bx);
-  const i0 = Math.max(0, Math.floor(x0 / BGC)), i1 = Math.min(BGN - 1, Math.floor(x1 / BGC)), j0 = Math.max(0, Math.floor(z0 / BGC)), j1 = Math.min(BGN - 1, Math.floor(z1 / BGC));
+  const i0 = Math.max(0, Math.floor(x0 / BGC)), i1 = Math.min(BGN - 1, Math.floor(x1 / BGC)), j0 = Math.max(0, Math.floor((z0 - Z0) / BGC)), j1 = Math.min(BGNZ - 1, Math.floor((z1 - Z0) / BGC));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * BGN + i; (W.boxGrid[k] || (W.boxGrid[k] = [])).push(bx); }
   return bx;
 };
 W.blocked = (x, z, r) => {
-  const i0 = Math.floor((x - r - 20) / GC), i1 = Math.floor((x + r + 20) / GC), j0 = Math.floor((z - r - 20) / GC), j1 = Math.floor((z + r + 20) / GC);
-  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { if (i < 0 || j < 0 || i >= GN || j >= GN) continue; const L = W.colliders[j * GN + i]; if (L) for (const c of L) if ((x - c[0]) ** 2 + (z - c[1]) ** 2 < (r + c[2]) ** 2) return c; }
+  const i0 = Math.floor((x - r - 20) / GC), i1 = Math.floor((x + r + 20) / GC), j0 = Math.floor((z - r - 20 - Z0) / GC), j1 = Math.floor((z + r + 20 - Z0) / GC);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { if (i < 0 || j < 0 || i >= GN || j >= GNZ) continue; const L = W.colliders[j * GN + i]; if (L) for (const c of L) if ((x - c[0]) ** 2 + (z - c[1]) ** 2 < (r + c[2]) ** 2) return c; }
   return W.inBox(x, z, r);
 };
 W.inBox = (x, z, m = 0) => {
-  const i0 = Math.max(0, Math.floor((x - m) / BGC)), i1 = Math.min(BGN - 1, Math.floor((x + m) / BGC)), j0 = Math.max(0, Math.floor((z - m) / BGC)), j1 = Math.min(BGN - 1, Math.floor((z + m) / BGC));
+  const i0 = Math.max(0, Math.floor((x - m) / BGC)), i1 = Math.min(BGN - 1, Math.floor((x + m) / BGC)), j0 = Math.max(0, Math.floor((z - m - Z0) / BGC)), j1 = Math.min(BGNZ - 1, Math.floor((z + m - Z0) / BGC));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const L = W.boxGrid[j * BGN + i]; if (L) for (const b of L) if (x > b[0] - m && x < b[2] + m && z > b[1] - m && z < b[3] + m) return b; }
   return null;
 };
 
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
-  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68'];
+  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262'];
 const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 0], [0, 0.1, 0, 0.9], [0, 0.75, 0, 0.25], [0.45, 0.35, 0, 0.2], [0, 0.6, 0.4, 0],
-  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0]];
+  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0]];
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
-  const H = W.H = new Float32Array(V * V);
-  for (let j = 0; j < V; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / V; }
+  const H = W.H = new Float32Array(V * VZ);
+  for (let j = 0; j < VZ; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, Z0 + j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / VZ; }
   // spianate (borgo, rocca, città...) e, dopo, una piazzola sotto ogni edificio isolato: niente case mezze sepolte nei pendii
   const pads = [];
   for (const b of BUILD) {
@@ -330,77 +346,81 @@ function* build(atlas, sprites) {
   }
   const flatten = L => { for (const [fx, fz, r, th] of L) {
     const t = th !== null ? th : W_groundRaw(H, fx, fz);
-    const i0 = Math.max(0, Math.floor((fx - r) / CELL)), i1 = Math.min(N, Math.ceil((fx + r) / CELL)), j0 = Math.max(0, Math.floor((fz - r) / CELL)), j1 = Math.min(N, Math.ceil((fz + r) / CELL));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(i * CELL - fx, j * CELL - fz); if (d < r) H[j * V + i] = lerp(t, H[j * V + i], smooth(r * 0.62, r, d)); }
+    const i0 = Math.max(0, Math.floor((fx - r) / CELL)), i1 = Math.min(N, Math.ceil((fx + r) / CELL)), j0 = Math.max(0, Math.floor((fz - r - Z0) / CELL)), j1 = Math.min(NZ, Math.ceil((fz + r - Z0) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(i * CELL - fx, Z0 + j * CELL - fz); if (d < r) H[j * V + i] = lerp(t, H[j * V + i], smooth(r * 0.62, r, d)); }
   } };
   flatten(FLAT.concat(pads));
   yield 0.31;
   // strade: il terreno lungo il percorso viene smussato (si sale anche in montagna)
   {
-    const rm = SG.art.mk(V, V), rx = rm.getContext('2d');
-    rx.fillStyle = '#000'; rx.fillRect(0, 0, V, V); rx.lineCap = 'round'; rx.lineJoin = 'round'; rx.strokeStyle = '#fff';
-    for (const r of ROADS) { rx.lineWidth = (r.w + 26) / CELL; rx.beginPath(); r.pts.forEach(([x, z], k) => k ? rx.lineTo(x / CELL, z / CELL) : rx.moveTo(x / CELL, z / CELL)); rx.stroke(); }
-    const rmask = rx.getImageData(0, 0, V, V).data;
+    const rm = SG.art.mk(V, VZ), rx = rm.getContext('2d');
+    rx.fillStyle = '#000'; rx.fillRect(0, 0, V, VZ); rx.lineCap = 'round'; rx.lineJoin = 'round'; rx.strokeStyle = '#fff';
+    for (const r of ROADS) { rx.lineWidth = (r.w + 26) / CELL; rx.beginPath(); r.pts.forEach(([x, z], k) => k ? rx.lineTo(x / CELL, (z - Z0) / CELL) : rx.moveTo(x / CELL, (z - Z0) / CELL)); rx.stroke(); }
+    const rmask = rx.getImageData(0, 0, V, VZ).data;
     const blur = (src, rad) => {
-      const a = new Float32Array(V * V), b = new Float32Array(V * V);
-      for (let j = 0; j < V; j++) { let s = 0, n = 0; for (let i = -rad; i <= rad; i++) { const ii = Math.max(0, Math.min(N, i)); s += src[j * V + ii]; n++; } for (let i = 0; i < V; i++) { a[j * V + i] = s / n; const o = Math.max(0, Math.min(N, i - rad)), p = Math.max(0, Math.min(N, i + rad + 1)); s += src[j * V + p] - src[j * V + o]; } }
-      for (let i = 0; i < V; i++) { let s = 0, n = 0; for (let j = -rad; j <= rad; j++) { const jj = Math.max(0, Math.min(N, j)); s += a[jj * V + i]; n++; } for (let j = 0; j < V; j++) { b[j * V + i] = s / n; const o = Math.max(0, Math.min(N, j - rad)), p = Math.max(0, Math.min(N, j + rad + 1)); s += a[p * V + i] - a[o * V + i]; } }
+      const a = new Float32Array(V * VZ), b = new Float32Array(V * VZ);
+      for (let j = 0; j < VZ; j++) { let s = 0, n = 0; for (let i = -rad; i <= rad; i++) { const ii = Math.max(0, Math.min(N, i)); s += src[j * V + ii]; n++; } for (let i = 0; i < V; i++) { a[j * V + i] = s / n; const o = Math.max(0, Math.min(N, i - rad)), p = Math.max(0, Math.min(N, i + rad + 1)); s += src[j * V + p] - src[j * V + o]; } }
+      for (let i = 0; i < V; i++) { let s = 0, n = 0; for (let j = -rad; j <= rad; j++) { const jj = Math.max(0, Math.min(NZ, j)); s += a[jj * V + i]; n++; } for (let j = 0; j < VZ; j++) { b[j * V + i] = s / n; const o = Math.max(0, Math.min(NZ, j - rad)), p = Math.max(0, Math.min(NZ, j + rad + 1)); s += a[p * V + i] - a[o * V + i]; } }
       return b;
     };
     let Hb = blur(H, 5); yield 0.33; Hb = blur(Hb, 5);
-    for (let k = 0; k < V * V; k++) { const m = rmask[k * 4] / 255; if (m > 0 && H[k] > -0.5) H[k] = lerp(H[k], Hb[k], m * 0.92); }
+    for (let k = 0; k < V * VZ; k++) { const m = rmask[k * 4] / 255; if (m > 0 && H[k] > -0.5) H[k] = lerp(H[k], Hb[k], m * 0.92); }
     rm.width = rm.height = 1;
   }
   flatten(pads);   // le strade passano accanto alle case e ne smussano il terreno: le piazzole tornano piane
   // opere: ponti, moli, bacini dei porti, terrazze
   for (const t of TERRA) {
     const sf = t.soft || 0;   // bordo morbido: attorno al rettangolo il terreno raggiunge la quota a poco a poco (niente gradini agli angoli)
-    const i0 = Math.max(0, Math.ceil((t.x0 - sf) / CELL)), i1 = Math.min(N, Math.floor((t.x1 + sf) / CELL)), j0 = Math.max(0, Math.ceil((t.z0 - sf) / CELL)), j1 = Math.min(N, Math.floor((t.z1 + sf) / CELL));
+    const i0 = Math.max(0, Math.ceil((t.x0 - sf) / CELL)), i1 = Math.min(N, Math.floor((t.x1 + sf) / CELL)), j0 = Math.max(0, Math.ceil((t.z0 - sf - Z0) / CELL)), j1 = Math.min(NZ, Math.floor((t.z1 + sf - Z0) / CELL));
     const ty = t.y === null || t.y === undefined ? W_groundRaw(H, t.rx, t.rz) : t.y;
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * V + i;
-      if (sf) { const x = i * CELL, z = j * CELL, d = Math.hypot(Math.max(t.x0 - x, 0, x - t.x1), Math.max(t.z0 - z, 0, z - t.z1)); if (d > 0) { if (d < sf && H[k] > -0.5) H[k] = lerp(ty, H[k], smooth(0, sf, d)); continue; } }
-      H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
+      if (sf) { const x = i * CELL, z = Z0 + j * CELL, d = Math.hypot(Math.max(t.x0 - x, 0, x - t.x1), Math.max(t.z0 - z, 0, z - t.z1)); if (d > 0) { if (d < sf && H[k] > -0.5) H[k] = lerp(ty, H[k], smooth(0, sf, d)); continue; } }
+      H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (Z0 + j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
+  }
+  for (const s of SHAPERS) {
+    const i0 = Math.max(0, Math.ceil(s.box[0] / CELL)), i1 = Math.min(N, Math.floor(s.box[2] / CELL)), j0 = Math.max(0, Math.ceil((s.box[1] - Z0) / CELL)), j1 = Math.min(NZ, Math.floor((s.box[3] - Z0) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) H[j * V + i] = s.f(i * CELL, Z0 + j * CELL, H[j * V + i]);
   }
   // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
-  const shore = W.shore = new Uint8Array(N * N);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const h = H[j * V + i]; shore[j * N + i] = h >= 0 ? 255 : Math.max(0, 255 + h * 36); }
+  const shore = W.shore = new Uint8Array(N * NZ);
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < N; i++) { const h = H[j * V + i]; shore[j * N + i] = h >= 0 ? 255 : Math.max(0, 255 + h * 36); }
   yield 0.35;
   // pendenza e luce per vertice; bioma dominante; rumore largo per i colori
-  const SL = W.SL = new Float32Array(V * V), SH = W.SH = new Float32Array(V * V), BI = W.biome = new Uint8Array(V * V), N1 = new Float32Array(V * V);
+  const SL = W.SL = new Float32Array(V * VZ), SH = W.SH = new Float32Array(V * VZ), BI = W.biome = new Uint8Array(V * VZ), N1 = new Float32Array(V * VZ);
   const sun = [-0.42, 0.78, 0.46], sl = Math.hypot(...sun);
-  for (let j = 0; j < V; j++) {
+  for (let j = 0; j < VZ; j++) {
     for (let i = 0; i < V; i++) {
-      const k = j * V + i, hl = H[j * V + Math.max(0, i - 1)], hr = H[j * V + Math.min(N, i + 1)], hu = H[Math.max(0, j - 1) * V + i], hd = H[Math.min(N, j + 1) * V + i];
+      const k = j * V + i, hl = H[j * V + Math.max(0, i - 1)], hr = H[j * V + Math.min(N, i + 1)], hu = H[Math.max(0, j - 1) * V + i], hd = H[Math.min(NZ, j + 1) * V + i];
       const gx = (hr - hl) / (2 * CELL), gz = (hd - hu) / (2 * CELL), n = Math.hypot(gx, 1, gz);
       SL[k] = Math.hypot(gx, gz);
       const dot = (-gx * sun[0] + sun[1] - gz * sun[2]) / (n * sl);
       SH[k] = Math.max(0.42, Math.min(1.12, 0.38 + 0.74 * Math.max(0, dot)));
       if (H[k] < -16) { N1[k] = 0.5; continue; }
-      biomeW(i * CELL, j * CELL, BW); let bb = 0; for (let b = 1; b < NB; b++) if (BW[b] > BW[bb]) bb = b; BI[k] = bb;
-      N1[k] = fbm(i * CELL / 210, j * CELL / 210, 3);
+      biomeW(i * CELL, Z0 + j * CELL, BW); let bb = 0; for (let b = 1; b < NB; b++) if (BW[b] > BW[bb]) bb = b; BI[k] = bb;
+      N1[k] = fbm(i * CELL / 210, (Z0 + j * CELL) / 210, 3);
     }
-    if (j % 32 === 0) yield 0.35 + 0.1 * j / V;
+    if (j % 32 === 0) yield 0.35 + 0.1 * j / VZ;
   }
   // maschera delle strade visibili e dei pavimenti (risoluzione della texture)
-  const tm = SG.art.mk(TEX, TEX), tx = tm.getContext('2d');
-  tx.fillStyle = '#000'; tx.fillRect(0, 0, TEX, TEX); tx.lineCap = 'round'; tx.lineJoin = 'round';
-  const line = (w, pts) => { tx.lineWidth = w / TC; tx.beginPath(); pts.forEach(([x, z], k) => k ? tx.lineTo(x / TC, z / TC) : tx.moveTo(x / TC, z / TC)); tx.stroke(); };
+  const tm = SG.art.mk(TEX, TEXZ), tx = tm.getContext('2d');
+  tx.fillStyle = '#000'; tx.fillRect(0, 0, TEX, TEXZ); tx.lineCap = 'round'; tx.lineJoin = 'round';
+  const line = (w, pts) => { tx.lineWidth = w / TC; tx.beginPath(); pts.forEach(([x, z], k) => k ? tx.lineTo(x / TC, (z - Z0) / TC) : tx.moveTo(x / TC, (z - Z0) / TC)); tx.stroke(); };
   tx.strokeStyle = '#f00'; for (const r of ROADS) if (!r.hidden) line(r.w, r.pts);
   const PC = { r: '#f00', g: '#0f0', b: '#00f' };
   for (const p of PAVE) {
     tx.fillStyle = tx.strokeStyle = PC[p[0]];
-    if (p[1] === 'disc') { tx.beginPath(); tx.arc(p[2] / TC, p[3] / TC, p[4] / TC, 0, Math.PI * 2); tx.fill(); }
-    else if (p[1] === 'rect') tx.fillRect(Math.round(p[2] / TC), Math.round(p[3] / TC), Math.round((p[4] - p[2]) / TC), Math.round((p[5] - p[3]) / TC));
+    if (p[1] === 'disc') { tx.beginPath(); tx.arc(p[2] / TC, (p[3] - Z0) / TC, p[4] / TC, 0, Math.PI * 2); tx.fill(); }
+    else if (p[1] === 'rect') tx.fillRect(Math.round(p[2] / TC), Math.round((p[3] - Z0) / TC), Math.round((p[4] - p[2]) / TC), Math.round((p[5] - p[3]) / TC));
     else { tx.lineCap = p[4] ? 'butt' : 'round'; line(p[2], p[3]); tx.lineCap = 'round'; }
   }
-  const road = tx.getImageData(0, 0, TEX, TEX).data;
+  const road = tx.getImageData(0, 0, TEX, TEXZ).data;
   tm.width = tm.height = 1;
   yield 0.47;
   // colori e motivi del terreno: una cella del rilievo (4 punti di colore) alla volta
-  const col = W.col = new Uint8Array(TEX * TEX * 4), mat = W.mat = new Uint8Array(TEX * TEX * 4), paved = W.road = new Uint8Array(TEX * TEX);
+  const col = W.col = new Uint8Array(TEX * TEXZ * 4), mat = W.mat = new Uint8Array(TEX * TEXZ * 4), paved = W.road = new Uint8Array(TEX * TEXZ);
   const BC = []; for (let b = 0; b < NB; b++) BC.push([BCH[b * 2], BCH[b * 2 + 1]].map(h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }));
   const c = [0, 0, 0], m = [0, 0, 0, 0], tmp = new Float32Array(NB), act = new Int32Array(NB), aw = new Float32Array(NB);
-  for (let cj = 0; cj < N; cj++) {
+  for (let cj = 0; cj < NZ; cj++) {
     for (let ci = 0; ci < N; ci++) {
       const k00 = cj * V + ci, h00 = H[k00], h10 = H[k00 + 1], h01 = H[k00 + V], h11 = H[k00 + V + 1];
       if (h00 < -15 && h10 < -15 && h01 < -15 && h11 < -15) {   // mare profondo
@@ -409,16 +429,16 @@ function* build(atlas, sprites) {
       }
       if (h00 < -0.5 && h10 < -0.5 && h01 < -0.5 && h11 < -0.5) {   // fondale basso: il colore dipende solo dalla profondità
         for (let t = 0; t < 4; t++) { const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), o = (ty * TEX + tx2) * 4;
-          const h = (h00 * (1 - u) + h10 * u) * (1 - v) + (h01 * (1 - u) + h11 * u) * v, dd = smooth(-0.4, -14, h), vv = 0.94 + vn((tx2 + 0.5) * TC / 23, (ty + 0.5) * TC / 23) * 0.12;
+          const h = (h00 * (1 - u) + h10 * u) * (1 - v) + (h01 * (1 - u) + h11 * u) * v, dd = smooth(-0.4, -14, h), vv = 0.94 + vn((tx2 + 0.5) * TC / 23, (Z0 + (ty + 0.5) * TC) / 23) * 0.12;
           col[o] = lerp(196, 70, dd) * vv; col[o + 1] = lerp(180, 110, dd) * vv; col[o + 2] = lerp(128, 120, dd) * vv; mat[o + 1] = 102; mat[o + 3] = 153; }
         continue;
       }
-      biomeW((ci + 0.5) * CELL, (cj + 0.5) * CELL, tmp);
+      biomeW((ci + 0.5) * CELL, Z0 + (cj + 0.5) * CELL, tmp);
       let na = 0; for (let b = 0; b < NB; b++) if (tmp[b] >= 0.01) { act[na] = b; aw[na++] = tmp[b]; }
-      const wVol = tmp[B.VOLCANO], wDes = tmp[B.DESERT], wSw = tmp[B.SWAMP], wMesa = tmp[B.MESA], wJun = tmp[B.JUNGLE];
+      const wVol = tmp[B.VOLCANO], wDes = tmp[B.DESERT], wSw = tmp[B.SWAMP], wMesa = tmp[B.MESA], wJun = tmp[B.JUNGLE], wAlp = tmp[B.ALP];
       const s00 = SL[k00], s10 = SL[k00 + 1], s01 = SL[k00 + V], s11 = SL[k00 + V + 1], q00 = N1[k00], q10 = N1[k00 + 1], q01 = N1[k00 + V], q11 = N1[k00 + V + 1];
       for (let t = 0; t < 4; t++) {
-        const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), x = (tx2 + 0.5) * TC, z = (ty + 0.5) * TC;
+        const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), x = (tx2 + 0.5) * TC, z = Z0 + (ty + 0.5) * TC;
         const w00 = (1 - u) * (1 - v), w10 = u * (1 - v), w01 = (1 - u) * v, w11 = u * v;
         const h = h00 * w00 + h10 * w10 + h01 * w01 + h11 * w11, s = s00 * w00 + s10 * w10 + s01 * w01 + s11 * w11, n1 = q00 * w00 + q10 * w10 + q01 * w01 + q11 * w11, n2 = vn(x / 23, z / 23);
         c[0] = c[1] = c[2] = 0; m[0] = m[1] = m[2] = m[3] = 0; let em = 0;
@@ -437,12 +457,13 @@ function* build(atlas, sprites) {
           else if (b === B.MESA) { const bd = Math.floor((h + n1 * 14) / 7) % 3; if (bd === 1) { cr *= 0.86; cg *= 0.84; cb *= 0.86; } else if (bd === 2) { cr = lerp(cr, 236, 0.35); cg = lerp(cg, 190, 0.35); cb = lerp(cb, 140, 0.35); } }
           else if (b === B.JUNGLE) { if (n2 > 0.7) { cr *= 0.78; cg *= 0.8; cb *= 0.78; } }
           else if (b === B.BLOSSOM) { if (vn(x / 6, z / 6) > 0.8) { cr = 250; cg = 176; cb = 204; } }
+          else if (b === B.ALP) { const g = smooth(400, 520, h + (n1 - 0.5) * 70); cr = lerp(cr, 134, g); cg = lerp(cg, 130, g); cb = lerp(cb, 124, g); if (g < 0.5 && n2 > 0.8) { cr *= 0.86; cg *= 0.9; cb *= 0.84; } }
           else if (b === B.MOOR) { if (n2 > 0.62) { cr = 124; cg = 76; cb = 124; } else if (n2 < 0.2) { cr = 66; cg = 70; cb = 60; } }
           c[0] += cr * wb; c[1] += cg * wb; c[2] += cb * wb;
           const bm = BM[b]; m[0] += bm[0] * wb; m[1] += bm[1] * wb; m[2] += bm[2] * wb; m[3] += bm[3] * wb;
         }
         // neve in alto, roccia sui pendii, sabbia in riva, fondali sott'acqua
-        const snow = smooth(165, 205, h + (n1 - 0.5) * 50) * (1 - wVol) * (1 - wDes) * (1 - wMesa) * (1 - wJun);
+        const snow = smooth(165 + 365 * wAlp, 205 + 395 * wAlp, h + (n1 - 0.5) * (50 + 40 * wAlp)) * (1 - wVol) * (1 - wDes) * (1 - wMesa) * (1 - wJun);
         if (snow > 0) { c[0] = lerp(c[0], 238, snow); c[1] = lerp(c[1], 244, snow); c[2] = lerp(c[2], 251, snow); m[0] *= 1 - snow; m[1] *= 1 - snow; m[2] *= 1 - snow; m[3] = m[3] * (1 - snow) + snow; }
         const rk = smooth(0.62, 1.0, s) * (1 - snow * 0.6);
         if (rk > 0) {
@@ -458,7 +479,7 @@ function* build(atlas, sprites) {
         const ti = ty * TEX + tx2, ri = ti * 4, rr = road[ri] / 255, rg = road[ri + 1] / 255, rb = road[ri + 2] / 255;
         if (rr > 0) { c[0] = lerp(c[0], 168, rr); c[1] = lerp(c[1], 128, rr); c[2] = lerp(c[2], 84, rr); for (let q = 0; q < 4; q++) m[q] *= 1 - rr; m[1] += rr * 0.75; m[2] += rr * 0.25; }
         if (rg > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.93; c[0] = lerp(c[0], 160 * kk, rg); c[1] = lerp(c[1], 156 * kk, rg); c[2] = lerp(c[2], 150 * kk, rg); for (let q = 0; q < 4; q++) m[q] *= 1 - rg; m[2] += rg; }
-        if (rb > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.94; c[0] = lerp(c[0], 214 * kk, rb); c[1] = lerp(c[1], 186 * kk, rb); c[2] = lerp(c[2], 126 * kk, rb); for (let q = 0; q < 4; q++) m[q] *= 1 - rb; m[2] += rb; }
+        if (rb > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.94 - 0.05 * wAlp; c[0] = lerp(c[0], lerp(214, 232, wAlp) * kk, rb); c[1] = lerp(c[1], lerp(186, 232, wAlp) * kk, rb); c[2] = lerp(c[2], lerp(126, 238, wAlp) * kk, rb); for (let q = 0; q < 4; q++) m[q] *= 1 - rb; m[2] += rb; }
         paved[ti] = Math.max(road[ri], road[ri + 1], road[ri + 2]);
         em *= 1 - Math.min(1, rr + rg + rb);
         const o = ri, vv = 0.94 + n2 * 0.12;
@@ -468,12 +489,12 @@ function* build(atlas, sprites) {
         mat[o] = m[0] / ms * 255; mat[o + 1] = m[1] / ms * 255; mat[o + 2] = m[2] / ms * 255; mat[o + 3] = m[3] / ms * 255;
       }
     }
-    if (cj % 32 === 0) yield 0.47 + 0.33 * cj / N;
+    if (cj % 32 === 0) yield 0.47 + 0.33 * cj / NZ;
   }
   // immagine della mappa (512x512) con rilievo e acqua
-  const MS = 512, mi = SG.art.mk(MS, MS), mx = mi.getContext('2d'), md = mx.createImageData(MS, MS);
-  for (let y = 0; y < MS; y++) for (let x = 0; x < MS; x++) {
-    const o = (y * MS + x) * 4, t = ((y * 4 + 2) * TEX + x * 4 + 2) * 4, i = Math.min(N, x * 2 + 1), j = Math.min(N, y * 2 + 1), h = H[j * V + i], sh = SH[j * V + i];
+  const MS = 512, MSZ = MS * WSZ / WS, mi = SG.art.mk(MS, MSZ), mx = mi.getContext('2d'), md = mx.createImageData(MS, MSZ);
+  for (let y = 0; y < MSZ; y++) for (let x = 0; x < MS; x++) {
+    const o = (y * MS + x) * 4, t = ((y * 4 + 2) * TEX + x * 4 + 2) * 4, i = Math.min(N, x * 2 + 1), j = Math.min(NZ, y * 2 + 1), h = H[j * V + i], sh = SH[j * V + i];
     if (h < -0.6) { const dd = smooth(0, -20, h); md.data[o] = lerp(86, 40, dd); md.data[o + 1] = lerp(150, 90, dd); md.data[o + 2] = lerp(210, 170, dd); }
     else { md.data[o] = Math.min(255, col[t] * (0.55 + sh * 0.5)); md.data[o + 1] = Math.min(255, col[t + 1] * (0.55 + sh * 0.5)); md.data[o + 2] = Math.min(255, col[t + 2] * (0.55 + sh * 0.5)); }
     md.data[o + 3] = 255;
@@ -481,7 +502,7 @@ function* build(atlas, sprites) {
   mx.putImageData(md, 0, 0); W.mapImg = mi;
   yield 0.82;
   // edifici e collisioni
-  W.colliders = new Array(GN * GN); W.boxGrid = new Array(BGN * BGN); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
+  W.colliders = new Array(GN * GNZ); W.boxGrid = new Array(BGN * BGNZ); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
   for (const p of buildMeshes()) yield 0.82 + 0.06 * p;
   // oggetti messi a mano e sparsi
   for (const p of placeObjects(sprites)) yield 0.88 + 0.08 * p;
@@ -489,7 +510,7 @@ function* build(atlas, sprites) {
   if (W.bakeShadows) W.bakeShadows();
   yield 0.97;
 }
-function W_groundRaw(H, x, z) { const i = Math.round(x / CELL), j = Math.round(z / CELL); return H[Math.max(0, Math.min(N, j)) * V + Math.max(0, Math.min(N, i))]; }
+function W_groundRaw(H, x, z) { const i = Math.round(x / CELL), j = Math.round((z - Z0) / CELL); return H[Math.max(0, Math.min(NZ, j)) * V + Math.max(0, Math.min(N, i))]; }
 
 // ---------- geometria degli edifici ----------
 // vertice: x, y, z, riquadro x, riquadro y, u, v, luce
@@ -640,14 +661,14 @@ function* buildMeshes() {
 // ogni oggetto sono 7 numeri nel pezzo di mondo a cui appartiene: x, y, z, scala, disegno, luce, vento
 const RL = [];
 function* placeObjects(S) {
-  const OB = W.OB = new Array(CH * CH), TAU2 = Math.PI * 2;
+  const OB = W.OB = new Array(CH * CHZ), TAU2 = Math.PI * 2, isOld = (x, z) => x < OLD && z < OLD && z >= 0;
   let R = rng(4242);
   W.nObjs = 0;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
     if (rect._i === undefined) { rect._i = RL.length; RL.push(rect); }
-    const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CH - 1, Math.floor(z / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
+    const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CHZ - 1, Math.floor((z - Z0) / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
     (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, rect._i, sp.lit || 1, sp.sway || 0);
     if (sp.glow) W.glows.push([x, y + sp.glow[0], z, sp.glow[1], sp.glow[2], sp.glow[3], sp.glow[4], 0]);
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
@@ -717,6 +738,7 @@ function* placeObjects(S) {
     [B.JUNGLE]: [[0.15, 'jungle'], [0.24, 'palm'], [0.33, 'fernbig'], [0.4, 'fern', 1], [0.44, 'flower', 1], [0.46, 'bush'], [0.47, 'rock']],
     [B.BLOSSOM]: [[0.035, 'cherry'], [0.05, 'cherrywhite'], [0.062, 'bush'], [0.2, 'flower', 1], [0.27, 'tuft', 1], [0.276, 'rock']],
     [B.MOOR]: [[0.02, 'deadtree'], [0.03, 'willow'], [0.14, 'heather', 1], [0.16, 'rock'], [0.175, 'tomb'], [0.19, 'tuft', 1]],
+    [B.ALP]: [[0.06, 'pine'], [0.088, 'rock'], [0.098, 'rocksnow'], [0.14, 'tuft', 1], [0.185, 'flower', 1]],
   };
   const scatter = (gx0, gz0, gx1, gz1, skipOld) => {
     const step = 12;
@@ -727,12 +749,14 @@ function* placeObjects(S) {
       const h = W.ground(x, z); if (h < WL + 0.8) { if (h > -1.5 && r < 0.05 && W.biomeAt(x, z) === B.SWAMP) add('reeds', x, z, { small: true }); continue; }
       const sl = W.slope(x, z), b = W.biomeAt(x, z);
       if (W.roadAt(x, z) > 0.05 || busy(x, z, 6)) continue;
-      if (W.col[(Math.min(TEX - 1, Math.floor(z / TC)) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
+      if (W.col[(Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
       let pick = null;
       for (const e of TBL[b]) if (r < e[0]) { pick = e; break; }
       if (!pick) continue;
       if (sl > 0.75 && pick[1] !== 'rock' && pick[1] !== 'mesarock') continue;
-      if (h > 175 && pick[1] === 'pine') pick = [0, 'snowpine'];
+      // sui grandi monti: boschi di pini nelle valli, più radi salendo, e sopra i nevai soltanto roccia
+      if (b === B.ALP) { if (h > 545) { if (pick[1] !== 'rock' && pick[1] !== 'rocksnow') continue; pick = [0, 'rocksnow']; } else if (h > 420) { if (pick[1] === 'pine') { if (r > 0.03) continue; pick = [0, 'snowpine']; } else if (pick[1] === 'flower') continue; } }
+      else if (h > 175 && pick[1] === 'pine') pick = [0, 'snowpine'];
       if (Math.abs(x - 2150) < 360 && Math.abs(z - 1340) < 290 && h < 6 && R() < 0.5) pick = [0, 'crystal'];
       if (h < 6 && b === B.MEADOW && z > 3100 && R() < 0.4) pick = [0, 'palm'];
       add(pick[1], x, z, { small: !!pick[2] });
@@ -740,10 +764,13 @@ function* placeObjects(S) {
   };
   // prima l'isola di Lumen, con lo stesso ordine di sempre: la sua vegetazione resta dov'era
   for (let i = 0; i < OLDN.nooks; i++) nook(NOOKS[i]);
-  for (const b of BUILD) if (b.k === 'cave' && b.x < OLD && b.z < OLD) caveRing(b);
+  for (const b of BUILD) if (b.k === 'cave' && isOld(b.x, b.z)) caveRing(b);
   for (let i = 0; i < OLDN.props; i++) prop(PROPS[i]);
   yield 0.05;
-  scatter(0, 0, OLD, OLD, false);
+  // a nord della riga 732 il terreno di Lumen è cambiato (i grandi monti, il valico): lì la vegetazione segue una sequenza sua.
+  // Da lì in giù la sequenza riparte dal punto esatto di prima (64383 numeri già usati): ogni albero di Lumen resta dov'era
+  R = rng(7117); scatter(0, 0, OLD, 732, false);
+  R = rng((4242 + Math.imul(64383, 0x6D2B79F5)) >>> 0); scatter(0, 732, OLD, OLD, false);
   yield 0.3;
   // pietre che affiorano dal lago: il passaggio verso l'isola
   for (let i = 0; i < STONES.length - 1; i++) { const [ax, az] = STONES[i], [bx, bz] = STONES[i + 1], L = Math.hypot(bx - ax, bz - az); for (let t = 0; t < L; t += 11) { const x = ax + (bx - ax) * t / L + (R() - 0.5) * 4, z = az + (bz - az) * t / L + (R() - 0.5) * 4; add('stepstone', x, z, { y: WL + 0.15, sink: 0 }); } }
@@ -754,12 +781,19 @@ function* placeObjects(S) {
   for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
   // poi le terre nuove, con un'altra sequenza di numeri
   R = rng(90210);
-  for (let i = OLDN.nooks; i < NOOKS.length; i++) nook(NOOKS[i]);
-  for (const b of BUILD) if (b.k === 'cave' && !(b.x < OLD && b.z < OLD)) caveRing(b);
-  for (let i = OLDN.props; i < PROPS.length; i++) prop(PROPS[i]);
+  const NN = W.NORDN || { nooks: [0, 0], props: [0, 0] };   // le cose dei grandi monti (un tratto degli elenchi) hanno la loro sequenza: le lasciamo per ultime
+  for (let i = OLDN.nooks; i < NOOKS.length; i++) if (i < NN.nooks[0] || i >= NN.nooks[1]) nook(NOOKS[i]);
+  for (const b of BUILD) if (b.k === 'cave' && !isOld(b.x, b.z) && b.z >= 0) caveRing(b);
+  for (let i = OLDN.props; i < PROPS.length; i++) if (i < NN.props[0] || i >= NN.props[1]) prop(PROPS[i]);
   yield 0.35;
   for (let z0 = 0; z0 < WS; z0 += 1024) { scatter(0, z0, WS, z0 + 1024, true); yield 0.35 + 0.6 * (z0 + 1024) / WS; }
   for (let k = 0; k < 3200; k++) { const x = 100 + R() * (WS - 200), z = 100 + R() * (WS - 200); if (x < OLD && z < OLD) continue; const h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
+  // infine i grandi monti del nord
+  R = rng(31337);
+  for (let i = NN.nooks[0]; i < NN.nooks[1]; i++) nook(NOOKS[i]);
+  for (const b of BUILD) if (b.k === 'cave' && b.z < 0) caveRing(b);
+  for (let i = NN.props[0]; i < NN.props[1]; i++) prop(PROPS[i]);
+  scatter(900, Z0, 3960, 0, false);
   for (const k in OB) { const L = OB[k]; L.big = new Float32Array(L.big); L.small = new Float32Array(L.small); }
 }
 
@@ -768,21 +802,22 @@ function* placeObjects(S) {
 const CV = N / CH + 1, scratch = new Float32Array(CV * CV * 6);
 W.upload = (G) => {
   const gl = G.gl; W.G = G;
-  W.tex = { col: G.texture({ w: TEX, h: TEX, data: W.col }, { linear: true }), mat: G.texture({ w: TEX, h: TEX, data: W.mat }, { linear: true }) };
+  W.tex = { col: G.texture({ w: TEX, h: TEXZ, data: W.col }, { linear: true }), mat: G.texture({ w: TEX, h: TEXZ, data: W.mat }, { linear: true }) };
   W.mat = null;
   const lod = st => { const out = []; for (let j = 0; j < CV - 1; j += st) for (let i = 0; i < CV - 1; i += st) { const a = j * CV + i, b = a + st, c = a + st * CV, d = c + st; out.push(a, d, b, a, c, d); } return G.buffer(new Uint16Array(out), gl.ELEMENT_ARRAY_BUFFER); };
   W.lod = [1, 2, 4].map(st => ({ buf: lod(st), n: ((CV - 1) / st) ** 2 * 6 }));
   W.chunks = []; W.live = [];
   const H = W.H;
-  for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
+  for (let cj = 0; cj < CHZ; cj++) for (let ci = 0; ci < CH; ci++) {
     let lo = 1e9, hi = -1e9;
     for (let j = 0; j < CV; j++) { const row = (cj * (CV - 1) + j) * V + ci * (CV - 1); for (let i = 0; i < CV; i++) { const h = H[row + i]; if (h < lo) lo = h; if (h > hi) hi = h; } }
     const L = W.OB[cj * CH + ci];
-    W.chunks.push({ ci, cj, cx: (ci + 0.5) * CS, cz: (cj + 0.5) * CS, lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
+    const ccx = (ci + 0.5) * CS, ccz = Z0 + (cj + 0.5) * CS;
+    W.chunks.push({ ci, cj, cx: ccx, cz: ccz, fine: FINE.some(f => ccx > f[0] && ccx < f[2] && ccz > f[1] && ccz < f[3]), lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
   }
   const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null; if (window.__SG_DEBUG) W.meshDbg = m;
   // acqua: un grande quadrato fino all'orizzonte
-  W.waterBuf = G.buffer(new Float32Array([-3000, -3000, WS + 3000, -3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
+  W.waterBuf = G.buffer(new Float32Array([-3000, Z0 - 3000, WS + 3000, Z0 - 3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
 };
 const quadsOf = list => {
   const n = list.length / 7, f = new Float32Array(n * 44); let p = 0;
@@ -802,9 +837,9 @@ W.need = (c, frame) => {
   const G = W.G, H = W.H, data = scratch;
   for (let j = 0; j < CV; j++) for (let i = 0; i < CV; i++) {
     const gi = c.ci * (CV - 1) + i, gj = c.cj * (CV - 1) + j, k = gj * V + gi, o = (j * CV + i) * 6;
-    data[o] = gi * CELL; data[o + 1] = H[k]; data[o + 2] = gj * CELL; data[o + 3] = W.SH[k];
+    data[o] = gi * CELL; data[o + 1] = H[k]; data[o + 2] = Z0 + gj * CELL; data[o + 3] = W.SH[k];
     // pendenza (per disegnare le pareti di roccia senza stirare la grana)
-    data[o + 4] = (H[gj * V + Math.min(N, gi + 1)] - H[gj * V + Math.max(0, gi - 1)]) / (2 * CELL); data[o + 5] = (H[Math.min(N, gj + 1) * V + gi] - H[Math.max(0, gj - 1) * V + gi]) / (2 * CELL);
+    data[o + 4] = (H[gj * V + Math.min(N, gi + 1)] - H[gj * V + Math.max(0, gi - 1)]) / (2 * CELL); data[o + 5] = (H[Math.min(NZ, gj + 1) * V + gi] - H[Math.max(0, gj - 1) * V + gi]) / (2 * CELL);
   }
   c.buf = G.buffer(data);
   const L = W.OB[c.cj * CH + c.ci];
@@ -819,27 +854,27 @@ W.sweep = frame => {
 };
 // ombre di alberi ed edifici dipinte sul terreno (il sole sta a sud-ovest: le ombre vanno a nord-est)
 W.bakeShadows = () => {
-  const m = new Uint8Array(TEX * TEX), col = W.col, dx = 0.674, dz = -0.738;
-  const put = (tx, tz, v) => { if (tx < 0 || tz < 0 || tx >= TEX || tz >= TEX) return; const k = tz * TEX + tx; if (m[k] < v) m[k] = v; };
+  const m = new Uint8Array(TEX * TEXZ), col = W.col, dx = 0.674, dz = -0.738;
+  const put = (tx, tz, v) => { if (tx < 0 || tz < 0 || tx >= TEX || tz >= TEXZ) return; const k = tz * TEX + tx; if (m[k] < v) m[k] = v; };
   for (const L of W.OB) {
     if (!L) continue; const b = L.big;
     for (let o = 0; o < b.length; o += 7) {
       const r = RL[b[o + 4]], w = r.w * b[o + 3], h = r.h * b[o + 3]; if (h < 6 || b[o + 1] < 0.2) continue;
       const cx = b[o] + dx * h * 0.42, cz = b[o + 2] + dz * h * 0.42, ra = Math.max(3.5, h * 0.5), rb = Math.max(3.5, w * 0.36), R = Math.max(ra, rb);
-      for (let tz = Math.floor((cz - R) / TC); tz <= (cz + R) / TC; tz++) for (let tx = Math.floor((cx - R) / TC); tx <= (cx + R) / TC; tx++) {
-        const px = (tx + 0.5) * TC - cx, pz = (tz + 0.5) * TC - cz, al = px * dx + pz * dz, ac = -px * dz + pz * dx; if ((al / ra) ** 2 + (ac / rb) ** 2 < 1) put(tx, tz, 62);
+      for (let tz = Math.floor((cz - R - Z0) / TC); tz <= (cz + R - Z0) / TC; tz++) for (let tx = Math.floor((cx - R) / TC); tx <= (cx + R) / TC; tx++) {
+        const px = (tx + 0.5) * TC - cx, pz = Z0 + (tz + 0.5) * TC - cz, al = px * dx + pz * dz, ac = -px * dz + pz * dx; if ((al / ra) ** 2 + (ac / rb) ** 2 < 1) put(tx, tz, 62);
       }
     }
   }
   for (const b of W.boxes) {
     const g = W.ground((b[0] + b[2]) / 2, (b[1] + b[3]) / 2), hh = Math.max(0, Math.min(46, b[4] - g)); if (hh < 3) continue;
     const vx = dx * hh * 1.25, vz = dz * hh * 1.25;
-    for (let tz = Math.floor((b[1] + vz) / TC); tz <= b[3] / TC; tz++) for (let tx = Math.floor(b[0] / TC); tx <= (b[2] + vx) / TC; tx++) {
-      const px = (tx + 0.5) * TC, pz = (tz + 0.5) * TC, t0 = Math.max(0, (px - b[2]) / vx, (pz - b[1]) / vz), t1 = Math.min(1, (px - b[0]) / vx, (pz - b[3]) / vz);
+    for (let tz = Math.floor((b[1] + vz - Z0) / TC); tz <= (b[3] - Z0) / TC; tz++) for (let tx = Math.floor(b[0] / TC); tx <= (b[2] + vx) / TC; tx++) {
+      const px = (tx + 0.5) * TC, pz = Z0 + (tz + 0.5) * TC, t0 = Math.max(0, (px - b[2]) / vx, (pz - b[1]) / vz), t1 = Math.min(1, (px - b[0]) / vx, (pz - b[3]) / vz);
       if (t0 <= t1) put(tx, tz, 84);
     }
   }
-  for (let k = 0; k < TEX * TEX; k++) if (m[k]) { const o = k * 4; if (col[o + 3] > 8) continue; const f = 1 - m[k] / 255; col[o] *= f; col[o + 1] *= f; col[o + 2] *= f * 1.04 > 1 ? 1 : f * 1.04; }
+  for (let k = 0; k < TEX * TEXZ; k++) if (m[k]) { const o = k * 4; if (col[o + 3] > 8) continue; const f = 1 - m[k] / 255; col[o] *= f; col[o + 1] *= f; col[o + 2] *= f * 1.04 > 1 ? 1 : f * 1.04; }
 };
 W.build = build;
 W.coastDist = coastDist;

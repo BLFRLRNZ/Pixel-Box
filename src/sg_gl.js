@@ -57,11 +57,11 @@ varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 ` + PTL + `
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y; vPL = ptLights(aPos + vec3(0.0, 1.5, 0.0));
   vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + CLD + `
-uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime, uInvWS;
+uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime; uniform vec2 uInvW, uW0;
 varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 void main() {
   // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
-  vec2 uv = (floor(vW * 4.0) + 0.5) * 0.25 * uInvWS;
+  vec2 uv = ((floor(vW * 4.0) + 0.5) * 0.25 - uW0) * uInvW;
   vec4 b = texture2D(uCol, uv), w = texture2D(uMat, uv), d = texture2D(uDet, vW * 0.0625);
   // sulle pareti ripide la grana si proietta di lato (lungo la parete e in altezza): niente strisce stirate
   float sl = length(vG);
@@ -105,9 +105,10 @@ uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { float f = floor(aSh / 2.0 + 0.01), dec = min(f, 1.0); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * f; vGl = f - 1.0; vP = aPos;
   vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform float uNight;
+uniform sampler2D uTex; uniform vec3 uFogC, uFl; uniform vec2 uTiles; uniform float uNight;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
-void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
+void main() { vec2 l = vL; if (vGl > 2.5) l += vGl > 3.5 ? uFl.yz : vec2(0.0, 1.0 - uFl.x);   // l'acqua che cade (3) e quella che scorre piano (4): uFl porta già le frazioni, piccole e precise
+  vec4 t = texture2D(uTex, (vT + fract(l)) / uTiles); if (t.a < 0.5) discard;
   vec3 c = vSh > 0.99 ? t.rgb : t.rgb * vSh * worldLight(vP);
   // di notte le finestre si accendono: il vetro azzurro diventa luce calda, le vetrate colorate brillano
   if (vGl > 0.5 && uNight > 0.0) { float mx = max(t.r, max(t.g, t.b)), mn = min(t.r, min(t.g, t.b));
@@ -116,14 +117,14 @@ void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5
   water: [`
 attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
 void main() { vP = vec3(aP.x, uY, aP.y); gl_Position = uVP * vec4(vP, 1.0); }`, PREC + DITHER + WLIGHT + `
-uniform sampler2D uDet, uShore; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog; uniform float uTime, uA, uInvWS;
+uniform sampler2D uDet, uShore; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog, uInvW, uW0; uniform float uTime, uA;
 varying vec3 vP;
 void main() { vec2 w = vP.xz; float dist = distance(vP, uCam);
   float a = texture2D(uDet, w * 0.041 + vec2(uTime * 0.011, uTime * 0.006)).g, b = texture2D(uDet, w * 0.027 - vec2(uTime * 0.008, -uTime * 0.004)).g, k = mix(0.26, a * b, clamp(1.8 - dist / 110.0, 0.0, 1.0));
   vec3 L = uLc * (0.5 + 0.5 * cloudSh(w)) + band(ptLights(vP), 5.0);
   vec3 c = uWat * (0.78 + 0.6 * k) * L; if (k > 0.6) c = mix(c, uHi * L, 0.5);
   // schiuma: una fascia bianca che respira lungo la riva e un'onda che corre verso terra
-  float s = texture2D(uShore, w * uInvWS).r, al = uA;
+  float s = texture2D(uShore, (w - uW0) * uInvW).r, al = uA;
   if (s > 0.42 && dist < 420.0) { float n = texture2D(uDet, floor(w * 2.0) * 0.5 * 0.057).r, wv = fract(s * 2.2 + uTime * 0.11 + n * 0.25);
     float foam = step(0.8 - 0.06 * sin(uTime * 1.3 + n * 6.0), s) + step(0.88, wv) * step(0.5, s) * step(0.3, n);
     if (foam > 0.5) { c = mix(c, vec3(0.96, 0.98, 1.0) * L, 0.82); al = max(al, 0.9); } else { c = mix(c, uHi * L, 0.25 * smoothstep(0.42, 0.9, s)); } }
@@ -131,7 +132,7 @@ void main() { vec2 w = vP.xz; float dist = distance(vP, uCam);
   gl_FragColor = vec4(dith(mix(c, uFogC, f)), mix(al, 1.0, f)); }`],
   sky: [`
 attribute vec2 aP; void main() { gl_Position = vec4(aP, 0.9999, 1.0); }`, PREC + DITHER + `
-uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime, uStars; uniform vec3 uZen, uHorC, uSun, uSunC, uMoon, uPanoC; uniform sampler2D uPano;
+uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime, uStars; uniform vec3 uZen, uHorC, uSun, uSunC, uMoon, uPanoC; uniform sampler2D uPano; uniform vec4 uPk[10];
 void main() { vec2 f = gl_FragCoord.xy;
   float t = clamp((f.y - uHor) / (uRes.y * 0.75), 0.0, 1.0);
   vec3 c = mix(uHorC, uZen, sqrt(t));
@@ -145,6 +146,14 @@ void main() { vec2 f = gl_FragCoord.xy;
   float dm = length(floor(f) + 0.5 - uMoon.xy);
   if (uMoon.z > 0.0) { if (dm < uMoon.z) { c = vec3(0.93, 0.95, 1.0); if (length(floor(f) + 0.5 - uMoon.xy - vec2(uMoon.z * 0.3, uMoon.z * 0.25)) < uMoon.z * 0.3 || length(floor(f) + 0.5 - uMoon.xy + vec2(uMoon.z * 0.35, uMoon.z * 0.3)) < uMoon.z * 0.2) c = vec3(0.76, 0.8, 0.9); } else if (dm < uMoon.z * 1.8) c = mix(c, vec3(0.7, 0.8, 1.0), 0.2); }
   if (v > 0.0 && v < 1.0) { vec4 p = texture2D(uPano, vec2(u + (v > 0.45 ? uTime * 0.002 : 0.0), 1.0 - v)); c = mix(c, mix(p.rgb * uPanoC, uHorC, 0.3 * (1.0 - v)), p.a); }
+  // i giganti del nord, oltre la foschia: sagome di cime innevate (x, cima, mezza larghezza in pixel; dal più lontano al più vicino)
+  if (f.y > uHor - 1.0) for (int i = 0; i < 10; i++) { vec4 k = uPk[i]; if (k.w <= 0.0) continue;
+    float dx = floor(f.x) + 0.5 - k.x, q = 1.0 - abs(dx) / k.z; if (q <= 0.0) continue;
+    float fi = float(i), hh = k.y - uHor, top = uHor + hh * (q * (0.6 + 0.4 * q) + 0.06 * q * sin(dx * 0.19 + fi * 2.7) + 0.035 * q * sin(dx * 0.47 + fi));
+    if (f.y < top) { float rel = (f.y - uHor) / max(1.0, hh);
+      vec3 m = rel > 0.6 + 0.09 * sin(dx * 0.33 + fi * 1.3) - 0.2 * q * q ? mix(uHorC, uPanoC, 0.82) : mix(uHorC, uHorC * vec3(0.56, 0.66, 0.86), 0.3 + 0.6 * rel);
+      if (dx > hh * 0.04 * sin(f.y * 0.21 + fi)) m *= 0.9;
+      c = mix(c, m, k.w); } }
   gl_FragColor = vec4(dith(c), 1.0); }`],
   // aloni di luce (lampioni, fuochi, finestre grandi): dischi a gradini che si sommano al colore
   glow: [`

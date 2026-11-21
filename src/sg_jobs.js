@@ -93,9 +93,21 @@ const LIST = {
   f4: { c: 'fioralba', n: 'TAGLIA: IL CAVALIERE SENZA NOME', by: 'DAMA SAKURA', k: 'taglia', coins: 400, where: 'NELLA BRUGHIERA NERA, A SUD',
     boss: { n: 'IL CAVALIERE SENZA NOME', as: 'skel', x: 2440, z: 6640, sc: 0.31, hp: 125, dmg: 6, sp: 26, r: 4.5, range: 11, tint: [0.7, 0.62, 1.04] },
     txt: "NELLA BRUGHIERA CAMMINA UN CAVALIERE MORTO DA CENTO ANNI, E NON RICORDA PIÙ PER CHI COMBATTEVA. DAGLI LA PACE. FIORALBA TI DARÀ QUATTROCENTO MONETE." },
+  // ---------- Marmorea ----------
+  m1: { c: 'marmorea', n: 'LUPI NELLA VALLE', by: 'I PASTORI DELLA VALLE', k: 'caccia', foe: 'icewolf', pl: 'LUPI DEI GHIACCI', q: 8, coins: 230,
+    txt: "I LUPI DEI GHIACCI SCENDONO DAI NEVAI FIN SULLA STRADA DELLA VALLE, E I MERCANTI NON SALGONO PIÙ. OTTO LUPI IN MENO E IL VALICO TORNA SICURO." },
+  m2: { c: 'marmorea', n: 'LO STENDARDO SULLA VETTA', by: "L'ARCONTE DELLE ACQUE", k: 'visita', x: 2310, z: 450, r: 40, at: 'LA VETTA DEL DRAGO', coins: 180, where: 'OLTRE IL VALICO, IN CIMA AL SENTIERO DEL PICCO',
+    txt: "DALLA VETTA DEL DRAGO SI VEDONO INSIEME MARMOREA E IL BORGO. PORTA LASSÙ IL NOSTRO STENDARDO AZZURRO: CHI GUARDA DA LUMEN SAPRÀ CHE LA CITTÀ DELLE CASCATE È VIVA.",
+    found: "PIANTI LO STENDARDO AZZURRO SULLA VETTA. A NORD, TRA I GIGANTI DI NEVE, BRILLA IL MARMO DELLA CITTÀ; A SUD, IL LAGO E I TETTI DEL BORGO." },
+  m3: { c: 'marmorea', n: "UN'AMPOLLA PER IL PESCATORE", by: 'IL CUSTODE DELLA FONTE', k: 'consegna', to: 'pescatore', toN: 'IL PESCATORE, SULLA RIVA DEL LAGO DI CRISTALLO', coins: 170,
+    txt: "IL PESCATORE DEL LAGO DI CRISTALLO HA LE MANI ROVINATE DAL GELO. QUEST'AMPOLLA D'ACQUA DELLA FONTE LE RIMETTE A NUOVO. LO TROVI SULLA RIVA SUD DEL LAGO: PAGA LUI.",
+    thanks: ["L'ACQUA DELLA FONTE DI MARMOREA! CREDEVO FOSSE UNA FAVOLA DEI VECCHI.", 'CENTOSETTANTA MONETE, E IL PRIMO PESCE DI DOMANI È PER TE.'] },
+  m4: { c: 'marmorea', n: 'TAGLIA: IL RE DEI NEVAI', by: 'LA SENTINELLA', k: 'taglia', coins: 420, where: 'A METÀ DELLA VALLE DELLE CASCATE, TRA I PINI',
+    boss: { n: 'IL RE DEI NEVAI', as: 'icewolf', x: 2640, z: -200, sc: 0.4, hp: 135, dmg: 6, sp: 44, r: 5, range: 10, tint: [0.86, 0.94, 1.06] },
+    txt: "È BIANCO COME LA NEVE E GROSSO COME UN ORSO. DI NOTTE LO SI SENTE ULULARE FIN DALLA TERRAZZA. QUATTROCENTOVENTI MONETE A CHI LO FERMA." },
 };
 const CITY = {}; for (const id in LIST) { LIST[id].id = id; (CITY[LIST[id].c] = CITY[LIST[id].c] || []).push(id); }
 // il nome di ogni città (per la bacheca, lo sconto, il diploma)
-const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA' };
+const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA', marmorea: 'MARMOREA' };
 SG.jobs = { LIST, CITY, NOME };
 })();

@@ -139,7 +139,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.4.1", "id": "2.4.1-b874d7b3", "date": "20/11/2026", "pwa": true};
+const APP = {"v": "2.5", "id": "2.5-d879b97b", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4333,11 +4333,11 @@ varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 ` + PTL + `
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y; vPL = ptLights(aPos + vec3(0.0, 1.5, 0.0));
   vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + CLD + `
-uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime, uInvWS;
+uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime; uniform vec2 uInvW, uW0;
 varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 void main() {
   // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
-  vec2 uv = (floor(vW * 4.0) + 0.5) * 0.25 * uInvWS;
+  vec2 uv = ((floor(vW * 4.0) + 0.5) * 0.25 - uW0) * uInvW;
   vec4 b = texture2D(uCol, uv), w = texture2D(uMat, uv), d = texture2D(uDet, vW * 0.0625);
   // sulle pareti ripide la grana si proietta di lato (lungo la parete e in altezza): niente strisce stirate
   float sl = length(vG);
@@ -4381,9 +4381,10 @@ uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { float f = floor(aSh / 2.0 + 0.01), dec = min(f, 1.0); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * f; vGl = f - 1.0; vP = aPos;
   vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + `
-uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform float uNight;
+uniform sampler2D uTex; uniform vec3 uFogC, uFl; uniform vec2 uTiles; uniform float uNight;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
-void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
+void main() { vec2 l = vL; if (vGl > 2.5) l += vGl > 3.5 ? uFl.yz : vec2(0.0, 1.0 - uFl.x);   // l'acqua che cade (3) e quella che scorre piano (4): uFl porta già le frazioni, piccole e precise
+  vec4 t = texture2D(uTex, (vT + fract(l)) / uTiles); if (t.a < 0.5) discard;
   vec3 c = vSh > 0.99 ? t.rgb : t.rgb * vSh * worldLight(vP);
   // di notte le finestre si accendono: il vetro azzurro diventa luce calda, le vetrate colorate brillano
   if (vGl > 0.5 && uNight > 0.0) { float mx = max(t.r, max(t.g, t.b)), mn = min(t.r, min(t.g, t.b));
@@ -4392,14 +4393,14 @@ void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5
   water: [`
 attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
 void main() { vP = vec3(aP.x, uY, aP.y); gl_Position = uVP * vec4(vP, 1.0); }`, PREC + DITHER + WLIGHT + `
-uniform sampler2D uDet, uShore; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog; uniform float uTime, uA, uInvWS;
+uniform sampler2D uDet, uShore; uniform vec3 uCam, uFogC, uWat, uHi; uniform vec2 uFog, uInvW, uW0; uniform float uTime, uA;
 varying vec3 vP;
 void main() { vec2 w = vP.xz; float dist = distance(vP, uCam);
   float a = texture2D(uDet, w * 0.041 + vec2(uTime * 0.011, uTime * 0.006)).g, b = texture2D(uDet, w * 0.027 - vec2(uTime * 0.008, -uTime * 0.004)).g, k = mix(0.26, a * b, clamp(1.8 - dist / 110.0, 0.0, 1.0));
   vec3 L = uLc * (0.5 + 0.5 * cloudSh(w)) + band(ptLights(vP), 5.0);
   vec3 c = uWat * (0.78 + 0.6 * k) * L; if (k > 0.6) c = mix(c, uHi * L, 0.5);
   // schiuma: una fascia bianca che respira lungo la riva e un'onda che corre verso terra
-  float s = texture2D(uShore, w * uInvWS).r, al = uA;
+  float s = texture2D(uShore, (w - uW0) * uInvW).r, al = uA;
   if (s > 0.42 && dist < 420.0) { float n = texture2D(uDet, floor(w * 2.0) * 0.5 * 0.057).r, wv = fract(s * 2.2 + uTime * 0.11 + n * 0.25);
     float foam = step(0.8 - 0.06 * sin(uTime * 1.3 + n * 6.0), s) + step(0.88, wv) * step(0.5, s) * step(0.3, n);
     if (foam > 0.5) { c = mix(c, vec3(0.96, 0.98, 1.0) * L, 0.82); al = max(al, 0.9); } else { c = mix(c, uHi * L, 0.25 * smoothstep(0.42, 0.9, s)); } }
@@ -4407,7 +4408,7 @@ void main() { vec2 w = vP.xz; float dist = distance(vP, uCam);
   gl_FragColor = vec4(dith(mix(c, uFogC, f)), mix(al, 1.0, f)); }`],
   sky: [`
 attribute vec2 aP; void main() { gl_Position = vec4(aP, 0.9999, 1.0); }`, PREC + DITHER + `
-uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime, uStars; uniform vec3 uZen, uHorC, uSun, uSunC, uMoon, uPanoC; uniform sampler2D uPano;
+uniform vec2 uRes; uniform float uHor, uYaw, uFovX, uPanoH, uTime, uStars; uniform vec3 uZen, uHorC, uSun, uSunC, uMoon, uPanoC; uniform sampler2D uPano; uniform vec4 uPk[10];
 void main() { vec2 f = gl_FragCoord.xy;
   float t = clamp((f.y - uHor) / (uRes.y * 0.75), 0.0, 1.0);
   vec3 c = mix(uHorC, uZen, sqrt(t));
@@ -4421,6 +4422,14 @@ void main() { vec2 f = gl_FragCoord.xy;
   float dm = length(floor(f) + 0.5 - uMoon.xy);
   if (uMoon.z > 0.0) { if (dm < uMoon.z) { c = vec3(0.93, 0.95, 1.0); if (length(floor(f) + 0.5 - uMoon.xy - vec2(uMoon.z * 0.3, uMoon.z * 0.25)) < uMoon.z * 0.3 || length(floor(f) + 0.5 - uMoon.xy + vec2(uMoon.z * 0.35, uMoon.z * 0.3)) < uMoon.z * 0.2) c = vec3(0.76, 0.8, 0.9); } else if (dm < uMoon.z * 1.8) c = mix(c, vec3(0.7, 0.8, 1.0), 0.2); }
   if (v > 0.0 && v < 1.0) { vec4 p = texture2D(uPano, vec2(u + (v > 0.45 ? uTime * 0.002 : 0.0), 1.0 - v)); c = mix(c, mix(p.rgb * uPanoC, uHorC, 0.3 * (1.0 - v)), p.a); }
+  // i giganti del nord, oltre la foschia: sagome di cime innevate (x, cima, mezza larghezza in pixel; dal più lontano al più vicino)
+  if (f.y > uHor - 1.0) for (int i = 0; i < 10; i++) { vec4 k = uPk[i]; if (k.w <= 0.0) continue;
+    float dx = floor(f.x) + 0.5 - k.x, q = 1.0 - abs(dx) / k.z; if (q <= 0.0) continue;
+    float fi = float(i), hh = k.y - uHor, top = uHor + hh * (q * (0.6 + 0.4 * q) + 0.06 * q * sin(dx * 0.19 + fi * 2.7) + 0.035 * q * sin(dx * 0.47 + fi));
+    if (f.y < top) { float rel = (f.y - uHor) / max(1.0, hh);
+      vec3 m = rel > 0.6 + 0.09 * sin(dx * 0.33 + fi * 1.3) - 0.2 * q * q ? mix(uHorC, uPanoC, 0.82) : mix(uHorC, uHorC * vec3(0.56, 0.66, 0.86), 0.3 + 0.6 * rel);
+      if (dx > hh * 0.04 * sin(f.y * 0.21 + fi)) m *= 0.9;
+      c = mix(c, m, k.w); } }
   gl_FragColor = vec4(dith(c), 1.0); }`],
   // aloni di luce (lampioni, fuochi, finestre grandi): dischi a gradini che si sommano al colore
   glow: [`
@@ -5441,7 +5450,8 @@ SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, b
 // Le terre nuove (il continente a est e le terre del sud) si aggiungono in sg_lands.js; città e castelli in sg_town.js.
 // Le forme sono decise dalle tabelle; il rumore aggiunge solo i dettagli, sempre uguali (seme fisso).
 (() => {
-const WS = 8192, N = 1024, CELL = WS / N, V = N + 1, TEX = 2048, TC = WS / TEX, WL = 0, CH = 32, CS = WS / CH, OLD = 4096;
+// il mondo è largo WS (x da 0 a WS) e si allunga a nord di ZN: z va da Z0 = -ZN a WS (le terre di prima restano dove sono)
+const WS = 8192, ZN = 2048, Z0 = -ZN, WSZ = WS + ZN, N = 1024, CELL = WS / N, NZ = WSZ / CELL, V = N + 1, VZ = NZ + 1, TEX = 2048, TC = WS / TEX, TEXZ = WSZ / TC, WL = 0, CH = 32, CS = WS / CH, CHZ = WSZ / CS, OLD = 4096;
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -5457,9 +5467,10 @@ function fbm(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i 
 function ridge(x, y, o = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++) { const r = 1 - Math.abs(vn(x * f + i * 31.7, y * f) * 2 - 1); s += a * r * r; n += a; a *= 0.5; f *= 2.1; } return s / n; }
 
 // ---------- disegno del mondo ----------
-const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13 };
-const NB = 14;
-const COAST = [[520, 420], [900, 230], [1400, 170], [1900, 200], [2400, 130], [2950, 200], [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
+const B = { MEADOW: 0, FARM: 1, FOREST: 2, MOUNT: 3, SNOW: 4, DESERT: 5, SWAMP: 6, VOLCANO: 7, AUTUMN: 8, SAVANNA: 9, MESA: 10, JUNGLE: 11, BLOSSOM: 12, MOOR: 13, ALP: 14 };
+const NB = 15;
+const COAST = [[520, 420], [900, 230], [1150, 150], [1120, -250], [1020, -700], [1160, -1150], [1500, -1520], [2000, -1760], [2500, -1840], [3000, -1760], [3400, -1480], [3640, -1050], [3700, -550], [3620, -120], [3500, 120],
+  [3450, 300], [3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500],
   [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880], [1150, 3740], [750, 3480], [430, 3100], [260, 2650], [200, 2150], [260, 1650], [190, 1150], [300, 750]];
 // [x, z, raggio, bioma, nome]
 const REG = [
@@ -5580,6 +5591,9 @@ const PLACES = [[2000, 2650, 200, 'BORGO AURORA'], [2760, 2960, 300, 'ROCCA DI L
   [2150, 1340, 70, "ISOLA DEL LAGO"], [3700, 900, 90, 'NIDO DEL GRIFONE'], [3150, 2030, 110, 'OASI DI SABBIA'], [2310, 445, 90, 'VETTA DEL DRAGO'], [1310, 3610, 70, 'FARO DEL SUD'], [3350, 3150, 150, 'CRATERE DEL BRACE']];
 // altre tabelle che le terre nuove e le città possono allungare
 const COASTS = [COAST], RIVERS = [RIVER];
+const FINE = [];                                   // zone dove il rilievo resta preciso anche da lontano: [x0, z0, x1, z1]
+const SHAPERS = [];                                // forme a mano sul rilievo finito: { box: [x0, z0, x1, z1], f(x, z, h) → nuova quota } (i gradoni della città dei monti)
+const CARVE = [];                                  // valli scavate nei monti: { pts: [[x, z, quota]...], w (fondo piatto), w2 (dove la valle finisce) }
 const PEAKS = [[2300, 440, 210, 290]];           // cime isolate: [x, z, altezza, raggio]
 const VOLC = [3350, 3150];
 const TERRA = [];                                  // opere sul terreno: { x0, z0, x1, z1, y, mode } (ponti, moli, bacini, terrazze)
@@ -5591,7 +5605,7 @@ const CLEAR = [];
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
 
 // ---------- griglie larghe (un punto ogni 32 unità): distanza dalla costa e pesi dei biomi ----------
-const CG = 32, CGN = WS / CG, CGV = CGN + 1;
+const CG = 32, CGN = WS / CG, CGV = CGN + 1, CGNZ = WSZ / CG, CGVZ = CGNZ + 1;
 let SDc = null, BWc = null;
 function polySD(P, x, z) {
   let inside = false, md = 1e18;
@@ -5605,12 +5619,12 @@ function polySD(P, x, z) {
 }
 function warp(x, z, o) { o[0] = x + (fbm(x / 640, z / 640, 3) - 0.5) * 460; o[1] = z + (fbm(x / 640 + 41, z / 640 + 13, 3) - 0.5) * 460; }
 function* prepCoarse() {
-  SDc = new Float32Array(CGV * CGV); BWc = new Float32Array(CGV * CGV * NB);
+  SDc = new Float32Array(CGV * CGVZ); BWc = new Float32Array(CGV * CGVZ * NB);
   const BB = COASTS.map(P => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const [x, z] of P) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; });
   const wp = [0, 0];
-  for (let j = 0; j < CGV; j++) {
+  for (let j = 0; j < CGVZ; j++) {
     for (let i = 0; i < CGV; i++) {
-      const x = i * CG, z = j * CG, k = j * CGV + i, o = k * NB; let best = -1e9;
+      const x = i * CG, z = Z0 + j * CG, k = j * CGV + i, o = k * NB; let best = -1e9;
       for (let p = 0; p < COASTS.length; p++) {
         const b = BB[p], ox = Math.max(b[0] - x, 0, x - b[2]), oz = Math.max(b[1] - z, 0, z - b[3]);
         if (ox + oz > 0 && -Math.hypot(ox, oz) <= best) continue;
@@ -5619,19 +5633,19 @@ function* prepCoarse() {
       SDc[k] = best;
       if (best < -420) { BWc[o] = 1; continue; }
       warp(x, z, wp); let tot = 0;
-      for (const r of REG) { const w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); BWc[o + r[3]] += w; tot += w; }
+      for (const r of REG) { let w = Math.exp(-7 * Math.hypot(wp[0] - r[0], wp[1] - r[1]) / r[2]); if (r[5]) w *= r[5](x, z); BWc[o + r[3]] += w; tot += w; }   // r[5]: dove la regione vale (i monti del nord non toccano le terre di prima)
       if (tot > 1e-200) for (let b = 0; b < NB; b++) BWc[o + b] /= tot; else { for (let b = 0; b < NB; b++) BWc[o + b] = 0; BWc[o] = 1; }
     }
-    if (j % 32 === 0) yield j / CGV;
+    if (j % 32 === 0) yield j / CGVZ;
   }
 }
 function sdAt(x, z) {
-  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGN - 0.001, z / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * CGV + i;
+  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGNZ - 0.001, (z - Z0) / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * CGV + i;
   return (SDc[k] * (1 - u) + SDc[k + 1] * u) * (1 - v) + (SDc[k + CGV] * (1 - u) + SDc[k + CGV + 1] * u) * v;
 }
 function coastDist(x, z) { return sdAt(x, z) + (fbm(x / 320, z / 320, 3) - 0.5) * 170; }
 function biomeW(x, z, out) {
-  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGN - 0.001, z / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j;
+  const fx = Math.max(0, Math.min(CGN - 0.001, x / CG)), fz = Math.max(0, Math.min(CGNZ - 0.001, (z - Z0) / CG)), i = fx | 0, j = fz | 0, u = fx - i, v = fz - j;
   const a = (j * CGV + i) * NB, b = a + NB, c = a + CGV * NB, d = c + NB, wa = (1 - u) * (1 - v), wb = u * (1 - v), wc = (1 - u) * v, wd = u * v;
   for (let q = 0; q < NB; q++) out[q] = BWc[a + q] * wa + BWc[b + q] * wb + BWc[c + q] * wc + BWc[d + q] * wd;
   return out;
@@ -5663,6 +5677,8 @@ function biomeH(b, x, z) {
     case B.JUNGLE: return 12 + 30 * fbm(x / 380, z / 380, 4) + 8 * fbm(x / 90, z / 90, 2);
     case B.BLOSSOM: return 20 + 44 * fbm(x / 460, z / 460, 4) + 6 * fbm(x / 100, z / 100, 2);
     case B.MOOR: return 10 + 22 * fbm(x / 420, z / 420, 3) + 12 * Math.pow(ridge(x / 300, z / 300, 3), 2);
+    // i grandi monti del nord: salgono a poco a poco verso settentrione, con creste sempre più alte
+    case B.ALP: { const up = smooth(280, -1050, z), rg = Math.pow(ridge(x / 880 + 3.1, z / 880 + 7.7, 5), 1.45); return 150 + 300 * up + (230 + 470 * up) * rg + 26 * fbm(x / 150, z / 150, 3); }
     default: return 20 + 10 * fbm(x / 200, z / 200, 2);
   }
 }
@@ -5697,6 +5713,15 @@ function height0(x, z) {
       h = lerp(bed, h, smooth(w * 0.3, w * 0.95, d));
     }
   }
+  // le valli scavate: un fondo quasi piano che sale lungo il percorso, e i fianchi che tornano alla montagna
+  for (const cv of CARVE) {
+    const bx = cv.box || (cv.box = boxOf(cv.pts, cv.w2));
+    if (x < bx[0] || x > bx[2] || z < bx[1] || z > bx[3]) continue;
+    let md = 1e9, fy = 0, wm = 1;   // il quarto numero di ogni punto: quanto è larga lì la valle (1 = tutta)
+    for (let i = 0; i < cv.pts.length - 1; i++) { const a = cv.pts[i], b = cv.pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))), d = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); if (d < md) { md = d; fy = a[2] + (b[2] - a[2]) * t; const ma = a[3] === undefined ? 1 : a[3], mb = b[3] === undefined ? 1 : b[3]; wm = ma + (mb - ma) * t; } }
+    const w = cv.w * wm, w2 = cv.w2 * wm;
+    if (md < w2) { const k = smooth(w, w2, md + (fbm(x / 70, z / 70, 2) - 0.5) * 50 * wm), fl = fy + 5 * fbm(x / 60, z / 60, 2); h = lerp(lerp(fl, Math.min(h, fl), smooth(w, w * 2.5, md)), h, k * k); }
+  }
   // la costa
   if (cd < 0) h = Math.max(-42, Math.min(h, -3 + cd * 0.08));
   else if (cd < 170) h = lerp(lerp(-3, 3.5, smooth(0, 40, cd)), h, smooth(30, 170, cd));
@@ -5706,18 +5731,18 @@ function height0(x, z) {
 
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, N, CELL, V, TEX, WL, CH, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, CARVE, SHAPERS, FINE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
-  const fx = x / CELL, fz = z / CELL, i = Math.floor(fx), j = Math.floor(fz);
-  if (i < 0 || j < 0 || i >= N || j >= N) return -40;
+  const fx = x / CELL, fz = (z - Z0) / CELL, i = Math.floor(fx), j = Math.floor(fz);
+  if (i < 0 || j < 0 || i >= N || j >= NZ) return -40;
   const u = fx - i, v = fz - j, k = j * V + i, H = W.H, h00 = H[k], h10 = H[k + 1], h01 = H[k + V], h11 = H[k + V + 1];
   return u > v ? h00 + (h10 - h00) * u + (h11 - h10) * v : h00 + (h11 - h01) * u + (h01 - h00) * v;
 };
-W.slope = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(N, Math.round(z / CELL))); return W.SL[j * V + i]; };
-W.biomeAt = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(N, Math.round(z / CELL))); return W.biome[j * V + i]; };
-W.roadAt = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEX - 1, Math.floor(z / TC))); return W.road[j * TEX + i] / 255; };
+W.slope = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.SL[j * V + i]; };
+W.biomeAt = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.biome[j * V + i]; };
+W.roadAt = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))); return W.road[j * TEX + i] / 255; };
 const WP = [0, 0];
 W.placeName = (x, z) => {
   for (const p of PLACES) if (Math.hypot(x - p[0], z - p[1]) < p[2]) return p[3];
@@ -5730,35 +5755,35 @@ W.placeName = (x, z) => {
 W.atmo = (x, z) => biomeW(x, z, BW);
 
 // collisioni: cerchi (alberi, rocce) e scatole (edifici), ognuni nella loro griglia
-const GC = 32, GN = WS / GC, BGC = 64, BGN = WS / BGC;
-W.addCircle = (x, z, r) => { const i = Math.floor(x / GC), j = Math.floor(z / GC); if (i < 0 || j < 0 || i >= GN || j >= GN) return; const k = j * GN + i; (W.colliders[k] || (W.colliders[k] = [])).push([x, z, r]); };
+const GC = 32, GN = WS / GC, GNZ = WSZ / GC, BGC = 64, BGN = WS / BGC, BGNZ = WSZ / BGC;
+W.addCircle = (x, z, r) => { const i = Math.floor(x / GC), j = Math.floor((z - Z0) / GC); if (i < 0 || j < 0 || i >= GN || j >= GNZ) return; const k = j * GN + i; (W.colliders[k] || (W.colliders[k] = [])).push([x, z, r]); };
 W.addBox = (x0, z0, x1, z1, top, b) => {
   const bx = [x0, z0, x1, z1, top, b]; W.boxes.push(bx);
-  const i0 = Math.max(0, Math.floor(x0 / BGC)), i1 = Math.min(BGN - 1, Math.floor(x1 / BGC)), j0 = Math.max(0, Math.floor(z0 / BGC)), j1 = Math.min(BGN - 1, Math.floor(z1 / BGC));
+  const i0 = Math.max(0, Math.floor(x0 / BGC)), i1 = Math.min(BGN - 1, Math.floor(x1 / BGC)), j0 = Math.max(0, Math.floor((z0 - Z0) / BGC)), j1 = Math.min(BGNZ - 1, Math.floor((z1 - Z0) / BGC));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * BGN + i; (W.boxGrid[k] || (W.boxGrid[k] = [])).push(bx); }
   return bx;
 };
 W.blocked = (x, z, r) => {
-  const i0 = Math.floor((x - r - 20) / GC), i1 = Math.floor((x + r + 20) / GC), j0 = Math.floor((z - r - 20) / GC), j1 = Math.floor((z + r + 20) / GC);
-  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { if (i < 0 || j < 0 || i >= GN || j >= GN) continue; const L = W.colliders[j * GN + i]; if (L) for (const c of L) if ((x - c[0]) ** 2 + (z - c[1]) ** 2 < (r + c[2]) ** 2) return c; }
+  const i0 = Math.floor((x - r - 20) / GC), i1 = Math.floor((x + r + 20) / GC), j0 = Math.floor((z - r - 20 - Z0) / GC), j1 = Math.floor((z + r + 20 - Z0) / GC);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { if (i < 0 || j < 0 || i >= GN || j >= GNZ) continue; const L = W.colliders[j * GN + i]; if (L) for (const c of L) if ((x - c[0]) ** 2 + (z - c[1]) ** 2 < (r + c[2]) ** 2) return c; }
   return W.inBox(x, z, r);
 };
 W.inBox = (x, z, m = 0) => {
-  const i0 = Math.max(0, Math.floor((x - m) / BGC)), i1 = Math.min(BGN - 1, Math.floor((x + m) / BGC)), j0 = Math.max(0, Math.floor((z - m) / BGC)), j1 = Math.min(BGN - 1, Math.floor((z + m) / BGC));
+  const i0 = Math.max(0, Math.floor((x - m) / BGC)), i1 = Math.min(BGN - 1, Math.floor((x + m) / BGC)), j0 = Math.max(0, Math.floor((z - m - Z0) / BGC)), j1 = Math.min(BGNZ - 1, Math.floor((z + m - Z0) / BGC));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const L = W.boxGrid[j * BGN + i]; if (L) for (const b of L) if (x > b[0] - m && x < b[2] + m && z > b[1] - m && z < b[3] + m) return b; }
   return null;
 };
 
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
-  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68'];
+  '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262'];
 const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 0], [0, 0.1, 0, 0.9], [0, 0.75, 0, 0.25], [0.45, 0.35, 0, 0.2], [0, 0.6, 0.4, 0],
-  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0]];
+  [0.7, 0.3, 0, 0], [0.65, 0.35, 0, 0], [0, 0.55, 0.45, 0], [0.9, 0.1, 0, 0], [1, 0, 0, 0], [0.5, 0.3, 0.2, 0], [0.8, 0.08, 0.12, 0]];
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
-  const H = W.H = new Float32Array(V * V);
-  for (let j = 0; j < V; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / V; }
+  const H = W.H = new Float32Array(V * VZ);
+  for (let j = 0; j < VZ; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, Z0 + j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / VZ; }
   // spianate (borgo, rocca, città...) e, dopo, una piazzola sotto ogni edificio isolato: niente case mezze sepolte nei pendii
   const pads = [];
   for (const b of BUILD) {
@@ -5768,77 +5793,81 @@ function* build(atlas, sprites) {
   }
   const flatten = L => { for (const [fx, fz, r, th] of L) {
     const t = th !== null ? th : W_groundRaw(H, fx, fz);
-    const i0 = Math.max(0, Math.floor((fx - r) / CELL)), i1 = Math.min(N, Math.ceil((fx + r) / CELL)), j0 = Math.max(0, Math.floor((fz - r) / CELL)), j1 = Math.min(N, Math.ceil((fz + r) / CELL));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(i * CELL - fx, j * CELL - fz); if (d < r) H[j * V + i] = lerp(t, H[j * V + i], smooth(r * 0.62, r, d)); }
+    const i0 = Math.max(0, Math.floor((fx - r) / CELL)), i1 = Math.min(N, Math.ceil((fx + r) / CELL)), j0 = Math.max(0, Math.floor((fz - r - Z0) / CELL)), j1 = Math.min(NZ, Math.ceil((fz + r - Z0) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(i * CELL - fx, Z0 + j * CELL - fz); if (d < r) H[j * V + i] = lerp(t, H[j * V + i], smooth(r * 0.62, r, d)); }
   } };
   flatten(FLAT.concat(pads));
   yield 0.31;
   // strade: il terreno lungo il percorso viene smussato (si sale anche in montagna)
   {
-    const rm = SG.art.mk(V, V), rx = rm.getContext('2d');
-    rx.fillStyle = '#000'; rx.fillRect(0, 0, V, V); rx.lineCap = 'round'; rx.lineJoin = 'round'; rx.strokeStyle = '#fff';
-    for (const r of ROADS) { rx.lineWidth = (r.w + 26) / CELL; rx.beginPath(); r.pts.forEach(([x, z], k) => k ? rx.lineTo(x / CELL, z / CELL) : rx.moveTo(x / CELL, z / CELL)); rx.stroke(); }
-    const rmask = rx.getImageData(0, 0, V, V).data;
+    const rm = SG.art.mk(V, VZ), rx = rm.getContext('2d');
+    rx.fillStyle = '#000'; rx.fillRect(0, 0, V, VZ); rx.lineCap = 'round'; rx.lineJoin = 'round'; rx.strokeStyle = '#fff';
+    for (const r of ROADS) { rx.lineWidth = (r.w + 26) / CELL; rx.beginPath(); r.pts.forEach(([x, z], k) => k ? rx.lineTo(x / CELL, (z - Z0) / CELL) : rx.moveTo(x / CELL, (z - Z0) / CELL)); rx.stroke(); }
+    const rmask = rx.getImageData(0, 0, V, VZ).data;
     const blur = (src, rad) => {
-      const a = new Float32Array(V * V), b = new Float32Array(V * V);
-      for (let j = 0; j < V; j++) { let s = 0, n = 0; for (let i = -rad; i <= rad; i++) { const ii = Math.max(0, Math.min(N, i)); s += src[j * V + ii]; n++; } for (let i = 0; i < V; i++) { a[j * V + i] = s / n; const o = Math.max(0, Math.min(N, i - rad)), p = Math.max(0, Math.min(N, i + rad + 1)); s += src[j * V + p] - src[j * V + o]; } }
-      for (let i = 0; i < V; i++) { let s = 0, n = 0; for (let j = -rad; j <= rad; j++) { const jj = Math.max(0, Math.min(N, j)); s += a[jj * V + i]; n++; } for (let j = 0; j < V; j++) { b[j * V + i] = s / n; const o = Math.max(0, Math.min(N, j - rad)), p = Math.max(0, Math.min(N, j + rad + 1)); s += a[p * V + i] - a[o * V + i]; } }
+      const a = new Float32Array(V * VZ), b = new Float32Array(V * VZ);
+      for (let j = 0; j < VZ; j++) { let s = 0, n = 0; for (let i = -rad; i <= rad; i++) { const ii = Math.max(0, Math.min(N, i)); s += src[j * V + ii]; n++; } for (let i = 0; i < V; i++) { a[j * V + i] = s / n; const o = Math.max(0, Math.min(N, i - rad)), p = Math.max(0, Math.min(N, i + rad + 1)); s += src[j * V + p] - src[j * V + o]; } }
+      for (let i = 0; i < V; i++) { let s = 0, n = 0; for (let j = -rad; j <= rad; j++) { const jj = Math.max(0, Math.min(NZ, j)); s += a[jj * V + i]; n++; } for (let j = 0; j < VZ; j++) { b[j * V + i] = s / n; const o = Math.max(0, Math.min(NZ, j - rad)), p = Math.max(0, Math.min(NZ, j + rad + 1)); s += a[p * V + i] - a[o * V + i]; } }
       return b;
     };
     let Hb = blur(H, 5); yield 0.33; Hb = blur(Hb, 5);
-    for (let k = 0; k < V * V; k++) { const m = rmask[k * 4] / 255; if (m > 0 && H[k] > -0.5) H[k] = lerp(H[k], Hb[k], m * 0.92); }
+    for (let k = 0; k < V * VZ; k++) { const m = rmask[k * 4] / 255; if (m > 0 && H[k] > -0.5) H[k] = lerp(H[k], Hb[k], m * 0.92); }
     rm.width = rm.height = 1;
   }
   flatten(pads);   // le strade passano accanto alle case e ne smussano il terreno: le piazzole tornano piane
   // opere: ponti, moli, bacini dei porti, terrazze
   for (const t of TERRA) {
     const sf = t.soft || 0;   // bordo morbido: attorno al rettangolo il terreno raggiunge la quota a poco a poco (niente gradini agli angoli)
-    const i0 = Math.max(0, Math.ceil((t.x0 - sf) / CELL)), i1 = Math.min(N, Math.floor((t.x1 + sf) / CELL)), j0 = Math.max(0, Math.ceil((t.z0 - sf) / CELL)), j1 = Math.min(N, Math.floor((t.z1 + sf) / CELL));
+    const i0 = Math.max(0, Math.ceil((t.x0 - sf) / CELL)), i1 = Math.min(N, Math.floor((t.x1 + sf) / CELL)), j0 = Math.max(0, Math.ceil((t.z0 - sf - Z0) / CELL)), j1 = Math.min(NZ, Math.floor((t.z1 + sf - Z0) / CELL));
     const ty = t.y === null || t.y === undefined ? W_groundRaw(H, t.rx, t.rz) : t.y;
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * V + i;
-      if (sf) { const x = i * CELL, z = j * CELL, d = Math.hypot(Math.max(t.x0 - x, 0, x - t.x1), Math.max(t.z0 - z, 0, z - t.z1)); if (d > 0) { if (d < sf && H[k] > -0.5) H[k] = lerp(ty, H[k], smooth(0, sf, d)); continue; } }
-      H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
+      if (sf) { const x = i * CELL, z = Z0 + j * CELL, d = Math.hypot(Math.max(t.x0 - x, 0, x - t.x1), Math.max(t.z0 - z, 0, z - t.z1)); if (d > 0) { if (d < sf && H[k] > -0.5) H[k] = lerp(ty, H[k], smooth(0, sf, d)); continue; } }
+      H[k] = t.mode === 'max' ? Math.max(H[k], ty) : t.mode === 'min' ? Math.min(H[k], ty) : t.mode === 'rampx' ? lerp(ty, t.y1, (i * CELL - t.x0) / (t.x1 - t.x0)) : t.mode === 'rampz' ? lerp(ty, t.y1, (Z0 + j * CELL - t.z0) / (t.z1 - t.z0)) : ty; }
+  }
+  for (const s of SHAPERS) {
+    const i0 = Math.max(0, Math.ceil(s.box[0] / CELL)), i1 = Math.min(N, Math.floor(s.box[2] / CELL)), j0 = Math.max(0, Math.ceil((s.box[1] - Z0) / CELL)), j1 = Math.min(NZ, Math.floor((s.box[3] - Z0) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) H[j * V + i] = s.f(i * CELL, Z0 + j * CELL, H[j * V + i]);
   }
   // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
-  const shore = W.shore = new Uint8Array(N * N);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const h = H[j * V + i]; shore[j * N + i] = h >= 0 ? 255 : Math.max(0, 255 + h * 36); }
+  const shore = W.shore = new Uint8Array(N * NZ);
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < N; i++) { const h = H[j * V + i]; shore[j * N + i] = h >= 0 ? 255 : Math.max(0, 255 + h * 36); }
   yield 0.35;
   // pendenza e luce per vertice; bioma dominante; rumore largo per i colori
-  const SL = W.SL = new Float32Array(V * V), SH = W.SH = new Float32Array(V * V), BI = W.biome = new Uint8Array(V * V), N1 = new Float32Array(V * V);
+  const SL = W.SL = new Float32Array(V * VZ), SH = W.SH = new Float32Array(V * VZ), BI = W.biome = new Uint8Array(V * VZ), N1 = new Float32Array(V * VZ);
   const sun = [-0.42, 0.78, 0.46], sl = Math.hypot(...sun);
-  for (let j = 0; j < V; j++) {
+  for (let j = 0; j < VZ; j++) {
     for (let i = 0; i < V; i++) {
-      const k = j * V + i, hl = H[j * V + Math.max(0, i - 1)], hr = H[j * V + Math.min(N, i + 1)], hu = H[Math.max(0, j - 1) * V + i], hd = H[Math.min(N, j + 1) * V + i];
+      const k = j * V + i, hl = H[j * V + Math.max(0, i - 1)], hr = H[j * V + Math.min(N, i + 1)], hu = H[Math.max(0, j - 1) * V + i], hd = H[Math.min(NZ, j + 1) * V + i];
       const gx = (hr - hl) / (2 * CELL), gz = (hd - hu) / (2 * CELL), n = Math.hypot(gx, 1, gz);
       SL[k] = Math.hypot(gx, gz);
       const dot = (-gx * sun[0] + sun[1] - gz * sun[2]) / (n * sl);
       SH[k] = Math.max(0.42, Math.min(1.12, 0.38 + 0.74 * Math.max(0, dot)));
       if (H[k] < -16) { N1[k] = 0.5; continue; }
-      biomeW(i * CELL, j * CELL, BW); let bb = 0; for (let b = 1; b < NB; b++) if (BW[b] > BW[bb]) bb = b; BI[k] = bb;
-      N1[k] = fbm(i * CELL / 210, j * CELL / 210, 3);
+      biomeW(i * CELL, Z0 + j * CELL, BW); let bb = 0; for (let b = 1; b < NB; b++) if (BW[b] > BW[bb]) bb = b; BI[k] = bb;
+      N1[k] = fbm(i * CELL / 210, (Z0 + j * CELL) / 210, 3);
     }
-    if (j % 32 === 0) yield 0.35 + 0.1 * j / V;
+    if (j % 32 === 0) yield 0.35 + 0.1 * j / VZ;
   }
   // maschera delle strade visibili e dei pavimenti (risoluzione della texture)
-  const tm = SG.art.mk(TEX, TEX), tx = tm.getContext('2d');
-  tx.fillStyle = '#000'; tx.fillRect(0, 0, TEX, TEX); tx.lineCap = 'round'; tx.lineJoin = 'round';
-  const line = (w, pts) => { tx.lineWidth = w / TC; tx.beginPath(); pts.forEach(([x, z], k) => k ? tx.lineTo(x / TC, z / TC) : tx.moveTo(x / TC, z / TC)); tx.stroke(); };
+  const tm = SG.art.mk(TEX, TEXZ), tx = tm.getContext('2d');
+  tx.fillStyle = '#000'; tx.fillRect(0, 0, TEX, TEXZ); tx.lineCap = 'round'; tx.lineJoin = 'round';
+  const line = (w, pts) => { tx.lineWidth = w / TC; tx.beginPath(); pts.forEach(([x, z], k) => k ? tx.lineTo(x / TC, (z - Z0) / TC) : tx.moveTo(x / TC, (z - Z0) / TC)); tx.stroke(); };
   tx.strokeStyle = '#f00'; for (const r of ROADS) if (!r.hidden) line(r.w, r.pts);
   const PC = { r: '#f00', g: '#0f0', b: '#00f' };
   for (const p of PAVE) {
     tx.fillStyle = tx.strokeStyle = PC[p[0]];
-    if (p[1] === 'disc') { tx.beginPath(); tx.arc(p[2] / TC, p[3] / TC, p[4] / TC, 0, Math.PI * 2); tx.fill(); }
-    else if (p[1] === 'rect') tx.fillRect(Math.round(p[2] / TC), Math.round(p[3] / TC), Math.round((p[4] - p[2]) / TC), Math.round((p[5] - p[3]) / TC));
+    if (p[1] === 'disc') { tx.beginPath(); tx.arc(p[2] / TC, (p[3] - Z0) / TC, p[4] / TC, 0, Math.PI * 2); tx.fill(); }
+    else if (p[1] === 'rect') tx.fillRect(Math.round(p[2] / TC), Math.round((p[3] - Z0) / TC), Math.round((p[4] - p[2]) / TC), Math.round((p[5] - p[3]) / TC));
     else { tx.lineCap = p[4] ? 'butt' : 'round'; line(p[2], p[3]); tx.lineCap = 'round'; }
   }
-  const road = tx.getImageData(0, 0, TEX, TEX).data;
+  const road = tx.getImageData(0, 0, TEX, TEXZ).data;
   tm.width = tm.height = 1;
   yield 0.47;
   // colori e motivi del terreno: una cella del rilievo (4 punti di colore) alla volta
-  const col = W.col = new Uint8Array(TEX * TEX * 4), mat = W.mat = new Uint8Array(TEX * TEX * 4), paved = W.road = new Uint8Array(TEX * TEX);
+  const col = W.col = new Uint8Array(TEX * TEXZ * 4), mat = W.mat = new Uint8Array(TEX * TEXZ * 4), paved = W.road = new Uint8Array(TEX * TEXZ);
   const BC = []; for (let b = 0; b < NB; b++) BC.push([BCH[b * 2], BCH[b * 2 + 1]].map(h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }));
   const c = [0, 0, 0], m = [0, 0, 0, 0], tmp = new Float32Array(NB), act = new Int32Array(NB), aw = new Float32Array(NB);
-  for (let cj = 0; cj < N; cj++) {
+  for (let cj = 0; cj < NZ; cj++) {
     for (let ci = 0; ci < N; ci++) {
       const k00 = cj * V + ci, h00 = H[k00], h10 = H[k00 + 1], h01 = H[k00 + V], h11 = H[k00 + V + 1];
       if (h00 < -15 && h10 < -15 && h01 < -15 && h11 < -15) {   // mare profondo
@@ -5847,16 +5876,16 @@ function* build(atlas, sprites) {
       }
       if (h00 < -0.5 && h10 < -0.5 && h01 < -0.5 && h11 < -0.5) {   // fondale basso: il colore dipende solo dalla profondità
         for (let t = 0; t < 4; t++) { const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), o = (ty * TEX + tx2) * 4;
-          const h = (h00 * (1 - u) + h10 * u) * (1 - v) + (h01 * (1 - u) + h11 * u) * v, dd = smooth(-0.4, -14, h), vv = 0.94 + vn((tx2 + 0.5) * TC / 23, (ty + 0.5) * TC / 23) * 0.12;
+          const h = (h00 * (1 - u) + h10 * u) * (1 - v) + (h01 * (1 - u) + h11 * u) * v, dd = smooth(-0.4, -14, h), vv = 0.94 + vn((tx2 + 0.5) * TC / 23, (Z0 + (ty + 0.5) * TC) / 23) * 0.12;
           col[o] = lerp(196, 70, dd) * vv; col[o + 1] = lerp(180, 110, dd) * vv; col[o + 2] = lerp(128, 120, dd) * vv; mat[o + 1] = 102; mat[o + 3] = 153; }
         continue;
       }
-      biomeW((ci + 0.5) * CELL, (cj + 0.5) * CELL, tmp);
+      biomeW((ci + 0.5) * CELL, Z0 + (cj + 0.5) * CELL, tmp);
       let na = 0; for (let b = 0; b < NB; b++) if (tmp[b] >= 0.01) { act[na] = b; aw[na++] = tmp[b]; }
-      const wVol = tmp[B.VOLCANO], wDes = tmp[B.DESERT], wSw = tmp[B.SWAMP], wMesa = tmp[B.MESA], wJun = tmp[B.JUNGLE];
+      const wVol = tmp[B.VOLCANO], wDes = tmp[B.DESERT], wSw = tmp[B.SWAMP], wMesa = tmp[B.MESA], wJun = tmp[B.JUNGLE], wAlp = tmp[B.ALP];
       const s00 = SL[k00], s10 = SL[k00 + 1], s01 = SL[k00 + V], s11 = SL[k00 + V + 1], q00 = N1[k00], q10 = N1[k00 + 1], q01 = N1[k00 + V], q11 = N1[k00 + V + 1];
       for (let t = 0; t < 4; t++) {
-        const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), x = (tx2 + 0.5) * TC, z = (ty + 0.5) * TC;
+        const u = t & 1 ? 0.75 : 0.25, v = t & 2 ? 0.75 : 0.25, tx2 = ci * 2 + (t & 1), ty = cj * 2 + (t >> 1), x = (tx2 + 0.5) * TC, z = Z0 + (ty + 0.5) * TC;
         const w00 = (1 - u) * (1 - v), w10 = u * (1 - v), w01 = (1 - u) * v, w11 = u * v;
         const h = h00 * w00 + h10 * w10 + h01 * w01 + h11 * w11, s = s00 * w00 + s10 * w10 + s01 * w01 + s11 * w11, n1 = q00 * w00 + q10 * w10 + q01 * w01 + q11 * w11, n2 = vn(x / 23, z / 23);
         c[0] = c[1] = c[2] = 0; m[0] = m[1] = m[2] = m[3] = 0; let em = 0;
@@ -5875,12 +5904,13 @@ function* build(atlas, sprites) {
           else if (b === B.MESA) { const bd = Math.floor((h + n1 * 14) / 7) % 3; if (bd === 1) { cr *= 0.86; cg *= 0.84; cb *= 0.86; } else if (bd === 2) { cr = lerp(cr, 236, 0.35); cg = lerp(cg, 190, 0.35); cb = lerp(cb, 140, 0.35); } }
           else if (b === B.JUNGLE) { if (n2 > 0.7) { cr *= 0.78; cg *= 0.8; cb *= 0.78; } }
           else if (b === B.BLOSSOM) { if (vn(x / 6, z / 6) > 0.8) { cr = 250; cg = 176; cb = 204; } }
+          else if (b === B.ALP) { const g = smooth(400, 520, h + (n1 - 0.5) * 70); cr = lerp(cr, 134, g); cg = lerp(cg, 130, g); cb = lerp(cb, 124, g); if (g < 0.5 && n2 > 0.8) { cr *= 0.86; cg *= 0.9; cb *= 0.84; } }
           else if (b === B.MOOR) { if (n2 > 0.62) { cr = 124; cg = 76; cb = 124; } else if (n2 < 0.2) { cr = 66; cg = 70; cb = 60; } }
           c[0] += cr * wb; c[1] += cg * wb; c[2] += cb * wb;
           const bm = BM[b]; m[0] += bm[0] * wb; m[1] += bm[1] * wb; m[2] += bm[2] * wb; m[3] += bm[3] * wb;
         }
         // neve in alto, roccia sui pendii, sabbia in riva, fondali sott'acqua
-        const snow = smooth(165, 205, h + (n1 - 0.5) * 50) * (1 - wVol) * (1 - wDes) * (1 - wMesa) * (1 - wJun);
+        const snow = smooth(165 + 365 * wAlp, 205 + 395 * wAlp, h + (n1 - 0.5) * (50 + 40 * wAlp)) * (1 - wVol) * (1 - wDes) * (1 - wMesa) * (1 - wJun);
         if (snow > 0) { c[0] = lerp(c[0], 238, snow); c[1] = lerp(c[1], 244, snow); c[2] = lerp(c[2], 251, snow); m[0] *= 1 - snow; m[1] *= 1 - snow; m[2] *= 1 - snow; m[3] = m[3] * (1 - snow) + snow; }
         const rk = smooth(0.62, 1.0, s) * (1 - snow * 0.6);
         if (rk > 0) {
@@ -5896,7 +5926,7 @@ function* build(atlas, sprites) {
         const ti = ty * TEX + tx2, ri = ti * 4, rr = road[ri] / 255, rg = road[ri + 1] / 255, rb = road[ri + 2] / 255;
         if (rr > 0) { c[0] = lerp(c[0], 168, rr); c[1] = lerp(c[1], 128, rr); c[2] = lerp(c[2], 84, rr); for (let q = 0; q < 4; q++) m[q] *= 1 - rr; m[1] += rr * 0.75; m[2] += rr * 0.25; }
         if (rg > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.93; c[0] = lerp(c[0], 160 * kk, rg); c[1] = lerp(c[1], 156 * kk, rg); c[2] = lerp(c[2], 150 * kk, rg); for (let q = 0; q < 4; q++) m[q] *= 1 - rg; m[2] += rg; }
-        if (rb > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.94; c[0] = lerp(c[0], 214 * kk, rb); c[1] = lerp(c[1], 186 * kk, rb); c[2] = lerp(c[2], 126 * kk, rb); for (let q = 0; q < 4; q++) m[q] *= 1 - rb; m[2] += rb; }
+        if (rb > 0) { const kk = ((tx2 >> 1) + (ty >> 1)) & 1 ? 1 : 0.94 - 0.05 * wAlp; c[0] = lerp(c[0], lerp(214, 232, wAlp) * kk, rb); c[1] = lerp(c[1], lerp(186, 232, wAlp) * kk, rb); c[2] = lerp(c[2], lerp(126, 238, wAlp) * kk, rb); for (let q = 0; q < 4; q++) m[q] *= 1 - rb; m[2] += rb; }
         paved[ti] = Math.max(road[ri], road[ri + 1], road[ri + 2]);
         em *= 1 - Math.min(1, rr + rg + rb);
         const o = ri, vv = 0.94 + n2 * 0.12;
@@ -5906,12 +5936,12 @@ function* build(atlas, sprites) {
         mat[o] = m[0] / ms * 255; mat[o + 1] = m[1] / ms * 255; mat[o + 2] = m[2] / ms * 255; mat[o + 3] = m[3] / ms * 255;
       }
     }
-    if (cj % 32 === 0) yield 0.47 + 0.33 * cj / N;
+    if (cj % 32 === 0) yield 0.47 + 0.33 * cj / NZ;
   }
   // immagine della mappa (512x512) con rilievo e acqua
-  const MS = 512, mi = SG.art.mk(MS, MS), mx = mi.getContext('2d'), md = mx.createImageData(MS, MS);
-  for (let y = 0; y < MS; y++) for (let x = 0; x < MS; x++) {
-    const o = (y * MS + x) * 4, t = ((y * 4 + 2) * TEX + x * 4 + 2) * 4, i = Math.min(N, x * 2 + 1), j = Math.min(N, y * 2 + 1), h = H[j * V + i], sh = SH[j * V + i];
+  const MS = 512, MSZ = MS * WSZ / WS, mi = SG.art.mk(MS, MSZ), mx = mi.getContext('2d'), md = mx.createImageData(MS, MSZ);
+  for (let y = 0; y < MSZ; y++) for (let x = 0; x < MS; x++) {
+    const o = (y * MS + x) * 4, t = ((y * 4 + 2) * TEX + x * 4 + 2) * 4, i = Math.min(N, x * 2 + 1), j = Math.min(NZ, y * 2 + 1), h = H[j * V + i], sh = SH[j * V + i];
     if (h < -0.6) { const dd = smooth(0, -20, h); md.data[o] = lerp(86, 40, dd); md.data[o + 1] = lerp(150, 90, dd); md.data[o + 2] = lerp(210, 170, dd); }
     else { md.data[o] = Math.min(255, col[t] * (0.55 + sh * 0.5)); md.data[o + 1] = Math.min(255, col[t + 1] * (0.55 + sh * 0.5)); md.data[o + 2] = Math.min(255, col[t + 2] * (0.55 + sh * 0.5)); }
     md.data[o + 3] = 255;
@@ -5919,7 +5949,7 @@ function* build(atlas, sprites) {
   mx.putImageData(md, 0, 0); W.mapImg = mi;
   yield 0.82;
   // edifici e collisioni
-  W.colliders = new Array(GN * GN); W.boxGrid = new Array(BGN * BGN); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
+  W.colliders = new Array(GN * GNZ); W.boxGrid = new Array(BGN * BGNZ); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
   for (const p of buildMeshes()) yield 0.82 + 0.06 * p;
   // oggetti messi a mano e sparsi
   for (const p of placeObjects(sprites)) yield 0.88 + 0.08 * p;
@@ -5927,7 +5957,7 @@ function* build(atlas, sprites) {
   if (W.bakeShadows) W.bakeShadows();
   yield 0.97;
 }
-function W_groundRaw(H, x, z) { const i = Math.round(x / CELL), j = Math.round(z / CELL); return H[Math.max(0, Math.min(N, j)) * V + Math.max(0, Math.min(N, i))]; }
+function W_groundRaw(H, x, z) { const i = Math.round(x / CELL), j = Math.round((z - Z0) / CELL); return H[Math.max(0, Math.min(NZ, j)) * V + Math.max(0, Math.min(N, i))]; }
 
 // ---------- geometria degli edifici ----------
 // vertice: x, y, z, riquadro x, riquadro y, u, v, luce
@@ -6078,14 +6108,14 @@ function* buildMeshes() {
 // ogni oggetto sono 7 numeri nel pezzo di mondo a cui appartiene: x, y, z, scala, disegno, luce, vento
 const RL = [];
 function* placeObjects(S) {
-  const OB = W.OB = new Array(CH * CH), TAU2 = Math.PI * 2;
+  const OB = W.OB = new Array(CH * CHZ), TAU2 = Math.PI * 2, isOld = (x, z) => x < OLD && z < OLD && z >= 0;
   let R = rng(4242);
   W.nObjs = 0;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
     if (rect._i === undefined) { rect._i = RL.length; RL.push(rect); }
-    const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CH - 1, Math.floor(z / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
+    const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CHZ - 1, Math.floor((z - Z0) / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
     (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, rect._i, sp.lit || 1, sp.sway || 0);
     if (sp.glow) W.glows.push([x, y + sp.glow[0], z, sp.glow[1], sp.glow[2], sp.glow[3], sp.glow[4], 0]);
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
@@ -6155,6 +6185,7 @@ function* placeObjects(S) {
     [B.JUNGLE]: [[0.15, 'jungle'], [0.24, 'palm'], [0.33, 'fernbig'], [0.4, 'fern', 1], [0.44, 'flower', 1], [0.46, 'bush'], [0.47, 'rock']],
     [B.BLOSSOM]: [[0.035, 'cherry'], [0.05, 'cherrywhite'], [0.062, 'bush'], [0.2, 'flower', 1], [0.27, 'tuft', 1], [0.276, 'rock']],
     [B.MOOR]: [[0.02, 'deadtree'], [0.03, 'willow'], [0.14, 'heather', 1], [0.16, 'rock'], [0.175, 'tomb'], [0.19, 'tuft', 1]],
+    [B.ALP]: [[0.06, 'pine'], [0.088, 'rock'], [0.098, 'rocksnow'], [0.14, 'tuft', 1], [0.185, 'flower', 1]],
   };
   const scatter = (gx0, gz0, gx1, gz1, skipOld) => {
     const step = 12;
@@ -6165,12 +6196,14 @@ function* placeObjects(S) {
       const h = W.ground(x, z); if (h < WL + 0.8) { if (h > -1.5 && r < 0.05 && W.biomeAt(x, z) === B.SWAMP) add('reeds', x, z, { small: true }); continue; }
       const sl = W.slope(x, z), b = W.biomeAt(x, z);
       if (W.roadAt(x, z) > 0.05 || busy(x, z, 6)) continue;
-      if (W.col[(Math.min(TEX - 1, Math.floor(z / TC)) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
+      if (W.col[(Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))) * TEX + Math.min(TEX - 1, Math.floor(x / TC))) * 4 + 3] > 20) continue;
       let pick = null;
       for (const e of TBL[b]) if (r < e[0]) { pick = e; break; }
       if (!pick) continue;
       if (sl > 0.75 && pick[1] !== 'rock' && pick[1] !== 'mesarock') continue;
-      if (h > 175 && pick[1] === 'pine') pick = [0, 'snowpine'];
+      // sui grandi monti: boschi di pini nelle valli, più radi salendo, e sopra i nevai soltanto roccia
+      if (b === B.ALP) { if (h > 545) { if (pick[1] !== 'rock' && pick[1] !== 'rocksnow') continue; pick = [0, 'rocksnow']; } else if (h > 420) { if (pick[1] === 'pine') { if (r > 0.03) continue; pick = [0, 'snowpine']; } else if (pick[1] === 'flower') continue; } }
+      else if (h > 175 && pick[1] === 'pine') pick = [0, 'snowpine'];
       if (Math.abs(x - 2150) < 360 && Math.abs(z - 1340) < 290 && h < 6 && R() < 0.5) pick = [0, 'crystal'];
       if (h < 6 && b === B.MEADOW && z > 3100 && R() < 0.4) pick = [0, 'palm'];
       add(pick[1], x, z, { small: !!pick[2] });
@@ -6178,10 +6211,13 @@ function* placeObjects(S) {
   };
   // prima l'isola di Lumen, con lo stesso ordine di sempre: la sua vegetazione resta dov'era
   for (let i = 0; i < OLDN.nooks; i++) nook(NOOKS[i]);
-  for (const b of BUILD) if (b.k === 'cave' && b.x < OLD && b.z < OLD) caveRing(b);
+  for (const b of BUILD) if (b.k === 'cave' && isOld(b.x, b.z)) caveRing(b);
   for (let i = 0; i < OLDN.props; i++) prop(PROPS[i]);
   yield 0.05;
-  scatter(0, 0, OLD, OLD, false);
+  // a nord della riga 732 il terreno di Lumen è cambiato (i grandi monti, il valico): lì la vegetazione segue una sequenza sua.
+  // Da lì in giù la sequenza riparte dal punto esatto di prima (64383 numeri già usati): ogni albero di Lumen resta dov'era
+  R = rng(7117); scatter(0, 0, OLD, 732, false);
+  R = rng((4242 + Math.imul(64383, 0x6D2B79F5)) >>> 0); scatter(0, 732, OLD, OLD, false);
   yield 0.3;
   // pietre che affiorano dal lago: il passaggio verso l'isola
   for (let i = 0; i < STONES.length - 1; i++) { const [ax, az] = STONES[i], [bx, bz] = STONES[i + 1], L = Math.hypot(bx - ax, bz - az); for (let t = 0; t < L; t += 11) { const x = ax + (bx - ax) * t / L + (R() - 0.5) * 4, z = az + (bz - az) * t / L + (R() - 0.5) * 4; add('stepstone', x, z, { y: WL + 0.15, sink: 0 }); } }
@@ -6192,12 +6228,19 @@ function* placeObjects(S) {
   for (let k = 0; k < 900; k++) { const x = 300 + R() * 3500, z = 300 + R() * 3600, h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
   // poi le terre nuove, con un'altra sequenza di numeri
   R = rng(90210);
-  for (let i = OLDN.nooks; i < NOOKS.length; i++) nook(NOOKS[i]);
-  for (const b of BUILD) if (b.k === 'cave' && !(b.x < OLD && b.z < OLD)) caveRing(b);
-  for (let i = OLDN.props; i < PROPS.length; i++) prop(PROPS[i]);
+  const NN = W.NORDN || { nooks: [0, 0], props: [0, 0] };   // le cose dei grandi monti (un tratto degli elenchi) hanno la loro sequenza: le lasciamo per ultime
+  for (let i = OLDN.nooks; i < NOOKS.length; i++) if (i < NN.nooks[0] || i >= NN.nooks[1]) nook(NOOKS[i]);
+  for (const b of BUILD) if (b.k === 'cave' && !isOld(b.x, b.z) && b.z >= 0) caveRing(b);
+  for (let i = OLDN.props; i < PROPS.length; i++) if (i < NN.props[0] || i >= NN.props[1]) prop(PROPS[i]);
   yield 0.35;
   for (let z0 = 0; z0 < WS; z0 += 1024) { scatter(0, z0, WS, z0 + 1024, true); yield 0.35 + 0.6 * (z0 + 1024) / WS; }
   for (let k = 0; k < 3200; k++) { const x = 100 + R() * (WS - 200), z = 100 + R() * (WS - 200); if (x < OLD && z < OLD) continue; const h = W.ground(x, z); if (h > 0.8 && h < 4 && coastDist(x, z) < 160 && warm(W.biomeAt(x, z)) && !busy(x, z, 5)) add('palm', x, z); }
+  // infine i grandi monti del nord
+  R = rng(31337);
+  for (let i = NN.nooks[0]; i < NN.nooks[1]; i++) nook(NOOKS[i]);
+  for (const b of BUILD) if (b.k === 'cave' && b.z < 0) caveRing(b);
+  for (let i = NN.props[0]; i < NN.props[1]; i++) prop(PROPS[i]);
+  scatter(900, Z0, 3960, 0, false);
   for (const k in OB) { const L = OB[k]; L.big = new Float32Array(L.big); L.small = new Float32Array(L.small); }
 }
 
@@ -6206,21 +6249,22 @@ function* placeObjects(S) {
 const CV = N / CH + 1, scratch = new Float32Array(CV * CV * 6);
 W.upload = (G) => {
   const gl = G.gl; W.G = G;
-  W.tex = { col: G.texture({ w: TEX, h: TEX, data: W.col }, { linear: true }), mat: G.texture({ w: TEX, h: TEX, data: W.mat }, { linear: true }) };
+  W.tex = { col: G.texture({ w: TEX, h: TEXZ, data: W.col }, { linear: true }), mat: G.texture({ w: TEX, h: TEXZ, data: W.mat }, { linear: true }) };
   W.mat = null;
   const lod = st => { const out = []; for (let j = 0; j < CV - 1; j += st) for (let i = 0; i < CV - 1; i += st) { const a = j * CV + i, b = a + st, c = a + st * CV, d = c + st; out.push(a, d, b, a, c, d); } return G.buffer(new Uint16Array(out), gl.ELEMENT_ARRAY_BUFFER); };
   W.lod = [1, 2, 4].map(st => ({ buf: lod(st), n: ((CV - 1) / st) ** 2 * 6 }));
   W.chunks = []; W.live = [];
   const H = W.H;
-  for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
+  for (let cj = 0; cj < CHZ; cj++) for (let ci = 0; ci < CH; ci++) {
     let lo = 1e9, hi = -1e9;
     for (let j = 0; j < CV; j++) { const row = (cj * (CV - 1) + j) * V + ci * (CV - 1); for (let i = 0; i < CV; i++) { const h = H[row + i]; if (h < lo) lo = h; if (h > hi) hi = h; } }
     const L = W.OB[cj * CH + ci];
-    W.chunks.push({ ci, cj, cx: (ci + 0.5) * CS, cz: (cj + 0.5) * CS, lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
+    const ccx = (ci + 0.5) * CS, ccz = Z0 + (cj + 0.5) * CS;
+    W.chunks.push({ ci, cj, cx: ccx, cz: ccz, fine: FINE.some(f => ccx > f[0] && ccx < f[2] && ccz > f[1] && ccz < f[3]), lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
   }
   const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null; if (window.__SG_DEBUG) W.meshDbg = m;
   // acqua: un grande quadrato fino all'orizzonte
-  W.waterBuf = G.buffer(new Float32Array([-3000, -3000, WS + 3000, -3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
+  W.waterBuf = G.buffer(new Float32Array([-3000, Z0 - 3000, WS + 3000, Z0 - 3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
 };
 const quadsOf = list => {
   const n = list.length / 7, f = new Float32Array(n * 44); let p = 0;
@@ -6240,9 +6284,9 @@ W.need = (c, frame) => {
   const G = W.G, H = W.H, data = scratch;
   for (let j = 0; j < CV; j++) for (let i = 0; i < CV; i++) {
     const gi = c.ci * (CV - 1) + i, gj = c.cj * (CV - 1) + j, k = gj * V + gi, o = (j * CV + i) * 6;
-    data[o] = gi * CELL; data[o + 1] = H[k]; data[o + 2] = gj * CELL; data[o + 3] = W.SH[k];
+    data[o] = gi * CELL; data[o + 1] = H[k]; data[o + 2] = Z0 + gj * CELL; data[o + 3] = W.SH[k];
     // pendenza (per disegnare le pareti di roccia senza stirare la grana)
-    data[o + 4] = (H[gj * V + Math.min(N, gi + 1)] - H[gj * V + Math.max(0, gi - 1)]) / (2 * CELL); data[o + 5] = (H[Math.min(N, gj + 1) * V + gi] - H[Math.max(0, gj - 1) * V + gi]) / (2 * CELL);
+    data[o + 4] = (H[gj * V + Math.min(N, gi + 1)] - H[gj * V + Math.max(0, gi - 1)]) / (2 * CELL); data[o + 5] = (H[Math.min(NZ, gj + 1) * V + gi] - H[Math.max(0, gj - 1) * V + gi]) / (2 * CELL);
   }
   c.buf = G.buffer(data);
   const L = W.OB[c.cj * CH + c.ci];
@@ -6257,27 +6301,27 @@ W.sweep = frame => {
 };
 // ombre di alberi ed edifici dipinte sul terreno (il sole sta a sud-ovest: le ombre vanno a nord-est)
 W.bakeShadows = () => {
-  const m = new Uint8Array(TEX * TEX), col = W.col, dx = 0.674, dz = -0.738;
-  const put = (tx, tz, v) => { if (tx < 0 || tz < 0 || tx >= TEX || tz >= TEX) return; const k = tz * TEX + tx; if (m[k] < v) m[k] = v; };
+  const m = new Uint8Array(TEX * TEXZ), col = W.col, dx = 0.674, dz = -0.738;
+  const put = (tx, tz, v) => { if (tx < 0 || tz < 0 || tx >= TEX || tz >= TEXZ) return; const k = tz * TEX + tx; if (m[k] < v) m[k] = v; };
   for (const L of W.OB) {
     if (!L) continue; const b = L.big;
     for (let o = 0; o < b.length; o += 7) {
       const r = RL[b[o + 4]], w = r.w * b[o + 3], h = r.h * b[o + 3]; if (h < 6 || b[o + 1] < 0.2) continue;
       const cx = b[o] + dx * h * 0.42, cz = b[o + 2] + dz * h * 0.42, ra = Math.max(3.5, h * 0.5), rb = Math.max(3.5, w * 0.36), R = Math.max(ra, rb);
-      for (let tz = Math.floor((cz - R) / TC); tz <= (cz + R) / TC; tz++) for (let tx = Math.floor((cx - R) / TC); tx <= (cx + R) / TC; tx++) {
-        const px = (tx + 0.5) * TC - cx, pz = (tz + 0.5) * TC - cz, al = px * dx + pz * dz, ac = -px * dz + pz * dx; if ((al / ra) ** 2 + (ac / rb) ** 2 < 1) put(tx, tz, 62);
+      for (let tz = Math.floor((cz - R - Z0) / TC); tz <= (cz + R - Z0) / TC; tz++) for (let tx = Math.floor((cx - R) / TC); tx <= (cx + R) / TC; tx++) {
+        const px = (tx + 0.5) * TC - cx, pz = Z0 + (tz + 0.5) * TC - cz, al = px * dx + pz * dz, ac = -px * dz + pz * dx; if ((al / ra) ** 2 + (ac / rb) ** 2 < 1) put(tx, tz, 62);
       }
     }
   }
   for (const b of W.boxes) {
     const g = W.ground((b[0] + b[2]) / 2, (b[1] + b[3]) / 2), hh = Math.max(0, Math.min(46, b[4] - g)); if (hh < 3) continue;
     const vx = dx * hh * 1.25, vz = dz * hh * 1.25;
-    for (let tz = Math.floor((b[1] + vz) / TC); tz <= b[3] / TC; tz++) for (let tx = Math.floor(b[0] / TC); tx <= (b[2] + vx) / TC; tx++) {
-      const px = (tx + 0.5) * TC, pz = (tz + 0.5) * TC, t0 = Math.max(0, (px - b[2]) / vx, (pz - b[1]) / vz), t1 = Math.min(1, (px - b[0]) / vx, (pz - b[3]) / vz);
+    for (let tz = Math.floor((b[1] + vz - Z0) / TC); tz <= (b[3] - Z0) / TC; tz++) for (let tx = Math.floor(b[0] / TC); tx <= (b[2] + vx) / TC; tx++) {
+      const px = (tx + 0.5) * TC, pz = Z0 + (tz + 0.5) * TC, t0 = Math.max(0, (px - b[2]) / vx, (pz - b[1]) / vz), t1 = Math.min(1, (px - b[0]) / vx, (pz - b[3]) / vz);
       if (t0 <= t1) put(tx, tz, 84);
     }
   }
-  for (let k = 0; k < TEX * TEX; k++) if (m[k]) { const o = k * 4; if (col[o + 3] > 8) continue; const f = 1 - m[k] / 255; col[o] *= f; col[o + 1] *= f; col[o + 2] *= f * 1.04 > 1 ? 1 : f * 1.04; }
+  for (let k = 0; k < TEX * TEXZ; k++) if (m[k]) { const o = k * 4; if (col[o + 3] > 8) continue; const f = 1 - m[k] / 255; col[o] *= f; col[o + 1] *= f; col[o + 2] *= f * 1.04 > 1 ? 1 : f * 1.04; }
 };
 W.build = build;
 W.coastDist = coastDist;
@@ -6296,7 +6340,9 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   ROOF_BLUE: 76, ROOF_GREEN: 77, ROOF_ORANGE: 78, ROOF_DARK: 79, ROOF_SNOW: 80, ROOF_PURPLE: 81, WHITE: 82, OCHRE: 83, PINK: 84, ADOBE: 85, TIMBER2: 86, LOGS: 87,
   PAVING: 88, PLANKS: 89, HULL: 90, SAIL: 91, DOOR_BIG: 92, DOOR_BLUE: 93, DOOR_RED: 94, WIN_ARCH: 95, WIN_ROUND: 96, WIN_LATTICE: 97, WIN_PAPER: 98,
   AWN_BLUE: 99, AWN_GREEN: 100, AWN_YELLOW: 101, BAN_RED: 102, BAN_BLUE: 103, ARCADE: 104, TURQ: 105, GOLD: 106, IVY: 107, CLOCK: 108, STEPS: 109,
-  DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119 };
+  DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119,
+  // (120 è dei santuari, da 128 a 169 ci sono gli interni delle botteghe)
+  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -6354,6 +6400,17 @@ function tilesOn(c, R) {
   at(TL.CRATE, () => { P('#8a5e34', 0, 0, T, T); for (let x = 0; x < T; x += 8) P('#6a4424', x, 0, 1, T); P('#4a2e1a', 0, 0, T, 3); P('#4a2e1a', 0, T - 3, T, 3); P('#4a2e1a', 0, 0, 3, T); P('#4a2e1a', T - 3, 0, 3, T); for (let i = 3; i < T - 3; i++) P('#5a3a20', i, i, 2, 2); });
   at(TL.WATER, () => { fill('#3a9ad8', 0); for (let k = 0; k < 26; k++) P(R() < 0.5 ? '#7ac8f0' : '#e0f4ff', R() * T | 0, R() * T | 0, 3 + (R() * 3 | 0), 1); });
   at(TL.CREST, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : x < 16 ? '#c8342c' : '#2a5ab0', x, y, 1, 1); } disc('#ffd23f', 16, 13, 4); disc('#fff4b0', 16, 13, 2); });
+  // la città di marmo: blocchi bianchi venati, colonne scanalate, fregio azzurro e oro, acqua che cade, balaustra
+  at(TL.MARBLE, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let k = 0; k < 9; k++) { let x = R() * T, y = R() * T; for (let q = 0; q < 7; q++) { P('rgba(150,160,186,.55)', x | 0, y | 0, 1, 1); x += 1; y += R() < 0.5 ? 1 : 0; } } });
+  at(TL.FLUTE, () => { P('#f2f3f7', 0, 0, T, T); for (let x = 0; x < T; x += 4) { P('#c2c7d6', x, 0, 1, T); P('#ffffff', x + 1, 0, 1, T); P('#dde0ea', x + 3, 0, 1, T); } });
+  at(TL.FRIEZE, () => { P('#eceef4', 0, 0, T, T); P('#e8b42a', 0, 2, T, 2); P('#e8b42a', 0, T - 4, T, 2); P('#2a62b8', 0, 7, T, 18); for (let x = 0; x < T; x += 8) { P('#eceef4', x + 1, 10, 6, 2); P('#eceef4', x + 1, 10, 2, 10); P('#eceef4', x + 1, 18, 6, 2); P('#eceef4', x + 5, 14, 2, 6); P('#eceef4', x + 3, 14, 3, 2); } P('#bcc2d0', 0, 0, T, 1); P('#bcc2d0', 0, T - 1, T, 1); });
+  at(TL.FALL, () => { P('#58aee8', 0, 0, T, T); for (let x = 0; x < T; x++) { const c = R(); if (c < 0.3) P('#8fd0f6', x, 0, 1, T); else if (c < 0.42) P('#3f94d6', x, 0, 1, T); } for (let k = 0; k < 46; k++) { const x = R() * T | 0, y = R() * T | 0, n = 4 + (R() * 9 | 0); for (let q = 0; q < n; q++) P(k % 3 ? '#eaf8ff' : '#bfe6ff', x, (y + q) % T, 1, 1); } });
+  at(TL.ROOF_TEAL, () => roof('#2f8c96'));
+  at(TL.BALUSTER, () => { P('#f2f3f7', 0, 0, T, 5); P('#c2c7d6', 0, 4, T, 1); P('#eceef4', 0, T - 5, T, 5); P('#c2c7d6', 0, T - 5, T, 1); for (let x = 2; x < T; x += 8) { P('#e4e7ef', x + 1, 5, 2, T - 10); P('#f6f7fa', x, 9, 4, 9); P('#c8cdda', x + 3, 9, 1, 9); P('#f6f7fa', x, 20, 4, 4); } });
+  at(TL.POOLW, () => { fill('#49b4d8', 0); for (let k = 0; k < 16; k++) P(R() < 0.6 ? '#84d6ee' : '#d8f6ff', R() * T | 0, R() * T | 0, 3 + (R() * 4 | 0), 1); for (let k = 0; k < 8; k++) P('#3a9cc4', R() * T | 0, R() * T | 0, 4, 1); });
+  at(TL.MARBLE_WIN, () => { for (let y = 3; y < 30; y++) for (let x = 9; x < 23; x++) { if (y < 10 && Math.hypot(x + 0.5 - 16, y + 0.5 - 10) > 7) continue; const ed = x === 9 || x === 22 || y === 29 || (y < 10 && Math.hypot(x + 0.5 - 16, y + 0.5 - 10) > 5.6); P(ed ? '#f6f7fa' : y > 26 ? '#c2c7d6' : '#3a78c0', x, y, 1, 1); } P('#f6f7fa', 15, 5, 2, 24); P('#f6f7fa', 10, 17, 12, 1); P('#9ad0f6', 11, 11, 3, 4); });
+  at(TL.MARBLE_DOOR, () => { for (let y = 1; y < T; y++) for (let x = 5; x < 27; x++) { if (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 11) continue; const ed = x < 7 || x > 24 || (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 9); P(ed ? '#f6f7fa' : (x === 15 || x === 16) ? '#1a3e7a' : '#2a62b8', x, y, 1, 1); } P('#e8b42a', 12, 18, 2, 3); P('#e8b42a', 18, 18, 2, 3); for (let y = 14; y < T; y += 7) { P('#3f7cd0', 8, y, 6, 1); P('#3f7cd0', 18, y, 6, 1); } });
+  at(TL.ARCH_M, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let y = 4; y < T; y++) for (let x = 4; x < 28; x++) { if (y < 16 && Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 12) continue; const ed = y < 16 ? Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 10 : (x < 6 || x > 25); P(ed ? '#f6f7fa' : '#16223a', x, y, 1, 1); } });
   at(TL.SHOJI, () => { P('#4a2e1c', 4, 3, 24, 26); P('#f8f0dc', 6, 5, 20, 22); for (let x = 12; x < 26; x += 7) P('#4a2e1c', x, 5, 1, 22); for (let y = 12; y < 27; y += 7) P('#4a2e1c', 6, y, 20, 1); P('#3a6ab8', 6, 5, 6, 7); });
   return c;
 }
@@ -6546,11 +6603,12 @@ function sprites(set, A, R) {
   set('anchor', [fit([Cy([0, 0, 0.6], [0, 0, 4], 0.22, IR), Cy([0, -0.9, 3.4], [0, 0.9, 3.4], 0.2, IR), Ca([0, -1.5, 1.2], [0, 0, 0.5], 0.24, IR), Ca([0, 1.5, 1.2], [0, 0, 0.5], 0.24, IR), El([0, 0, 4.3], [0.2, 0.5, 0.5], IR)], Math.PI - 1.2)], 0.2, 1);
   set('target', [fit([Cy([-0.3, 0, 3.2], [0.3, 0, 3.2], 2.2, '#f0ece0'), Cy([0.3, 0, 3.2], [0.36, 0, 3.2], 1.5, '#c8342c'), Cy([0.36, 0, 3.2], [0.42, 0, 3.2], 0.7, '#ffd23f'), Ca([0, -1.4, 0], [0, -0.6, 2], 0.2, WD), Ca([0, 1.4, 0], [0, 0.6, 2], 0.2, WD)], Math.PI - 0.3)], 0.2, 1.4);
   set('kingstatue', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -10, 0], c: '#8a867a' }, { t: 'b', b: [-8, 8, -8, 8, -11.5, -9.5], c: '#a8a498' }, ...A.human({ skin: '#b8b4a8', crown: '#d8c890', shirt: '#a8a498', plate: '#c0bcb0', pants: '#98948a', boots: '#8a867a', cape: '#98948a', beard: '#c0bcb0', weapon: { col: '#c8c4b8', guard: '#a8a498' }, shield: '#a8a498', emblem: '#c8c4b8' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
+  set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);
 }
 
-W.flags = []; W.sprays = []; W.TOWNS = [{ x: 2000, z: 2650, name: 'BORGO AURORA', big: true, home: true }]; W.FOLK = {};
+W.flags = []; W.sprays = []; W.falls = []; W.TOWNS = [{ x: 2000, z: 2650, name: 'BORGO AURORA', big: true, home: true }]; W.FOLK = {};
 SG.town = { TL, tilesOn, sprites, merl, merlBox, wallSeg, oct, faceDecal, cone, pyramid, hip, dome, tower, decal, gate, awning, house, addBridge, addPier, fountain, ship, g0 };
 })();
 
@@ -6568,6 +6626,8 @@ const STYLES = {
   nord: { walls: [TL.LOGS, TL.LOGS, 2, 2], roofs: [TL.ROOF_SNOW, 5, TL.ROOF_SNOW], rt: ['gable'], steep: 0.72, h: [10, 15], wd: [16, 24], chim: 1, win: [8], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_SNOW, pave: 'g', trees: ['snowpine'], lamp: 'lamp', yard: ['barrel', 'crate'], flag: 2, ban: TL.BAN_BLUE },
   sole: { walls: [TL.ADOBE, TL.ADOBE, 10, TL.WHITE], roofs: [TL.ADOBE, 10], rt: ['flat', 'flat', 'flat', 'dome'], h: [9, 16], wd: [16, 26], chim: 0, win: [TL.WIN_LATTICE], dr: [TL.DOOR_BLUE], aw: [TL.AWN_YELLOW, TL.AWN_BLUE, TL.CLOTH], cw: 10, cm: TL.MERL_SAND, tr: TL.TURQ, pave: 'b', trees: ['palm'], lamp: 'lamp', yard: ['jar', 'pot', 'crate'], flag: 1, ban: TL.BAN_BLUE },
   porto: { walls: [TL.WHITE, TL.WHITE, TL.OCHRE, TL.PINK, 0], roofs: [TL.ROOF_ORANGE, TL.ROOF_ORANGE, 4], rt: ['gable', 'hip'], h: [10, 19], wd: [15, 24], chim: 0.5, win: [8, TL.WIN_ARCH], dr: [7, TL.DOOR_BLUE], aw: [TL.AWN_BLUE, 13], cw: 9, cm: TL.MERL, tr: TL.ROOF_ORANGE, pave: 'g', trees: ['palm', 'oak'], lamp: 'lamp', yard: ['barrel', 'crate', 'anchor', 'pot'], flag: 2, ban: TL.BAN_BLUE },
+  // la città dei monti: marmo bianco, tetti azzurri e verdi, cupole
+  marmo: { walls: [TL.MARBLE, TL.MARBLE, TL.WHITE, TL.MARBLE], roofs: [TL.ROOF_BLUE, TL.ROOF_TEAL, TL.ROOF_BLUE], rt: ['hip', 'gable', 'hip', 'dome'], h: [11, 18], wd: [16, 26], chim: 0.25, win: [TL.MARBLE_WIN, TL.MARBLE_WIN, TL.WIN_ARCH], dr: [TL.MARBLE_DOOR], aw: [TL.AWN_BLUE, TL.CLOTH], cw: TL.MARBLE, cm: TL.MERL, tr: TL.ROOF_BLUE, pave: 'b', trees: ['pine', 'birch'], lamp: 'lamp', yard: ['pot', 'pot', 'jar', 'bench'], flag: 2, ban: TL.BAN_BLUE },
   fiore: { walls: [TL.WHITE, TL.PINK, 3, TL.TIMBER2], roofs: [TL.ROOF_PINK, TL.ROOF_DARK, TL.ROOF_PURPLE], rt: ['hip', 'gable'], h: [9, 14], wd: [16, 24], chim: 0.3, win: [TL.SHOJI, TL.WIN_PAPER], dr: [TL.DOOR_RED], aw: [], cw: 9, cm: TL.MERL, tr: TL.ROOF_PINK, pave: 'b', trees: ['cherry', 'cherrywhite', 'cherry'], lamp: 'lantern', yard: ['pot', 'pot', 'bench'], flag: 1, ban: TL.BAN_RED },
 };
 // ---------- abitanti: gli aspetti si condividono (uno sprite per tipo, non per persona) ----------
@@ -6619,8 +6679,10 @@ function city(o) {
   const occ = [], free = (a, b, c, d, m = 2) => { for (const q of occ) if (a < q[2] + m && c > q[0] - m && b < q[3] + m && d > q[1] - m) return false; return true; };
   const plan = { o, S, x0, x1, z0, z1, px, pz, pl, y, houses: [], specials: [], gates: [], open };
   // terreno, nomi, pavimenti
-  W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
-  W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
+  if (!o.noTerra) {   // (la città dei monti si scava i suoi gradoni da sola)
+    W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
+    W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
+  }
   W.CLEAR.push([x0 - 18, z0 - 18, x1 + 18, z1 + 18]);
   W.PLACES.push([o.x, o.z, Math.max(hw, hd) + 34, o.name]); W.TOWNS.push({ x: o.x, z: o.z, name: o.name, big: !o.small });
   const prect = [px - pl.w / 2, pz - pl.d / 2, px + pl.w / 2, pz + pl.d / 2];
@@ -7197,6 +7259,292 @@ W.NOOKS.push(
   [6420, 980, 'neve', 1.8], [7250, 1350, 'neve', 2.4], [5650, 950, 'rocce', 1.2], [7500, 2700, 'rosse', 2.8], [7640, 2000, 'sabbia', 3.0],
   [6440, 4390, 'cespugli', 3.2], [5500, 4750, 'cespugli', 0.8], [7350, 5500, 'selva', 3.1], [6500, 6300, 'selva', -0.8], [7300, 6500, 'selva', -1.8], [4950, 6800, 'cespugli', -1.2],
   [3040, 5050, 'ciliegi', 2.9], [1250, 5050, 'ciliegi', 0.6], [3350, 5650, 'ciliegi', -2.2], [3400, 6380, 'rocce', -0.9], [1250, 6672, 'brughiera', 0.3]);
+})();
+
+// ===================== PIXEL SAGA · i grandi monti del nord =====================
+// Oltre i Monti del Drago, dove prima c'era il mare, la terra continua e sale: prima le alture di sempre,
+// poi creste sempre più alte fino ai ghiacciai. In fondo alla Valle delle Cascate, incastonata nella roccia
+// e affacciata verso Lumen, sta Marmorea: la Grande Terrazza, i colonnati, l'acropoli e l'acqua che cade da ogni gradone.
+(() => {
+const W = SG.world, B = W.B, TN = SG.town, TL = TN.TL, C = SG.city, K = W.kit, { quad, walls, box, boxTop, gable, onWall, prism } = K;
+const { oct, decal, dome, hip, fountain } = TN;
+const sm = W.smooth, lerp = W.lerp, TAU = Math.PI * 2, c01 = v => Math.max(0, Math.min(1, v));
+// tutto quello che segue (oggetti, nascondigli) ha la sua sequenza di numeri: le terre di prima non cambiano
+W.NORDN = { nooks: [W.NOOKS.length, 0], props: [W.PROPS.length, 0] };
+
+// ---------- la terra ----------
+// i monti nuovi valgono solo a nord (mai sotto z = 300) e a ovest dello stretto: il resto del mondo resta com'era
+const QUI = (x, z) => sm(300, 40, z + 150 * W.fbm(x / 260, z / 260, 2)) * sm(3950, 3700, x);
+W.REG.push(
+  [1500, -150, 520, B.ALP, 'SOGLIA DEI GIGANTI', QUI], [2350, -180, 520, B.ALP, 'VALLE DELLE CASCATE', QUI], [3200, -200, 520, B.ALP, 'SOGLIA DEI GIGANTI', QUI],
+  [1500, -720, 520, B.ALP, 'MONTI DEL CIELO', QUI], [2400, -720, 520, B.ALP, 'VALLE DELLE CASCATE', QUI], [3250, -760, 520, B.ALP, "CRESTE D'ARGENTO", QUI],
+  [1750, -1280, 520, B.ALP, 'MONTI DEL CIELO', QUI], [2450, -1330, 520, B.ALP, 'GHIACCIAIO ETERNO', QUI], [3150, -1280, 520, B.ALP, "CRESTE D'ARGENTO", QUI],
+  [2450, -1700, 420, B.ALP, 'GHIACCIAIO ETERNO', QUI]);
+// le cime: [x, z, altezza in più, raggio]
+W.PEAKS.push([2430, -1500, 620, 340], [1740, -800, 260, 290], [3090, -820, 270, 290], [2020, -130, 150, 230], [3080, -110, 140, 230], [1560, -1250, 180, 260], [3260, -1280, 40, 260]);
+// quelle che si vedono da tutto il mondo, come sagome oltre la foschia: [x, z, mezza larghezza]
+W.GIANTS = [[2430, -1500, 640], [3290, -1220, 520], [3080, -1584, 430], [1776, -904, 480], [3128, -900, 460], [1776, -1276, 420], [1512, -1324, 380], [2184, -124, 360], [1952, -92, 300], [2832, -288, 320]];
+
+// ---------- Marmorea: le misure ----------
+// quattro piani, da sud a nord: il lago in fondo alla valle, la Grande Terrazza, la città, l'acropoli
+const XC = 2424, Y0 = 330, Y1 = 392, Y2 = 420, Y3 = 468;
+const ZF = -656,      // il parapetto della terrazza, sul vuoto
+  ZT = -776,          // il muro della città (in mezzo, la scalinata)
+  ZS1 = -824,         // in cima alla scalinata
+  ZN2 = -1024,        // il muro dell'acropoli
+  ZS2 = -1080,        // in cima alla seconda scalinata
+  ZB = -1208;         // il fondo dell'acropoli, sotto la parete
+const HW1 = 136, HW2 = 176, HW3 = 128, SW1 = 40, SW2 = 32, RA = 104, RB = 136, ZR = -560;   // mezze larghezze dei piani e delle scalinate; le due rampe dal lago
+// la valle: dal valico dietro i Monti del Drago fino al lago (stringendosi: la città resta chiusa tra le pareti)
+W.CARVE.push({ pts: [[2640, 150, 214, 1], [2610, -150, 246, 1], [2505, -420, 290, 0.95], [2450, -520, 322, 0.7], [XC, -580, Y0, 0.52]], w: 55, w2: 270 });
+// i gradoni scavati nella montagna
+W.SHAPERS.push({ box: [XC - 320, ZB - 64, XC + 320, -504], f(x, z, h) {
+  const dx = Math.abs(x - XC);
+  if (z > ZF) {   // davanti alla terrazza: la conca del lago e le due rampe che salgono ai suoi lati
+    const k = sm(-512, -560, z); if (k <= 0) return h;
+    const yr = lerp(Y0, Y1, c01((ZR - z) / (ZR - ZF)));
+    let t;
+    if (dx < RA) t = Y0 - (dx <= 96 && z <= -576 ? 1.6 * sm(96, 86, dx) * sm(-576, -586, z) : 0);
+    else if (dx <= RB) t = yr;
+    else t = lerp(yr, Math.max(h, yr), sm(RB, RB + 64, dx));
+    return lerp(h, t, k);
+  }
+  if (z < ZB) return lerp(lerp(Y3, Math.max(h, Y3), sm(0, 40, ZB - z)), h, sm(HW3, HW3 + 60, dx));
+  let lev, hw;
+  if (z >= ZT) { lev = Y1; hw = HW1; }
+  else if (z > ZS1) { lev = dx <= SW1 ? lerp(Y1, Y2, (ZT - z) / (ZT - ZS1)) : Y2; hw = HW2; }
+  else if (z >= ZN2) { lev = Y2; hw = HW2; }
+  else if (z > ZS2) { lev = dx <= SW2 ? lerp(Y2, Y3, (ZN2 - z) / (ZN2 - ZS2)) : Y3; hw = HW3; }
+  else { lev = Y3; hw = HW3; }
+  return dx <= hw ? lev : lerp(lev, Math.max(h, lev), sm(0, 56, dx - hw));
+} });
+
+// ---------- strade, nomi, cartelli ----------
+W.ROADS.push(
+  // dal sentiero del Picco del Drago, oltre il valico, giù nella valle e fino alla rampa di levante
+  { w: 8, pts: [[2308, 684], [2400, 668], [2500, 610], [2580, 520], [2625, 420], [2645, 300], [2640, 150], [2625, 0], [2605, -160], [2560, -300], [2505, -420], [2520, -500], [2544, -564]] },
+  { w: 7, pts: [[2520, -500], [2440, -532], [2330, -540], [2304, -564]] });
+W.PLACES.push([XC - 72, -716, 94, 'LA GRANDE TERRAZZA'], [XC + 72, -716, 94, 'LA GRANDE TERRAZZA'], [XC - 60, -1146, 100, 'ACROPOLI DELLE ACQUE'], [XC + 60, -1146, 100, 'ACROPOLI DELLE ACQUE'], [2632, 330, 70, 'VALICO DEI GIGANTI']);
+W.PROPS.push(['sign', 2326, 672], ['sign', 2652, 160], ['sign', 2532, -486]);
+W.PAVE.push(['b', 'rect', XC - HW1, ZT, XC + HW1, ZF], ['b', 'rect', XC + RA, ZF, XC + RB, ZR + 6], ['b', 'rect', XC - RB, ZF, XC - RA, ZR + 6],
+  ['g', 'rect', XC - HW2, ZN2, XC + HW2, ZT - 8], ['b', 'rect', XC - SW1, ZS1 - 16, XC + SW1, ZT], ['b', 'rect', XC - SW2, ZS2, XC + SW2, ZN2 + 24], ['b', 'rect', XC - HW3, ZB, XC + HW3, ZN2 - 8],
+  // intarsi grigi sulla terrazza: il cerchio della fontana e la via di mezzo
+  ['g', 'disc', XC, -716, 30], ['b', 'disc', XC, -716, 25],
+  // la banchina del lago
+  ['b', 'rect', XC - RB, ZR - 14, XC + RB, ZR + 6]);
+W.CLEAR.push([XC - HW2 - 20, ZB - 10, XC + HW2 + 20, -548]);
+W.FINE.push([XC - 420, ZB - 260, XC + 420, -440]);   // da lontano il rilievo qui resta preciso: i muri di marmo combaciano sempre con i gradoni
+// statue, panchine e lampioni sulla terrazza e sull'acropoli
+for (const s of [-1, 1]) {
+  W.PROPS.push(['ninfa', XC + s * 32, -748], ['ninfa', XC + s * 32, -684], ['bench', XC + s * 58, ZF - 9], ['bench', XC + s * 80, ZF - 9], ['lamp', XC + s * 46, ZF - 6], ['lamp', XC + s * 92, ZF - 6],
+    ['lamp', XC + s * 60, -716], ['bench', XC + s * 66, -706], ['bench', XC + s * 66, -726], ['pot', XC + s * 100, -716], ['pot', XC + s * 21, ZT + 22], ['lamp', XC + s * 100, ZT + 40],
+    ['ninfa', XC + s * 46, ZS2 - 62], ['pot', XC + s * 20, ZS2 - 8], ['lamp', XC + s * 60, ZS2 - 44], ['bench', XC + s * 58, ZS2 - 20], ['pine', XC + s * 112, ZS2 - 24], ['pine', XC + s * 112, ZS2 - 60]);
+}
+
+// ---------- pezzi di marmo ----------
+const mesh = () => W.mesh;
+// acqua viva: i riquadri disegnati da fn scorrono (4: cade, 5: si muove piano)
+function flusso(f, fn) { const n0 = W.mesh.length; fn(); for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] = 0.93 + 2 * f; }
+// il rivestimento dei gradoni: un riquadro per ogni cella ripida del rilievo, appoggiato sulla roccia (stessa diagonale del terreno)
+function riveste(g, x0, z0, x1, z1, tile = TL.MARBLE, min = 4, f = 0) {
+  const tx = tile % 8, ty = Math.floor(tile / 8), M = W.mesh;
+  for (let z = z0; z < z1; z += 8) for (let x = x0; x < x1; x += 8) {
+    const a = g(x, z), b = g(x, z + 8), c = g(x + 8, z + 8), d = g(x + 8, z); if (Math.max(a, b, c, d) - Math.min(a, b, c, d) < min) continue;
+    const gx = (d + c - a - b) / 16, gz = (b + c - a - d) / 16, n = Math.hypot(gx, 1, gz), nx = -gx / n, ny = 1 / n, nz = -gz / n, e = f ? 0.8 : 0.45, X = Math.abs(gz) >= Math.abs(gx);
+    const sh = f ? 0.93 + 2 * f : Math.min(0.97, K.faceLight(nx, ny, nz) + 0.08), sc = tile === TL.MARBLE ? 16 : 8;   // sui muri grandi i blocchi sono grandi
+    // (riquadri contati da un punto vicino: numeri piccoli, precisi anche sui telefoni vecchi)
+    const vs = f ? 14 : sc, u0 = Math.floor((X ? x : z) / sc) * sc, v0 = Math.ceil(Math.max(a, b, c, d) / vs) * vs;
+    for (const [px, py, pz] of [[x, a, z], [x, b, z + 8], [x + 8, c, z + 8], [x + 8, d, z]]) M.push(px + nx * e, py + ny * e, pz + nz * e, tx, ty, ((X ? px : pz) - u0) / sc, (v0 - py) / vs, sh);
+  }
+}
+// balaustra tra due punti (anche in salita), con i pilastrini; chiude il passo
+function balaustra(x0, z0, x1, z1, ya, yb, b) {
+  const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 6)), m = Math.max(1, Math.round(L / 24));
+  quad([x0, ya, z0], [x1, yb, z1], [x1, yb + 3.4, z1], [x0, ya + 3.4, z0], TL.BALUSTER, n, 1, 0.95);
+  for (let k = 0; k <= m; k++) { const px = x0 + (x1 - x0) * k / m, pz = z0 + (z1 - z0) * k / m, py = ya + (yb - ya) * k / m; box(px - 0.9, pz - 0.9, px + 0.9, pz + 0.9, py - 1, py + 4.3, TL.MARBLE); }
+  W.addBox(Math.min(x0, x1) - 0.8, Math.min(z0, z1) - 0.8, Math.max(x0, x1) + 0.8, Math.max(z0, z1) + 0.8, Math.max(ya, yb) + 3.4, b);
+}
+// fascia col fregio azzurro e oro attorno a un rettangolo
+function fregio(x0, z0, x1, z1, y0, y1) {
+  const h = y1 - y0, ux = Math.max(1, Math.round((x1 - x0) / h)), uz = Math.max(1, Math.round((z1 - z0) / h)), e = 0.06;
+  quad([x0, y0, z1 + e], [x1, y0, z1 + e], [x1, y1, z1 + e], [x0, y1, z1 + e], TL.FRIEZE, ux, 1); quad([x1, y0, z0 - e], [x0, y0, z0 - e], [x0, y1, z0 - e], [x1, y1, z0 - e], TL.FRIEZE, ux, 1);
+  quad([x1 + e, y0, z1], [x1 + e, y0, z0], [x1 + e, y1, z0], [x1 + e, y1, z1], TL.FRIEZE, uz, 1); quad([x0 - e, y0, z0], [x0 - e, y0, z1], [x0 - e, y1, z1], [x0 - e, y1, z0], TL.FRIEZE, uz, 1);
+}
+// colonna scanalata con plinto e capitello
+function colonna(x, z, y, h, r = 1.5, b) {
+  box(x - r * 1.5, z - r * 1.5, x + r * 1.5, z + r * 1.5, y - 1.5, y + 1, TL.MARBLE);
+  oct(x, z, r, y + 1, y + h - 1.4, TL.FLUTE);
+  box(x - r * 1.5, z - r * 1.5, x + r * 1.5, z + r * 1.5, y + h - 1.4, y + h, TL.MARBLE);
+  if (b !== undefined) W.addBox(x - r * 1.2, z - r * 1.2, x + r * 1.2, z + r * 1.2, y + h, b);
+}
+// vasca col bordo di marmo e l'acqua che si muove
+function vasca(x0, z0, x1, z1, y, b, rim = 1.3) {
+  for (const r of [[x0 - 1.6, z0 - 1.6, x1 + 1.6, z0], [x0 - 1.6, z1, x1 + 1.6, z1 + 1.6], [x0 - 1.6, z0, x0, z1], [x1, z0, x1 + 1.6, z1]]) box(r[0], r[1], r[2], r[3], y - 2, y + rim, TL.MARBLE);
+  flusso(5, () => quad([x0, y + rim - 0.5, z1], [x1, y + rim - 0.5, z1], [x1, y + rim - 0.5, z0], [x0, y + rim - 0.5, z0], TL.POOLW, (x1 - x0) / 8, (z1 - z0) / 8));
+  W.addBox(x0 - 1.6, z0 - 1.6, x1 + 1.6, z1 + 1.6, y + rim, b);
+}
+// cascata che esce da un doccione in cima a un muro e cade verso sud: x, z del ciglio, zf dove cade, da yt a yb
+function cascata(x, z, zf, yt, yb, w, forza = 1) {
+  box(x - w / 2 - 1.2, z - 3, x + w / 2 + 1.2, zf, yt - 2.6, yt - 0.3, TL.MARBLE);
+  box(x - w / 2 - 1.2, z - 3, x - w / 2, zf, yt - 0.3, yt + 0.5, TL.MARBLE); box(x + w / 2, z - 3, x + w / 2 + 1.2, zf, yt - 0.3, yt + 0.5, TL.MARBLE);
+  flusso(4, () => {
+    quad([x - w / 2, yt + 0.1, zf], [x + w / 2, yt + 0.1, zf], [x + w / 2, yt + 0.1, z - 3], [x - w / 2, yt + 0.1, z - 3], TL.FALL, w / 8, (zf - z + 3) / 10);
+    quad([x - w / 2, yb, zf + 0.25], [x + w / 2, yb, zf + 0.25], [x + w / 2, yt + 0.1, zf + 0.25], [x - w / 2, yt + 0.1, zf + 0.25], TL.FALL, w / 8, (yt - yb) / 11);
+    quad([x - w * 0.36, yb, zf + 0.9], [x + w * 0.3, yb, zf + 0.9], [x + w * 0.3, yt - 1.5, zf + 0.9], [x - w * 0.36, yt - 1.5, zf + 0.9], TL.FALL, w * 0.66 / 8 + 0.31, (yt - yb) / 8);
+  });
+  W.falls.push([x, yb, zf + 1.2, w + 2, 1, forza]);
+}
+// portico: due file di colonne lungo z, architrave col fregio e tetto azzurro
+function portico(xa, xb, z0, z1, y, b, hc = 16) {
+  const n = Math.round((z1 - z0) / 12);
+  for (let k = 0; k <= n; k++) { const z = z0 + (z1 - z0) * k / n; colonna(xa, z, y, hc, 1.5, b); colonna(xb, z, y, hc, 1.5, b); }
+  const x0 = Math.min(xa, xb) - 2.4, x1 = Math.max(xa, xb) + 2.4, t = y + hc;
+  box(x0, z0 - 2.4, x1, z1 + 2.4, t, t + 3.2, TL.MARBLE); fregio(x0, z0 - 2.4, x1, z1 + 2.4, t + 0.2, t + 3.2);
+  hip(x0, z0 - 2.4, x1, z1 + 2.4, t + 3.2, 5, TL.ROOF_BLUE, 1.2);
+}
+// sperone a tre riseghe contro un muro a scarpa che guarda a sud (in cima il muro sta a zt, al piede a zb)
+function sperone(x, zt, zb, yb, yt, hw = 2.6) {
+  for (let k = 0; k < 3; k++) { const y0 = yb + (yt - yb) * k / 3, y1 = yb + (yt - yb) * (k + 1) / 3, zw = zb + (zt - zb) * k / 3; box(x - hw + k * 0.5, zt - 1, x + hw - k * 0.5, zw + 2.4, y0 - (k ? 0 : 2), y1, TL.MARBLE); }
+}
+// arcate cieche al piede di un muro che guarda a sud: una fila di archi alti h tra xa e xb
+function arcate(xa, xb, z, y, h, b) {
+  const n = Math.max(1, Math.round((xb - xa) / (h * 0.86)));
+  box(xa, z - 3, xb, z + 1.4, y - 2, y + h + 1, TL.MARBLE); box(xa - 0.5, z - 3, xb + 0.5, z + 1.9, y + h + 1, y + h + 2.2, TL.MARBLE);
+  quad([xa, y, z + 1.46], [xb, y, z + 1.46], [xb, y + h, z + 1.46], [xa, y + h, z + 1.46], TL.ARCH_M, n, 1);
+  if (b !== undefined) W.addBox(xa, z - 3, xb, z + 1.4, y + h, b);
+}
+// asta con la bandiera azzurra
+const asta = (x, z, y, h) => { box(x - 0.28, z - 0.28, x + 0.28, z + 0.28, y, y + h, TL.GOLD); W.flags.push([x, y + h, z, 2]); };
+// vaso di marmo con un alberello
+const vaso = (x, z, y, b) => { prism(x, z, 2.2, y - 1, y + 2.4, TL.MARBLE, 8); W.addBox(x - 1.8, z - 1.8, x + 1.8, z + 1.8, y + 2.4, b); };
+
+// ---------- il lago e il fronte della terrazza ----------
+const PARTI = {
+  fronte(b, g) {
+    // i gradoni rivestiti di marmo, dal lago al parapetto, e i fianchi delle rampe
+    riveste(g, XC - RB, ZF - 8, XC + RB, ZR + 8);
+    // il lago ai piedi del muro
+    flusso(5, () => quad([XC - 100, Y0 - 0.55, -572], [XC + 100, Y0 - 0.55, -572], [XC + 100, Y0 - 0.55, ZF + 6], [XC - 100, Y0 - 0.55, ZF + 6], TL.POOLW, 25, 10));
+    // speroni e arcate lungo il muro, a filo dell'acqua
+    for (const s of [-1, 1]) { sperone(XC + s * 34, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6); sperone(XC + s * 92, ZF, ZF + 8, Y0 - 1.6, Y1 - 4.6, 3); arcate(XC + s * 18, XC + s * 31, ZF + 8, Y0 - 0.6, 13); arcate(XC + s * 73, XC + s * 88.5, ZF + 8, Y0 - 0.6, 13); arcate(XC + s * 37, XC + s * 51, ZF + 8, Y0 - 0.6, 13); }
+    // tre cascate: due dai doccioni, una larga sotto il belvedere
+    cascata(XC - 62, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC + 62, ZF, ZF + 12, Y1, Y0 - 0.6, 12, 1.6); cascata(XC, ZF, ZF + 14, Y1 - 1, Y0 - 0.6, 26, 2.4);
+    // il parapetto sul vuoto (aperto dove arrivano le rampe) e la cornice col fregio
+    box(XC - RA + 1, ZF - 2.6, XC + RA - 1, ZF + 0.5, Y1 - 4.4, Y1 + 0.3, TL.MARBLE); fregio(XC - RA + 1, ZF - 2.6, XC + RA - 1, ZF + 0.5, Y1 - 4.2, Y1 - 0.2);
+    for (const s of [-1, 1]) {
+      balaustra(XC + s * 13, ZF - 1.4, XC + s * (RA - 2), ZF - 1.4, Y1 + 0.3, Y1 + 0.3, b);
+      // le rampe: balaustra verso il lago e due lampioni di marmo all'imbocco
+      balaustra(XC + s * (RA - 1.5), ZF - 1.4, XC + s * (RA - 1.5), ZR + 2, Y1 + 0.3, Y0 + 1.6, b);
+      for (const zz of [ZR + 2, ZF - 1.4]) { const yy = g(XC + s * (RB - 2), zz); colonna(XC + s * (RA - 1.5), zz, zz > ZF ? Y0 : Y1, 9, 1.1); W.glows.push([XC + s * (RA - 1.5), (zz > ZF ? Y0 : Y1) + 10.4, zz, 5, 0.75, 0.9, 1, 0]); }
+    }
+    // il belvedere sopra la grande cascata, con le due bandiere
+    balaustra(XC - 13, ZF - 1.4, XC + 13, ZF - 1.4, Y1 + 0.3, Y1 + 0.3, b);
+    for (const s of [-1, 1]) { asta(XC + s * 13, ZF - 1.4, Y1 + 4, 15); asta(XC + s * (RA - 2), ZF - 1.4, Y1 + 4, 11); }
+  },
+  // ---------- la Grande Terrazza ----------
+  terrazza(b, g) {
+    // i due portici lungo i fianchi
+    for (const s of [-1, 1]) portico(XC + s * 112, XC + s * 126, ZT + 16, ZF - 14, Y1, b);
+    // la fontana al centro, in una vasca ottagonale
+    prism(XC, -716, 19, Y1 - 2, Y1 + 1.5, TL.MARBLE, 8);
+    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 17.6, Y1 + 0.9, -716 + Math.sin(k / 8 * TAU) * 17.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 3, 3); });
+    prism(XC, -716, 3, Y1, Y1 + 7, TL.MARBLE, 8); prism(XC, -716, 8.5, Y1 + 6.4, Y1 + 7.8, TL.MARBLE, 8);
+    flusso(5, () => { const tp = []; for (let k = 0; k < 8; k++) tp.push([XC + Math.cos(k / 8 * TAU) * 7.6, Y1 + 7.9, -716 + Math.sin(k / 8 * TAU) * 7.6]); for (let k = 1; k < 7; k += 2) quad(tp[0], tp[k], tp[k + 1], tp[(k + 2) % 8], TL.POOLW, 2, 2); });
+    prism(XC, -716, 1.5, Y1 + 7.8, Y1 + 14, TL.MARBLE, 8); prism(XC, -716, 4, Y1 + 13.4, Y1 + 14.4, TL.MARBLE, 8); prism(XC, -716, 0.8, Y1 + 14.4, Y1 + 17, TL.GOLD, 8);
+    W.addBox(XC - 17, -733, XC + 17, -699, Y1 + 1.5, b); W.sprays.push([XC, Y1 + 17.2, -716, 8], [XC, Y1 + 8.5, -716, 16]);
+    // il muro della città: marmo sui gradoni, la scalinata, due cascate nelle loro vasche
+    riveste(g, XC - HW1, ZS1 - 8, XC - SW1, ZT + 8); riveste(g, XC + SW1, ZS1 - 8, XC + HW1, ZT + 8); riveste(g, XC - SW1, ZS1, XC + SW1, ZT, TL.STEPS, 2);   // (oltre la terrazza il gradone resta di roccia)
+    for (const s of [-1, 1]) {
+      cascata(XC + s * 92, ZT - 8, ZT + 5, Y2, Y1 + 0.8, 10, 1.1); vasca(XC + s * 92 - 9, ZT + 1.5, XC + s * 92 + 9, ZT + 14, Y1, b);
+      // parapetti in cima al muro e lungo la scalinata
+      const xa = XC + s * (SW1 + 9.4), xb = XC + s * (HW1 + 2);
+      box(Math.min(xa, xb), ZT - 10.6, Math.max(xa, xb), ZT - 7.4, Y2 - 4.4, Y2 + 0.3, TL.MARBLE); fregio(Math.min(xa, xb), ZT - 10.6, Math.max(xa, xb), ZT - 7.4, Y2 - 4.2, Y2 - 0.2);
+      balaustra(xa, ZT - 9.4, XC + s * 85, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b); balaustra(XC + s * 99, ZT - 9.4, xb, ZT - 9.4, Y2 + 0.3, Y2 + 0.3, b);
+      balaustra(xa, ZT - 9.4, xa, ZS1 - 2, Y2 + 0.3, Y2 + 0.3, b);
+      // speroni e arcate ai piedi del muro
+      for (const xx of [66, 120]) sperone(XC + s * xx, ZT - 8, ZT, Y1 - 1, Y2 - 4.6, 2.4);
+      arcate(XC + s * 70, XC + s * 81, ZT, Y1, 10, b); arcate(XC + s * 103, XC + s * 116.5, ZT, Y1, 10, b);
+      // due colonne con la fiamma azzurra ai piedi della scalinata
+      colonna(XC + s * (SW1 + 5), ZT + 6, Y1, 13, 1.7, b); W.glows.push([XC + s * (SW1 + 5), Y1 + 15, ZT + 6, 7, 0.7, 0.88, 1, 0]);
+      // vasi con gli alberelli
+      for (const zz of [ZF - 14, -700, -732, ZT + 26]) vaso(XC + s * 100, zz, Y1, b);
+    }
+  },
+  // ---------- l'acropoli ----------
+  acropoli(b, g) {
+    // il muro e la scalinata
+    riveste(g, XC - HW3, ZS2 - 8, XC - SW2, ZN2 + 8); riveste(g, XC + SW2, ZS2 - 8, XC + HW3, ZN2 + 8); riveste(g, XC - SW2, ZS2, XC + SW2, ZN2, TL.STEPS, 2);
+    for (const s of [-1, 1]) {
+      const xa = XC + s * (SW2 + 9.4), xb = XC + s * HW3;
+      box(Math.min(xa, xb), ZN2 - 10.6, Math.max(xa, xb), ZN2 - 7.4, Y3 - 4.4, Y3 + 0.3, TL.MARBLE); fregio(Math.min(xa, xb), ZN2 - 10.6, Math.max(xa, xb), ZN2 - 7.4, Y3 - 4.2, Y3 - 0.2);
+      balaustra(xa, ZN2 - 9.4, XC + s * 77, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b); balaustra(XC + s * 91, ZN2 - 9.4, xb, ZN2 - 9.4, Y3 + 0.3, Y3 + 0.3, b);
+      balaustra(xa, ZN2 - 9.4, xa, ZS2 - 2, Y3 + 0.3, Y3 + 0.3, b);
+      for (const xx of [56, 108]) sperone(XC + s * xx, ZN2 - 8, ZN2, Y2 - 1, Y3 - 4.6, 2.6);
+      arcate(XC + s * 36, XC + s * 53, ZN2, Y2, 12, b); arcate(XC + s * 59, XC + s * 73, ZN2, Y2, 12, b); arcate(XC + s * 95, XC + s * 105, ZN2, Y2, 12, b); arcate(XC + s * 111, XC + s * 127, ZN2, Y2, 12, b);
+      // le sorgenti: l'acqua scende dalla parete, riempie la vasca, corre nel canale e cade verso la città
+      const cx = XC + s * 84;
+      riveste(g, cx - 16, ZB - 64, cx + 16, ZB, TL.FALL, 3, 4); W.falls.push([cx, Y3 + 1.2, ZB + 3, 30, 1, 2.2]);
+      vasca(cx - 26, ZB + 2, cx + 26, ZB + 40, Y3, b, 1.5);
+      for (const q of [-1, 1]) box(cx + q * 5 - 0.8, ZB + 41.6, cx + q * 5 + 0.8, ZN2 - 8, Y3 - 2, Y3 + 1.5, TL.MARBLE);
+      flusso(4, () => quad([cx - 4.2, Y3 + 1, ZN2 - 8], [cx + 4.2, Y3 + 1, ZN2 - 8], [cx + 4.2, Y3 + 1, ZB + 41.6], [cx - 4.2, Y3 + 1, ZB + 41.6], TL.FALL, 1, (ZN2 - 8 - ZB - 41.6) / 12));
+      W.addBox(cx - 5.8, ZB + 41.6, cx + 5.8, ZN2 - 8, Y3 + 1.5, b);
+      cascata(cx, ZN2 - 8, ZN2 + 5, Y3 + 0.9, Y2 + 0.8, 8.4, 1.3); vasca(cx - 9, ZN2 + 1.5, cx + 9, ZN2 + 15, Y2, b);
+      // colonne votive lungo il viale
+      for (const zz of [ZS2 - 10, ZS2 - 30]) { colonna(XC + s * 44, zz, Y3, 14, 1.6, b); W.glows.push([XC + s * 44, Y3 + 16, zz, 7, 0.7, 0.88, 1, 0]); }
+    }
+    // il Tempio delle Acque: gradini, un giro di colonne, la cella, il frontone e l'acroterio d'oro
+    const tx0 = XC - 30, tx1 = XC + 30, tz0 = ZB + 14, tz1 = ZS2 - 46, ty = Y3 + 3.2, hc = 24;
+    for (let k = 0; k < 3; k++) box(tx0 - 6 + k * 2, tz0 - 6 + k * 2, tx1 + 6 - k * 2, tz1 + 6 - k * 2, Y3 - 2, Y3 + 1.2 + k, TL.MARBLE);
+    W.addBox(tx0 - 5, tz0 - 5, tx1 + 5, tz1 + 5, ty, b);
+    for (let k = 0; k < 6; k++) { const x = tx0 + (tx1 - tx0) * k / 5; colonna(x, tz1, ty, hc, 1.9); colonna(x, tz0, ty, hc, 1.9); }
+    for (let k = 1; k < 8; k++) { const z = tz0 + (tz1 - tz0) * k / 8; colonna(tx0, z, ty, hc, 1.9); colonna(tx1, z, ty, hc, 1.9); }
+    box(tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, ty, ty + hc, TL.MARBLE); onWall('s', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, XC, ty, 11, 17, TL.MARBLE_DOOR, 2);
+    for (const s of [-1, 1]) onWall(s < 0 ? 'w' : 'e', tx0 + 9, tz0 + 9, tx1 - 9, tz1 - 12, (tz0 + tz1) / 2 - 2, ty + 7, 6, 10, TL.MARBLE_WIN, true);
+    const et = ty + hc; box(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et, et + 4.4, TL.MARBLE); fregio(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et + 0.2, et + 4.2);
+    gable(tx0 - 3, tz0 - 3, tx1 + 3, tz1 + 3, et + 4.4, 13, TL.ROOF_BLUE, TL.MARBLE, 1.8);
+    decal(XC, et + 6.2, tz1 + 3, 1, 0, 9, 9, TL.CREST, false, 0.3);
+    for (const [ax, az] of [[XC, tz1 + 3], [XC, tz0 - 3]]) { box(ax - 0.9, az - 0.9, ax + 0.9, az + 0.9, et + 17, et + 22, TL.GOLD); }
+    asta(XC, tz1 + 3, et + 22, 9);
+    for (const sx of [-1, 1]) for (const az of [tz1 + 3, tz0 - 3]) box(XC + sx * 33 - 0.8, az - 0.8, XC + sx * 33 + 0.8, az + 0.8, et + 4.4, et + 8, TL.GOLD);
+    W.glows.push([XC, ty + 9, tz1 - 11, 10, 0.6, 0.85, 1, 0]);
+    // il braciere azzurro davanti al tempio
+    prism(XC, ZS2 - 22, 3.4, Y3 - 1, Y3 + 3, TL.MARBLE, 8); prism(XC, ZS2 - 22, 2.4, Y3 + 3, Y3 + 3.6, TL.GOLD, 8); W.addBox(XC - 3, ZS2 - 25, XC + 3, ZS2 - 19, Y3 + 3, b); W.glows.push([XC, Y3 + 6, ZS2 - 22, 9, 0.55, 0.85, 1, 1]);
+  },
+};
+W.builders.marmo = (b, g) => PARTI[b.part](b, g);
+W.BUILD.push({ k: 'marmo', part: 'fronte', x: XC, z: -600 }, { k: 'marmo', part: 'terrazza', x: XC - 400, z: -730 }, { k: 'marmo', part: 'acropoli', x: XC + 400, z: -1140 });
+
+// ---------- la città ----------
+C.city({ id: 'marmorea', guild: true, name: 'MARMOREA', x: XC, z: -922, w: 336, d: 164, y: Y2, style: 'marmo', open: true, noTerra: true, plaza: { w: 78, d: 60 }, board: [22, 15],
+  shops: [['cigno', 'locanda', 'LOCANDA DEL CIGNO', 's1', { fw: 32, fd: 21, h: 17, roof: TL.ROOF_TEAL }], ['marmo_armi', 'armeria', "L'ARMERIA DELLE CASCATE", 's2', { roof: TL.ROOF_BLUE }],
+    ['marmo_erbe', 'erboristeria', 'LA FONTE DEI RIMEDI', 'n1', { roof: TL.ROOF_TEAL }], ['marmo_gemme', 'orafo', "L'ORAFO DEL GHIACCIAIO", 'n2', { roof: TL.ROOF_BLUE }]],
+  people: [
+    ['saggio', "L'ARCONTE DELLE ACQUE", ['BENVENUTO A MARMOREA, VIANDANTE. POCHI SALGONO FIN QUASSÙ: IL VALICO DEI GIGANTI SPAVENTA PIÙ DEI LUPI.', "L'ACQUA CHE VEDI CADERE NASCE DAL GHIACCIAIO ETERNO. FINCHÉ SCORRE, LA CITTÀ VIVE.", 'SALI ALLA TERRAZZA AL TRAMONTO: DA LÌ SI VEDE TUTTA LA VALLE, E NEI GIORNI LIMPIDI PERFINO IL LAGO DI LUMEN.'], [12, -190, Math.PI / 2], { id: 'arconte' }],
+    ['ostessa', 'OSTESSA DEL CIGNO', ['AL CIGNO SI DORME COL RUMORE DELLE CASCATE. I FORESTIERI DICONO CHE È IL SONNO PIÙ BELLO DELLA LORO VITA.'], 'in:cigno', { role: 'inn', cost: 16 }],
+    ['montanaro', 'LA GUIDA DEL GHIACCIAIO', ['SOPRA LA CITTÀ NON CI SONO STRADE: SOLO NEVE, ROCCIA E VENTO. MA LUNGO LA VALLE, TRA I PINI, QUALCUNO HA NASCOSTO PIÙ DI UN FORZIERE.'], 'in:cigno:ospite1'],
+    ['mercante', 'IL MERCANTE DI LUMEN', ['HO PORTATO DUE MULI DI STOFFE FIN QUI. AL RITORNO LI CARICO DI MARMO: A BORGO AURORA NON HANNO MAI VISTO UNA PIETRA COSÌ BIANCA.'], 'in:cigno:ospite2'],
+    ['lanciere', "L'ARMAIOLA DELLE CASCATE", ["L'ACCIAIO TEMPRATO NELL'ACQUA DEL GHIACCIAIO NON SI SPEZZA. PROVA A PIEGARLO, SE NON MI CREDI."], 'in:marmo_armi', { role: 'shop', shop: 'marmo_armi' }],
+    ['monaco', 'IL CUSTODE DELLA FONTE', ["L'ACQUA DELLA FONTE GUARISCE. IO CI AGGIUNGO SOLO LE ERBE GIUSTE E UN PO' DI PAZIENZA."], 'in:marmo_erbe', { role: 'shop', shop: 'marmo_erbe' }],
+    ['dama2', "L'ORAFA", ["SOTTO IL GHIACCIO SI TROVANO PIETRE CHE NON HANNO NOME. IO LE LEGO NELL'ARGENTO E GLIENE DO UNO."], 'in:marmo_gemme', { role: 'shop', shop: 'marmo_gemme' }],
+    ['guardia', 'LA SENTINELLA', ["DALLA GRANDE TERRAZZA SI VEDE CHI ARRIVA UN'ORA PRIMA CHE BUSSI. NON CHE BUSSI MAI NESSUNO.", "LE DUE RAMPE AI LATI DEL LAGO SONO L'UNICA VIA PER SALIRE. CHI HA COSTRUITO LA CITTÀ SAPEVA IL FATTO SUO."], [70, 252, -Math.PI / 2]],
+    ['dama', 'LA SCULTRICE', ["OGNI COLONNA DELLA CITTÀ È STATA TAGLIATA DALLA MONTAGNA QUI DIETRO. LA MONTAGNA NON SE N'È NEMMENO ACCORTA."], 'p', { walk: 1 }],
+    ['bimbo', 'LA PICCOLA NIVE', ['HO CONTATO LE CASCATE: SONO NOVE! LA PIÙ GRANDE È QUELLA SOTTO IL BELVEDERE: DA VICINO BAGNA TUTTI.'], 'p', { walk: 1 }],
+    ['borghese', "IL MAESTRO D'ACQUE", ["L'ACQUA SCENDE DALLE SORGENTI DELL'ACROPOLI, PASSA SOTTO LA CITTÀ E CADE DALLA TERRAZZA NEL LAGO. NON SE NE PERDE UNA GOCCIA."], 'd'],
+    ['donna', 'LA LAVANDAIA', ["D'INVERNO IL LAGO GELA E I BAMBINI CI SCIVOLANO SOPRA. LE CASCATE NO: QUELLE NON SI FERMANO MAI."], 'd', { walk: 1 }],
+    ['monaco', 'IL PELLEGRINO', ['SONO SALITO DAL BORGO A PIEDI PER VEDERE IL TEMPIO DELLE ACQUE. HO LE VESCICHE, MA NE VALEVA LA PENA.'], [-22, -172, Math.PI / 2]],
+    ['saggio', 'IL VECCHIO DELLA TERRAZZA', ['DA GIOVANE HO VISTO IL DRAGO VOLARE SOPRA IL PICCO, LAGGIÙ IN FONDO. DA QUASSÙ SEMBRAVA UNA RONDINE.'], [-40, 250, -Math.PI / 2]],
+  ] });
+
+W.TOWNS[W.TOWNS.length - 1].r = 310;   // terrazza e acropoli sono città: niente stambecchi tra le colonne
+
+// ---------- tane, tesori ----------
+W.CAMPS.push([2660, 40, 'wolf', 3, 90], [2560, -160, 'icewolf', 3, 90], [2470, -455, 'bat', 3, 80], [2655, 250, 'icewolf', 2, 80]);
+W.NOOKS.push([2668, -52, 'rocce'], [2470, -380, 'rocce']);
+W.CHESTS.push(['n01', 2668, -52, 'monete:220', 1], ['n02', XC, ZB + 6, 'cuore', 2], ['n03', 2470, -380, 'elisir', 1]);
+// a Borgo Aurora un mercante racconta della città di marmo: chi giocava già sa dove andare
+C.folk('mercante', 'IL MERCANTE DI MARMO', 1972, 2694, -0.9, ['VENGO DA MARMOREA, LA CITTÀ DELLE CASCATE. NON LA CONOSCI? È LASSÙ, TRA I GIGANTI DI NEVE CHE VEDI A NORD.', 'SI SALE DAL SENTIERO DEL PICCO DEL DRAGO: A METÀ STRADA UN CARTELLO INDICA IL VALICO DEI GIGANTI. DA LÌ È TUTTA VALLE, FINO AL LAGO.', 'PORTATI UN MANTELLO. E OCCHI BUONI: UNA CITTÀ COSÌ NON L\'HAI MAI VISTA.'], { id: 'mercante_marmo' });
+
+W.NORDN.nooks[1] = W.NOOKS.length; W.NORDN.props[1] = W.PROPS.length;
 })();
 
 // ===================== PIXEL SAGA · i santuari =====================
@@ -8448,6 +8796,7 @@ const STILI = {
   sole: { floor: TL.COTTO, wall: TL.ADOBE, base: TL.ZOCC_S, rug: TL.TAPPETO, bed: TL.LETTO, lume: [1, 0.8, 0.44] },
   porto: { floor: TL.ASSI, wall: TL.INTON, base: TL.ZOCC_B, rug: TL.TAPPETO2, bed: TL.LETTO2, lume: [1, 0.8, 0.5] },
   fiore: { floor: TL.TATAMI, wall: TL.CARTA, base: TL.ZOCC_T, rug: TL.TAPPETO, bed: TL.LETTO, lume: [1, 0.76, 0.5] },
+  marmo: { floor: TL.LASTRE, wall: TL.INTON, base: TL.ZOCC_B, rug: TL.TAPPETO2, bed: TL.LETTO2, lume: [0.92, 0.9, 0.96] },
 };
 // tipi di bottega: insegna, riquadro dietro al banco, tendone
 const TIPI = {
@@ -8692,10 +9041,22 @@ const LIST = {
   f4: { c: 'fioralba', n: 'TAGLIA: IL CAVALIERE SENZA NOME', by: 'DAMA SAKURA', k: 'taglia', coins: 400, where: 'NELLA BRUGHIERA NERA, A SUD',
     boss: { n: 'IL CAVALIERE SENZA NOME', as: 'skel', x: 2440, z: 6640, sc: 0.31, hp: 125, dmg: 6, sp: 26, r: 4.5, range: 11, tint: [0.7, 0.62, 1.04] },
     txt: "NELLA BRUGHIERA CAMMINA UN CAVALIERE MORTO DA CENTO ANNI, E NON RICORDA PIÙ PER CHI COMBATTEVA. DAGLI LA PACE. FIORALBA TI DARÀ QUATTROCENTO MONETE." },
+  // ---------- Marmorea ----------
+  m1: { c: 'marmorea', n: 'LUPI NELLA VALLE', by: 'I PASTORI DELLA VALLE', k: 'caccia', foe: 'icewolf', pl: 'LUPI DEI GHIACCI', q: 8, coins: 230,
+    txt: "I LUPI DEI GHIACCI SCENDONO DAI NEVAI FIN SULLA STRADA DELLA VALLE, E I MERCANTI NON SALGONO PIÙ. OTTO LUPI IN MENO E IL VALICO TORNA SICURO." },
+  m2: { c: 'marmorea', n: 'LO STENDARDO SULLA VETTA', by: "L'ARCONTE DELLE ACQUE", k: 'visita', x: 2310, z: 450, r: 40, at: 'LA VETTA DEL DRAGO', coins: 180, where: 'OLTRE IL VALICO, IN CIMA AL SENTIERO DEL PICCO',
+    txt: "DALLA VETTA DEL DRAGO SI VEDONO INSIEME MARMOREA E IL BORGO. PORTA LASSÙ IL NOSTRO STENDARDO AZZURRO: CHI GUARDA DA LUMEN SAPRÀ CHE LA CITTÀ DELLE CASCATE È VIVA.",
+    found: "PIANTI LO STENDARDO AZZURRO SULLA VETTA. A NORD, TRA I GIGANTI DI NEVE, BRILLA IL MARMO DELLA CITTÀ; A SUD, IL LAGO E I TETTI DEL BORGO." },
+  m3: { c: 'marmorea', n: "UN'AMPOLLA PER IL PESCATORE", by: 'IL CUSTODE DELLA FONTE', k: 'consegna', to: 'pescatore', toN: 'IL PESCATORE, SULLA RIVA DEL LAGO DI CRISTALLO', coins: 170,
+    txt: "IL PESCATORE DEL LAGO DI CRISTALLO HA LE MANI ROVINATE DAL GELO. QUEST'AMPOLLA D'ACQUA DELLA FONTE LE RIMETTE A NUOVO. LO TROVI SULLA RIVA SUD DEL LAGO: PAGA LUI.",
+    thanks: ["L'ACQUA DELLA FONTE DI MARMOREA! CREDEVO FOSSE UNA FAVOLA DEI VECCHI.", 'CENTOSETTANTA MONETE, E IL PRIMO PESCE DI DOMANI È PER TE.'] },
+  m4: { c: 'marmorea', n: 'TAGLIA: IL RE DEI NEVAI', by: 'LA SENTINELLA', k: 'taglia', coins: 420, where: 'A METÀ DELLA VALLE DELLE CASCATE, TRA I PINI',
+    boss: { n: 'IL RE DEI NEVAI', as: 'icewolf', x: 2640, z: -200, sc: 0.4, hp: 135, dmg: 6, sp: 44, r: 5, range: 10, tint: [0.86, 0.94, 1.06] },
+    txt: "È BIANCO COME LA NEVE E GROSSO COME UN ORSO. DI NOTTE LO SI SENTE ULULARE FIN DALLA TERRAZZA. QUATTROCENTOVENTI MONETE A CHI LO FERMA." },
 };
 const CITY = {}; for (const id in LIST) { LIST[id].id = id; (CITY[LIST[id].c] = CITY[LIST[id].c] || []).push(id); }
 // il nome di ogni città (per la bacheca, lo sconto, il diploma)
-const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA' };
+const NOME = { borgo: 'BORGO AURORA', rocca: 'ROCCA DI LUMEN', castelrosso: 'CASTELROSSO', altabrina: 'ALTABRINA', zafira: 'ZAFIRA', porto: 'PORTO SERENO', fioralba: 'FIORALBA', marmorea: 'MARMOREA' };
 SG.jobs = { LIST, CITY, NOME };
 })();
 
@@ -9055,12 +9416,13 @@ const LAND = [
   /* 11 giungla   */ [['scimmia', 4], ['pappagallo', 4], ['tucano', 2.5], ['capibara', 2], ['rana', 3], ['tartaruga', 1]],
   /* 12 ciliegi   */ [['cervoS', 4], ['gru', 3], ['tanuki', 2.5], ['coniglio', 2], ['passero', 3], ['gatto', 0.7], ['gufo', 2]],
   /* 13 brughiera */ [['pecora', 3], ['cavallo', 2], ['corvo', 3], ['coniglio', 3], ['volpe', 1.5], ['gufo', 2]],
+  /* 14 alpi      */ [['stambecco', 5], ['cervo', 2.5], ['lepreB', 2], ['volpeB', 1], ['corvo', 1.5], ['gufo', 1.5], ['passero', 1.5]],
 ];
-const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila' };
+const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila', 14: 'aquila' };
 const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_COLD = [['foca', 4], ['pinguino', 3.5], ['gabbiano', 2]];
 const TOWN = [['piccione', 5], ['gatto', 2.2], ['cane', 2.2], ['gallina', 1.5], ['passero', 2]];
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
-const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13]);
+const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14]);
 
 // ---------- il motore ----------
 // Il mondo è diviso in riquadri: quando l'eroe si avvicina, ogni riquadro fa comparire i suoi gruppi (sempre gli stessi
@@ -9105,7 +9467,7 @@ function create(env) {
   const wet = (x, z) => { const g = gH(x, z); return g < -0.7 && g > -40 && !W.inBox(x, z, 2); };
   const shallow = (x, z) => { const g = gH(x, z); return g < 1.5 && g > -1.7 && !W.blocked(x, z, 1.3); };
   const okFor = (S, x, z) => S.k === 'swim' ? wet(x, z) : S.k === 'wade' ? shallow(x, z) || dry(x, z, S) : dry(x, z, S);
-  const inTown = (x, z) => { for (const t of W.TOWNS) if (t.big && (x - t.x) ** 2 + (z - t.z) ** 2 < 150 * 150) return true; return false; };
+  const inTown = (x, z) => { for (const t of W.TOWNS) if (t.big && (x - t.x) ** 2 + (z - t.z) ** 2 < (t.r || 150) ** 2) return true; return false; };
   const nearWater = (x, z, r) => { for (let i = 0; i < 8; i++) { const a = i * 0.785; if (gH(x + Math.cos(a) * r, z + Math.sin(a) * r) < -0.3) return true; } return false; };
   function choose(table, R, only) {
     let tot = 0; for (const [, w] of table) tot += w;
@@ -9153,7 +9515,7 @@ function create(env) {
     const R = rng(((ci * 73856093) ^ (cj * 19349663) ^ (night ? 0x9e3779 : 0)) >>> 0), x0 = ci * CS, z0 = cj * CS;
     for (let t = 0; t < 3; t++) {
       const go = R() < [0.7, 0.36, 0.12][t], x = x0 + (0.1 + R() * 0.8) * CS, z = z0 + (0.1 + R() * 0.8) * CS;
-      if (!go || list.length >= MAXN || x < 40 || z < 40 || x > W.WS - 40 || z > W.WS - 40) continue;
+      if (!go || list.length >= MAXN || x < 40 || z < W.Z0 + 40 || x > W.WS - 40 || z > W.WS - 40) continue;
       if (only && Math.hypot(x - hx, z - hz) < 110) continue;
       const g = gH(x, z), bio = W.biomeAt(x, z), cd = W.coastDist(x, z);
       let table;
@@ -10536,7 +10898,7 @@ const ATMO = [
   ['#bcd8ee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#c4dcee', '#4a92dc', 380, 1250, '#3a7ac8'], ['#a8c8b4', '#4a8ac0', 240, 900, '#3a6aa0'], ['#c8d6e8', '#3a7ccc', 450, 1450, '#3a72b8'],
   ['#dce6f2', '#7aa4d4', 200, 860, '#5a8ac0'], ['#f0d8a8', '#5a9cdc', 400, 1300, '#3a8ab8'], ['#8a9a7a', '#4a5a4e', 70, 480, '#4a5e46'], ['#b8786a', '#4a2424', 190, 820, '#5a3a3a'],
   ['#ecc8a0', '#6a9ad0', 300, 1050, '#3a7ab0'], ['#ecdcb0', '#5aa0dc', 420, 1350, '#3a86c0'], ['#f0c8a0', '#5a94d8', 400, 1300, '#3a8ab8'], ['#a8d0b0', '#4a90b8', 180, 760, '#2a8a80'],
-  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'],
+  ['#f0d8e4', '#6aa8e4', 360, 1200, '#4a90d0'], ['#8a8498', '#4a4660', 110, 620, '#4a5068'], ['#cadaee', '#3672c8', 500, 1500, '#3a72b8'],
 ].map(a => [hexf(a[0]), hexf(a[1]), a[2], a[3], hexf(a[4])]);
 
 // ---------- stato ----------
@@ -10546,6 +10908,7 @@ let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], dro
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
 const cam = { x: 2000, y: 60, z: 2700, yaw: -1.57, tx: 2000, ty: 30, tz: 2600 };
+let GIANTS = []; const PKS = new Float32Array(40);
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
 let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 427, H3 = 240, K3 = 1, OX3 = 0, OY3 = 0;
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
@@ -10581,12 +10944,13 @@ function writeSave() {
   if (!save || !hero) return;
   if (D) { save.x = D.outX; save.z = D.outZ; save.yaw = D.outYaw; dsave(D.id).seen = b64(D.seen); } else { save.x = hero.x; save.z = hero.z; save.yaw = hero.yaw; }
   save.hp = hero.hp; save.time = Math.round(save.time);
-  save.seen = b64(seen);
+  save.seen = b64(seen.subarray(MGN * MG)); save.seenN = b64(seen.subarray(0, MGN * MG));
   try { localStorage.setItem(SAVEKEY, JSON.stringify(save)); } catch (e) {}
 }
-const MG = 128, seen = new Uint8Array(MG * MG), LAND = new Uint8Array(MG * MG);
+// la mappa esplorata: caselle di 64 unità. Le prime MGN righe sono le terre a nord (z negativa), aggiunte dopo: nei salvataggi stanno a parte (seenN)
+const MG = 128, MGN = SG.world.ZN / 64, MGZ = MG + MGN, seen = new Uint8Array(MG * MGZ), LAND = new Uint8Array(MG * MGZ);
 // i salvataggi di prima del grande viaggio ricordano solo l'isola di Lumen (64x64 caselle)
-function loadSeen(str) { seen.fill(0); if (!str) return; if (str.length > 700) return unb64(str, seen); const o = new Uint8Array(4096); unb64(str, o); for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) seen[j * MG + i] = o[j * 64 + i]; }
+function loadSeen(str, strN) { seen.fill(0); if (strN) unb64(strN, seen.subarray(0, MGN * MG)); if (!str) return; if (str.length > 700) return unb64(str, seen.subarray(MGN * MG)); const o = new Uint8Array(4096); unb64(str, o); for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) seen[(j + MGN) * MG + i] = o[j * 64 + i]; }
 function b64(u) { let s = ''; for (let i = 0; i < u.length; i += 8) { let b = 0; for (let k = 0; k < 8; k++) if (u[i + k]) b |= 1 << k; s += String.fromCharCode(b); } return btoa(s); }
 function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length; i++) { const b = s.charCodeAt(i); for (let k = 0; k < 8; k++) u[i * 8 + k] = (b >> k) & 1; } } catch (e) {} }
 
@@ -10799,7 +11163,7 @@ function* loader() {
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31)));
   DET = G.texture(A.detail(rng(3)), { repeat: true });
-  SHORE = G.texture({ w: W.N, h: W.N, data: W.shore }, { linear: true, lum: true }); W.shore = null;
+  SHORE = G.texture({ w: W.N, h: W.NZ, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
   W.upload(G);
@@ -10828,12 +11192,14 @@ function setupWorld() {
   for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
   doors = W.lights.filter(l => l.id);
   SG.shop.registra(); botteghe = Object.values(W.SHOPS).filter(b => b.x !== undefined);      // le botteghe con la loro soglia
-  for (let j = 0; j < MG; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, j * 64 + 32) > 0 ? 1 : 0;
+  for (let j = 0; j < MGZ; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, (j - MGN) * 64 + 32) > 0 ? 1 : 0;
+  // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
+  GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
-  else loadSeen(save.seen || '');
+  else loadSeen(save.seen || '', save.seenN || '');
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0,
     act: 'slash', atkT: 0.42, en: MAXEN(), enT: 0, enFl: 0, chg: 0, aDown: false, aHold: 0, cdC: 0, dash: null, block: false, guard: 0, hid: 0, nextShot: null, castFn: null };
@@ -10852,6 +11218,9 @@ function startGame(fresh) {
   // ...e che nelle città ci sono botteghe in cui entrare e bacheche con gli incarichi
   if (!fresh && !save.flags.cityTip) toasts.push({ t: 'NOVITÀ: BOTTEGHE, LOCANDE E BACHECHE NELLE CITTÀ', c: '#ffd23f', life: 11 });
   save.flags.cityTip = 1;
+  // ...e che a nord sono nati i grandi monti
+  if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
+  save.flags.nordTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -11092,12 +11461,13 @@ function talk(n) {
   if (id === 'contadino') return say(id, [q.melme >= 3 ? 'CHE RACCOLTO, QUEST\'ANNO! GRAZIE A TE, VIAGGIATORE.' : 'LE MELME SI MANGIANO IL GRANO! SE LE SCACCI, OTTO SARÀ CONTENTO.']);
 }
 const SIGNS = {
-  '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO: IL SENTIERO GIRA A OVEST DEL LAGO',
+  '1996,2470': '↑ LAGO DI CRISTALLO   ← BOSCO ANTICO\n→ ROCCA DI LUMEN   ↓ BORGO AURORA', '2120,1680': 'LAGO DI CRISTALLO\n↑ PICCO DEL DRAGO E VALICO PER MARMOREA: A OVEST DEL LAGO',
+  '2326,672': '↑ VETTA DEL DRAGO\n→ VALICO DEI GIGANTI: MARMOREA, LA CITTÀ DELLE CASCATE', '2652,160': 'VALLE DELLE CASCATE\n↑ MARMOREA   ↓ LAGO DI CRISTALLO', '2532,-486': 'MARMOREA\nLE RAMPE AI LATI DEL LAGO SALGONO ALLA GRANDE TERRAZZA',
   '2532,2936': 'ROCCA DI LUMEN, CITTÀ DEL RE\n↗ DESERTO DI SOLIS E PONTE DEI RE   ↘ MONTE BRACE',
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
-const PROPTXT = { well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
+const PROPTXT = { ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
   snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 // quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
@@ -11119,6 +11489,9 @@ const SHOPS = {
   porto: { title: "L'EMPORIO DELL'ARMATORE", list: [['mappa', 150], ['tridente', 430], ['madreperla', 520], ['bussola', 600]] },
   fiore: { title: 'LA SERRA DELLA FIORAIA', list: [['pozione', 22], ['elisir', 105], ['trifoglio', 160], ['seta', 170]] },
   dojo: { title: 'IL DOJO DI FIORALBA', list: [['argento', 240], ['kabuto', 380], ['acciaio', 420]] },
+  marmo_armi: { title: "L'ARMERIA DELLE CASCATE", list: [['elmoFerro', 150], ['torre', 270], ['scaglie', 350], ['acciaio', 430], ['martello', 520]] },
+  marmo_erbe: { title: 'LA FONTE DEI RIMEDI', list: [['pozione', 22], ['elisir', 105]] },
+  marmo_gemme: { title: "L'ORAFO DEL GHIACCIAIO", list: [['talismano', 90], ['anello2', 260], ['anelloForza', 420], ['piuma', 520]] },
 };
 // lo sconto di una bottega: la città ricorda chi ha sbrigato i suoi incarichi (5% per incarico, fino al 20%)
 const shopCity = who => SHOPS[who].city || (W.SHOPS[who] || {}).city || '';
@@ -11139,7 +11512,10 @@ const MUS_PLACE = { 'BORGO AURORA': 'borgo', 'ROCCA DI LUMEN': 'rocca', 'PRATI D
   'CASTELROSSO': 'borgo:ambra', 'ALTABRINA': 'borgo:nord', 'LOCANDA DEL PONTE': 'campi', 'MEZZAVIA': 'campi', 'APPRODO DEL FARO': 'costa', 'APPRODO DEI PETALI': 'costa', 'PORTO SERENO': 'costa', 'ZAFIRA': 'deserto',
   'FIORALBA': 'fiore', 'COLLINE DEI CILIEGI': 'fiore', 'PONTE DEI RE': 'title', 'PONTE DELLE LANTERNE': 'costa', 'PIANA DEI VENTI': 'rupi', 'MONTI DI FERRO': 'monti', 'ALTOPIANO BIANCO': 'gelo', "BOSCO D'AMBRA": 'bosco',
   'TERRE ROSSE': 'deserto', 'DUNE DEL SOLE': 'deserto', 'PIANA DI MEZZO': 'prati', 'BAIA DI ZAFFIRO': 'costa', 'SELVA SMERALDO': 'selva', 'TEMPIO DELLA LAGUNA': 'selva', 'DELTA DELLE NEBBIE': 'palude', 'CAPO DELLE LANTERNE': 'prati',
-  'BRUGHIERA NERA': 'palude', "TORRE DELL'ECLISSE": 'grotta:gelo', 'DENTI DEL SUD': 'monti' };
+  'BRUGHIERA NERA': 'palude', "TORRE DELL'ECLISSE": 'grotta:gelo', 'DENTI DEL SUD': 'monti',
+  // i grandi monti del nord
+  'VALICO DEI GIGANTI': 'monti', 'SOGLIA DEI GIGANTI': 'monti', 'MONTI DEL CIELO': 'monti', "CRESTE D'ARGENTO": 'monti', 'GHIACCIAIO ETERNO': 'gelo', 'VALLE DELLE CASCATE': 'lago',
+  'MARMOREA': 'rocca', 'LA GRANDE TERRAZZA': 'rocca', 'ACROPOLI DELLE ACQUE': 'lago' };
 const MUS_DUN = { bosco: 'santuario:bosco', lago: 'santuario:lago', sole: 'tempio:sole', ghiaccio: 'santuario:ghiaccio', fuoco: 'tempio:fuoco' };
 let musQuiet = 0;
 try { MU.on = localStorage.getItem('sg_mus') !== '0'; } catch (e) {}
@@ -11235,7 +11611,7 @@ function placeCam(snap) {
 // ---------- movimento con collisioni ----------
 function canStand(e, nx, nz, r, steep) {
   if (D) return dCanStand(e, nx, nz, r);
-  if (nx < 10 || nz < 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
+  if (nx < 10 || nz < W.Z0 + 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.WL - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
@@ -11331,7 +11707,7 @@ function heroUpdate(dt) {
   // amuleti che curano
   if (eqHas('regen') && h.hp < MAXHP()) { h.regenT += dt; if (h.regenT > 8) { h.regenT = 0; h.hp++; } }
 }
-function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEX - 1, Math.floor(z / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
+function lavaAt(x, z) { const i = Math.max(0, Math.min(W.TEX - 1, Math.floor(x / (W.WS / W.TEX)))), j = Math.max(0, Math.min(W.TEXZ - 1, Math.floor((z - W.Z0) / (W.WS / W.TEX)))); return W.col[(j * W.TEX + i) * 4 + 3] > 140; }
 
 // ---------- classi: colpi, colpo caricato, abilità ----------
 // ogni mossa: quanto dura e quanto manca alla fine quando va a segno
@@ -11764,6 +12140,11 @@ function ambUpdate(dt) {
   // fumo dei camini e zampilli delle fontane vicine
   for (const s of W.smokes) if (Math.abs(s[0] - hero.x) < 240 && Math.abs(s[2] - hero.z) < 240 && Math.random() < dt * 1.1) fx.push({ k: 'smoke', x: s[0], y: s[1], z: s[2], vx: 1.6 + Math.random(), vz: 1.2, vy: 4 + Math.random() * 2, t: 2.4, s: 0.36 });
   for (const s of W.sprays) if (Math.abs(s[0] - hero.x) < 160 && Math.abs(s[2] - hero.z) < 160 && Math.random() < dt * 26) { const a = Math.random() * TAU, v = 2.5 + Math.random() * 2.5; fx.push({ k: 'drop', x: s[0], y: s[1], z: s[2], vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 9 + Math.random() * 3, t: 0.95, s: 0.3 }); }
+  // ai piedi delle cascate: spruzzi e nuvole d'acqua. [x, y, z, larghezza, lungo x?, forza]
+  for (const s of W.falls) if (Math.abs(s[0] - hero.x) < 330 && Math.abs(s[2] - hero.z) < 330) {
+    if (Math.random() < dt * 5 * s[5]) { const o = (Math.random() - 0.5) * s[3], a = Math.random() * TAU, v = 1.5 + Math.random() * 3; fx.push({ k: 'drop', x: s[0] + (s[4] ? o : 0), y: s[1] + 0.3, z: s[2] + (s[4] ? 0 : o), vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 7 + Math.random() * 7, t: 0.75, s: 0.34 }); }
+    if (Math.random() < dt * 2.2 * s[5]) { const o = (Math.random() - 0.5) * s[3]; fx.push({ k: 'puff', x: s[0] + (s[4] ? o : 0), y: s[1] + 1 + Math.random() * 2, z: s[2] + (s[4] ? 0 : o), vx: (Math.random() - 0.5) * 2, vz: (Math.random() - 0.5) * 2, vy: 2.2 + Math.random() * 1.5, t: 0.9, s: 0.5 + Math.random() * 0.4 }); }
+  }
   // polvere sotto i piedi quando si corre, schizzi nell'acqua bassa
   if (hero.moving && !D) { hero.dustT = (hero.dustT || 0) - dt; if (hero.dustT <= 0) { hero.dustT = BTN.b ? 0.16 : 0.34; if (hero.wade) fx.push({ k: 'drop', x: hero.x + (Math.random() - 0.5) * 2, y: 0.3, z: hero.z + (Math.random() - 0.5) * 2, vy: 7, t: 0.45, s: 0.3 }); else if (BTN.b) fx.push({ k: 'puff', x: hero.x - Math.cos(hero.yaw) * 1.5, y: hero.y + 0.4, z: hero.z - Math.sin(hero.yaw) * 1.5, vy: 2.5, t: 0.45, s: 0.3 }); } }
 }
@@ -11859,7 +12240,7 @@ function playUpdate(dt) {
   if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
   // mappa esplorata
   seenT -= dt;
-  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64); for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MG && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
+  if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64) + MGN; for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MGZ && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
   }
   if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
   for (const t of toasts) t.life -= dt; toasts = toasts.filter(t => t.life > 0);
@@ -12708,12 +13089,19 @@ function render3D() {
     put(p.u.uSun, sa, td > 5.5 && td < 19.5 ? se : -1, Math.max(6, H3 * 0.045)); put(p.u.uMoon, ma, tm < 11 ? me : -1, Math.max(5, H3 * 0.034));
     const low = Math.max(0, Math.min(1, se / 0.5)); gl.uniform3f(p.u.uSunC, 1, 0.72 + 0.26 * low, 0.36 + 0.5 * low); gl.uniform1f(p.u.uStars, day.stars); gl.uniform3fv(p.u.uPanoC, day.pano);
   }
+  { // i giganti del nord: da lontano il rilievo vero è oltre la foschia, e le cime si disegnano come sagome sul cielo
+    const hor = H3 / 2 - foc * Math.tan(pitch), L = [];
+    for (const g of GIANTS) { const dx = g[0] - cam.x, dz = g[1] - cam.z, d = Math.hypot(dx, dz), a = Math.max(0, Math.min(1, (d - (atm.far - 250)) / 550)), dd = angDiff(Math.atan2(dz, dx), yaw), cd = Math.cos(dd);
+      if (a > 0 && Math.abs(dd) < 1.25 && g[2] > cam.y) L.push([d, W3 / 2 + foc * Math.tan(dd), hor + foc * (g[2] - cam.y) / (d * cd), foc * g[3] / (d * cd), a]); }
+    L.sort((p, q) => q[0] - p[0]); PKS.fill(0); L.slice(-10).forEach((k, i) => { PKS[i * 4] = k[1]; PKS[i * 4 + 1] = k[2]; PKS[i * 4 + 2] = k[3]; PKS[i * 4 + 3] = k[4]; });
+    gl.uniform4fv(p.u.uPk, PKS);
+  }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PANO); gl.uniform1i(p.u.uPano, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
   // terreno
   p = P.terrain; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform1f(p.u.uInvWS, 1 / W.WS);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0);
   gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
@@ -12725,13 +13113,13 @@ function render3D() {
     if (d > far + W.CS * 0.75) continue;
     if (!boxVisible(c.cx - W.CS / 2, c.lo - 2, c.cz - W.CS / 2, c.cx + W.CS / 2, c.hi + 30, c.cz + W.CS / 2)) continue;
     vis.push([c, d]); W.need(c, frameN);
-    const L = W.lod[d < 520 ? 0 : d < 950 ? 1 : 2];
+    const L = W.lod[d < 520 || (c.fine && d < 1350) ? 0 : d < 950 ? 1 : 2];
     gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); setWL(p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
@@ -12773,7 +13161,7 @@ function render3D() {
   // acqua
   p = P.water; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform1f(p.u.uY, W.WL); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform3fv(p.u.uWat, atm.wat);
-  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uInvWS, 1 / W.WS); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
+  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, SHORE); gl.uniform1i(p.u.uShore, 1);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -13000,7 +13388,7 @@ function boardKey(name) {
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
 // la mappa è una finestra sul mondo: una zona (4096 unità) oppure tutto. La croce la sposta, A cambia ingrandimento
 const mapV = { x: 2048, z: 2048, span: 4096 };
-function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(h, Math.min(W.WS - h, mapV.z)); }
+function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(W.Z0 + h, Math.min(W.WS - h, mapV.z)); }
 const mapMe = () => inCasa() ? { x: D.outX, z: D.outZ, yaw: D.outYaw } : hero;
 function openMap() { mapOpen = true; if (hero && (!D || D.def.casa)) { const m = mapMe(); mapV.span = 4096; mapV.x = m.x; mapV.z = m.z; clampMap(); } }
 function drawMap() {
@@ -13010,10 +13398,10 @@ function drawMap() {
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
   T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
   const mk2 = W.mapImg.width / W.WS;
-  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, wz0 * mk2, span * mk2, span * mk2, x0, y0, S, S);
+  hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, (wz0 - W.Z0) * mk2, span * mk2, span * mk2, x0, y0, S, S);
   const i0 = Math.floor(wx0 / 64), j0 = Math.floor(wz0 / 64), nc = Math.ceil(span / 64);
   for (let j = j0; j <= j0 + nc; j++) for (let i = i0; i <= i0 + nc; i++) {
-    if (i < 0 || j < 0 || i >= MG || j >= MG || seen[j * MG + i]) continue;
+    if (i < 0 || j < -MGN || i >= MG || j >= MG || seen[(j + MGN) * MG + i]) continue;
     const ax = Math.max(x0, Math.floor(x0 + (i * 64 - wx0) * k)), ay = Math.max(y0, Math.floor(y0 + (j * 64 - wz0) * k)), bx = Math.min(x0 + S, Math.ceil(x0 + (i * 64 + 64 - wx0) * k)), by = Math.min(y0 + S, Math.ceil(y0 + (j * 64 + 64 - wz0) * k));
     if (bx > ax && by > ay) { hg.fillStyle = (i + j) % 2 ? '#2a2638' : '#24202f'; hg.fillRect(ax, ay, bx - ax, by - ay); }
   }
@@ -13022,7 +13410,7 @@ function drawMap() {
     if (!inV(x, z)) { if (!edge) return; x = Math.max(wx0, Math.min(wx0 + span, x)); z = Math.max(wz0, Math.min(wz0 + span, z)); }
     hg.fillStyle = '#0b0a12'; hg.fillRect(PX(x) - s, PZ(z) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(PX(x) - s + 1, PZ(z) - s + 1, s * 2 - 1, s * 2 - 1);
   };
-  const isSeen = (x, z) => seen[Math.min(MG - 1, Math.floor(z / 64)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
+  const isSeen = (x, z) => seen[Math.max(0, Math.min(MGZ - 1, Math.floor(z / 64) + MGN)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
   for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r >= 2 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);

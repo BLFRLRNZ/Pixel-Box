@@ -12,6 +12,8 @@ const STYLES = {
   nord: { walls: [TL.LOGS, TL.LOGS, 2, 2], roofs: [TL.ROOF_SNOW, 5, TL.ROOF_SNOW], rt: ['gable'], steep: 0.72, h: [10, 15], wd: [16, 24], chim: 1, win: [8], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_SNOW, pave: 'g', trees: ['snowpine'], lamp: 'lamp', yard: ['barrel', 'crate'], flag: 2, ban: TL.BAN_BLUE },
   sole: { walls: [TL.ADOBE, TL.ADOBE, 10, TL.WHITE], roofs: [TL.ADOBE, 10], rt: ['flat', 'flat', 'flat', 'dome'], h: [9, 16], wd: [16, 26], chim: 0, win: [TL.WIN_LATTICE], dr: [TL.DOOR_BLUE], aw: [TL.AWN_YELLOW, TL.AWN_BLUE, TL.CLOTH], cw: 10, cm: TL.MERL_SAND, tr: TL.TURQ, pave: 'b', trees: ['palm'], lamp: 'lamp', yard: ['jar', 'pot', 'crate'], flag: 1, ban: TL.BAN_BLUE },
   porto: { walls: [TL.WHITE, TL.WHITE, TL.OCHRE, TL.PINK, 0], roofs: [TL.ROOF_ORANGE, TL.ROOF_ORANGE, 4], rt: ['gable', 'hip'], h: [10, 19], wd: [15, 24], chim: 0.5, win: [8, TL.WIN_ARCH], dr: [7, TL.DOOR_BLUE], aw: [TL.AWN_BLUE, 13], cw: 9, cm: TL.MERL, tr: TL.ROOF_ORANGE, pave: 'g', trees: ['palm', 'oak'], lamp: 'lamp', yard: ['barrel', 'crate', 'anchor', 'pot'], flag: 2, ban: TL.BAN_BLUE },
+  // la città dei monti: marmo bianco, tetti azzurri e verdi, cupole
+  marmo: { walls: [TL.MARBLE, TL.MARBLE, TL.WHITE, TL.MARBLE], roofs: [TL.ROOF_BLUE, TL.ROOF_TEAL, TL.ROOF_BLUE], rt: ['hip', 'gable', 'hip', 'dome'], h: [11, 18], wd: [16, 26], chim: 0.25, win: [TL.MARBLE_WIN, TL.MARBLE_WIN, TL.WIN_ARCH], dr: [TL.MARBLE_DOOR], aw: [TL.AWN_BLUE, TL.CLOTH], cw: TL.MARBLE, cm: TL.MERL, tr: TL.ROOF_BLUE, pave: 'b', trees: ['pine', 'birch'], lamp: 'lamp', yard: ['pot', 'pot', 'jar', 'bench'], flag: 2, ban: TL.BAN_BLUE },
   fiore: { walls: [TL.WHITE, TL.PINK, 3, TL.TIMBER2], roofs: [TL.ROOF_PINK, TL.ROOF_DARK, TL.ROOF_PURPLE], rt: ['hip', 'gable'], h: [9, 14], wd: [16, 24], chim: 0.3, win: [TL.SHOJI, TL.WIN_PAPER], dr: [TL.DOOR_RED], aw: [], cw: 9, cm: TL.MERL, tr: TL.ROOF_PINK, pave: 'b', trees: ['cherry', 'cherrywhite', 'cherry'], lamp: 'lantern', yard: ['pot', 'pot', 'bench'], flag: 1, ban: TL.BAN_RED },
 };
 // ---------- abitanti: gli aspetti si condividono (uno sprite per tipo, non per persona) ----------
@@ -63,8 +65,10 @@ function city(o) {
   const occ = [], free = (a, b, c, d, m = 2) => { for (const q of occ) if (a < q[2] + m && c > q[0] - m && b < q[3] + m && d > q[1] - m) return false; return true; };
   const plan = { o, S, x0, x1, z0, z1, px, pz, pl, y, houses: [], specials: [], gates: [], open };
   // terreno, nomi, pavimenti
-  W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
-  W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
+  if (!o.noTerra) {   // (la città dei monti si scava i suoi gradoni da sola)
+    W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
+    W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
+  }
   W.CLEAR.push([x0 - 18, z0 - 18, x1 + 18, z1 + 18]);
   W.PLACES.push([o.x, o.z, Math.max(hw, hd) + 34, o.name]); W.TOWNS.push({ x: o.x, z: o.z, name: o.name, big: !o.small });
   const prect = [px - pl.w / 2, pz - pl.d / 2, px + pl.w / 2, pz + pl.d / 2];

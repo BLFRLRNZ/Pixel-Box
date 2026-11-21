@@ -354,12 +354,13 @@ const LAND = [
   /* 11 giungla   */ [['scimmia', 4], ['pappagallo', 4], ['tucano', 2.5], ['capibara', 2], ['rana', 3], ['tartaruga', 1]],
   /* 12 ciliegi   */ [['cervoS', 4], ['gru', 3], ['tanuki', 2.5], ['coniglio', 2], ['passero', 3], ['gatto', 0.7], ['gufo', 2]],
   /* 13 brughiera */ [['pecora', 3], ['cavallo', 2], ['corvo', 3], ['coniglio', 3], ['volpe', 1.5], ['gufo', 2]],
+  /* 14 alpi      */ [['stambecco', 5], ['cervo', 2.5], ['lepreB', 2], ['volpeB', 1], ['corvo', 1.5], ['gufo', 1.5], ['passero', 1.5]],
 ];
-const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila' };
+const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'avvoltoio', 10: 'aquila', 14: 'aquila' };
 const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_COLD = [['foca', 4], ['pinguino', 3.5], ['gabbiano', 2]];
 const TOWN = [['piccione', 5], ['gatto', 2.2], ['cane', 2.2], ['gallina', 1.5], ['passero', 2]];
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
-const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13]);
+const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14]);
 
 // ---------- il motore ----------
 // Il mondo è diviso in riquadri: quando l'eroe si avvicina, ogni riquadro fa comparire i suoi gruppi (sempre gli stessi
@@ -404,7 +405,7 @@ function create(env) {
   const wet = (x, z) => { const g = gH(x, z); return g < -0.7 && g > -40 && !W.inBox(x, z, 2); };
   const shallow = (x, z) => { const g = gH(x, z); return g < 1.5 && g > -1.7 && !W.blocked(x, z, 1.3); };
   const okFor = (S, x, z) => S.k === 'swim' ? wet(x, z) : S.k === 'wade' ? shallow(x, z) || dry(x, z, S) : dry(x, z, S);
-  const inTown = (x, z) => { for (const t of W.TOWNS) if (t.big && (x - t.x) ** 2 + (z - t.z) ** 2 < 150 * 150) return true; return false; };
+  const inTown = (x, z) => { for (const t of W.TOWNS) if (t.big && (x - t.x) ** 2 + (z - t.z) ** 2 < (t.r || 150) ** 2) return true; return false; };
   const nearWater = (x, z, r) => { for (let i = 0; i < 8; i++) { const a = i * 0.785; if (gH(x + Math.cos(a) * r, z + Math.sin(a) * r) < -0.3) return true; } return false; };
   function choose(table, R, only) {
     let tot = 0; for (const [, w] of table) tot += w;
@@ -452,7 +453,7 @@ function create(env) {
     const R = rng(((ci * 73856093) ^ (cj * 19349663) ^ (night ? 0x9e3779 : 0)) >>> 0), x0 = ci * CS, z0 = cj * CS;
     for (let t = 0; t < 3; t++) {
       const go = R() < [0.7, 0.36, 0.12][t], x = x0 + (0.1 + R() * 0.8) * CS, z = z0 + (0.1 + R() * 0.8) * CS;
-      if (!go || list.length >= MAXN || x < 40 || z < 40 || x > W.WS - 40 || z > W.WS - 40) continue;
+      if (!go || list.length >= MAXN || x < 40 || z < W.Z0 + 40 || x > W.WS - 40 || z > W.WS - 40) continue;
       if (only && Math.hypot(x - hx, z - hz) < 110) continue;
       const g = gH(x, z), bio = W.biomeAt(x, z), cd = W.coastDist(x, z);
       let table;

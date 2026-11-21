@@ -9,7 +9,9 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   ROOF_BLUE: 76, ROOF_GREEN: 77, ROOF_ORANGE: 78, ROOF_DARK: 79, ROOF_SNOW: 80, ROOF_PURPLE: 81, WHITE: 82, OCHRE: 83, PINK: 84, ADOBE: 85, TIMBER2: 86, LOGS: 87,
   PAVING: 88, PLANKS: 89, HULL: 90, SAIL: 91, DOOR_BIG: 92, DOOR_BLUE: 93, DOOR_RED: 94, WIN_ARCH: 95, WIN_ROUND: 96, WIN_LATTICE: 97, WIN_PAPER: 98,
   AWN_BLUE: 99, AWN_GREEN: 100, AWN_YELLOW: 101, BAN_RED: 102, BAN_BLUE: 103, ARCADE: 104, TURQ: 105, GOLD: 106, IVY: 107, CLOCK: 108, STEPS: 109,
-  DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119 };
+  DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119,
+  // (120 è dei santuari, da 128 a 169 ci sono gli interni delle botteghe)
+  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -67,6 +69,17 @@ function tilesOn(c, R) {
   at(TL.CRATE, () => { P('#8a5e34', 0, 0, T, T); for (let x = 0; x < T; x += 8) P('#6a4424', x, 0, 1, T); P('#4a2e1a', 0, 0, T, 3); P('#4a2e1a', 0, T - 3, T, 3); P('#4a2e1a', 0, 0, 3, T); P('#4a2e1a', T - 3, 0, 3, T); for (let i = 3; i < T - 3; i++) P('#5a3a20', i, i, 2, 2); });
   at(TL.WATER, () => { fill('#3a9ad8', 0); for (let k = 0; k < 26; k++) P(R() < 0.5 ? '#7ac8f0' : '#e0f4ff', R() * T | 0, R() * T | 0, 3 + (R() * 3 | 0), 1); });
   at(TL.CREST, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : x < 16 ? '#c8342c' : '#2a5ab0', x, y, 1, 1); } disc('#ffd23f', 16, 13, 4); disc('#fff4b0', 16, 13, 2); });
+  // la città di marmo: blocchi bianchi venati, colonne scanalate, fregio azzurro e oro, acqua che cade, balaustra
+  at(TL.MARBLE, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let k = 0; k < 9; k++) { let x = R() * T, y = R() * T; for (let q = 0; q < 7; q++) { P('rgba(150,160,186,.55)', x | 0, y | 0, 1, 1); x += 1; y += R() < 0.5 ? 1 : 0; } } });
+  at(TL.FLUTE, () => { P('#f2f3f7', 0, 0, T, T); for (let x = 0; x < T; x += 4) { P('#c2c7d6', x, 0, 1, T); P('#ffffff', x + 1, 0, 1, T); P('#dde0ea', x + 3, 0, 1, T); } });
+  at(TL.FRIEZE, () => { P('#eceef4', 0, 0, T, T); P('#e8b42a', 0, 2, T, 2); P('#e8b42a', 0, T - 4, T, 2); P('#2a62b8', 0, 7, T, 18); for (let x = 0; x < T; x += 8) { P('#eceef4', x + 1, 10, 6, 2); P('#eceef4', x + 1, 10, 2, 10); P('#eceef4', x + 1, 18, 6, 2); P('#eceef4', x + 5, 14, 2, 6); P('#eceef4', x + 3, 14, 3, 2); } P('#bcc2d0', 0, 0, T, 1); P('#bcc2d0', 0, T - 1, T, 1); });
+  at(TL.FALL, () => { P('#58aee8', 0, 0, T, T); for (let x = 0; x < T; x++) { const c = R(); if (c < 0.3) P('#8fd0f6', x, 0, 1, T); else if (c < 0.42) P('#3f94d6', x, 0, 1, T); } for (let k = 0; k < 46; k++) { const x = R() * T | 0, y = R() * T | 0, n = 4 + (R() * 9 | 0); for (let q = 0; q < n; q++) P(k % 3 ? '#eaf8ff' : '#bfe6ff', x, (y + q) % T, 1, 1); } });
+  at(TL.ROOF_TEAL, () => roof('#2f8c96'));
+  at(TL.BALUSTER, () => { P('#f2f3f7', 0, 0, T, 5); P('#c2c7d6', 0, 4, T, 1); P('#eceef4', 0, T - 5, T, 5); P('#c2c7d6', 0, T - 5, T, 1); for (let x = 2; x < T; x += 8) { P('#e4e7ef', x + 1, 5, 2, T - 10); P('#f6f7fa', x, 9, 4, 9); P('#c8cdda', x + 3, 9, 1, 9); P('#f6f7fa', x, 20, 4, 4); } });
+  at(TL.POOLW, () => { fill('#49b4d8', 0); for (let k = 0; k < 16; k++) P(R() < 0.6 ? '#84d6ee' : '#d8f6ff', R() * T | 0, R() * T | 0, 3 + (R() * 4 | 0), 1); for (let k = 0; k < 8; k++) P('#3a9cc4', R() * T | 0, R() * T | 0, 4, 1); });
+  at(TL.MARBLE_WIN, () => { for (let y = 3; y < 30; y++) for (let x = 9; x < 23; x++) { if (y < 10 && Math.hypot(x + 0.5 - 16, y + 0.5 - 10) > 7) continue; const ed = x === 9 || x === 22 || y === 29 || (y < 10 && Math.hypot(x + 0.5 - 16, y + 0.5 - 10) > 5.6); P(ed ? '#f6f7fa' : y > 26 ? '#c2c7d6' : '#3a78c0', x, y, 1, 1); } P('#f6f7fa', 15, 5, 2, 24); P('#f6f7fa', 10, 17, 12, 1); P('#9ad0f6', 11, 11, 3, 4); });
+  at(TL.MARBLE_DOOR, () => { for (let y = 1; y < T; y++) for (let x = 5; x < 27; x++) { if (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 11) continue; const ed = x < 7 || x > 24 || (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 9); P(ed ? '#f6f7fa' : (x === 15 || x === 16) ? '#1a3e7a' : '#2a62b8', x, y, 1, 1); } P('#e8b42a', 12, 18, 2, 3); P('#e8b42a', 18, 18, 2, 3); for (let y = 14; y < T; y += 7) { P('#3f7cd0', 8, y, 6, 1); P('#3f7cd0', 18, y, 6, 1); } });
+  at(TL.ARCH_M, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let y = 4; y < T; y++) for (let x = 4; x < 28; x++) { if (y < 16 && Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 12) continue; const ed = y < 16 ? Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 10 : (x < 6 || x > 25); P(ed ? '#f6f7fa' : '#16223a', x, y, 1, 1); } });
   at(TL.SHOJI, () => { P('#4a2e1c', 4, 3, 24, 26); P('#f8f0dc', 6, 5, 20, 22); for (let x = 12; x < 26; x += 7) P('#4a2e1c', x, 5, 1, 22); for (let y = 12; y < 27; y += 7) P('#4a2e1c', 6, y, 20, 1); P('#3a6ab8', 6, 5, 6, 7); });
   return c;
 }
@@ -259,10 +272,11 @@ function sprites(set, A, R) {
   set('anchor', [fit([Cy([0, 0, 0.6], [0, 0, 4], 0.22, IR), Cy([0, -0.9, 3.4], [0, 0.9, 3.4], 0.2, IR), Ca([0, -1.5, 1.2], [0, 0, 0.5], 0.24, IR), Ca([0, 1.5, 1.2], [0, 0, 0.5], 0.24, IR), El([0, 0, 4.3], [0.2, 0.5, 0.5], IR)], Math.PI - 1.2)], 0.2, 1);
   set('target', [fit([Cy([-0.3, 0, 3.2], [0.3, 0, 3.2], 2.2, '#f0ece0'), Cy([0.3, 0, 3.2], [0.36, 0, 3.2], 1.5, '#c8342c'), Cy([0.36, 0, 3.2], [0.42, 0, 3.2], 0.7, '#ffd23f'), Ca([0, -1.4, 0], [0, -0.6, 2], 0.2, WD), Ca([0, 1.4, 0], [0, 0.6, 2], 0.2, WD)], Math.PI - 0.3)], 0.2, 1.4);
   set('kingstatue', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -10, 0], c: '#8a867a' }, { t: 'b', b: [-8, 8, -8, 8, -11.5, -9.5], c: '#a8a498' }, ...A.human({ skin: '#b8b4a8', crown: '#d8c890', shirt: '#a8a498', plate: '#c0bcb0', pants: '#98948a', boots: '#8a867a', cape: '#98948a', beard: '#c0bcb0', weapon: { col: '#c8c4b8', guard: '#a8a498' }, shield: '#a8a498', emblem: '#c8c4b8' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
+  set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);
 }
 
-W.flags = []; W.sprays = []; W.TOWNS = [{ x: 2000, z: 2650, name: 'BORGO AURORA', big: true, home: true }]; W.FOLK = {};
+W.flags = []; W.sprays = []; W.falls = []; W.TOWNS = [{ x: 2000, z: 2650, name: 'BORGO AURORA', big: true, home: true }]; W.FOLK = {};
 SG.town = { TL, tilesOn, sprites, merl, merlBox, wallSeg, oct, faceDecal, cone, pyramid, hip, dome, tower, decal, gate, awning, house, addBridge, addPier, fountain, ship, g0 };
 })();
