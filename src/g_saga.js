@@ -168,7 +168,7 @@ const ATMO = [
 
 // ---------- stato ----------
 let G = null, gl = null, st = 'boot', gen = null, prog = 0, progMsg = '', errMsg = '';
-let atlas = null, ATEX = null, TILES = null, DET = null, PANO = null, SHORE = null, glowBuf = null, SPR = {}, CHR = {}, heroRects = null;
+let atlas = null, ATEX = null, TILES = null, DET = null, PAVT = null, PANO = null, SHORE = null, glowBuf = null, SPR = {}, CHR = {}, heroRects = null;
 let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [], botteghe = [];
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
 let dialog = null, menu = null, shop = null, loot = null, mapOpen = false, help = 0, death = 0, intro = 0, title = { sel: 0, t: 0 };
@@ -436,7 +436,7 @@ function* loader() {
   ATEX = G.texture(atlas.c); atlasUse = atlas.used;
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31)));
-  DET = G.texture(A.detail(rng(3)), { repeat: true });
+  DET = G.texture(A.detail(rng(3)), { repeat: true }); PAVT = G.texture(A.paving(rng(77)), { repeat: true });
   SHORE = G.texture({ w: W.N, h: W.NZ, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
   PANO = G.texture(A.pano(rng(8), ['#8aa0c0', '#6a82a8', '#e8eef8']), { repeat: true });
@@ -940,7 +940,7 @@ function canStand(e, nx, nz, r, steep) {
   if (D) return dCanStand(e, nx, nz, r);
   if (nx < 10 || nz < W.Z0 + 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
-  if (h1 < W.WL - 2.2) return false;
+  if (h1 < W.wlAt(nx, nz) - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
   return !W.blocked(nx, nz, r);
 }
@@ -1003,7 +1003,7 @@ function heroUpdate(dt) {
   if (ma !== null) h.yaw += angDiff(ma, h.yaw) * Math.min(1, 16 * dt); else h.yaw += turn * 2.45 * dt;
   const mdir = ma !== null ? ma : h.yaw;           // dove si va: con la leva, subito nella direzione premuta
   const cell = D ? dCellAt(h.x, h.z) : -1;
-  h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.WL - 0.35;
+  h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.wlAt(h.x, h.z) - 0.35;
   const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
   let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
@@ -1022,7 +1022,7 @@ function heroUpdate(dt) {
       const ahead = dCellAt(h.x + Math.cos(h.yaw) * 4, h.z + Math.sin(h.yaw) * 4);
       if (ahead === DT.WATER && !canSwim() && time > (h.hintT || 0)) { h.hintT = time + 4; toast(swimItem() ? 'EQUIPAGGIA ' + swimItem().n + ' (START)' : "L'ACQUA È TROPPO PROFONDA", '#a9d8ff'); }
     }
-    if (h.wade && Math.random() < 0.3) fx.push({ k: 'drop', x: h.x, z: h.z, y: D ? -1 : W.WL + 0.3, vy: 8 + Math.random() * 6, t: 0.4, s: 0.35 });
+    if (h.wade && Math.random() < 0.3) fx.push({ k: 'drop', x: h.x, z: h.z, y: D ? -1 : W.wlAt(h.x, h.z) + 0.3, vy: 8 + Math.random() * 6, t: 0.4, s: 0.35 });
   } else { h.vx = h.vz = 0; h.pushT = 0; }
   // spinta via dagli abitanti
   if (!D) for (const n of npcs) { const ddx = h.x - n.x, ddz = h.z - n.z, d = Math.hypot(ddx, ddz); if (d < 4.2 && d > 0.01) { move(h, ddx / d * (4.2 - d), ddz / d * (4.2 - d), 1.6); } }
@@ -2524,6 +2524,8 @@ function render3D() {
   p = P.terrain; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0);
   gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
+  gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, W.tex.pav); gl.uniform1i(p.u.uPav, 3);
+  gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, PAVT); gl.uniform1i(p.u.uPavT, 4);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.tex.mat); gl.uniform1i(p.u.uMat, 1);
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 2);
@@ -2588,6 +2590,8 @@ function render3D() {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.waterBuf); G.attribs(p, [['aP', 2]]); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  // gli stagni in quota: la stessa acqua, più su, dentro il contorno della conca
+  for (const q of W.PONDS) { if (Math.hypot(q.x - cam.x, q.z - cam.z) > fogF + 160) continue; gl.uniform1f(p.u.uY, q.y); gl.bindBuffer(gl.ARRAY_BUFFER, q.buf); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, q.n * 6, gl.UNSIGNED_SHORT, 0); }
   // aloni di lampioni, fuochi e fari: si sommano al colore (di notte forti, di giorno appena accennati)
   { let n = 0; const ng = day.night;
     for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;

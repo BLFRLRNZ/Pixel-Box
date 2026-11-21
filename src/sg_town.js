@@ -16,7 +16,7 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
   BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199,
   // gli altri santuari: otto riquadri a tema (muro, colonna, fregio, portale, stemma, rune, pendagli, stendardo) a partire da questi numeri
-  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237 };
+  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237, BASOLATO: 238 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -163,6 +163,8 @@ function tilesOn(c, R) {
     at(TL.SLAB_FIRE, () => { bricks('#4a4248', '#241e24', 16, 16); for (let k = 0; k < 10; k++) P(Q() < 0.5 ? '#c8401a' : '#ff8a2a', q(T), q(T), 1, 1); });
     at(TL.CRYSTAL, () => { P('#b06af0', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#f0d8ff' : '#7a3ac8', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
     at(TL.RUNE_V, () => runa(['#f0d0ff', '#c070ff']));
+    // il selciato antico dei ponti: gli stessi pietroni delle strade maestre
+    at(TL.BASOLATO, () => { const pv = SG.art.paving(rng(78), T, 3); for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const i = (y * T + x) * 4; P('rgb(' + pv.data[i] + ',' + pv.data[i + 1] + ',' + pv.data[i + 2] + ')', x, y, 1, 1); } });
     at(TL.ICE, () => { P('#bfe6ff', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#ffffff' : '#8fd0f6', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
   }
   return c;
@@ -270,7 +272,7 @@ function addBridge(o) {
   const X = o.axis === 'x', y = o.y === undefined ? 10 : o.y, hw = 12, r = X ? [o.a0, o.c - hw, o.a1, o.c + hw] : [o.c - hw, o.a0, o.c + hw, o.a1];
   W.TERRA.push({ x0: r[0], z0: r[1], x1: r[2], z1: r[3], y });
   if (o.ramps !== false) for (const a of [o.a0 - 26, o.a1 + 26]) W.FLAT.push(X ? [a, o.c, 64, y] : [o.c, a, 64, y]);
-  W.PAVE.push(['g', 'rect', r[0] - (X ? 30 : 0), r[1] - (X ? 0 : 30), r[2] + (X ? 30 : 0), r[3] + (X ? 0 : 30)]);
+  W.PAVE.push(['g', 'rect', r[0] - (X ? 30 : 0), r[1] - (X ? 0 : 30), r[2] + (X ? 30 : 0), r[3] + (X ? 0 : 30)], ['s', 'rect', r[0] - (X ? 30 : 0), r[1] - (X ? 0 : 30) + 2, r[2] + (X ? 30 : 0), r[3] + (X ? 0 : 30) - 2]);
   W.CLEAR.push([r[0] - 30, r[1] - 30, r[2] + 30, r[3] + 30]);
   W.BUILD.push(Object.assign({ k: 'bridge', x: (r[0] + r[2]) / 2, z: (r[1] + r[3]) / 2, y }, o));
   if (o.lamp !== false) for (let a = o.a0 + 16, k = 0; a < o.a1 - 8; a += 48, k++) for (const s of [-1, 1]) W.PROPS.push(X ? ['lamp', a, o.c + s * 8.4] : ['lamp', o.c + s * 8.4, a]);
@@ -278,7 +280,7 @@ function addBridge(o) {
 W.builders.bridge = (b, g) => {
   const X = b.axis === 'x', y = b.y, L = b.a1 - b.a0, P = (a, c, yy) => X ? [a, yy, c] : [c, yy, a];
   // il piano di calpestio copre la diga di terreno
-  quad(P(b.a0, b.c + (X ? 11 : -11), y + 0.07), P(b.a1, b.c + (X ? 11 : -11), y + 0.07), P(b.a1, b.c - (X ? 11 : -11), y + 0.07), P(b.a0, b.c - (X ? 11 : -11), y + 0.07), TL.PAVING, L / 8, 22 / 8, 0.94);
+  quad(P(b.a0, b.c + (X ? 11 : -11), y + 0.07), P(b.a1, b.c + (X ? 11 : -11), y + 0.07), P(b.a1, b.c - (X ? 11 : -11), y + 0.07), P(b.a0, b.c - (X ? 11 : -11), y + 0.07), TL.BASOLATO, L / 8, 22 / 8, 0.94);
   for (const s of [-1, 1]) {
     const c0 = b.c + s * 9.2, c1 = b.c + s * 11.4, lo = Math.min(c0, c1), hi = Math.max(c0, c1);
     if (X) box(b.a0, lo, b.a1, hi, -7, y + 2.6, 9); else box(lo, b.a0, hi, b.a1, -7, y + 2.6, 9);

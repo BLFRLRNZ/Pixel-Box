@@ -57,7 +57,7 @@ varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 ` + PTL + `
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y; vPL = ptLights(aPos + vec3(0.0, 1.5, 0.0));
   vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + CLD + `
-uniform sampler2D uCol, uMat, uDet; uniform vec3 uFogC, uLc; uniform float uTime; uniform vec2 uInvW, uW0;
+uniform sampler2D uCol, uMat, uDet, uPav, uPavT; uniform vec3 uFogC, uLc; uniform float uTime; uniform vec2 uInvW, uW0;
 varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 void main() {
   // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
@@ -67,7 +67,12 @@ void main() {
   float sl = length(vG);
   if (sl > 0.8) { vec2 dir = vG / sl; vec4 d2 = texture2D(uDet, vec2(dot(vW, vec2(-dir.y, dir.x)), vH) * 0.0625); d = mix(d, d2, smoothstep(0.8, 1.5, sl)); }
   // luce a gradini netti, come sui personaggi
-  vec3 c = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), clamp(1.7 - vD / 75.0, 0.0, 1.0))) * ((floor(vSh * 12.0 + 0.5) / 12.0) * uLc * cloudSh(vW) + band(vPL, 5.0));
+  float nk = clamp(1.7 - vD / 75.0, 0.0, 1.0);
+  vec3 base = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), nk));
+  // il selciato antico delle strade maestre: pietroni che compaiono dove la strada è più forte della soglia di ogni pietra (da lontano, una fascia chiara)
+  float pv = texture2D(uPav, uv).r;
+  if (pv > 0.2) { vec4 st = texture2D(uPavT, (floor(vW * 4.0) + 0.5) * 0.015625); if (pv > mix(0.5, st.a, nk)) base = mix(vec3(0.62, 0.6, 0.55), st.rgb, nk); }
+  vec3 c = base * ((floor(vSh * 12.0 + 0.5) / 12.0) * uLc * cloudSh(vW) + band(vPL, 5.0));
   if (b.a > 0.04) { float g = texture2D(uDet, vW * 0.031 + vec2(uTime * 0.013, uTime * 0.005)).g; c = mix(c, b.rgb * (0.85 + 0.6 * g), b.a); }
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
   bb: [`

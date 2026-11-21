@@ -833,6 +833,23 @@ function detail(R) {
   return { w: S, h: S, data: d };
 }
 
+// ---------- selciato antico: pietroni irregolari. In ogni punto: il colore della pietra e, nel quarto numero, la «soglia» di quella pietra
+// (il terreno la mostra solo dove la strada è abbastanza forte: così il bordo è fatto di pietre che compaiono e scompaiono). 255 = fessura.
+function paving(R, S = 64, n = 5) {
+  const d = new Uint8Array(S * S * 4), c = S / n, pts = [];
+  const PAL = [[170, 164, 150], [156, 151, 140], [182, 174, 157], [148, 142, 130], [164, 156, 138], [176, 170, 160], [142, 150, 124]];
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const p = PAL[R() < 0.1 ? 6 : Math.floor(R() * 6)], k = 0.94 + R() * 0.12; pts.push({ x: (i + 0.2 + R() * 0.6) * c, y: (j + 0.2 + R() * 0.6) * c, c: p.map(v => v * k), a: Math.round(72 + R() * 118), s: R() }); }
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    let d1 = 1e9, d2 = 1e9, best = null;
+    for (const p of pts) { let dx = Math.abs(x + 0.5 - p.x), dy = Math.abs(y + 0.5 - p.y); if (dx > S / 2) dx = S - dx; if (dy > S / 2) dy = S - dy; const dd = Math.hypot(dx, dy); if (dd < d1) { d2 = d1; d1 = dd; best = p; } else if (dd < d2) d2 = dd; }
+    const i = (y * S + x) * 4, e = d2 - d1;
+    if (e < 1.5) { d[i] = 96; d[i + 1] = 88; d[i + 2] = 74; d[i + 3] = 255; continue; }
+    const k = e < 3 ? 0.84 : R() < 0.07 ? 0.9 : R() < 0.05 ? 1.07 : 1;
+    d[i] = Math.min(255, best.c[0] * k); d[i + 1] = Math.min(255, best.c[1] * k); d[i + 2] = Math.min(255, best.c[2] * k); d[i + 3] = best.a;
+  }
+  return { w: S, h: S, data: d };
+}
+
 // ---------- panorama lontano: monti in basso, nuvole in alto ----------
 function pano(R, cols) {
   const c = mk(512, 64), g = c.getContext('2d');
@@ -919,5 +936,5 @@ function Atlas(AW, AH) {
 const SR = 1.5;
 SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
   oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
-  tiles, detail, pano, icon, Atlas, TRUNK, BIRCH };
+  tiles, detail, paving, pano, icon, Atlas, TRUNK, BIRCH };
 })();

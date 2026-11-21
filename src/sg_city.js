@@ -206,14 +206,14 @@ function fuoriPorta(P, gt, g) {
     if (n >= 5) break;
     const fw = Math.round(16 + R() * 7), fd = Math.round(13 + R() * 4), ju = (R() - 0.5) * 6, cx = X ? gt.x + sg * (du + ju) : gt.x + dv, cz = X ? gt.z + dv : gt.z + sg * (du + ju), w = X ? fw : fd, d = X ? fd : fw;
     const x0 = cx - w / 2, x1 = cx + w / 2, z0 = cz - d / 2, z1 = cz + d / 2; let ok = true, lo = 1e9, hi = -1e9;
-    for (let a = 0; a <= 4 && ok; a++) for (let c = 0; c <= 4 && ok; c++) { const x = x0 - 4 + (w + 8) * a / 4, z = z0 - 4 + (d + 8) * c / 4, h = g(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); if (h < 1.6 || W.roadAt(x, z) > 0.04 || W.inBox(x, z, 5)) ok = false; }
+    for (let a = 0; a <= 4 && ok; a++) for (let c = 0; c <= 4 && ok; c++) { const x = x0 - 4 + (w + 8) * a / 4, z = z0 - 4 + (d + 8) * c / 4, h = W.ground0(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); if (h < 1.6 || W.road0At(x, z) > 0.04 || W.inBox(x, z, 5)) ok = false; }   // (si sceglie sul mondo com'era: le case restano dov'erano)
     if (!ok || hi - lo > 4.5) continue;
     if (!lontano(W.CHESTS, cx, cz, 34, 1, 2) || !lontano(W.NOOKS, cx, cz, 34) || !lontano(W.PROPS, cx, cz, Math.max(w, d) / 2 + 6, 1, 2) || !lontano(W.NPCS, cx, cz, Math.max(w, d) / 2 + 7, 1, 2) || !W.CAMPS.every(c => Math.hypot(c[0] - cx, c[1] - cz) > c[4] + 70)) continue;
     const door = X ? (dv < 0 ? 's' : 'n') : (dv < 0 ? 'e' : 'w'), rt = pick(S.rt);
     house({ x: cx, z: cz, w, d, h: Math.round(9 + R() * 4), wall: pick(S.walls), roof: pick(S.roofs), door, rt: rt === 'dome' ? 'flat' : rt, steep: S.steep, win: pick(S.win), dr: pick(S.dr), chim: R() < S.chim }, g);
     // l'aia: fieno, un carro o una botte dal lato opposto alla porta
     const bx = X ? cx + (R() < 0.5 ? -1 : 1) * (w / 2 + 4) : cx + (dv < 0 ? -1 : 1) * (w / 2 + 4), bz = X ? cz + (dv < 0 ? -1 : 1) * (d / 2 + 4) : cz + (R() < 0.5 ? -1 : 1) * (d / 2 + 4);
-    if (g(bx, bz) > 1.6 && W.roadAt(bx, bz) < 0.04 && !W.inBox(bx, bz, 3)) W.PROPS.push([pick(['haybale', 'haybale', 'barrel', 'crate', 'sack', 'cart']), bx, bz]);
+    if (W.ground0(bx, bz) > 1.6 && W.road0At(bx, bz) < 0.04 && !W.inBox(bx, bz, 3)) W.PROPS.push([pick(['haybale', 'haybale', 'barrel', 'crate', 'sack', 'cart']), bx, bz]);
     n++;
   }
 }

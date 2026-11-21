@@ -36,7 +36,8 @@ const TZ = (ZF + ZT) / 2, CZ = -968, AZ = (ZS2 + ZB) / 2, ZG = ZS2 - 44;   // il
 // la valle: dal valico dietro i Monti del Drago fino al lago (stringendosi: la città resta chiusa tra le pareti)
 W.CARVE.push({ pts: [[2640, 150, 214, 1], [2610, -150, 246, 1], [2505, -420, 290, 0.95], [2450, -520, 322, 0.7], [XC, -580, Y0, 0.52]], w: 55, w2: 270 });
 // i gradoni scavati nella montagna
-W.SHAPERS.push({ box: [XC - 360, ZB - 64, XC + 360, -504], f(x, z, h) {
+W.SHAPERS.push({ box: [XC - 360, ZB - 64, XC + 360, -504], free: (x, z) => z > ZR + 8 && x > XC,   // (a levante, davanti alla banchina, la strada maestra può ancora addolcire la salita)
+  f(x, z, h) {
   const dx = Math.abs(x - XC);
   if (z > ZF) {   // davanti alla terrazza: la conca del lago e le due rampe che salgono ai suoi lati
     const k = sm(-512, -560, z); if (k <= 0) return h;
@@ -61,7 +62,13 @@ W.SHAPERS.push({ box: [XC - 360, ZB - 64, XC + 360, -504], f(x, z, h) {
 W.ROADS.push(
   // dal sentiero del Picco del Drago, oltre il valico, giù nella valle e fino alla rampa di levante
   { w: 8, pts: [[2308, 684], [2400, 668], [2500, 610], [2580, 520], [2625, 420], [2645, 300], [2640, 150], [2625, 0], [2605, -160], [2560, -300], [2505, -420], [2530, -500], [XC + (RA + RB) / 2, ZR - 4]] },
-  { w: 7, pts: [[2530, -500], [2440, -534], [2300, -540], [XC - (RA + RB) / 2, ZR - 4]] });
+  // (il ramo per la rampa di ponente ora corre sul prato scavato lungo il lago; «was» è il tracciato di prima, vedi sg_world)
+  { w: 7, stone: true, pts: [[2530, -500], [2440, -538], [2340, -548], [XC - (RA + RB) / 2, ZR + 4]], was: [[2530, -500], [2440, -534], [2300, -540], [XC - (RA + RB) / 2, ZR - 4]] });
+// davanti alla rampa di ponente la montagna scendeva fin sulla banchina: ora c'è un prato che sale appena, largo una cinquantina di passi, e la parete sta dietro
+W.LATESHAPE.push({ box: [XC - 262, ZR + 2, XC, ZR + 124], f(x, z, h) {
+  const dS = z - (ZR + 2), cap = Y0 + 0.4 + 0.2 * Math.min(dS, 46), back = sm(46, 120, dS), west = sm(XC - RB - 22, XC - RB - 92, x);
+  return lerp(lerp(Math.min(h, cap), h, back), h, west);
+} });
 W.PLACES.push([XC - 88, TZ, 112, 'LA GRANDE TERRAZZA'], [XC + 88, TZ, 112, 'LA GRANDE TERRAZZA'], [XC - 72, AZ, 112, 'ACROPOLI DELLE ACQUE'], [XC + 72, AZ, 112, 'ACROPOLI DELLE ACQUE'], [2632, 330, 70, 'VALICO DEI GIGANTI']);
 W.PROPS.push(['sign', 2326, 672], ['sign', 2652, 160], ['sign', 2548, -486]);
 W.PAVE.push(['b', 'rect', XC - HW1, ZT, XC + HW1, ZF], ['b', 'rect', XC + RA, ZF, XC + RB, ZR + 6], ['b', 'rect', XC - RB, ZF, XC - RA, ZR + 6],
