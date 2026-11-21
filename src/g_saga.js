@@ -287,7 +287,7 @@ function buildStatics() {
   setZ('crystal', [A.crystal(R, Z(18), Z(28), ['#2a8aa8', '#4ac8e8', '#a8f0ff', '#ffffff']), A.crystal(R, Z(16), Z(24), ['#6a3aa8', '#9a6ae8', '#d0b0ff', '#ffffff'])], 0.42, 1.4);
   setZ('icecrystal', [A.crystal(R, Z(18), Z(26), ['#5a8ac8', '#8ab8f0', '#d0e8ff', '#ffffff'])], 0.42, 1.4);
   set('bones', [A.bones()], 0.2, 0, true);
-  setZ('giant', [A.giantTree(rng(7), Z(220), Z(200))], 0.62, 17);
+  set('giant', [A.pix(['.'], { a: '#000000' })], 0.2, 17);     // l'Albero Madre ora è costruito in rilievo (sg_bosco.js): qui resta solo il segnaposto, invisibile
   setZ('stepstone', [A.rock(R, Z(16), Z(7), ['#6a7a80', '#9aa8b0', '#c8d4d8', '#eef4f6'])], 0.5);
   set('well', [A.well()], 0.2, 6);
   set('torch', [A.torch()], 0.2, 1);
@@ -317,7 +317,7 @@ function buildStatics() {
   setZ('cherrywhite', [A.oak(R, Z(40), Z(50), ['#c0a8b8', '#e8d0dc', '#f8ecf2', '#ffffff'], DARKT)], 0.43, 2);
   set('heather', [A.tuft(['#7a3a7a', '#b05aa8'], 12, 9), A.tuft(['#6a4a8a', '#9a6ac0'], 10, 8)], 0.2, 0, true);
   setZ('tomb', [A.rock(R, Z(8), Z(13), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae']), A.rock(R, Z(10), Z(10), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae'])], 0.4, 1.5);
-  SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35];
+  SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35]; S.braciereV.glow = [4.6, 7, 0.36, 0.72, 0.44]; S.runa.glow = [2.3, 3.5, 0.3, 0.6, 0.4];
   // il vento muove alberi (poco) ed erba (di più); cristalli e lava brillano
   for (const k of ['oak', 'oakbig', 'birch', 'pine', 'snowpine', 'palm', 'willow', 'deadtree', 'burnt', 'oakred', 'oakgold', 'birchgold', 'acacia', 'jungle', 'cherry', 'cherrywhite']) S[k].sway = 1;
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
@@ -457,7 +457,7 @@ function setupWorld() {
   chests = W.CHESTS.map(([id, x, z, c, r]) => { const fixed = ['c06', 'c07', 'c09', 'c10'].includes(id); const [X, Z] = fixed ? [x, z] : fixSpot(x, z, 4); return { id, x: X, z: Z, c, r, yaw: Math.atan2(2650 - Z, 2000 - X) }; });
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
-  props = W.PROPS.map(([k, x, z]) => ({ k, x, z }));
+  props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
   for (const id in JOBS) { const j = JOBS[id];
     if (j.boss) { const [X, Z] = fixSpot(j.boss.x, j.boss.z, 5); camps.push({ x: X, z: Z, type: 'J_' + id, n: 1, r: 44, alive: [], dead: 0, cool: 0, on: false, job: id }); }
@@ -769,8 +769,8 @@ const SIGNS = {
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
-const PROPTXT = { ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
-  snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
+const PROPTXT = { custode: 'UN CUSTODE DEL BOSCO SCOLPITO NELLA PIETRA: IL CAPPUCCIO, LE CORNA DI CERVO, IL BASTONE. IL MUSCHIO GLI SALE FINO ALLE GINOCCHIA.', cervopietra: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «ENTRA IN PACE, ESCI PIÙ FORTE».', cervopietra2: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «CHI HA RADICI NON TEME IL VENTO».', runa: 'UNA PIETRA CON UNA RUNA CHE BRILLA DI VERDE. È TIEPIDA AL TATTO.', ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
+  snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO. NELLA CAVITÀ BATTE UNA LUCE, PIANO, COME UN CUORE.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 // quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
 const SHOPS = {
@@ -1532,7 +1532,7 @@ function findTarget() {
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
@@ -2544,6 +2544,7 @@ function render3D() {
   // ombre
   shN = 0;
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
+  for (const s of W.bigShadows || []) if (near(s[0], s[1], 520)) pushShadow(s[0], s[1], s[2]);      // l'ombra della chioma dell'Albero Madre
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (st !== 'title') fauna.shadows(cam);

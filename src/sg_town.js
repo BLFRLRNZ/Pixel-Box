@@ -11,7 +11,10 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   AWN_BLUE: 99, AWN_GREEN: 100, AWN_YELLOW: 101, BAN_RED: 102, BAN_BLUE: 103, ARCADE: 104, TURQ: 105, GOLD: 106, IVY: 107, CLOCK: 108, STEPS: 109,
   DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119,
   // (120 è dei santuari, da 128 a 169 ci sono gli interni delle botteghe)
-  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179 };
+  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179,
+  // l'Albero Madre e il Santuario del Bosco
+  BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
+  BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -81,6 +84,39 @@ function tilesOn(c, R) {
   at(TL.MARBLE_DOOR, () => { for (let y = 1; y < T; y++) for (let x = 5; x < 27; x++) { if (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 11) continue; const ed = x < 7 || x > 24 || (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 9); P(ed ? '#f6f7fa' : (x === 15 || x === 16) ? '#1a3e7a' : '#2a62b8', x, y, 1, 1); } P('#e8b42a', 12, 18, 2, 3); P('#e8b42a', 18, 18, 2, 3); for (let y = 14; y < T; y += 7) { P('#3f7cd0', 8, y, 6, 1); P('#3f7cd0', 18, y, 6, 1); } });
   at(TL.ARCH_M, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let y = 4; y < T; y++) for (let x = 4; x < 28; x++) { if (y < 16 && Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 12) continue; const ed = y < 16 ? Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 10 : (x < 6 || x > 25); P(ed ? '#f6f7fa' : '#16223a', x, y, 1, 1); } });
   at(TL.SHOJI, () => { P('#4a2e1c', 4, 3, 24, 26); P('#f8f0dc', 6, 5, 20, 22); for (let x = 12; x < 26; x += 7) P('#4a2e1c', x, 5, 1, 22); for (let y = 12; y < 27; y += 7) P('#4a2e1c', 6, y, 20, 1); P('#3a6ab8', 6, 5, 6, 7); });
+  // ---------- l'Albero Madre e il Santuario del Bosco (numeri loro: le altre texture restano com'erano) ----------
+  { const Q = rng(9091), q = n => Q() * n | 0;
+    // corteccia: solchi verticali, più scura per le radici
+    const bark = (base, dark, lite) => { P(base, 0, 0, T, T); for (let x = 0; x < T; x += 1 + q(3)) { let y = q(T); const n = 6 + q(22), c = Q() < 0.55 ? dark : lite; for (let k = 0; k < n; k++) P(c, x, (y + k) % T, 1, 1); } for (let k = 0; k < 14; k++) P(sh(dark, 0.8), q(T), q(T), 1, 2 + q(3)); };
+    at(TL.BARK, () => bark('#6e4827', '#4c3019', '#8b5e36')); at(TL.BARK_D, () => bark('#5a3a20', '#3c2513', '#70492a'));
+    // fogliame: ciuffi a tre toni
+    const leaf = (base, a, b, c) => { P(base, 0, 0, T, T); for (let k = 0; k < 70; k++) { const x = q(T), y = q(T), col = Q() < 0.45 ? a : Q() < 0.6 ? b : c; P(col, x, y, 2 + q(2), 2); P(col, x + 1, y - 1, 2, 1); if (Q() < 0.4) P(sh(col, 1.18), x + 1, y, 1, 1); } };
+    at(TL.LEAF_L, () => leaf('#4aa63e', '#6cc552', '#3a8f36', '#93dd6c')); at(TL.LEAF_M, () => leaf('#2f7d32', '#3f9a3c', '#256a2a', '#58b548')); at(TL.LEAF_D, () => leaf('#1f5a28', '#174a22', '#2b6c30', '#123c1c'));
+    // frangia: l'orlo frastagliato delle chiome (sotto è vuoto)
+    at(TL.LEAF_FR, () => { for (let x = 0; x < T; x += 2) { const n = 9 + q(21); for (let y = 0; y < n; y += 2) { const col = Q() < 0.4 ? '#3f9a3c' : Q() < 0.5 ? '#256a2a' : '#2f7d32'; P(col, x, y, 2, 2); } P(Q() < 0.5 ? '#58b548' : '#3f9a3c', x, n - 2, 2, 2); } });
+    // liana: uno stelo che ondeggia, foglioline e qualche fiore chiaro
+    at(TL.VINE, () => { for (let y = 0; y < T; y++) { const x = 15 + Math.round(Math.sin(y * 0.42) * 3); P('#2e6a2a', x, y, 2, 1); if (y % 5 === 1) { P('#3e8a34', x - 3, y, 3, 2); P('#5aa844', x - 3, y, 1, 1); } if (y % 5 === 3) { P('#3e8a34', x + 2, y, 3, 2); P('#5aa844', x + 4, y, 1, 1); } if (y % 11 === 7) P('#fff2a8', x + (y % 2 ? 3 : -3), y + 1, 2, 2); } });
+    // la cavità del tronco: un arco scuro col cuore che brilla
+    at(TL.HOLLOW, () => { for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const cx = x + 0.5 - 16, top = y < 14, d = top ? Math.hypot(cx * 1.05, y + 0.5 - 14) : Math.abs(cx) * 1.05; if (d > 12.5) continue; const core = Math.hypot(cx, (y + 0.5 - 23) * 0.8); P(d > 10.6 ? '#3a2413' : core < 3.2 ? '#fff6b8' : core < 5.4 ? '#c8f07a' : core < 8 ? '#3f7a3a' : '#150c06', x, y, 1, 1); } });
+    // rune che brillano (verdi sul bosco)
+    at(TL.RUNE_G, () => { const G = ['#9dffb0', '#5cf08a']; const ln = (x, y, w, h) => { P(G[1], x - 0, y, w, h); P(G[0], x, y, Math.max(1, w - 1), Math.max(1, h - 1)); }; ln(6, 3, 2, 10); ln(6, 3, 7, 2); ln(11, 3, 2, 6); ln(20, 3, 2, 10); ln(16, 7, 10, 2); ln(7, 19, 8, 2); ln(7, 19, 2, 9); ln(13, 23, 2, 5); ln(20, 18, 2, 10); ln(24, 18, 2, 10); ln(20, 22, 6, 2); });
+    // pietra del santuario: conci grigio-verdi col muschio in basso; colonna scanalata; fregio di foglie; tetto di rame verde
+    at(TL.BOSCO_WALL, () => { bricks('#8f978a', '#5d6557', 16, 8); for (let k = 0; k < 46; k++) { const y = T - 1 - q(13 + q(10)); P(Q() < 0.5 ? '#4f8a3c' : '#3f7434', q(T), y, 1 + q(2), 1); } for (let k = 0; k < 5; k++) { let x = q(T), y = q(T); for (let n = 0; n < 6; n++) { P('#565e52', x, y, 1, 1); y = (y + 1) % T; if (Q() < 0.5) x = (x + (Q() < 0.5 ? 1 : T - 1)) % T; } } });
+    at(TL.BOSCO_FLUTE, () => { P('#aab1a3', 0, 0, T, T); for (let x = 0; x < T; x += 4) { P('#7c8477', x, 0, 1, T); P('#c6ccbf', x + 1, 0, 1, T); P('#98a092', x + 3, 0, 1, T); } for (let k = 0; k < 26; k++) P(Q() < 0.5 ? '#4f8a3c' : '#3f7434', q(T), T - 1 - q(9), 1, 1 + q(2)); });
+    at(TL.BOSCO_FRIEZE, () => { P('#9aa294', 0, 0, T, T); P('#d8b23a', 0, 2, T, 2); P('#d8b23a', 0, T - 4, T, 2); P('#2c5a37', 0, 7, T, 18); for (let x = 0; x < T; x += 16) { P('#bfe0a8', x + 2, 15, 12, 2); for (const [dx, dy] of [[3, 11], [7, 10], [11, 11]]) { P('#bfe0a8', x + dx, dy, 2, 4); P('#8fc47a', x + dx, dy, 1, 1); } for (const [dx, dy] of [[5, 18], [9, 19]]) { P('#bfe0a8', x + dx, dy, 2, 3); } P('#e8c24a', x + 14, 14, 3, 4); } P('#6b7366', 0, 0, T, 1); P('#6b7366', 0, T - 1, T, 1); });
+    at(TL.ROOF_MOSS, () => roof('#3d7c56'));
+    // il portale: arco di pietra, battenti di legno scuro, l'albero d'oro
+    at(TL.BOSCO_DOOR, () => { for (let y = 0; y < T; y++) for (let x = 2; x < 30; x++) { const cx = x + 0.5 - 16, d = y < 13 ? Math.hypot(cx, y + 0.5 - 13) : Math.abs(cx); if (d > 14) continue; P(d > 11.4 ? (Math.floor((y < 13 ? Math.atan2(13 - y, cx) * 5 : y / 4)) % 2 ? '#b9c0b1' : '#a2aa9b') : (x === 15 || x === 16) ? '#1c120a' : ((x + (y >> 3)) % 5 === 0 ? '#2e1e10' : '#3b2715'), x, y, 1, 1); }
+      P('#e8c24a', 15, 15, 2, 12); for (const [x, y, w] of [[11, 9, 10], [9, 11, 14], [10, 13, 12], [12, 7, 8]]) P('#e8c24a', x, y, w, 2); P('#fff2a8', 13, 9, 2, 1); P('#fff2a8', 18, 11, 2, 1); for (const [x, y] of [[12, 27], [19, 27], [13, 25], [18, 25]]) P('#e8c24a', x, y, 1, 2); P('#7dffa0', 15, 4, 2, 2); P('#d8b23a', 12, 21, 1, 3); P('#d8b23a', 19, 21, 1, 3); });
+    // mensole di funghi sul tronco; lanterna; bassorilievo del cervo; edera che scende
+    at(TL.FUNGUS, () => { P('#e9a24c', 0, 0, T, T); for (let k = 0; k < 40; k++) P(Q() < 0.5 ? '#f4c27a' : '#c8823a', q(T), q(T), 2, 1); P('#fbe3b0', 0, 0, T, 3); P('#b06a2c', 0, T - 3, T, 3); });
+    at(TL.LANTERN, () => { P('#3a2616', 0, 0, T, T); P('#ffe9a0', 4, 5, 24, 22); P('#fff8d8', 8, 9, 16, 14); P('#3a2616', 15, 5, 2, 22); P('#3a2616', 4, 15, 24, 2); P('#d8b23a', 0, 0, T, 3); P('#d8b23a', 0, T - 3, T, 3); });
+    at(TL.RELIEF, () => { bricks('#99a193', '#666e60', 32, 16); P('#737b6d', 2, 2, 28, 28); P('#a9b1a3', 3, 3, 26, 26); const D = '#7a8274', L = '#c9cfc2'; P(D, 9, 15, 12, 6); P(D, 18, 10, 4, 7); P(D, 20, 8, 5, 4); P(D, 10, 21, 2, 6); P(D, 13, 21, 2, 6); P(D, 17, 21, 2, 6); P(D, 20, 21, 2, 6); P(D, 7, 15, 3, 2); for (const [x, y, w, h] of [[21, 3, 1, 5], [24, 3, 1, 5], [19, 4, 3, 1], [24, 5, 3, 1], [22, 2, 1, 2], [26, 3, 1, 3]]) P(D, x, y, w, h); P(L, 9, 15, 12, 1); P(L, 20, 8, 5, 1); });
+    at(TL.BAN_GREEN, () => ban('#2c6a3c', '#e8c24a'));
+    // lo stemma del santuario: scudo verde con l'albero d'oro
+    at(TL.CREST_G, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : '#1f5a30', x, y, 1, 1); } P('#e8c24a', 15, 13, 2, 11); disc('#e8c24a', 16, 11, 5); disc('#fff4b0', 14.5, 9.5, 1.5); disc('#c8a02a', 18, 12.5, 1.6); P('#e8c24a', 12, 23, 8, 1); });
+    at(TL.MOSS, () => { for (let x = 0; x < T; x++) { const n = 3 + q(9) + Math.round(6 * Math.abs(Math.sin(x * 0.5))); for (let y = 0; y < n; y++) P(Q() < 0.5 ? '#3f7434' : Q() < 0.6 ? '#4f8a3c' : '#6aa84c', x, y, 1, 1); } });
+  }
   return c;
 }
 
@@ -272,6 +308,21 @@ function sprites(set, A, R) {
   set('anchor', [fit([Cy([0, 0, 0.6], [0, 0, 4], 0.22, IR), Cy([0, -0.9, 3.4], [0, 0.9, 3.4], 0.2, IR), Ca([0, -1.5, 1.2], [0, 0, 0.5], 0.24, IR), Ca([0, 1.5, 1.2], [0, 0, 0.5], 0.24, IR), El([0, 0, 4.3], [0.2, 0.5, 0.5], IR)], Math.PI - 1.2)], 0.2, 1);
   set('target', [fit([Cy([-0.3, 0, 3.2], [0.3, 0, 3.2], 2.2, '#f0ece0'), Cy([0.3, 0, 3.2], [0.36, 0, 3.2], 1.5, '#c8342c'), Cy([0.36, 0, 3.2], [0.42, 0, 3.2], 0.7, '#ffd23f'), Ca([0, -1.4, 0], [0, -0.6, 2], 0.2, WD), Ca([0, 1.4, 0], [0, 0.6, 2], 0.2, WD)], Math.PI - 0.3)], 0.2, 1.4);
   set('kingstatue', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -10, 0], c: '#8a867a' }, { t: 'b', b: [-8, 8, -8, 8, -11.5, -9.5], c: '#a8a498' }, ...A.human({ skin: '#b8b4a8', crown: '#d8c890', shirt: '#a8a498', plate: '#c0bcb0', pants: '#98948a', boots: '#8a867a', cape: '#98948a', beard: '#c0bcb0', weapon: { col: '#c8c4b8', guard: '#a8a498' }, shield: '#a8a498', emblem: '#c8c4b8' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
+  // ---------- il sagrato del Santuario del Bosco ----------
+  { const ST = '#a3ab9c', ST2 = '#8a9284', ST3 = '#bcc3b4', MO = '#4f8a3c';
+    // il custode: un druido di pietra col cappuccio, le corna di cervo e il bastone, su un piedistallo col muschio
+    set('custode', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -13, 0], c: ST2 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -14.5, -12.5], c: ST3 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -1.6, 0], c: ST3 }, { t: 'b', b: [-7.1, 7.1, -7.1, 7.1, -12.4, -10.6], c: MO },
+      ...A.human({ skin: ST3, hood: ST, robe: ST, shirt: ST, pants: ST2, boots: ST2, cape: ST2, beard: ST3, staff: ST2, orb: '#9dffb0', antlers: ST3, blank: 1 }, { armR: 0.2, armL: 0.1 })], Math.PI, Math.round(46 * A.SR), Math.round(39.8 * A.SR), { base: Math.round(28 * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 3.6);
+    // il cervo di pietra: lo stesso modello dei cervi vivi, tutto grigio, fermo sul suo basamento
+    const FM = SG.fauna && SG.fauna.model;
+    if (FM) { const stag = FM.quad(Object.assign({}, FM.DEER, { s: 1.45, c: ST, c2: ST, leg: ST2, hoof: ST2, sn: [1.6, ST2], ear: ['point', 2.7, ST], tail: ['puff', 1.5, ST3], horn: ['antler', 5.6, ST3], nt: 1.9, eyeC: ST2, nose: ST2 }), { look: 0.12 });
+      for (const fl of [1, -1]) set('cervopietra' + (fl > 0 ? '' : '2'), [A.figure([{ t: 'b', b: [-13, 13, -6, 6, -12, 0], c: ST2 }, { t: 'b', b: [-14.2, 14.2, -7.2, 7.2, -13.4, -11.6], c: ST3 }, { t: 'b', b: [-14.2, 14.2, -7.2, 7.2, -1.5, 0], c: ST3 }, { t: 'b', b: [-13.1, 13.1, -6.1, 6.1, -11.2, -9.8], c: MO }, ...stag],
+        fl > 0 ? Math.PI * 0.72 : Math.PI * 1.28, Math.round(70 * A.SR), Math.round(37.8 * A.SR), { base: Math.round(27 * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 5.5); }
+    // braciere di pietra con la fiamma verde (due fotogrammi non servono: la luce attorno tremola da sé)
+    set('braciereV', [fit([Kc([0, 0, 0], [0, 0, 0.5], 1.05, 0.75, ST2), Cy([0, 0, 0.5], [0, 0, 2.5], 0.38, ST), Kc([0, 0, 2.5], [0, 0, 3.4], 0.42, 1.3, ST3), Cy([0, 0, 3.4], [0, 0, 3.6], 1.36, ST2), El([0, 0, 4.2], [0.95, 0.95, 1.05], '#3fe07a', 1.6), El([0, 0, 4.7], [0.6, 0.6, 0.95], '#b8ffc8', 1.8), El([0.2, 0.1, 5.4], [0.3, 0.3, 0.6], '#eafff0', 1.9)], Math.PI - 0.4)], 0.2, 1.3);
+    // pietra con la runa accesa
+    set('runa', [fit([Kc([0, 0, 0], [0, 0, 4.2], 1.3, 0.85, ST2), El([0, 0, 4.2], [0.85, 0.85, 0.55], ST), Bx([0.8, 1.3, -0.17, 0.17, 1.1, 3.3], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.6, 0.6, 2.6, 2.95], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.5, 0.5, 1.5, 1.85], '#5cf08a', 1.7), El([0.3, 0.6, 0.35], [0.6, 0.5, 0.35], MO), El([-0.4, -0.7, 0.3], [0.55, 0.55, 0.3], MO)], Math.PI - 0.5)], 0.2, 1.4);
+  }
   set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea', blank: 1 }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);

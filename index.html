@@ -149,7 +149,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.8.1", "id": "2.8.1-b4d635a6", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.9", "id": "2.9-c1bec6ef", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -5636,6 +5636,8 @@ const BRIDGES = [];                                // ponti: { x0, z0, x1, z1, y
 const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 1720], ['b', 'disc', 1080, 1420, 40], ['b', 'disc', 2150, 1340, 30]];
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
+// aggiunte recenti alle terre di sempre: oggetti e ostacoli che entrano per ultimi, con una sequenza di numeri tutta loro (nient'altro si sposta)
+const LATE = { props: [], boxes: [], circles: [] };
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
 // la sequenza della vegetazione di Lumen, riga per riga (vedi placeObjects): numeri già usati all'inizio della riga 738, poi quanti ne usa ogni riga
 const SOLR0 = 64383, SOLR = [1052,1051,1054,1051,1050,1055,1058,1070,1062,1057,1068,1068,1065,1064,1081,1074,1074,1085,1090,1093,1099,1105,1115,1102,1114,1093,1097,1100,1110,1094,1108,1090,1097,1106,1103,1091,1098,1090,1091,1097,1087,1098,1102,1090,1096,1096,1103,1101,1093,1083,1085,1086,1084,1086,1074,1093,1080,1086,1089,1077,1075,1084,1077,1080,1089,1090,1101,1095,1104,1093,1096,1095,1094,1101,1103,1103,1089,1092,1105,1102,1105,1088,1107,1108,1095,1097,1099,1095,1104,1104,1102,1095,1102,1094,1103,1107,1096,1104,1094,1101,1084,1101,1100,1086,1081,1087,1091,1085,1091,1086,1089,1082,1071,1081,1086,1083,1077,1071,1075,1070,1073,1072,1060,1055,1061,1060,1062,1085,1074,1084,1071,1065,1067,1072,1068,1069,1071,1052,1074,1077,1063,1063,1068,1072,1073,1070,1064,1060,1065,1063,1060,1056,1064,1059,1067,1054,1059,1056,1056,1057,1061,1059,1049,1056,1053,1064,1055,1053,1052,1054,1058,1062,1057,1074,1058,1056,1057,1068,1062,1061,1058,1054,1060,1053,1065,1057,1047,1065,1056,1055,1067,1057,1054,1059,1059,1058,1052,1059,1059,1057,1051,1056,1052,1053,1058,1057,1052,1066,1058,1053,1067,1068,1057];
@@ -5773,7 +5775,7 @@ function height0(x, z) {
 
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, CARVE, SHAPERS, FINE,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, FINE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
@@ -6105,6 +6107,7 @@ function* buildMeshes() {
     const b = BUILD[bi];
     if (k !== key) { close(); key = k; }
     if (W.builders[b.k]) { W.builders[b.k](b, g); if (solo[b.k]) yield ++done / 12; continue; }
+    if (b.k === 'temple' && W.builders['temple:' + b.id]) { W.builders['temple:' + b.id](b, g); continue; }
     if (b.k === 'temple') {
       const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, z0 = b.z - b.d / 2, z1 = b.z + b.d / 2;
       let y0 = Infinity; for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [b.x, b.z]]) y0 = Math.min(y0, g(x, z));
@@ -6208,7 +6211,7 @@ function* placeObjects(S) {
   };
   const prop = ([k, x, z, o]) => {
     if (k === 'ore') return;   // i minerali si raccolgono: li disegna il gioco
-    if (k === 'giant') add('giant', x, z, { r: 15, sink: 2 });
+    if (k === 'giant') add('giant', x, z, { r: 14.5, sink: 2 });
     else if (k === 'well') add('well', x, z, { r: 6 });
     else if (k === 'anvil') add('anvil', x, z, { r: 2 });
     else if (k === 'menhir') add('menhir', x, z, { r: 3 });
@@ -6306,6 +6309,11 @@ function* placeObjects(S) {
   for (const b of BUILD) if (b.k === 'cave' && b.z < 0) caveRing(b);
   for (let i = NN.props[0]; i < NN.props[1]; i++) prop(PROPS[i]);
   scatter(900, Z0, 3960, 0, false);
+  // per ultime le aggiunte recenti (vedi LATE)
+  R = rng(52525);
+  for (const p of LATE.props) prop(p);
+  for (const b of LATE.boxes) W.addBox(b[0], b[1], b[2], b[3], b[4], b[5]);
+  for (const c of LATE.circles) W.addCircle(c[0], c[1], c[2]);
   for (const k in OB) { const L = OB[k]; L.big = new Float32Array(L.big); L.small = new Float32Array(L.small); }
 }
 
@@ -6407,7 +6415,10 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   AWN_BLUE: 99, AWN_GREEN: 100, AWN_YELLOW: 101, BAN_RED: 102, BAN_BLUE: 103, ARCADE: 104, TURQ: 105, GOLD: 106, IVY: 107, CLOCK: 108, STEPS: 109,
   DARKSTONE: 110, RUNEWIN: 111, CLOTH: 112, HAY: 113, CRATE: 114, WATER: 115, CREST: 116, BAN_PURPLE: 117, SHOJI: 118, ROOF_PINK: 119,
   // (120 è dei santuari, da 128 a 169 ci sono gli interni delle botteghe)
-  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179 };
+  MARBLE: 170, FLUTE: 171, FRIEZE: 172, FALL: 173, ROOF_TEAL: 174, BALUSTER: 175, POOLW: 176, MARBLE_WIN: 177, MARBLE_DOOR: 178, ARCH_M: 179,
+  // l'Albero Madre e il Santuario del Bosco
+  BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
+  BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -6477,6 +6488,39 @@ function tilesOn(c, R) {
   at(TL.MARBLE_DOOR, () => { for (let y = 1; y < T; y++) for (let x = 5; x < 27; x++) { if (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 11) continue; const ed = x < 7 || x > 24 || (y < 12 && Math.hypot(x + 0.5 - 16, y + 0.5 - 12) > 9); P(ed ? '#f6f7fa' : (x === 15 || x === 16) ? '#1a3e7a' : '#2a62b8', x, y, 1, 1); } P('#e8b42a', 12, 18, 2, 3); P('#e8b42a', 18, 18, 2, 3); for (let y = 14; y < T; y += 7) { P('#3f7cd0', 8, y, 6, 1); P('#3f7cd0', 18, y, 6, 1); } });
   at(TL.ARCH_M, () => { bricks('#eceef4', '#bcc2d0', 16, 8); for (let y = 4; y < T; y++) for (let x = 4; x < 28; x++) { if (y < 16 && Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 12) continue; const ed = y < 16 ? Math.hypot(x + 0.5 - 16, y + 0.5 - 16) > 10 : (x < 6 || x > 25); P(ed ? '#f6f7fa' : '#16223a', x, y, 1, 1); } });
   at(TL.SHOJI, () => { P('#4a2e1c', 4, 3, 24, 26); P('#f8f0dc', 6, 5, 20, 22); for (let x = 12; x < 26; x += 7) P('#4a2e1c', x, 5, 1, 22); for (let y = 12; y < 27; y += 7) P('#4a2e1c', 6, y, 20, 1); P('#3a6ab8', 6, 5, 6, 7); });
+  // ---------- l'Albero Madre e il Santuario del Bosco (numeri loro: le altre texture restano com'erano) ----------
+  { const Q = rng(9091), q = n => Q() * n | 0;
+    // corteccia: solchi verticali, più scura per le radici
+    const bark = (base, dark, lite) => { P(base, 0, 0, T, T); for (let x = 0; x < T; x += 1 + q(3)) { let y = q(T); const n = 6 + q(22), c = Q() < 0.55 ? dark : lite; for (let k = 0; k < n; k++) P(c, x, (y + k) % T, 1, 1); } for (let k = 0; k < 14; k++) P(sh(dark, 0.8), q(T), q(T), 1, 2 + q(3)); };
+    at(TL.BARK, () => bark('#6e4827', '#4c3019', '#8b5e36')); at(TL.BARK_D, () => bark('#5a3a20', '#3c2513', '#70492a'));
+    // fogliame: ciuffi a tre toni
+    const leaf = (base, a, b, c) => { P(base, 0, 0, T, T); for (let k = 0; k < 70; k++) { const x = q(T), y = q(T), col = Q() < 0.45 ? a : Q() < 0.6 ? b : c; P(col, x, y, 2 + q(2), 2); P(col, x + 1, y - 1, 2, 1); if (Q() < 0.4) P(sh(col, 1.18), x + 1, y, 1, 1); } };
+    at(TL.LEAF_L, () => leaf('#4aa63e', '#6cc552', '#3a8f36', '#93dd6c')); at(TL.LEAF_M, () => leaf('#2f7d32', '#3f9a3c', '#256a2a', '#58b548')); at(TL.LEAF_D, () => leaf('#1f5a28', '#174a22', '#2b6c30', '#123c1c'));
+    // frangia: l'orlo frastagliato delle chiome (sotto è vuoto)
+    at(TL.LEAF_FR, () => { for (let x = 0; x < T; x += 2) { const n = 9 + q(21); for (let y = 0; y < n; y += 2) { const col = Q() < 0.4 ? '#3f9a3c' : Q() < 0.5 ? '#256a2a' : '#2f7d32'; P(col, x, y, 2, 2); } P(Q() < 0.5 ? '#58b548' : '#3f9a3c', x, n - 2, 2, 2); } });
+    // liana: uno stelo che ondeggia, foglioline e qualche fiore chiaro
+    at(TL.VINE, () => { for (let y = 0; y < T; y++) { const x = 15 + Math.round(Math.sin(y * 0.42) * 3); P('#2e6a2a', x, y, 2, 1); if (y % 5 === 1) { P('#3e8a34', x - 3, y, 3, 2); P('#5aa844', x - 3, y, 1, 1); } if (y % 5 === 3) { P('#3e8a34', x + 2, y, 3, 2); P('#5aa844', x + 4, y, 1, 1); } if (y % 11 === 7) P('#fff2a8', x + (y % 2 ? 3 : -3), y + 1, 2, 2); } });
+    // la cavità del tronco: un arco scuro col cuore che brilla
+    at(TL.HOLLOW, () => { for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const cx = x + 0.5 - 16, top = y < 14, d = top ? Math.hypot(cx * 1.05, y + 0.5 - 14) : Math.abs(cx) * 1.05; if (d > 12.5) continue; const core = Math.hypot(cx, (y + 0.5 - 23) * 0.8); P(d > 10.6 ? '#3a2413' : core < 3.2 ? '#fff6b8' : core < 5.4 ? '#c8f07a' : core < 8 ? '#3f7a3a' : '#150c06', x, y, 1, 1); } });
+    // rune che brillano (verdi sul bosco)
+    at(TL.RUNE_G, () => { const G = ['#9dffb0', '#5cf08a']; const ln = (x, y, w, h) => { P(G[1], x - 0, y, w, h); P(G[0], x, y, Math.max(1, w - 1), Math.max(1, h - 1)); }; ln(6, 3, 2, 10); ln(6, 3, 7, 2); ln(11, 3, 2, 6); ln(20, 3, 2, 10); ln(16, 7, 10, 2); ln(7, 19, 8, 2); ln(7, 19, 2, 9); ln(13, 23, 2, 5); ln(20, 18, 2, 10); ln(24, 18, 2, 10); ln(20, 22, 6, 2); });
+    // pietra del santuario: conci grigio-verdi col muschio in basso; colonna scanalata; fregio di foglie; tetto di rame verde
+    at(TL.BOSCO_WALL, () => { bricks('#8f978a', '#5d6557', 16, 8); for (let k = 0; k < 46; k++) { const y = T - 1 - q(13 + q(10)); P(Q() < 0.5 ? '#4f8a3c' : '#3f7434', q(T), y, 1 + q(2), 1); } for (let k = 0; k < 5; k++) { let x = q(T), y = q(T); for (let n = 0; n < 6; n++) { P('#565e52', x, y, 1, 1); y = (y + 1) % T; if (Q() < 0.5) x = (x + (Q() < 0.5 ? 1 : T - 1)) % T; } } });
+    at(TL.BOSCO_FLUTE, () => { P('#aab1a3', 0, 0, T, T); for (let x = 0; x < T; x += 4) { P('#7c8477', x, 0, 1, T); P('#c6ccbf', x + 1, 0, 1, T); P('#98a092', x + 3, 0, 1, T); } for (let k = 0; k < 26; k++) P(Q() < 0.5 ? '#4f8a3c' : '#3f7434', q(T), T - 1 - q(9), 1, 1 + q(2)); });
+    at(TL.BOSCO_FRIEZE, () => { P('#9aa294', 0, 0, T, T); P('#d8b23a', 0, 2, T, 2); P('#d8b23a', 0, T - 4, T, 2); P('#2c5a37', 0, 7, T, 18); for (let x = 0; x < T; x += 16) { P('#bfe0a8', x + 2, 15, 12, 2); for (const [dx, dy] of [[3, 11], [7, 10], [11, 11]]) { P('#bfe0a8', x + dx, dy, 2, 4); P('#8fc47a', x + dx, dy, 1, 1); } for (const [dx, dy] of [[5, 18], [9, 19]]) { P('#bfe0a8', x + dx, dy, 2, 3); } P('#e8c24a', x + 14, 14, 3, 4); } P('#6b7366', 0, 0, T, 1); P('#6b7366', 0, T - 1, T, 1); });
+    at(TL.ROOF_MOSS, () => roof('#3d7c56'));
+    // il portale: arco di pietra, battenti di legno scuro, l'albero d'oro
+    at(TL.BOSCO_DOOR, () => { for (let y = 0; y < T; y++) for (let x = 2; x < 30; x++) { const cx = x + 0.5 - 16, d = y < 13 ? Math.hypot(cx, y + 0.5 - 13) : Math.abs(cx); if (d > 14) continue; P(d > 11.4 ? (Math.floor((y < 13 ? Math.atan2(13 - y, cx) * 5 : y / 4)) % 2 ? '#b9c0b1' : '#a2aa9b') : (x === 15 || x === 16) ? '#1c120a' : ((x + (y >> 3)) % 5 === 0 ? '#2e1e10' : '#3b2715'), x, y, 1, 1); }
+      P('#e8c24a', 15, 15, 2, 12); for (const [x, y, w] of [[11, 9, 10], [9, 11, 14], [10, 13, 12], [12, 7, 8]]) P('#e8c24a', x, y, w, 2); P('#fff2a8', 13, 9, 2, 1); P('#fff2a8', 18, 11, 2, 1); for (const [x, y] of [[12, 27], [19, 27], [13, 25], [18, 25]]) P('#e8c24a', x, y, 1, 2); P('#7dffa0', 15, 4, 2, 2); P('#d8b23a', 12, 21, 1, 3); P('#d8b23a', 19, 21, 1, 3); });
+    // mensole di funghi sul tronco; lanterna; bassorilievo del cervo; edera che scende
+    at(TL.FUNGUS, () => { P('#e9a24c', 0, 0, T, T); for (let k = 0; k < 40; k++) P(Q() < 0.5 ? '#f4c27a' : '#c8823a', q(T), q(T), 2, 1); P('#fbe3b0', 0, 0, T, 3); P('#b06a2c', 0, T - 3, T, 3); });
+    at(TL.LANTERN, () => { P('#3a2616', 0, 0, T, T); P('#ffe9a0', 4, 5, 24, 22); P('#fff8d8', 8, 9, 16, 14); P('#3a2616', 15, 5, 2, 22); P('#3a2616', 4, 15, 24, 2); P('#d8b23a', 0, 0, T, 3); P('#d8b23a', 0, T - 3, T, 3); });
+    at(TL.RELIEF, () => { bricks('#99a193', '#666e60', 32, 16); P('#737b6d', 2, 2, 28, 28); P('#a9b1a3', 3, 3, 26, 26); const D = '#7a8274', L = '#c9cfc2'; P(D, 9, 15, 12, 6); P(D, 18, 10, 4, 7); P(D, 20, 8, 5, 4); P(D, 10, 21, 2, 6); P(D, 13, 21, 2, 6); P(D, 17, 21, 2, 6); P(D, 20, 21, 2, 6); P(D, 7, 15, 3, 2); for (const [x, y, w, h] of [[21, 3, 1, 5], [24, 3, 1, 5], [19, 4, 3, 1], [24, 5, 3, 1], [22, 2, 1, 2], [26, 3, 1, 3]]) P(D, x, y, w, h); P(L, 9, 15, 12, 1); P(L, 20, 8, 5, 1); });
+    at(TL.BAN_GREEN, () => ban('#2c6a3c', '#e8c24a'));
+    // lo stemma del santuario: scudo verde con l'albero d'oro
+    at(TL.CREST_G, () => { for (let y = 3; y < 29; y++) for (let x = 5; x < 27; x++) { const hw = y < 16 ? 11 : 11 - (y - 16) * 0.85; if (Math.abs(x + 0.5 - 16) > hw) continue; const ed = Math.abs(x + 0.5 - 16) > hw - 1.6 || y < 5; P(ed ? '#ffd23f' : '#1f5a30', x, y, 1, 1); } P('#e8c24a', 15, 13, 2, 11); disc('#e8c24a', 16, 11, 5); disc('#fff4b0', 14.5, 9.5, 1.5); disc('#c8a02a', 18, 12.5, 1.6); P('#e8c24a', 12, 23, 8, 1); });
+    at(TL.MOSS, () => { for (let x = 0; x < T; x++) { const n = 3 + q(9) + Math.round(6 * Math.abs(Math.sin(x * 0.5))); for (let y = 0; y < n; y++) P(Q() < 0.5 ? '#3f7434' : Q() < 0.6 ? '#4f8a3c' : '#6aa84c', x, y, 1, 1); } });
+  }
   return c;
 }
 
@@ -6668,6 +6712,21 @@ function sprites(set, A, R) {
   set('anchor', [fit([Cy([0, 0, 0.6], [0, 0, 4], 0.22, IR), Cy([0, -0.9, 3.4], [0, 0.9, 3.4], 0.2, IR), Ca([0, -1.5, 1.2], [0, 0, 0.5], 0.24, IR), Ca([0, 1.5, 1.2], [0, 0, 0.5], 0.24, IR), El([0, 0, 4.3], [0.2, 0.5, 0.5], IR)], Math.PI - 1.2)], 0.2, 1);
   set('target', [fit([Cy([-0.3, 0, 3.2], [0.3, 0, 3.2], 2.2, '#f0ece0'), Cy([0.3, 0, 3.2], [0.36, 0, 3.2], 1.5, '#c8342c'), Cy([0.36, 0, 3.2], [0.42, 0, 3.2], 0.7, '#ffd23f'), Ca([0, -1.4, 0], [0, -0.6, 2], 0.2, WD), Ca([0, 1.4, 0], [0, 0.6, 2], 0.2, WD)], Math.PI - 0.3)], 0.2, 1.4);
   set('kingstatue', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -10, 0], c: '#8a867a' }, { t: 'b', b: [-8, 8, -8, 8, -11.5, -9.5], c: '#a8a498' }, ...A.human({ skin: '#b8b4a8', crown: '#d8c890', shirt: '#a8a498', plate: '#c0bcb0', pants: '#98948a', boots: '#8a867a', cape: '#98948a', beard: '#c0bcb0', weapon: { col: '#c8c4b8', guard: '#a8a498' }, shield: '#a8a498', emblem: '#c8c4b8' }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
+  // ---------- il sagrato del Santuario del Bosco ----------
+  { const ST = '#a3ab9c', ST2 = '#8a9284', ST3 = '#bcc3b4', MO = '#4f8a3c';
+    // il custode: un druido di pietra col cappuccio, le corna di cervo e il bastone, su un piedistallo col muschio
+    set('custode', [A.figure([{ t: 'b', b: [-7, 7, -7, 7, -13, 0], c: ST2 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -14.5, -12.5], c: ST3 }, { t: 'b', b: [-8.2, 8.2, -8.2, 8.2, -1.6, 0], c: ST3 }, { t: 'b', b: [-7.1, 7.1, -7.1, 7.1, -12.4, -10.6], c: MO },
+      ...A.human({ skin: ST3, hood: ST, robe: ST, shirt: ST, pants: ST2, boots: ST2, cape: ST2, beard: ST3, staff: ST2, orb: '#9dffb0', antlers: ST3, blank: 1 }, { armR: 0.2, armL: 0.1 })], Math.PI, Math.round(46 * A.SR), Math.round(39.8 * A.SR), { base: Math.round(28 * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 3.6);
+    // il cervo di pietra: lo stesso modello dei cervi vivi, tutto grigio, fermo sul suo basamento
+    const FM = SG.fauna && SG.fauna.model;
+    if (FM) { const stag = FM.quad(Object.assign({}, FM.DEER, { s: 1.45, c: ST, c2: ST, leg: ST2, hoof: ST2, sn: [1.6, ST2], ear: ['point', 2.7, ST], tail: ['puff', 1.5, ST3], horn: ['antler', 5.6, ST3], nt: 1.9, eyeC: ST2, nose: ST2 }), { look: 0.12 });
+      for (const fl of [1, -1]) set('cervopietra' + (fl > 0 ? '' : '2'), [A.figure([{ t: 'b', b: [-13, 13, -6, 6, -12, 0], c: ST2 }, { t: 'b', b: [-14.2, 14.2, -7.2, 7.2, -13.4, -11.6], c: ST3 }, { t: 'b', b: [-14.2, 14.2, -7.2, 7.2, -1.5, 0], c: ST3 }, { t: 'b', b: [-13.1, 13.1, -6.1, 6.1, -11.2, -9.8], c: MO }, ...stag],
+        fl > 0 ? Math.PI * 0.72 : Math.PI * 1.28, Math.round(70 * A.SR), Math.round(37.8 * A.SR), { base: Math.round(27 * A.SR), sc: A.SR * 0.8 })], 0.52 / A.SR, 5.5); }
+    // braciere di pietra con la fiamma verde (due fotogrammi non servono: la luce attorno tremola da sé)
+    set('braciereV', [fit([Kc([0, 0, 0], [0, 0, 0.5], 1.05, 0.75, ST2), Cy([0, 0, 0.5], [0, 0, 2.5], 0.38, ST), Kc([0, 0, 2.5], [0, 0, 3.4], 0.42, 1.3, ST3), Cy([0, 0, 3.4], [0, 0, 3.6], 1.36, ST2), El([0, 0, 4.2], [0.95, 0.95, 1.05], '#3fe07a', 1.6), El([0, 0, 4.7], [0.6, 0.6, 0.95], '#b8ffc8', 1.8), El([0.2, 0.1, 5.4], [0.3, 0.3, 0.6], '#eafff0', 1.9)], Math.PI - 0.4)], 0.2, 1.3);
+    // pietra con la runa accesa
+    set('runa', [fit([Kc([0, 0, 0], [0, 0, 4.2], 1.3, 0.85, ST2), El([0, 0, 4.2], [0.85, 0.85, 0.55], ST), Bx([0.8, 1.3, -0.17, 0.17, 1.1, 3.3], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.6, 0.6, 2.6, 2.95], '#9dffb0', 1.8), Bx([0.8, 1.27, -0.5, 0.5, 1.5, 1.85], '#5cf08a', 1.7), El([0.3, 0.6, 0.35], [0.6, 0.5, 0.35], MO), El([-0.4, -0.7, 0.3], [0.55, 0.55, 0.3], MO)], Math.PI - 0.5)], 0.2, 1.4);
+  }
   set('ninfa', [A.figure([{ t: 'b', b: [-6.5, 6.5, -6.5, 6.5, -10, 0], c: '#d2d7e2' }, { t: 'b', b: [-7.5, 7.5, -7.5, 7.5, -11.5, -9.5], c: '#f2f3f7' }, ...A.human({ skin: '#f2f3f7', hair: '#dfe3ec', shirt: '#e6e9f0', pants: '#e6e9f0', boots: '#d8dce6', cape: '#dde1ea', blank: 1 }, { armR: 2.9 })], Math.PI, Math.round(70 * A.SR), Math.round(96 * A.SR), { base: Math.round(78 * A.SR), sc: A.SR * 1.25 })], 0.52 / A.SR, 6);
   set('flag', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#c8342c', b: '#8a1e1a', c: '#ffd23f' })), 0.55, 0);
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);
@@ -7713,6 +7772,199 @@ W.CHESTS.push(['n01', 2668, -52, 'monete:220', 1], ['n02', XC, ZB + 7, 'cuore', 
 C.folk('mercante', 'IL MERCANTE DI MARMO', 1972, 2694, -0.9, ['VENGO DA MARMOREA, LA CITTÀ DELLE CASCATE. NON LA CONOSCI? È LASSÙ, TRA I GIGANTI DI NEVE CHE VEDI A NORD.', 'SI SALE DAL SENTIERO DEL PICCO DEL DRAGO: A METÀ STRADA UN CARTELLO INDICA IL VALICO DEI GIGANTI. DA LÌ È TUTTA VALLE, FINO AL LAGO.', 'PORTATI UN MANTELLO. E OCCHI BUONI: UNA CITTÀ COSÌ NON L\'HAI MAI VISTA.'], { id: 'mercante_marmo' });
 
 W.NORDN.nooks[1] = W.NOOKS.length; W.NORDN.props[1] = W.PROPS.length;
+})();
+
+// ===================== PIXEL SAGA · l'Albero Madre e il Santuario del Bosco =====================
+// L'Albero Madre non è più un disegno piatto che gira con lo sguardo: è costruito in rilievo, come le case. Tronco a contrafforti,
+// otto radici, rami, una chioma fatta di tante masse di foglie, liane, lanterne, funghi, rune e la cavità col cuore che brilla.
+// Poco a nord, il Santuario del Bosco ha finalmente un ingresso da santuario: pronao a colonne col frontone, piloni, cervi di pietra,
+// custodi, bracieri dalla fiamma verde e un sagrato lastricato che scende fino ai piedi dell'albero.
+// Tutto sta dentro la radura di sempre (nessun albero del bosco si sposta): gli ostacoli e gli oggetti nuovi entrano per ultimi (W.LATE).
+(() => {
+const W = SG.world, TN = SG.town, TL = TN.TL, K = W.kit, { quad, box, boxTop, onWall, prism } = K;
+const { oct, decal, pyramid } = TN;
+const TAU = Math.PI * 2, lerp = (a, b, t) => a + (b - a) * t, c01 = v => Math.max(0, Math.min(1, v));
+const TX = 1080, TZ = 1420;       // il piede dell'Albero Madre
+const late = (x0, z0, x1, z1, top, b) => W.LATE.boxes.push([x0, z0, x1, z1, top, b]);
+// i riquadri disegnati da fn brillano di luce propria (rune, lanterne, il cuore dell'albero); dec: staccati dal muro come le insegne
+function acceso(fn, dec) { const n0 = W.mesh.length; fn(); for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] = 0.995 + (dec ? 2 : 0); }
+// una fascia di riquadri tra due anelli di punti (A sotto, B sopra)
+function fascia(A, B, tile, vr, lf) { const n = A.length; for (let k = 0; k < n; k++) { const k1 = (k + 1) % n; quad(A[k1], A[k], B[k], B[k1], tile, 1, vr, lf ? lf(k) : undefined); } }
+// un ramo: un tubo a sei facce che segue i punti [x, y, z, raggio]
+function ramo(P, tile = TL.BARK, n = 6) {
+  let prev = null;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)], d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], dl = Math.hypot(d[0], d[1], d[2]) || 1; d[0] /= dl; d[1] /= dl; d[2] /= dl;
+    // due direzioni di traverso al ramo
+    let s = [d[2], 0, -d[0]], sl = Math.hypot(s[0], s[2]); if (sl < 0.01) s = [1, 0, 0]; else { s[0] /= sl; s[2] /= sl; }
+    const u = [d[1] * s[2] - d[2] * s[1], d[2] * s[0] - d[0] * s[2], d[0] * s[1] - d[1] * s[0]], r = P[i][3], ring = [];
+    for (let k = 0; k < n; k++) { const t = k / n * TAU, c = Math.cos(t) * r, q = Math.sin(t) * r; ring.push([P[i][0] + s[0] * c + u[0] * q, P[i][1] + s[1] * c + u[1] * q, P[i][2] + s[2] * c + u[2] * q]); }
+    if (prev) fascia(prev, ring, tile, Math.max(1, Math.round(Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1], P[i][2] - P[i - 1][2]) / 8)));
+    prev = ring;
+  }
+}
+// una massa di foglie: un ellissoide schiacciato a fasce (scuro sotto, chiaro in cima), un po' storto, con la frangia attorno
+function chioma(cx, cy, cz, rx, ry, rz, R, n = 9) {
+  const LV = [[0.62, -0.5], [1, -0.08], [0.84, 0.46], [0.5, 0.82]], rings = LV.map(([k, h]) => { const out = []; for (let i = 0; i < n; i++) { const a = i / n * TAU, j = 0.9 + R() * 0.2; out.push([cx + Math.cos(a) * rx * k * j, cy + ry * h + (R() - 0.5) * ry * 0.14, cz + Math.sin(a) * rz * k * j]); } return out; });
+  const lum = (k, base) => { const a = (k + 0.5) / n * TAU; return c01(base + 0.09 * (Math.cos(a) * 0.5 - Math.sin(a) * 0.3)); };       // il lato verso il sole è un po' più chiaro
+  const bot = [cx, cy - ry * 0.62, cz], top = [cx + (R() - 0.5) * rx * 0.2, cy + ry, cz + (R() - 0.5) * rz * 0.2];
+  for (let k = 0; k < n; k++) { const k1 = (k + 1) % n; quad(rings[0][k], rings[0][k1], bot, bot, TL.LEAF_D, 2, 2, 0.5); quad(rings[3][k1], rings[3][k], top, top, TL.LEAF_L, 2, 2, lum(k, 0.93)); }
+  fascia(rings[0], rings[1], TL.LEAF_D, 1.5, k => lum(k, 0.62)); fascia(rings[1], rings[2], TL.LEAF_M, 1.5, k => lum(k, 0.8)); fascia(rings[2], rings[3], TL.LEAF_L, 1.5, k => lum(k, 0.9));
+  // la frangia: l'orlo frastagliato che pende dal punto più largo
+  for (let k = 0; k < n; k++) { const k1 = (k + 1) % n, a = rings[1][k], b = rings[1][k1], h = ry * 0.5, o = 1.07;
+    quad([cx + (b[0] - cx) * o, b[1] - h, cz + (b[2] - cz) * o], [cx + (a[0] - cx) * o, a[1] - h, cz + (a[2] - cz) * o], [cx + (a[0] - cx) * 1.02, a[1] + 0.6, cz + (a[2] - cz) * 1.02], [cx + (b[0] - cx) * 1.02, b[1] + 0.6, cz + (b[2] - cz) * 1.02], TL.LEAF_FR, 2, 1, lum(k, 0.7)); }
+}
+// una liana: due veli incrociati che pendono
+function liana(x, y, z, len, a) { const c = Math.cos(a) * 1.6, s = Math.sin(a) * 1.6, v = len / 8; quad([x - c, y - len, z - s], [x + c, y - len, z + s], [x + c, y, z + s], [x - c, y, z - s], TL.VINE, 1, v, 0.86); quad([x + s, y - len, z - c], [x - s, y - len, z + c], [x - s, y, z + c], [x + s, y, z - c], TL.VINE, 1, v, 0.8); }
+// una lanterna appesa: la corda, la gabbia accesa, la luce attorno
+function lanterna(x, y, z, len) {
+  box(x - 0.14, z - 0.14, x + 0.14, z + 0.14, y - len, y, TL.BARK_D); box(x - 0.95, z - 0.95, x + 0.95, z + 0.95, y - len - 0.5, y - len, TL.BARK_D);
+  acceso(() => box(x - 0.8, z - 0.8, x + 0.8, z + 0.8, y - len - 2.4, y - len - 0.5, TL.LANTERN));
+  box(x - 0.95, z - 0.95, x + 0.95, z + 0.95, y - len - 2.8, y - len - 2.4, TL.BARK_D); W.glows.push([x, y - len - 1.4, z, 7, 0.75, 0.62, 0.32, 1]);
+}
+
+// ---------- l'Albero Madre ----------
+const NR = 8, radA = j => (j + 0.5) / NR * TAU;                 // le otto radici: a nord (dove sta il forziere) e a sud (dove si apre la cavità) resta un varco
+// il tronco: [quota, raggio, quanto sporgono i contrafforti sopra le radici]
+const TRUNK = [[-3, 19, 0.3], [3, 16.4, 0.27], [9, 14.2, 0.19], [18, 12.5, 0.1], [30, 11.5, 0.05], [42, 11.3, 0.03], [50, 12.4, 0.02], [57, 13.6, 0]];
+// raggio del tronco a una certa quota, tra due radici (rad = false) o sopra una radice (rad = true)
+const pende = y => [Math.sin(y * 0.05) * 1.2, Math.cos(y * 0.04) * 0.9];      // il tronco non sale dritto: il centro si sposta un poco con la quota
+// un punto sulla corteccia: all'angolo a, alla quota y, staccato di e
+function pelle(a, y, e = 0) { const l = pende(y), r = raggio(y, false) + e; return [TX + l[0] + Math.cos(a) * r, TZ + l[1] + Math.sin(a) * r]; }
+function raggio(y, rad) { let i = 0; while (i < TRUNK.length - 2 && y > TRUNK[i + 1][0]) i++; const a = TRUNK[i], b = TRUNK[i + 1], t = c01((y - a[0]) / (b[0] - a[0])), r = lerp(a[1], b[1], t), l = lerp(a[2], b[2], t); return r * (rad ? 1 + l : 1 - l * 0.4); }
+W.builders.albero = (b, g) => {
+  const y0 = g(TX, TZ), R = rng(1420), N = NR * 2, jit = []; for (let k = 0; k < N; k++) jit.push(0.97 + R() * 0.06);
+  // il tronco: sedici spigoli, uno sì e uno no sporge a contrafforte sopra una radice
+  const anello = ([y, r, l], i) => { const out = [], lean = pende(y); for (let k = 0; k < N; k++) { const a = k / N * TAU, rr = r * (k % 2 === 1 ? 1 + l : 1 - l * 0.4) * jit[k]; out.push([TX + lean[0] + Math.cos(a) * rr, y0 + y, TZ + lean[1] + Math.sin(a) * rr]); } return out; };
+  const rings = TRUNK.map(anello);
+  for (let i = 0; i < rings.length - 1; i++) fascia(rings[i], rings[i + 1], TL.BARK, Math.max(1, Math.round((TRUNK[i + 1][0] - TRUNK[i][0]) / 8)));
+  { const top = [TX, y0 + 62, TZ], A = rings[rings.length - 1]; for (let k = 0; k < N; k++) quad(A[(k + 1) % N], A[k], top, top, TL.BARK_D, 1, 1); }
+  // le radici: creste che escono dal tronco, si piegano e affondano nella terra
+  for (let j = 0; j < NR; j++) {
+    const a0 = radA(j), nord = Math.sin(a0) < -0.85, L = (nord ? 27 : 34 + R() * 7), bend = (R() - 0.5) * 0.5, S = [], LB = [], RB = [];
+    const prof = [[0.1, 17.5, 4.2], [0.34, 12, 4.8], [0.58, 6.8, 3.8], [0.8, 3, 2.6], [1, -0.4, 1]];
+    for (const [t, h, w] of prof) { const r = lerp(11, L, t), a = a0 + bend * t * t, x = TX + Math.cos(a) * r, z = TZ + Math.sin(a) * r, px = -Math.sin(a), pz = Math.cos(a), gy = g(x, z) - 1.2;
+      S.push([x, Math.max(gy + 0.4, y0 + h + (R() - 0.5) * 0.8), z]); LB.push([x + px * w, gy, z + pz * w]); RB.push([x - px * w, gy, z - pz * w]); }
+    for (let i = 0; i < S.length - 1; i++) { quad(LB[i], LB[i + 1], S[i + 1], S[i], TL.BARK_D, 1, 1); quad(RB[i + 1], RB[i], S[i], S[i + 1], TL.BARK_D, 1, 1); }
+    // dove la radice è alta non si passa; verso la punta la si scavalca
+    for (const t of [0.36, 0.56]) { const r = lerp(11, L, t), a = a0 + bend * t * t; W.LATE.circles.push([TX + Math.cos(a) * r, TZ + Math.sin(a) * r, t < 0.5 ? 3.6 : 2.8]); }
+    // un ciuffo di muschio a cavallo della cresta
+    if (j % 2 === 0) { const m = S[2], n2 = S[3]; quad([m[0], m[1] - 3.2, m[2]], [n2[0], n2[1] - 2.6, n2[2]], [n2[0], n2[1] + 0.15, n2[2]], [m[0], m[1] + 0.15, m[2]], TL.MOSS, 2, 1, 0.9); }
+  }
+  // la cavità a sud, col cuore dell'albero che brilla, e due lanterne ai lati
+  { const yb = y0 + 0.6, yt = y0 + 15.5, pb = pelle(TAU / 4, 0.6, 0.7), pt = pelle(TAU / 4, 15.5, 0.8);
+    acceso(() => quad([pb[0] - 6.2, yb, pb[1]], [pb[0] + 6.2, yb, pb[1]], [pt[0] + 6.2, yt, pt[1]], [pt[0] - 6.2, yt, pt[1]], TL.HOLLOW, 1, 1), true);
+    W.glows.push([TX, y0 + 5, TZ + 19, 16, 0.78, 1, 0.5, 1]); }
+  // rune incise sulla corteccia, a spirale
+  for (const [deg, y, s] of [[40, 21, 5], [138, 26, 5.4], [205, 19, 5], [318, 24, 5.4], [262, 31, 4.6], [90, 33, 5]]) { const a = deg / 360 * TAU, p0 = pelle(a, y, 0.9), p1 = pelle(a, y + s, 0.9), px = -Math.sin(a) * s / 2, pz = Math.cos(a) * s / 2;
+    acceso(() => quad([p0[0] - px, y0 + y, p0[1] - pz], [p0[0] + px, y0 + y, p0[1] + pz], [p1[0] + px, y0 + y + s, p1[1] + pz], [p1[0] - px, y0 + y + s, p1[1] - pz], TL.RUNE_G, 1, 1), true); }
+  // mensole di funghi
+  for (const [deg, y, r] of [[20, 9, 2.6], [28, 12.5, 2], [14, 15, 1.6], [168, 10, 2.8], [176, 14, 2.1], [160, 17.5, 1.5], [300, 12, 2.4], [292, 16, 1.8]]) { const a = deg / 360 * TAU, c = pelle(a, y, r * 0.2); prism(c[0], c[1], r, y0 + y, y0 + y + 0.7, TL.FUNGUS, 7); const t = [c[0], y0 + y + 1.3, c[1]];
+    for (let k = 0; k < 7; k++) { const a0 = k / 7 * TAU, a1 = (k + 1) / 7 * TAU; quad([t[0] + Math.cos(a1) * r, y0 + y + 0.7, t[2] + Math.sin(a1) * r], [t[0] + Math.cos(a0) * r, y0 + y + 0.7, t[2] + Math.sin(a0) * r], t, t, TL.FUNGUS, 1, 1); } }
+  // i rami maestri (sei, a raggiera) e la cima
+  const RAMI = [];
+  for (let i = 0; i < 6; i++) { const a = (i + 0.3) / 6 * TAU + (R() - 0.5) * 0.3, ca = Math.cos(a), sa = Math.sin(a), tw = (R() - 0.5) * 9, up = R() * 5;
+    const P = [[TX + ca * 4, y0 + 49, TZ + sa * 4, 6.2], [TX + ca * 19 - sa * tw * 0.3, y0 + 60 + up * 0.4, TZ + sa * 19 + ca * tw * 0.3, 4.6], [TX + ca * 33 - sa * tw, y0 + 69 + up, TZ + sa * 33 + ca * tw, 3.1], [TX + ca * 43 - sa * tw, y0 + 76 + up, TZ + sa * 43 + ca * tw, 1.6]];
+    ramo(P); RAMI.push([a, P[3], P[2]]); }
+  ramo([[TX, y0 + 54, TZ, 8.2], [TX + 2.5, y0 + 72, TZ - 1.5, 5.6], [TX - 1.5, y0 + 90, TZ + 1, 3.4], [TX, y0 + 102, TZ, 1.6]]);
+  // tre rami bassi, da cui pendono le lanterne
+  const BASSI = [];
+  for (const deg of [58, 122, 196, 344]) { const a = deg / 360 * TAU, ca = Math.cos(a), sa = Math.sin(a), P = [[TX + ca * 8, y0 + 36, TZ + sa * 8, 3.3], [TX + ca * 21, y0 + 43, TZ + sa * 21, 2.5], [TX + ca * 33, y0 + 46, TZ + sa * 33, 1.7], [TX + ca * 41, y0 + 45, TZ + sa * 41, 0.9]]; ramo(P, TL.BARK_D, 5); BASSI.push(P); }
+  // la chioma: una massa in fondo a ogni ramo, una tra un ramo e l'altro più in alto, la corona in cima, ciuffi sui rami bassi
+  for (const [a, e] of RAMI) chioma(e[0] + Math.cos(a) * 3, e[1] + 6, e[2] + Math.sin(a) * 3, 22 + R() * 3, 12 + R() * 2, 22 + R() * 3, R);
+  for (let i = 0; i < 6; i++) { const a = (i + 0.8) / 6 * TAU, r = 25 + R() * 4; chioma(TX + Math.cos(a) * r, y0 + 93 + R() * 4, TZ + Math.sin(a) * r, 21 + R() * 3, 12 + R() * 2, 21 + R() * 3, R); }
+  for (let i = 0; i < 4; i++) { const a = (i + 0.4) / 4 * TAU; chioma(TX + Math.cos(a) * 14, y0 + 104 + R() * 3, TZ + Math.sin(a) * 14, 18, 10.5, 18, R); }
+  for (let i = 0; i < 6; i++) { const a = (i + 0.82) / 6 * TAU, r = 37 + R() * 4; chioma(TX + Math.cos(a) * r, y0 + 81 + R() * 3, TZ + Math.sin(a) * r, 16 + R() * 2, 8.5 + R(), 16 + R() * 2, R, 8); }      // tra un ramo e l'altro, più in basso: la chioma è piena anche vista da sotto
+  chioma(TX, y0 + 113, TZ, 24, 13, 24, R);
+  for (const P of BASSI) { const e = P[3]; chioma(e[0], e[1] + 4.5, e[2], 12.5, 6.6, 12.5, R, 8); }
+  // liane sotto la chioma e lungo i rami bassi
+  for (const [a, e, m] of RAMI) { liana(e[0] + Math.cos(a) * 6, e[1] - 2, e[2] + Math.sin(a) * 6, 15 + R() * 13, R() * 3); liana(m[0] - Math.sin(a) * 4, m[1] - 2, m[2] + Math.cos(a) * 4, 11 + R() * 9, R() * 3); liana(e[0] - Math.sin(a) * 12, e[1] - 1, e[2] + Math.cos(a) * 12, 12 + R() * 12, R() * 3); }
+  for (const P of BASSI) { liana(P[2][0], P[2][1] - 1, P[2][2], 9 + R() * 6, R() * 3); lanterna(P[1][0] + (P[2][0] - P[1][0]) * 0.55, P[1][1] + (P[2][1] - P[1][1]) * 0.55 - 2, P[1][2] + (P[2][2] - P[1][2]) * 0.55, 6 + R() * 4); }
+  // lucciole e bagliori tra le foglie: di notte l'albero è acceso
+  for (let i = 0; i < 7; i++) { const a = R() * TAU, r = 20 + R() * 30; W.glows.push([TX + Math.cos(a) * r, y0 + 58 + R() * 14, TZ + Math.sin(a) * r, 12, 0.6, 1, 0.55, 1]); }
+};
+W.BUILD.push({ k: 'albero', x: TX, z: TZ });
+(W.bigShadows = W.bigShadows || []).push([TX, TZ, 52]);
+// attorno al piede: pietre con le rune in cerchio, funghi e felci tra le radici, due bracieri davanti alla cavità
+for (const deg of [20, 60, 120, 160, 200, 340]) { const a = deg / 360 * TAU; W.LATE.props.push(['runa', TX + Math.cos(a) * 44, TZ + Math.sin(a) * 44]); }      // (a sud, davanti alla cavità, e a nord, dov'è il forziere, il passo resta libero)
+W.LATE.props.push(['braciereV', TX - 11, TZ + 26], ['braciereV', TX + 11, TZ + 26]);
+{ const R = rng(2014); for (let j = 0; j < NR; j++) for (let k = 0; k < 3; k++) { const a = radA(j) + TAU / NR / 2 + (R() - 0.5) * 0.5, r = 19 + R() * 13; if (Math.sin(a) < -0.7 && r > 22) continue; W.LATE.props.push([['mushroom', 'fern', 'flower'][(j + k) % 3], TX + Math.cos(a) * r, TZ + Math.sin(a) * r]); } }
+
+// ---------- il Santuario del Bosco ----------
+const BW = TL.BOSCO_WALL;
+// colonna di pietra scanalata, col plinto, il capitello e un po' di muschio
+function colonna(x, z, y, h, r, b) {
+  box(x - r * 1.5, z - r * 1.5, x + r * 1.5, z + r * 1.5, y - 2, y + 1.4, BW); oct(x, z, r, y + 1.4, y + h - 1.8, TL.BOSCO_FLUTE); box(x - r * 1.25, z - r * 1.25, x + r * 1.25, z + r * 1.25, y + h - 1.8, y + h - 0.9, BW); box(x - r * 1.6, z - r * 1.6, x + r * 1.6, z + r * 1.6, y + h - 0.9, y + h, BW);
+  if (b !== undefined) late(x - r * 1.25, z - r * 1.25, x + r * 1.25, z + r * 1.25, y + h, b);
+}
+// fascia col fregio di foglie attorno a un rettangolo (lati: quali facce)
+function fregio(x0, z0, x1, z1, y0, y1, lati = 'snew') {
+  const h = y1 - y0, ux = Math.max(1, Math.round((x1 - x0) / h / 2)) , uz = Math.max(1, Math.round((z1 - z0) / h / 2)), e = 0.07, F = TL.BOSCO_FRIEZE;
+  if (lati.includes('s')) quad([x0, y0, z1 + e], [x1, y0, z1 + e], [x1, y1, z1 + e], [x0, y1, z1 + e], F, ux, 1); if (lati.includes('n')) quad([x1, y0, z0 - e], [x0, y0, z0 - e], [x0, y1, z0 - e], [x1, y1, z0 - e], F, ux, 1);
+  if (lati.includes('e')) quad([x1 + e, y0, z1], [x1 + e, y0, z0], [x1 + e, y1, z0], [x1 + e, y1, z1], F, uz, 1); if (lati.includes('w')) quad([x0 - e, y0, z0], [x0 - e, y0, z1], [x0 - e, y1, z1], [x0 - e, y1, z0], F, uz, 1);
+}
+// frontone verso sud: il triangolo sulla facciata e le due falde che scendono a levante e a ponente
+function frontone(x0, z0, x1, z1, y, rh, o = 1.5) {
+  const xm = (x0 + x1) / 2, sl = Math.hypot((x1 - x0) / 2 + o, rh) / 8, ln = (z1 - z0 + 2 * o) / 8, R = TL.ROOF_MOSS;
+  quad([x0 - o, y - 0.8, z0 - o], [x0 - o, y - 0.8, z1 + o], [xm, y + rh, z1 + o], [xm, y + rh, z0 - o], R, ln, sl); quad([x1 + o, y - 0.8, z1 + o], [x1 + o, y - 0.8, z0 - o], [xm, y + rh, z0 - o], [xm, y + rh, z1 + o], R, ln, sl);
+  quad([x0, y, z1], [x1, y, z1], [xm, y + rh, z1], [xm, y + rh, z1], BW, (x1 - x0) / 8, rh / 8); quad([x1, y, z0], [x0, y, z0], [xm, y + rh, z0], [xm, y + rh, z0], BW, (x1 - x0) / 8, rh / 8);
+}
+// pilone: un obelisco tozzo con la runa accesa, la punta di rame e la luce in cima
+function pilone(x, z, y, h, b) {
+  box(x - 4, z - 4, x + 4, z + 4, y - 3, y + 3, BW); box(x - 3, z - 3, x + 3, z + 3, y + 3, y + h, BW); fregio(x - 3, z - 3, x + 3, z + 3, y + h - 5, y + h - 1); box(x - 3.6, z - 3.6, x + 3.6, z + 3.6, y + h, y + h + 1.2, BW);
+  pyramid(x - 3, z - 3, x + 3, z + 3, y + h + 1.2, 6, TL.ROOF_MOSS, 0.4); box(x - 0.4, z - 0.4, x + 0.4, z + 0.4, y + h + 7, y + h + 9.4, TL.GOLD);
+  acceso(() => decal(x, y + 9, z + 3, 1, 0, 4.4, 4.4, TL.RUNE_G), true); acceso(() => decal(x, y + 9, z - 3, -1, 0, 4.4, 4.4, TL.RUNE_G), true);
+  quad([x - 3, y + h - 12, z + 3.08], [x + 3, y + h - 12, z + 3.08], [x + 3, y + h - 5, z + 3.08], [x - 3, y + h - 5, z + 3.08], TL.MOSS, 1, 1, 0.9);
+  W.glows.push([x, y + h + 8, z, 9, 0.4, 0.75, 0.45, 1]); late(x - 4, z - 4, x + 4, z + 4, y + h, b);
+}
+W.builders['temple:bosco'] = (b, g) => {
+  const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, z0 = b.z - b.d / 2, z1 = b.z + b.d / 2;
+  let y0 = Infinity; for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [b.x, b.z]]) y0 = Math.min(y0, g(x, z));
+  const H1 = 25, PF = 17, PW = 22, zf = z1 + PF;         // la cella è alta una volta e mezza quella di prima; il pronao sporge di 17 ed è largo 44
+  // la cella: muri, lesene agli angoli, fregio, cornicione, due gradoni rientrati e il tetto di rame
+  box(x0, z0, x1, z1, y0 - 3, y0 + H1, BW);
+  for (const [px, pz] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) box(px - 1.4, pz - 1.4, px + 1.4, pz + 1.4, y0 - 3, y0 + H1, BW);
+  fregio(x0, z0, x1, z1, y0 + H1 - 5, y0 + H1); box(x0 - 1.6, z0 - 1.6, x1 + 1.6, z1 + 1.6, y0 + H1, y0 + H1 + 1.6, BW);
+  box(x0 + 3, z0 + 3, x1 - 3, z1 - 3, y0 + H1 + 1.6, y0 + H1 + 7.4, BW); fregio(x0 + 3, z0 + 3, x1 - 3, z1 - 3, y0 + H1 + 3.8, y0 + H1 + 7.4);
+  box(x0 + 6.5, z0 + 6.5, x1 - 6.5, z1 - 6.5, y0 + H1 + 7.4, y0 + H1 + 12, BW);
+  for (const sd of ['s', 'e', 'w', 'n']) acceso(() => onWall(sd, x0 + 6.5, z0 + 6.5, x1 - 6.5, z1 - 6.5, sd === 'e' || sd === 'w' ? b.z : b.x, y0 + H1 + 7.8, 3.6, 3.6, TL.RUNE_G), true);
+  pyramid(x0 + 6.5, z0 + 6.5, x1 - 6.5, z1 - 6.5, y0 + H1 + 12, 8, TL.ROOF_MOSS, 1.2); box(b.x - 0.5, b.z - 0.5, b.x + 0.5, b.z + 0.5, y0 + H1 + 19.5, y0 + H1 + 23, TL.GOLD);
+  W.glows.push([b.x, y0 + H1 + 22, b.z, 12, 0.45, 0.85, 0.5, 1]);
+  // sui fianchi e sul retro: il bassorilievo del cervo e il muschio che scende dal cornicione
+  for (const sd of ['e', 'w']) { onWall(sd, x0, z0, x1, z1, b.z, y0 + 5, 9, 9, TL.RELIEF); onWall(sd, x0, z0, x1, z1, b.z - 6, y0 + H1 - 13, 8, 8, TL.MOSS); onWall(sd, x0, z0, x1, z1, b.z + 5.5, y0 + H1 - 12, 7, 7, TL.MOSS); }
+  onWall('n', x0, z0, x1, z1, b.x, y0 + 5, 9, 9, TL.RELIEF); onWall('n', x0, z0, x1, z1, b.x - 7, y0 + H1 - 13, 8, 8, TL.MOSS);
+  // il portale: grande, ad arco, con l'albero d'oro sui battenti
+  onWall('s', x0, z0, x1, z1, b.x, y0, 11.5, 15, TL.BOSCO_DOOR);
+  acceso(() => onWall('s', x0, z0, x1, z1, b.x, y0 + 16, 4.6, 4.6, TL.RUNE_G), true);
+  W.lights.push({ x: b.x, z: z1 + 2, id: b.id });
+  W.addBox(x0, z0, x1, z1, y0 + H1, b);
+  // il pronao: sei colonne in facciata, due per fianco, l'architrave col fregio, il soffitto e il frontone con lo stemma
+  const ax0 = b.x - PW, ax1 = b.x + PW, hc = 21;
+  for (const dx of [6.6, 13.6, 20.4]) for (const s of [-1, 1]) colonna(b.x + s * dx, zf - 2, y0, hc, 1.9, b);
+  for (const s of [-1, 1]) { colonna(b.x + s * 20.4, z1 + 6.6, y0, hc, 1.9, b); box(b.x + s * 13 - 1.6, z1, b.x + s * 13 + 1.6, z1 + 1.2, y0 - 2, y0 + hc, BW); }
+  box(ax0, z1, ax1, zf, y0 + hc, y0 + hc + 4.6, BW); fregio(ax0, z1, ax1, zf, y0 + hc + 0.3, y0 + hc + 4.3, 'sew');
+  quad([ax0, y0 + hc, z1], [ax1, y0 + hc, z1], [ax1, y0 + hc, zf], [ax0, y0 + hc, zf], BW, 5, 2, 0.5);
+  box(ax0 - 1.2, z1, ax1 + 1.2, zf + 1.2, y0 + hc + 4.6, y0 + hc + 5.8, BW);
+  frontone(ax0, z1, ax1, zf, y0 + hc + 5.8, 10);
+  decal(b.x, y0 + hc + 6.4, zf, 1, 0, 6.8, 6.8, TL.CREST_G, false, 0.25); acceso(() => { decal(b.x - 9.5, y0 + hc + 6.3, zf, 1, 0, 3.4, 3.4, TL.RUNE_G, false, 0.25); decal(b.x + 9.5, y0 + hc + 6.3, zf, 1, 0, 3.4, 3.4, TL.RUNE_G, false, 0.25); }, true);
+  for (const [dx, dy] of [[0, 10], [-PW, 0], [PW, 0]]) box(b.x + dx - 0.8, zf - 0.8, b.x + dx + 0.8, zf + 0.8, y0 + hc + 5.8 + dy, y0 + hc + 9.8 + dy, TL.GOLD);
+  for (const s of [-1, 1]) { onWall('s', ax0, z1, ax1, zf, b.x + s * 17, y0 + hc - 9, 6, 9, TL.MOSS); decal(b.x + s * 10.1, y0 + hc - 9, zf - 1.9, 1, 0, 3.6, 9, TL.BAN_GREEN, false, 0.1); }
+  for (const s of [-1, 1]) lanterna(b.x + s * 3.4, y0 + hc, z1 + 9, 3.2);
+  // un gradino appena accennato davanti alle colonne
+  box(ax0 - 1.5, zf, ax1 + 1.5, zf + 2.2, y0 - 2, y0 + 0.28, BW);
+  // i due piloni ai lati del pronao e i muretti che li legano
+  for (const s of [-1, 1]) { pilone(b.x + s * (PW + 8), z1 + 9, y0, 31, b); const xa = b.x + s * (PW + 0.5), xb = b.x + s * (PW + 4); box(Math.min(xa, xb), z1 + 7.6, Math.max(xa, xb), z1 + 10.4, y0 - 2, y0 + 6, BW); late(Math.min(xa, xb), z1 + 7.6, Math.max(xa, xb), z1 + 10.4, y0 + 6, b); }
+  // in fondo al viale: due colonne basse con la fiamma verde in cima
+  for (const s of [-1, 1]) { const x = b.x + s * 13.5, z = z1 + 51; colonna(x, z, y0, 12, 1.5, b); acceso(() => box(x - 0.9, z - 0.9, x + 0.9, z + 0.9, y0 + 12, y0 + 13.6, TL.LANTERN)); W.glows.push([x, y0 + 13.4, z, 7, 0.32, 0.62, 0.38, 1]); }
+};
+// il sagrato: lastre grigie dal pronao ai piedi dell'albero, il viale chiaro nel mezzo, un tondo con le rune
+{ const X = 1115, Z1 = 1341;
+  // (largo davanti al pronao, poi solo il viale: a ponente c'è il nascondiglio del forziere, che resta nell'erba tra i cespugli)
+  W.PAVE.push(['g', 'rect', X - 30, Z1, X + 30, Z1 + 33], ['g', 'rect', X - 12, Z1 + 33, X + 12, Z1 + 53], ['b', 'rect', X - 7.5, Z1, X + 7.5, Z1 + 53], ['b', 'rect', X - 22, Z1, X + 22, Z1 + 19], ['g', 'disc', X, Z1 + 39, 14], ['b', 'disc', X, Z1 + 39, 10.5]);
+  // le statue: due cervi di pietra davanti al pronao, due custodi ai lati del tondo, due bracieri
+  W.LATE.props.push(['cervopietra', X - 19, Z1 + 24, { r: 5.6 }], ['cervopietra2', X + 19, Z1 + 24, { r: 5.6 }], ['custode', X - 19, Z1 + 39, { r: 3.6 }], ['custode', X + 19, Z1 + 39, { r: 3.6 }],
+    ['braciereV', X - 9, Z1 + 20.5], ['braciereV', X + 9, Z1 + 20.5]);
+}
 })();
 
 // ===================== PIXEL SAGA · i santuari =====================
@@ -10041,7 +10293,7 @@ function create(env) {
 }
 
 SG.faunaModels = { kit, quad, bird, frog, lizard, crab, turtle, penguin, seal, monkey, fish, dolphin };
-SG.fauna = { SPEC, LAND, create };
+SG.fauna = { SPEC, LAND, create, model: { quad, DEER } };
 })();
 
 // ===================== PIXEL SAGA · la musica =====================
@@ -11264,7 +11516,7 @@ function buildStatics() {
   setZ('crystal', [A.crystal(R, Z(18), Z(28), ['#2a8aa8', '#4ac8e8', '#a8f0ff', '#ffffff']), A.crystal(R, Z(16), Z(24), ['#6a3aa8', '#9a6ae8', '#d0b0ff', '#ffffff'])], 0.42, 1.4);
   setZ('icecrystal', [A.crystal(R, Z(18), Z(26), ['#5a8ac8', '#8ab8f0', '#d0e8ff', '#ffffff'])], 0.42, 1.4);
   set('bones', [A.bones()], 0.2, 0, true);
-  setZ('giant', [A.giantTree(rng(7), Z(220), Z(200))], 0.62, 17);
+  set('giant', [A.pix(['.'], { a: '#000000' })], 0.2, 17);     // l'Albero Madre ora è costruito in rilievo (sg_bosco.js): qui resta solo il segnaposto, invisibile
   setZ('stepstone', [A.rock(R, Z(16), Z(7), ['#6a7a80', '#9aa8b0', '#c8d4d8', '#eef4f6'])], 0.5);
   set('well', [A.well()], 0.2, 6);
   set('torch', [A.torch()], 0.2, 1);
@@ -11294,7 +11546,7 @@ function buildStatics() {
   setZ('cherrywhite', [A.oak(R, Z(40), Z(50), ['#c0a8b8', '#e8d0dc', '#f8ecf2', '#ffffff'], DARKT)], 0.43, 2);
   set('heather', [A.tuft(['#7a3a7a', '#b05aa8'], 12, 9), A.tuft(['#6a4a8a', '#9a6ac0'], 10, 8)], 0.2, 0, true);
   setZ('tomb', [A.rock(R, Z(8), Z(13), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae']), A.rock(R, Z(10), Z(10), ['#3e3e4a', '#5e5e6c', '#7e7e8e', '#9e9eae'])], 0.4, 1.5);
-  SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35];
+  SG.town.sprites(set, A, R); SG.shop.sprites(set, A, R); S.lamp.glow = [9.6, 7, 1, 0.8, 0.42]; S.lantern.glow = [5.2, 6, 1, 0.45, 0.35]; S.braciereV.glow = [4.6, 7, 0.36, 0.72, 0.44]; S.runa.glow = [2.3, 3.5, 0.3, 0.6, 0.4];
   // il vento muove alberi (poco) ed erba (di più); cristalli e lava brillano
   for (const k of ['oak', 'oakbig', 'birch', 'pine', 'snowpine', 'palm', 'willow', 'deadtree', 'burnt', 'oakred', 'oakgold', 'birchgold', 'acacia', 'jungle', 'cherry', 'cherrywhite']) S[k].sway = 1;
   for (const k of ['bush', 'flower', 'tuft', 'fern', 'reeds', 'drybush', 'bushred', 'tuftgold', 'fernbig', 'heather']) S[k].sway = 2;
@@ -11434,7 +11686,7 @@ function setupWorld() {
   chests = W.CHESTS.map(([id, x, z, c, r]) => { const fixed = ['c06', 'c07', 'c09', 'c10'].includes(id); const [X, Z] = fixed ? [x, z] : fixSpot(x, z, 4); return { id, x: X, z: Z, c, r, yaw: Math.atan2(2650 - Z, 2000 - X) }; });
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
-  props = W.PROPS.map(([k, x, z]) => ({ k, x, z }));
+  props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
   for (const id in JOBS) { const j = JOBS[id];
     if (j.boss) { const [X, Z] = fixSpot(j.boss.x, j.boss.z, 5); camps.push({ x: X, z: Z, type: 'J_' + id, n: 1, r: 44, alive: [], dead: 0, cool: 0, on: false, job: id }); }
@@ -11746,8 +11998,8 @@ const SIGNS = {
   '4500,1990': "IL CONTINENTE D'ORIENTE\n→ CASTELROSSO   ↗ ALTABRINA", '5010,2130': '↑ ALTABRINA   → CASTELROSSO\n← PONTE DEI RE', '5770,3530': 'CASTELROSSO\n↓ PORTO SERENO   → ZAFIRA',
   '4150,6390': 'LE TERRE DEL SUD\n← FIORALBA, LA CITTÀ DEI CILIEGI', '2310,5540': 'FIORALBA\n↓ BRUGHIERA NERA: PERICOLO!   ↖ APPRODO DEI PETALI', '3220,1980': '↑ ROVINE DI SOLIS\nATTENZIONE: SCHELETRI!', '1180,1600': "BOSCO ANTICO\n↑ L'ALBERO MADRE   ↖ VALLE GELATA", '900,2660': "PALUDE D'OMBRA\nNON ANDARE OLTRE AL TRAMONTO",
 };
-const PROPTXT = { ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
-  snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
+const PROPTXT = { custode: 'UN CUSTODE DEL BOSCO SCOLPITO NELLA PIETRA: IL CAPPUCCIO, LE CORNA DI CERVO, IL BASTONE. IL MUSCHIO GLI SALE FINO ALLE GINOCCHIA.', cervopietra: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «ENTRA IN PACE, ESCI PIÙ FORTE».', cervopietra2: 'UN CERVO DI PIETRA GUARDA CHI SALE AL SANTUARIO. SUL BASAMENTO: «CHI HA RADICI NON TEME IL VENTO».', runa: 'UNA PIETRA CON UNA RUNA CHE BRILLA DI VERDE. È TIEPIDA AL TATTO.', ninfa: "UNA NINFA DI MARMO CON IL BRACCIO LEVATO VERSO LE CASCATE. SUL BASAMENTO: «CHI BEVE A MARMOREA, RITORNA».", well: 'IL POZZO DEL BORGO. BEVI UN SORSO DI ACQUA FRESCA...', statue: 'UNA STATUA DI PIETRA. SUL BASAMENTO: "RE AURELIO, PRIMO SIGNORE DI LUMEN".', menhir: 'UNA PIETRA ANTICA COPERTA DI RUNE CONSUMATE DAL TEMPO.',
+  snowman: 'UN PUPAZZO DI NEVE CON UNA CAROTA PER NASO. SEMBRA SORRIDERE.', giant: "L'ALBERO MADRE. IL SUO TRONCO È LARGO COME UNA CASA E LE RADICI AFFONDANO FINO AL CENTRO DEL MONDO. NELLA CAVITÀ BATTE UNA LUCE, PIANO, COME UN CUORE.", tent: 'LA TENDA DELLA NOMADE. PROFUMA DI SPEZIE.', campfire: 'UN FUOCO SCOPPIETTANTE.', anvil: "L'INCUDINE DI BRUNO. È ANCORA TIEPIDA." };
 const SANCT = { bosco: 'SANTUARIO DEL BOSCO', sole: 'SANTUARIO DEL SOLE', ghiaccio: 'SANTUARIO DEL GHIACCIO', fuoco: 'SANTUARIO DEL FUOCO', lago: 'SANTUARIO DEL LAGO' };
 // quello che vende ogni bottega (prezzo pieno; il terzo numero: da quale capitolo compare). «citta»: di chi è il banco, per lo sconto
 const SHOPS = {
@@ -12509,7 +12761,7 @@ function findTarget() {
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa') consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
@@ -13521,6 +13773,7 @@ function render3D() {
   // ombre
   shN = 0;
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
+  for (const s of W.bigShadows || []) if (near(s[0], s[1], 520)) pushShadow(s[0], s[1], s[2]);      // l'ombra della chioma dell'Albero Madre
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (st !== 'title') fauna.shadows(cam);

@@ -156,6 +156,8 @@ const BRIDGES = [];                                // ponti: { x0, z0, x1, z1, y
 const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 1720], ['b', 'disc', 1080, 1420, 40], ['b', 'disc', 2150, 1340, 30]];
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
+// aggiunte recenti alle terre di sempre: oggetti e ostacoli che entrano per ultimi, con una sequenza di numeri tutta loro (nient'altro si sposta)
+const LATE = { props: [], boxes: [], circles: [] };
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
 // la sequenza della vegetazione di Lumen, riga per riga (vedi placeObjects): numeri già usati all'inizio della riga 738, poi quanti ne usa ogni riga
 const SOLR0 = 64383, SOLR = [1052,1051,1054,1051,1050,1055,1058,1070,1062,1057,1068,1068,1065,1064,1081,1074,1074,1085,1090,1093,1099,1105,1115,1102,1114,1093,1097,1100,1110,1094,1108,1090,1097,1106,1103,1091,1098,1090,1091,1097,1087,1098,1102,1090,1096,1096,1103,1101,1093,1083,1085,1086,1084,1086,1074,1093,1080,1086,1089,1077,1075,1084,1077,1080,1089,1090,1101,1095,1104,1093,1096,1095,1094,1101,1103,1103,1089,1092,1105,1102,1105,1088,1107,1108,1095,1097,1099,1095,1104,1104,1102,1095,1102,1094,1103,1107,1096,1104,1094,1101,1084,1101,1100,1086,1081,1087,1091,1085,1091,1086,1089,1082,1071,1081,1086,1083,1077,1071,1075,1070,1073,1072,1060,1055,1061,1060,1062,1085,1074,1084,1071,1065,1067,1072,1068,1069,1071,1052,1074,1077,1063,1063,1068,1072,1073,1070,1064,1060,1065,1063,1060,1056,1064,1059,1067,1054,1059,1056,1056,1057,1061,1059,1049,1056,1053,1064,1055,1053,1052,1054,1058,1062,1057,1074,1058,1056,1057,1068,1062,1061,1058,1054,1060,1053,1065,1057,1047,1065,1056,1055,1067,1057,1054,1059,1059,1058,1052,1059,1059,1057,1051,1056,1052,1053,1058,1057,1052,1066,1058,1053,1067,1068,1057];
@@ -293,7 +295,7 @@ function height0(x, z) {
 
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, CARVE, SHAPERS, FINE,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, FINE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
@@ -625,6 +627,7 @@ function* buildMeshes() {
     const b = BUILD[bi];
     if (k !== key) { close(); key = k; }
     if (W.builders[b.k]) { W.builders[b.k](b, g); if (solo[b.k]) yield ++done / 12; continue; }
+    if (b.k === 'temple' && W.builders['temple:' + b.id]) { W.builders['temple:' + b.id](b, g); continue; }
     if (b.k === 'temple') {
       const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, z0 = b.z - b.d / 2, z1 = b.z + b.d / 2;
       let y0 = Infinity; for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [b.x, b.z]]) y0 = Math.min(y0, g(x, z));
@@ -728,7 +731,7 @@ function* placeObjects(S) {
   };
   const prop = ([k, x, z, o]) => {
     if (k === 'ore') return;   // i minerali si raccolgono: li disegna il gioco
-    if (k === 'giant') add('giant', x, z, { r: 15, sink: 2 });
+    if (k === 'giant') add('giant', x, z, { r: 14.5, sink: 2 });
     else if (k === 'well') add('well', x, z, { r: 6 });
     else if (k === 'anvil') add('anvil', x, z, { r: 2 });
     else if (k === 'menhir') add('menhir', x, z, { r: 3 });
@@ -826,6 +829,11 @@ function* placeObjects(S) {
   for (const b of BUILD) if (b.k === 'cave' && b.z < 0) caveRing(b);
   for (let i = NN.props[0]; i < NN.props[1]; i++) prop(PROPS[i]);
   scatter(900, Z0, 3960, 0, false);
+  // per ultime le aggiunte recenti (vedi LATE)
+  R = rng(52525);
+  for (const p of LATE.props) prop(p);
+  for (const b of LATE.boxes) W.addBox(b[0], b[1], b[2], b[3], b[4], b[5]);
+  for (const c of LATE.circles) W.addCircle(c[0], c[1], c[2]);
   for (const k in OB) { const L = OB[k]; L.big = new Float32Array(L.big); L.small = new Float32Array(L.small); }
 }
 

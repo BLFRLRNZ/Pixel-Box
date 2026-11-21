@@ -768,5 +768,5 @@ function create(env) {
 }
 
 SG.faunaModels = { kit, quad, bird, frog, lizard, crab, turtle, penguin, seal, monkey, fish, dolphin };
-SG.fauna = { SPEC, LAND, create };
+SG.fauna = { SPEC, LAND, create, model: { quad, DEER } };
 })();
