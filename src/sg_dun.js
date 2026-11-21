@@ -384,7 +384,7 @@ const bottomOf = t => t === PIT || t === PLAT ? -PD : t === WATER ? -WD : t === 
 // cell: celle attuali (muri rotti, pozzi riempiti); filled: celle riempite da un masso
 function buildStatic(P, cell, filled) {
   const D = P.def, Wd = P.w, H = P.h, at = (i, j) => (i >= 0 && j >= 0 && i < Wd && j < H) ? cell[j * Wd + i] : ROCK;
-  const floor = [], wall = [], water = [], lava = [], casa = D.casa, ZH = 4.4;     // nelle botteghe: zoccolo di legno ai piedi delle pareti, e in cima il buio
+  const floor = [], wall = [], deco = [], water = [], lava = [], casa = D.casa, ZH = 4.4;     // nelle botteghe: zoccolo di legno ai piedi delle pareti, e in cima il buio
   const N4 = [[0, -1, 'n'], [0, 1, 's'], [1, 0, 'e'], [-1, 0, 'w']];
   // le scale: '>' porta avanti (giù, oppure su nelle torri), '@' nei piani dopo il primo riporta indietro
   const tower = D.dir === 'up', isStair = t => t === STAIR || (t === EXIT && !!D.up), goesUp = t => t === STAIR ? tower : !tower;
@@ -410,7 +410,7 @@ function buildStatic(P, cell, filled) {
       continue;
     }
     if (isFlat(t)) {
-      const tile = t === ICE ? 28 : t === SPIKE ? 29 : t === BRIDGE ? 30 : filled && filled.has(k) ? 47 : P.tiles[k] ? P.tiles[k] : P.room[k] === P.bossRoom && P.bossRoom >= 0 ? 44 : D.floor;
+      const tile = t === ICE ? 28 : t === SPIKE ? 29 : t === BRIDGE ? 30 : filled && filled.has(k) ? 47 : P.tiles[k] ? P.tiles[k] : P.room[k] === P.bossRoom && P.bossRoom >= 0 ? 44 : (t === FLOOR && !casa && SG.decor && SG.decor.floorVar(P, i, j, k)) || D.floor;   // (pavimenti consumati e medaglioni: vedi sg_decor)
       flatTo(floor, x0, z0, x1, z1, 0, tile, 1, 1, tile === 60 ? 1 : LIT.floor);
       // bordi verso pozzi, acqua e lava
       for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (n === PIT || n === PLAT || n === WATER || n === LAVA) sideTo(floor, i, j, s, t === BRIDGE ? -1.4 : bottomOf(n), 0, t === BRIDGE ? 30 : 42); }
@@ -430,7 +430,8 @@ function buildStatic(P, cell, filled) {
     if (t === WATER || t === LAVA) for (const [a, b, s] of N4) { const n = at(i + a, j + b); if (n === PIT) sideTo(floor, i, j, s, -PD, bottomOf(t), 42); }
   }
   if (casa) casa.build({ floor, wall, quadTo, boxTo, flatTo });
-  return { floor: new Float32Array(floor), wall: new Float32Array(wall), water: new Float32Array(water), lava: new Float32Array(lava) };
+  else if (SG.decor) SG.decor.walls(P, at, deco);   // zoccoli, fregi, lesene, stendardi e il resto: solo da vedere (in un elenco a parte: dove il muro si fa trasparente davanti all'eroe, l'arredo sparisce)
+  return { floor: new Float32Array(floor), wall: new Float32Array(wall), deco: new Float32Array(deco), water: new Float32Array(water), lava: new Float32Array(lava) };
 }
 
 // ---------- piastrelle dei santuari (riquadri 18-47 dell'atlante degli edifici) ----------
@@ -722,8 +723,9 @@ function art(id, atlas) {
   SP.gold = atlas.add(goldPile()); SP.bones = atlas.add(bonesPile());
   SP.cluster = atlas.add(cluster(D.glow, sh(D.glow, 1.35)));
   SP.statue = dirs(() => A.human(STONE, {}), 44, 50);
+  SP.clut = SG.decor ? SG.decor.sprites(family(id), atlas) : {};   // le cose piccole ai piedi dei muri
   return { CH, SP, boss: B };
 }
 
-SG.dun = { CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT, STAIR }, Maker, ORDER, CAVES, DEF, BOSS, CHAMP, rootOf, family, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
+SG.dun = { LIT, isSolid, isFlat, CS, WH, DH, PD, WD, LD, T: { ROCK, WALL, CRACK, FLOOR, PIT, WATER, LAVA, ICE, SPIKE, BRIDGE, DOOR, EXIT, TOGB, PLAT, STAIR }, Maker, ORDER, CAVES, DEF, BOSS, CHAMP, rootOf, family, parse, buildStatic, quadTo, boxTo, flatTo, tilesOn, art };
 })();

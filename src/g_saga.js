@@ -435,7 +435,7 @@ function* loader() {
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
   ATEX = G.texture(atlas.c); atlasUse = atlas.used;
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
-  TILES = G.texture(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31)));
+  TILES = G.texture(SG.decor.tilesOn(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31))));
   DET = G.texture(A.detail(rng(3)), { repeat: true }); PAVT = G.texture(A.paving(rng(77)), { repeat: true });
   SHORE = G.texture({ w: W.N, h: W.NZ, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
@@ -1720,13 +1720,14 @@ function makeDungeon(id) {
   R.lights.push({ x: P.spawn.cx, y: 8, z: P.spawn.cz, r: 52, c: P.def.up ? [0.6, 0.52, 0.4] : P.def.casa ? [0.3, 0.33, 0.38] : [0.75, 0.82, 0.95], day: !!P.def.casa });
   if (P.stairs) R.lights.push({ x: P.stairs.cx, y: 6, z: P.stairs.cz, r: 60, c: hexf(P.def.glow) });
   if (P.def.casa) P.def.casa.setup(R);      // una bottega: mobili, oggetti, lumi, chi ci lavora e chi ci beve
+  R.clutter = P.def.casa ? [] : SG.decor.clutter(P);   // cose piccole ai piedi dei muri: si vedono e basta
   return R;
 }
 function dUpload() {
   const m = DS.buildStatic(D.P, D.cell, D.filled), del = b => { if (b) gl.deleteBuffer(b); };
-  if (D.gl) { del(D.gl.floor); del(D.gl.wall); del(D.gl.water); del(D.gl.lava); }
+  if (D.gl) { del(D.gl.floor); del(D.gl.wall); del(D.gl.deco); del(D.gl.water); del(D.gl.lava); }
   const buf = a => G.buffer(a.length ? a : new Float32Array(32));
-  D.gl = { floor: buf(m.floor), nf: m.floor.length / 32, wall: buf(m.wall), nw: m.wall.length / 32, water: buf(m.water), nwa: m.water.length / 8, lava: buf(m.lava), nl: m.lava.length / 8 };
+  D.gl = { floor: buf(m.floor), nf: m.floor.length / 32, wall: buf(m.wall), nw: m.wall.length / 32, deco: buf(m.deco), nd: m.deco.length / 32, water: buf(m.water), nwa: m.water.length / 8, lava: buf(m.lava), nl: m.lava.length / 8 };
 }
 // from: 'out' si entra da fuori, 'up' si arriva dal piano prima (alla via del ritorno), 'down' si torna dal piano dopo (in cima alla scala)
 function loadLevel(id, from, out) {
@@ -2261,6 +2262,7 @@ function buildDynamicD() {
     else if (o.c === 'A') pushBB2(o.x, 0, o.z, DSP.statue[dirOf(o.x, o.z, o.yaw)], 0.25 / SR);
     else pushBB2(o.x, 0, o.z, DSP.bones, 0.2);
   }
+  if (DSP.clut) for (const o of D.clutter) { if (Math.abs(o.x - hero.x) > 150 || Math.abs(o.z - hero.z) > 150) continue; if (o.st) { pushBB2(o.x, 2.8, o.z, DSP.statue[dirOf(o.x, o.z, o.yaw)], 0.25 / SR); continue; } const L = DSP.clut[o.set]; if (L) pushBB2(o.x, 0, o.z, L[o.k], 0.2); }
   if (D.sprs) for (const p of D.sprs) {
     if (p.fl) { pushBB(p.x, p.y, p.z, SPR.flame[Math.floor(time * 8 + p.x) % 2], p.s || 0.4, 1.2); continue; }
     const S2 = SPR[p.k]; if (!S2) continue; pushBB(p.x, p.y, p.z, S2.r[Math.min(p.v, S2.r.length - 1)], p.s || S2.s);
@@ -2300,7 +2302,7 @@ function renderDungeon() {
   const cut = hp ? [hp[0], hp[1], H3 * 0.21, Math.hypot(cam.x - hero.x, cam.y - hero.y, cam.z - hero.z) - 1] : [0, 0, 0, 0];
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.BLEND);
   let p = P.dmesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.05) * ambK);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
@@ -2308,6 +2310,7 @@ function renderDungeon() {
   const drawMesh = (buf, n, cutOn) => { if (!n) return; gl.uniform4f(p.u.uCut, cut[0], cut[1], cutOn ? cut[2] : 0, cut[3]); gl.bindBuffer(gl.ARRAY_BUFFER, buf); for (let q0 = 0; q0 < n; q0 += 16000) { G.attribs(p, [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]], q0 * 4 * 32); gl.drawElements(gl.TRIANGLES, Math.min(16000, n - q0) * 6, gl.UNSIGNED_SHORT, 0); } };
   drawMesh(D.gl.floor, D.gl.nf, false);
   drawMesh(D.gl.wall, D.gl.nw, true);
+  drawMesh(D.gl.deco, D.gl.nd, true);   // l'arredo dei muri: solo qui, non nella passata delle pareti trasparenti
   dmN = 0; buildDynMesh();
   if (dmN) { gl.bindBuffer(gl.ARRAY_BUFFER, dmBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dmF.subarray(0, dmN * 32)); drawMesh(dmBuf, dmN, true); }
   // ombre e segnali rossi a terra
@@ -2542,7 +2545,7 @@ function render3D() {
   }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 32); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
