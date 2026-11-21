@@ -149,7 +149,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.8", "id": "2.8-e3d62dd2", "date": "21/11/2026", "pwa": true};
+const APP = {"v": "2.8.1", "id": "2.8.1-b4d635a6", "date": "21/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -11985,11 +11985,11 @@ function heroUpdate(dt) {
     // sul ghiaccio si scivola
     const k = Math.min(1, 1.6 * dt); h.vx += (dx / dt - h.vx) * k; h.vz += (dz / dt - h.vz) * k;
     if (Math.hypot(h.vx, h.vz) > 0.4) { if (move(h, h.vx * dt, h.vz * dt, 1.6)) { h.moving = f !== 0; h.walk += Math.hypot(h.vx, h.vz) * dt; } else { h.vx *= -0.25; h.vz *= -0.25; } }
-    if (f > 0) heroPush(dt);
+    if (f > 0) heroPush(dt, mdir);
   } else if (f !== 0) {
     h.vx = dx / dt; h.vz = dz / dt;
-    if (move(h, dx, dz, 1.6)) { h.moving = true; h.walk += Math.hypot(dx, dz); h.pushT = 0; }
-    else if (D && f > 0 && !heroPush(dt)) {
+    if (move(h, dx, dz, 1.6)) { h.moving = true; h.walk += Math.hypot(dx, dz); if (!(D && f > 0 && D.blocks.length && heroPush(dt, mdir, 6.9))) h.pushT = 0; }
+    else if (D && f > 0 && !heroPush(dt, mdir)) {
       const ahead = dCellAt(h.x + Math.cos(h.yaw) * 4, h.z + Math.sin(h.yaw) * 4);
       if (ahead === DT.WATER && !canSwim() && time > (h.hintT || 0)) { h.hintT = time + 4; toast(swimItem() ? 'EQUIPAGGIA ' + swimItem().n + ' (START)' : "L'ACQUA È TROPPO PROFONDA", '#a9d8ff'); }
     }
@@ -12500,6 +12500,8 @@ function findTarget() {
     for (const c of D.chests) if (!c.hidden && !ds.ch[c.key]) consider(c.x, c.z, 'dchest', c, 10);
     for (const d of D.doors) if ((d.kind === 'lock' || d.kind === 'boss' || d.kind === 'shut' || d.kind === 'seal') && d.anim < 0.5) consider(d.cx, d.cz, 'ddoor', d, 13);
     for (const s2 of D.signs) consider(s2.x, s2.z, 'sign', s2, 10);
+    // la pietra davanti (ma con un nemico vicino A resta il colpo: la pietra allora si spinge camminandoci contro)
+    const pa = !foes.some(e => e.st !== 'dead' && e.room === D.room && Math.hypot(e.x - hero.x, e.z - hero.z) < 36) && blockAhead(); if (pa) consider(pa.b.x, pa.b.z, 'block', pa, 12);
     if (D.gem) consider(D.gem.x, D.gem.z, 'gem', D.gem, 11);
     if (D.folk) for (const n of D.folk) consider(n.x, n.z, 'npc', n, 17);       // il bottegaio sta dall'altra parte del banco
     return best;
@@ -12525,6 +12527,13 @@ function interact(t) {
   if (t.kind === 'ddoor') { useDoor(t.obj); return; }
   if (t.kind === 'sign') { say(null, [t.obj.txt]); return; }
   if (t.kind === 'gem') { takeGem(); return; }
+  if (t.kind === 'block') {
+    // l'eroe si volta verso la pietra e la spinge di una casella; se dietro non c'è posto, lo dice
+    const p = blockAhead(), h = hero; if (!p) return; h.yaw = Math.atan2(p.dj, p.di); h.pushT = 0;
+    if (pushBlock(p.b, p.di, p.dj)) vib(20);
+    else if (time > (h.hintT || 0)) { h.hintT = time + 3; toast('DA QUESTA PARTE NON SI MUOVE: PROVA DA UN ALTRO LATO', '#a9d8ff'); }
+    return;
+  }
   if (t.kind === 'ore') {
     if (save.q.ferro === 1) { save.oreTaken[t.obj.x + ',' + t.obj.z] = 1; save.ore++; puffAt(t.obj.x, t.obj.z, 5); toast('MINERALE DI FERRO ' + Math.min(3, save.ore) + '/3', '#ffb070'); seq([523, 784], 0.06, 0.06); if (save.ore >= 3) { save.q.ferro = 2; toast('TORNA DA BRUNO!', '#ffd23f'); jingle(); } }
     else say(null, ['UNA ROCCIA CON VENATURE DI FERRO. AL FABBRO DEL BORGO FAREBBE COMODO.']);
@@ -12962,14 +12971,28 @@ function blocksUpdate(dt) {
     else tone(140, 0.08, 'square', 0.04);
   }
 }
-function heroPush(dt) {
-  const h = hero, fx2 = Math.cos(h.yaw), fz2 = Math.sin(h.yaw), ax = Math.abs(fx2) > Math.abs(fz2), di = ax ? Math.sign(fx2) : 0, dj = ax ? 0 : Math.sign(fz2);
-  for (const b of D.blocks) {
+// Le pietre si spingono in due modi: camminandoci contro (conta dove si sta andando: va bene anche di sbieco, strisciando
+// lungo la faccia) oppure mettendosi davanti e premendo A. Si muovono sempre di una casella, lungo la griglia.
+function heroPush(dt, dir = hero.yaw, reach = 8.2) {
+  const h = hero, fx2 = Math.cos(dir), fz2 = Math.sin(dir), ax = Math.abs(fx2) > Math.abs(fz2), di = ax ? Math.sign(fx2) : 0, dj = ax ? 0 : Math.sign(fz2);
+  if (Math.max(Math.abs(fx2), Math.abs(fz2)) > 0.88) for (const b of D.blocks) {
     if (b.gone || b.mv) continue;
     const along = ax ? (b.x - h.x) * di : (b.z - h.z) * dj, side = ax ? Math.abs(b.z - h.z) : Math.abs(b.x - h.x);
-    if (along > 4 && along < 8.2 && side < 4.4) { h.pushT = (h.pushT || 0) + dt; if (h.pushT > 0.32) { h.pushT = 0; pushBlock(b, di, dj); } return true; }
+    if (along > 4 && along < reach && side < 4.4) { h.pushT = (h.pushT || 0) + dt; if (h.pushT > 0.32) { h.pushT = 0; pushBlock(b, di, dj); } return true; }
   }
   h.pushT = 0; return false;
+}
+// la pietra che l'eroe ha davanti, a un passo: quella che A spinge. Restituisce anche da che parte andrebbe
+function blockAhead() {
+  const h = hero; let best = null, bd = 1e9;
+  for (const b of D.blocks) {
+    if (b.gone || b.mv) continue;
+    const dx = b.x - h.x, dz = b.z - h.z, ax = Math.abs(dx) > Math.abs(dz), along = ax ? Math.abs(dx) : Math.abs(dz), side = ax ? Math.abs(dz) : Math.abs(dx);
+    if (along > 10.6 || side > 4.6) continue;
+    if (Math.cos(Math.atan2(dz, dx) - h.yaw) < 0.45) continue;                      // bisogna guardarla
+    if (along < bd) { bd = along; best = { b, di: ax ? Math.sign(dx) : 0, dj: ax ? 0 : Math.sign(dz) }; }
+  }
+  return best;
 }
 function breakPot(p) {
   p.alive = false; puffAt(p.x, p.z, 6, 3); noise(0.2, 0.05); tone(700, 0.05, 'square', 0.03, 300);
@@ -13637,7 +13660,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI' }[target.kind];
+    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
