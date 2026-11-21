@@ -303,7 +303,7 @@ const SPEC = {
   // --- uccelli
   passero: { n: 'passero', m: p => bird({ s: 1.0, c: '#8a6240', c2: '#5a3e2a', c3: '#e8d8c0', cap: '#6a4630', beak: [0.9, '#5a4a40', 0.36], legC: '#c89060', wing: 3.6, legs: 1.2 }, p), f: BIRD, W: 18, H: 16, k: 'bird', v: 9, run: 60, fl: 14, r: 1, g: [3, 6], roam: 22, alt: 22, tn: [null, [1.35, 1.1, 0.55], [0.7, 0.95, 1.6], [1.5, 0.6, 0.5]], when: 'day' },
   piccione: { n: 'piccione', m: p => bird({ s: 1.05, c: '#9aa0b0', c2: '#6a7084', c3: '#b8bcc8', headC: '#7a8098', beak: [0.9, '#e8c8a0', 0.36], legC: '#e87a7a', tip: '#3a3e4e', wing: 4.2, legs: 1.3,
-      extra: ({ E }, q) => E([q.H[0] - 0.9, 0, q.H[2] - 1.2], [1.2, 1.3, 0.75], '#5aa88a', q.HR) }, p), f: BIRD, W: 20, H: 18, k: 'bird', v: 8, run: 58, fl: 12, r: 1.2, g: [5, 10], roam: 24, alt: 26, when: 'day' },
+      extra: ({ E }, q) => E([q.H[0] - 0.9, 0, q.H[2] - 1.2], [1.2, 1.3, 0.75], '#5aa88a', q.HR) }, p), f: BIRD, W: 20, H: 18, k: 'bird', v: 8, run: 58, fl: 12, r: 1.2, g: [4, 7], roam: 24, alt: 26, when: 'day' },
   corvo: { n: 'corvo', m: p => bird({ s: 1.2, c: '#22222c', c2: '#16161e', c3: '#2a2a36', beak: [1.5, '#2a2a30', 0.5], legC: '#2a2a30', wing: 4.6, legs: 1.5, eyeC: '#d8d8e0' }, p), f: BIRD, W: 22, H: 20, k: 'bird', v: 9, run: 56, fl: 17, r: 1.3, g: [2, 5], roam: 30, alt: 30 },
   gabbiano: { n: 'gabbiano', m: p => bird({ s: 1.15, c: '#f8f8fc', c2: '#a8b0c0', c3: '#ffffff', tip: '#2a2e3a', beak: [1.5, '#f0b020', 0.46], legC: '#f0a030', wing: 5.4, legs: 1.5, tailC: '#f8f8fc' }, p), f: BIRD, W: 24, H: 22, k: 'bird', v: 8, run: 56, fl: 14, r: 1.3, g: [3, 7], roam: 30, alt: 34, when: 'day' },
   pappagallo: { n: 'pappagallo', m: p => bird({ s: 1.15, c: '#e83a30', c2: '#2a6ae0', c3: '#f04a3a', tip: '#f8d020', beak: [1.3, '#f0e8d8', 0.6], hook: 1, beakTip: '#3a3a40', legC: '#6a6a70', wing: 4.6, legs: 1.2, tail: 4.4, tailC: '#2a6ae0', eyeRing: '#ffffff' }, p), f: BIRD, W: 24, H: 20, k: 'bird', v: 7, run: 54, fl: 15, r: 1.2, g: [2, 5], roam: 26, alt: 30, tn: [null, [0.4, 1.3, 0.7], [1.2, 1.25, 0.4], [0.5, 0.9, 1.6]], when: 'day' },
@@ -351,7 +351,9 @@ const LAND = [
 ];
 const SKY = { 3: 'aquila', 5: 'avvoltoio', 7: 'avvoltoio', 9: 'aquila', 10: 'aquila', 14: 'aquila' };
 const BEACH = [['granchio', 4], ['gabbiano', 4.5], ['tartaruga', 1.2]], BEACH_COLD = [['foca', 4], ['pinguino', 3.5], ['gabbiano', 2]];
-const TOWN = [['piccione', 5], ['gatto', 2.2], ['cane', 2.2], ['gallina', 1.5], ['passero', 2]];
+// in città entrano solo cani, gatti e uccellini (e i gabbiani dei porti): nessun altro ci nasce, ci cammina o ci atterra
+const STREET = [['passero', 3], ['gatto', 2.2], ['cane', 1.6], ['piccione', 1.2]];
+for (const k of ['cane', 'gatto', 'piccione', 'passero', 'gabbiano']) SPEC[k].city = 1;
 const WATER = [['anatra', 4], ['cigno', 1.6]], WATER_WARM = [['fenicottero', 3], ['anatra', 2]];
 const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14, 15]);
 
@@ -360,7 +362,7 @@ const WARM = new Set([5, 9, 10, 11]), FLOWERS = new Set([0, 1, 8, 11, 12, 13, 14
 // per quel posto e quell'ora); quando si allontana, spariscono. Gli sprite di una specie si disegnano la prima volta
 // che serve, pochi per fotogramma, così il caricamento del gioco non si allunga.
 function create(env) {
-  const W = env.W, gH = env.gH, SR = env.SR, CS = 96, R_ON = 250, R_OFF = 330, MAXN = 130, SKS = 384, SK_ON = 620;
+  const W = env.W, gH = env.gH, SR = env.SR, CS = 96, R_ON = 250, R_OFF = 330, MAXN = 115, SKS = 384, SK_ON = 620;
   const SP = {}, queue = [], cells = new Map(), skies = new Map();
   let list = [], scanT = 0, leapT = 4, flockT = 30, flutT = 1, croakT = 6, chirpT = 5, night = false, on = false;
   const rnd = Math.random, rr = (a, b) => a + rnd() * (b - a);
@@ -397,8 +399,15 @@ function create(env) {
   const dry = (x, z, S) => { const g = gH(x, z); return g > (S.wet ? 0.15 : 0.4) && W.slope(x, z) < (S.steep ? 1.8 : 1.15) && !W.blocked(x, z, S.cr || 1.3); };
   const wet = (x, z) => { const g = gH(x, z); return g < -0.7 && g > -40 && !W.inBox(x, z, 2); };
   const shallow = (x, z) => { const g = gH(x, z); return g < 1.5 && g > -1.7 && !W.blocked(x, z, 1.3); };
-  const okFor = (S, x, z) => S.k === 'swim' ? wet(x, z) : S.k === 'wade' ? shallow(x, z) || dry(x, z, S) : dry(x, z, S);
-  const inTown = (x, z) => { for (const t of W.TOWNS) if (t.big && (x - t.x) ** 2 + (z - t.z) ** 2 < (t.r || 150) ** 2) return true; return false; };
+  // il suolo delle città: i rettangoli di città e villaggi (W.URBAN), più Borgo Aurora attorno alle sue case
+  let URB = null;
+  const urban = (x, z) => {
+    if (!URB) { URB = (W.URBAN || []).slice(); let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const b of W.BUILD) if (b.k === 'house' && Math.hypot(b.x - 2000, b.z - 2650) < 260) { x0 = Math.min(x0, b.x - b.w / 2); x1 = Math.max(x1, b.x + b.w / 2); z0 = Math.min(z0, b.z - b.d / 2); z1 = Math.max(z1, b.z + b.d / 2); } if (x1 > x0) URB.push([x0 - 14, z0 - 14, x1 + 14, z1 + 14]); }
+    for (const r of URB) if (x > r[0] && x < r[2] && z > r[1] && z < r[3]) return true;
+    return false;
+  };
+  const inCity = () => { let n = 0; for (const a of list) if (urban(a.x, a.z)) n++; return n; };   // quanti sono già in città: oltre un certo numero non ne nascono altri
+  const okFor = (S, x, z) => (S.city || !urban(x, z)) && (S.k === 'swim' ? wet(x, z) : S.k === 'wade' ? shallow(x, z) || dry(x, z, S) : dry(x, z, S));
   const nearWater = (x, z, r) => { for (let i = 0; i < 8; i++) { const a = i * 0.785; if (gH(x + Math.cos(a) * r, z + Math.sin(a) * r) < -0.3) return true; } return false; };
   function choose(table, R, only) {
     let tot = 0; for (const [, w] of table) tot += w;
@@ -445,13 +454,13 @@ function create(env) {
   function fill(ci, cj, only, hx, hz) {
     const R = rng(((ci * 73856093) ^ (cj * 19349663) ^ (night ? 0x9e3779 : 0)) >>> 0), x0 = ci * CS, z0 = cj * CS;
     for (let t = 0; t < 3; t++) {
-      const go = R() < [0.7, 0.36, 0.12][t], x = x0 + (0.1 + R() * 0.8) * CS, z = z0 + (0.1 + R() * 0.8) * CS;
+      const go = R() < [0.62, 0.31, 0.1][t], x = x0 + (0.1 + R() * 0.8) * CS, z = z0 + (0.1 + R() * 0.8) * CS;
       if (!go || list.length >= MAXN || x < 40 || z < W.Z0 + 40 || x > W.WS - 40 || z > W.WS - 40) continue;
       if (only && Math.hypot(x - hx, z - hz) < 110) continue;
-      const g = gH(x, z), bio = W.biomeAt(x, z), cd = W.coastDist(x, z);
+      const g = gH(x, z), bio = W.biomeAt(x, z), cd = W.coastDist(x, z), urb = urban(x, z);
       let table;
-      if (g < -0.6) { if (g < -8 || bio === 4 || cd < 70) continue; table = WARM.has(bio) ? WATER_WARM : WATER; }
-      else if (inTown(x, z)) table = TOWN;
+      if (g < -0.6) { if (urb || g < -8 || bio === 4 || cd < 70) continue; table = WARM.has(bio) ? WATER_WARM : WATER; }
+      else if (urb) { if (R() > 0.2 || inCity() >= 10) continue; table = STREET; }   // per le strade poca roba: i piccioni stanno in piazza (li mette la città, più sotto)
       else if (g < 3 && cd < 130 && bio !== 6) table = bio === 4 ? BEACH_COLD : BEACH;
       else table = LAND[bio];
       const k = choose(table, R, only); if (k) group(k, x, z, R);
@@ -468,8 +477,8 @@ function create(env) {
     W.TOWNS.forEach((t, n) => {
       const key = 'T' + n; if (!t.big || cells.has(key) || Math.hypot(t.x - hx, t.z - hz) > R_ON + 60) return;
       cells.set(key, { cx: t.x, cz: t.z, town: true });
-      const R = rng((n * 7919 + (night ? 13 : 0)) >>> 0), at = (k, r) => { const a = R() * TAU, d = R() * r; if (!(SPEC[k].when === 'day' && night)) group(k, t.x + Math.cos(a) * d, t.z + Math.sin(a) * d, R, true); };
-      at('piccione', 14); if (R() < 0.6) at('piccione', 70); at('gatto', 80); if (R() < 0.7) at('cane', 70); if (R() < 0.6) at('gallina', 90); if (R() < 0.5) at('gatto', 100);
+      const R = rng((n * 7919 + (night ? 13 : 0)) >>> 0), at = (k, r) => { const a = R() * TAU, d = R() * r; if (!(SPEC[k].when === 'day' && night) && inCity() < 14) group(k, t.x + Math.cos(a) * d, t.z + Math.sin(a) * d, R, true); };
+      at('piccione', 14); if (R() < 0.35) at('piccione', 70); at('gatto', 80); if (R() < 0.7) at('cane', 70); if (R() < 0.6) at('passero', 90); if (R() < 0.5) at('gatto', 100);
     });
     // chi vola in cerchio si vede da lontano: per il cielo i riquadri sono più grandi
     if (night) return;
@@ -725,7 +734,7 @@ function create(env) {
     for (const a of list) { if (a.st === 'leap' || a.st === 'soar' || a.st === 'vee' || a.S.k === 'swim' || !SP[a.k].ready) continue; if ((a.x - cam.x) ** 2 + (a.z - cam.z) ** 2 > 230 * 230) continue; env.pushShadow(a.x, a.z, a.S.r * a.sc * (a.air ? 0.7 : 1)); }
   }
   function reset() { list = []; flut = []; cells.clear(); skies.clear(); on = false; scanT = 0; }
-  const api = { init, update, draw, shadows, scare, reset, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
+  const api = { init, update, draw, shadows, scare, reset, urban, get list() { return list; }, get flut() { return flut; }, get queue() { return queue.length; }, SP, want, group: (k, x, z, R) => group(k, x, z, R, true), sky, calm: false };
   return api;
 }
 

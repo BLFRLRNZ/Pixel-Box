@@ -69,7 +69,7 @@ function city(o) {
     W.FLAT.push([o.x, o.z, Math.hypot(hw, hd) + 80, y]);
     W.TERRA.push({ x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6, y, rx: o.x, rz: o.z, soft: open ? 32 : 48 });
   }
-  W.CLEAR.push([x0 - 18, z0 - 18, x1 + 18, z1 + 18]);
+  W.CLEAR.push([x0 - 18, z0 - 18, x1 + 18, z1 + 18]); W.URBAN.push([x0 - 16, z0 - 16, x1 + 16, z1 + 16]);
   W.PLACES.push([o.x, o.z, Math.max(hw, hd) + 34, o.name]); W.TOWNS.push({ x: o.x, z: o.z, name: o.name, big: !o.small });
   const prect = [px - pl.w / 2, pz - pl.d / 2, px + pl.w / 2, pz + pl.d / 2];
   W.PAVE.push([ch, 'rect', ...prect], [ch, 'line', MS * 2, [[x0 - (gates.includes('w') ? 22 : -4), pz], [x1 + (gates.includes('e') ? 22 : -4), pz]], 1], [ch, 'line', MS * 2, [[px, z0 - (gates.includes('n') ? 22 : -4)], [px, z1 + (gates.includes('s') ? 22 : -4)]], 1]);

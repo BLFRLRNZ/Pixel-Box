@@ -277,6 +277,7 @@ function sprites(set, A, R) {
   set('flagblue', [0, 1].map(f => A.pix(f ? ['aaaaaaaab...', 'acccaaaaab..', 'acbcaaaaaab.', 'acccaaaaab..', 'aaaaaaaab...', '.aaaaaab....'] : ['.aaaaaaab...', 'aacccaaaab..', 'aacbcaaaaab.', 'aacccaaaab..', '.aaaaaaab...', '..aaaaab....'], { a: '#2a5ab0', b: '#1a3a7a', c: '#f0ece0' })), 0.55, 0);
 }
 
+W.URBAN = [];   // i rettangoli delle città: ci entrano solo cani, gatti e uccellini (vedi sg_fauna.js)
 W.flags = []; W.sprays = []; W.falls = []; W.TOWNS = [{ x: 2000, z: 2650, name: 'BORGO AURORA', big: true, home: true }]; W.FOLK = {};
 SG.town = { TL, tilesOn, sprites, merl, merlBox, wallSeg, oct, faceDecal, cone, pyramid, hip, dome, tower, decal, gate, awning, house, addBridge, addPier, fountain, ship, g0 };
 })();

@@ -272,7 +272,7 @@ C.city({ id: 'marmorea', guild: true, name: 'MARMOREA', x: XC, z: -922, w: 336, 
     ['saggio', 'IL VECCHIO DELLA TERRAZZA', ['DA GIOVANE HO VISTO IL DRAGO VOLARE SOPRA IL PICCO, LAGGIÙ IN FONDO. DA QUASSÙ SEMBRAVA UNA RONDINE.'], [-40, 250, -Math.PI / 2]],
   ] });
 
-W.TOWNS[W.TOWNS.length - 1].r = 310;   // terrazza e acropoli sono città: niente stambecchi tra le colonne
+W.URBAN.push([XC - HW2 - 12, ZB - 12, XC + HW2 + 12, ZR + 12]);   // lago, terrazza e acropoli sono città: niente stambecchi tra le colonne
 
 // ---------- tane, tesori ----------
 W.CAMPS.push([2660, 40, 'wolf', 3, 90], [2560, -160, 'icewolf', 3, 90], [2470, -455, 'bat', 3, 80], [2655, 250, 'icewolf', 2, 80]);
