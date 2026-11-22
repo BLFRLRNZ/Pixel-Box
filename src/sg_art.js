@@ -10,15 +10,21 @@ function shade(h, f) {
 }
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
-function finish(c, outline = true, oc = '#16121c') {
+function finish(c, outline = true, oc = '#16121c', ricco = false) {
   const w = c.width, h = c.height, x = c.getContext('2d'), d = x.getImageData(0, 0, w, h), a = d.data;
   for (let i = 3; i < a.length; i += 4) a[i] = a[i] < 110 ? 0 : 255;
   if (outline) {
     const o = hex(oc), m = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) m[i] = a[i * 4 + 3] ? 1 : 0;
+    if (ricco) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
+      const k = !m[i + 1] ? 0.5 : (y > 0 && !m[i - w + 1] && !m[i - w]) ? 0.34 : 0; if (!k) continue;
+      a[i * 4] += (212 - a[i * 4]) * k; a[i * 4 + 1] += (236 - a[i * 4 + 1]) * k; a[i * 4 + 2] += (255 - a[i * 4 + 2]) * k; }
     for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) {
       const i = y * w + X; if (m[i]) continue;
-      if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) { a[i * 4] = o[0]; a[i * 4 + 1] = o[1]; a[i * 4 + 2] = o[2]; a[i * 4 + 3] = 255; }
+      if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) {
+        if (ricco) { let r = 0, g = 0, b = 0, n = 0; for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += a[k * 4]; g += a[k * 4 + 1]; b += a[k * 4 + 2]; n++; }
+          a[i * 4] = r / n * 0.3 + 6; a[i * 4 + 1] = g / n * 0.27 + 4; a[i * 4 + 2] = b / n * 0.36 + 14; a[i * 4 + 3] = 255; }
+        else { a[i * 4] = o[0]; a[i * 4 + 1] = o[1]; a[i * 4 + 2] = o[2]; a[i * 4 + 3] = 255; } }
     }
   }
   x.putImageData(d, 0, 0); return c;
@@ -213,6 +219,7 @@ function figure(parts, yaw, W, H, o = {}) {
   const V = [cy * cp, -sy * cp, -sp], Rg = [-sy, -cy, 0], U = [cy * sp, -sy * sp, cp];
   const L = [-0.5 * Rg[0] + 0.8 * U[0] - 0.42 * V[0], -0.5 * Rg[1] + 0.8 * U[1] - 0.42 * V[1], -0.5 * Rg[2] + 0.8 * U[2] - 0.42 * V[2]], ll = Math.hypot(...L);
   L[0] /= ll; L[1] /= ll; L[2] /= ll;
+  const ricco = !!o.ricco;   // il disegno ricco: più gradini di luce, ombre fredde e luci calde; il bordo di controluce lo mette finish() sul profilo
   const c = mk(W, H), ctx = c.getContext('2d'), img = ctx.createImageData(W, H), px = img.data, zb = new Float32Array(W * H).fill(1e9), S0 = -300;
   for (const p of parts) {
     const q = prepPart(p), M = q.M, mt = v => [M[0] * v[0] + M[1] * v[1] + M[2] * v[2], M[3] * v[0] + M[4] * v[1] + M[5] * v[2], M[6] * v[0] + M[7] * v[1] + M[8] * v[2]];
@@ -235,6 +242,13 @@ function figure(parts, yaw, W, H, o = {}) {
         let nx = M[0] * NRM[0] + M[3] * NRM[1] + M[6] * NRM[2], ny = M[1] * NRM[0] + M[4] * NRM[1] + M[7] * NRM[2], nz = M[2] * NRM[0] + M[5] * NRM[1] + M[8] * NRM[2];
         const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
         const lum = nx * L[0] + ny * L[1] + nz * L[2], face = -(nx * V[0] + ny * V[1] + nz * V[2]);
+        if (ricco) {
+          let f = (lum > 0.8 ? 1.32 : lum > 0.52 ? 1.16 : lum > 0.16 ? 1 : lum > -0.14 ? 0.84 : lum > -0.48 ? 0.69 : 0.56) * q.k * (0.87 + 0.13 * Math.min(1, Math.max(0, up) / 9));
+          let r, g, b; const j = idx * 4;
+          if (f > 1) { const g2 = Math.min(1, f - 1); r = cr + (255 - cr) * g2; g = cg + (244 - cg) * g2 * 0.92; b = cb + (212 - cb) * g2 * 0.8; }
+          else { const sh = 1 - f; r = cr * f * (1 - sh * 0.24); g = cg * f * (1 - sh * 0.1); b = Math.min(255, cb * f * (1 + sh * 0.28) + sh * 24); }
+          px[j] = r; px[j + 1] = g; px[j + 2] = b; px[j + 3] = 255; continue;
+        }
         let f = lum > 0.55 ? 1.2 : lum > 0.12 ? 1 : lum > -0.3 ? 0.8 : 0.64;
         if (face < 0.2) f *= 0.84;
         f *= q.k;
@@ -246,7 +260,7 @@ function figure(parts, yaw, W, H, o = {}) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  return finish(c, o.outline !== false);
+  return finish(c, o.outline !== false, undefined, ricco);
 }
 
 // ---------- persone: tonde e tozze ----------
@@ -297,14 +311,21 @@ function human(o, pose = {}) {
     const rot = [['y', s > 0 ? L : -L, 0, s * 1.8, hip]];
     C([0, s * 1.8, hip + 0.3], [0.1, s * 1.8, 2.8], 1.65, o.pants, rot);
     E([0.75, s * 1.85, 1.45], [2.45, 1.7, 1.5], o.boots, rot);
+    if (o.cuff) E([0.15, s * 1.8, 3.7], [2.05, 1.95, 0.75], o.cuff, rot, 1.06);   // il risvolto dello stivale
   }
   if (o.robe) C.k([0, 0, 11], [0, 0, 2.6], 3.4 + wide, 4.6 + wide, o.robe);
   // busto
   E([0, 0, 13.9], [2.95 + wide * 0.3, 4.25 + wide, 5.4], o.shirt);
   if (o.plate) E([1.05, 0, 14.6], [2.2, 3.55 + wide, 3.7], o.plate, null, 1.1);
   if (o.belt) E([0, 0, 10.2], [3.1 + wide * 0.3, 4.4 + wide, 1.0], o.belt);
+  if (o.buckle) E([3.0 + wide * 0.3, 0, 10.2], [0.5, 0.95, 0.85], o.buckle, null, 1.25);
   if (o.apron) E([1.7, 0, 11.6], [1.55, 3.3, 5], o.apron);
   if (o.cape) E([-2.75 - wide * 0.3, 0, 12.6], [0.8, 4.5 + wide, 6.9], o.cape, [['y', -0.12 - (pose.cape || 0), -2.4, 0, sh]]);
+  // la sciarpa: un giro attorno al collo e una coda lunga che il vento alza (pose.vento: da 0, ferma lungo la schiena, a 1, tesa all'indietro; pose.onda la fa serpeggiare)
+  if (o.sciarpa) { const sc0 = o.sciarpa, v = pose.vento || 0, on = pose.onda || 0, a0 = -1.22 + v * 1.42; E([0.25, 0, sh + 0.9 + bob], [3.25, 3.85 + wide, 1.45], sc0.c, null, 1.04);
+    let qx = -2.5, qy = 1.3, qz = sh + 0.7 + bob;
+    for (let i = 0; i < 4; i++) { const a = a0 + (i - 1) * 0.15 * (1 - v) + Math.sin(on + i * 1.25) * 0.24, nx1 = qx - Math.cos(a) * 3.7, nz1 = qz + Math.sin(a) * 3.7, ny1 = qy + Math.sin(on * 1.3 + i * 1.1) * 0.95 * (0.35 + v);
+      const mx = (qx + nx1) / 2, my = (qy + ny1) / 2, mz = (qz + nz1) / 2; E([mx, my, mz], [2.55, 2.5 - i * 0.33, 0.62], i % 2 ? sc0.c2 || sc0.c : sc0.c, [['y', -a, mx, my, mz]], i === 3 ? 0.94 : 1.02); qx = nx1; qy = ny1; qz = nz1; } }
   if (o.pack) E([-3.4, 0, 14.2], [1.9, 3.1, 3.5], o.pack);
   if (o.quiver) { C([-3.5, -2.2, 10.2], [-3.7, 2.4, 19.4], 1.3, o.quiver); E([-3.8, 2.9, 21.2], [0.55, 0.8, 1.2], '#f0e8d8'); E([-3.4, 2.0, 21.6], [0.55, 0.8, 1.2], '#c8342c'); E([-4.1, 2.2, 20.6], [0.5, 0.7, 1.1], '#f0e8d8'); }
   // braccia
@@ -313,6 +334,7 @@ function human(o, pose = {}) {
     if (s < 0 && pose.armRz) rot.push(['z', pose.armRz, 0, s * 5.3, sh]);   // il fendente di lato: il braccio armato gira attorno alla spalla
     C([0, y, sh - 0.3], [0, y, 11.6], 1.38, o.sleeve || o.shirt, rot);
     E([0, y, 10.5], [1.4, 1.35, 1.4], o.hand || o.skin, rot);
+    if (o.bracer) E([0, y, 12.5], [1.62, 1.58, 1.25], o.bracer, rot, 1.06);
     if (o.pauldron) E([0, s * (5.1 + wide), sh - 0.1], [2.25, 2.05, 1.75], o.pauldron, rot, 1.08);
     if (s < 0) weapon(B, C, E, o.weapon, rot, y, pose);
     if (s > 0 && o.weapon2) weapon(B, C, E, o.weapon2, rot, y, pose);
@@ -337,6 +359,10 @@ function human(o, pose = {}) {
     if (st === 'bun') E([fx - 2.8, 0, hc + hs * 0.85], [2.1, 2.1, 2.1], hcol);
     if (st === 'tails') for (const s of [1, -1]) E([fx - 1, s * (hs + 1.1), hc - 0.6], [1.6, 1.5, 2.1], hcol);
   }
+  // i capelli a ciuffi: la calotta e sei punte che scappano all'indietro e in alto
+  if (st === 'ciuffi') { E([fx - 0.7, 0, hc + 1.15], [hs * 1.05, hs * 1.07, hs * 0.82], hcol);
+    for (const [ax, ay, az, bx, by, bz, r] of [[-1.4, 0, 3.2, -4.8, 0, 5.4, 1.5], [-2.1, 1.9, 2.3, -5.1, 3.3, 3.5, 1.3], [-2.1, -1.9, 2.3, -5.1, -3.3, 3.5, 1.3], [-2.8, 0, 0.5, -5.8, 0, 0.2, 1.4], [0.9, 1.2, 3.5, 2.8, 1.9, 4.9, 1.0], [-0.3, -2.6, 2.9, -1.9, -4.5, 4.5, 1.0]])
+      C.k([fx + ax, ay, hc + az], [fx + bx, by, hc + bz], r, 0.25, hcol, null, 1.05); }
   if (o.hood) { E([fx - 1.25, 0, hc + 0.6], [hs * 1.15, hs * 1.16, hs * 1.1], o.hood); E([fx - 2.3, 0, hc - 3.2], [1.9, 3.9, 3.4], o.hood); }
   if (o.helm) {
     const m = o.helm;

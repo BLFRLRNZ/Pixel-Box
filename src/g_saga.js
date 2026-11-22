@@ -266,11 +266,18 @@ function heroLook(c = cls(), demo) {
   if (demo) Object.assign(L, K.demo || {});
   if (K.dual && L.weapon) L.weapon2 = L.weapon;
   if (!demo && save.eq.acc === 'vento') L.boots = '#e8eef6';
+  if (MODO && !demo) {   // i particolari in più: la sciarpa col colore del mestiere, risvolti, fibbia, bracciali, capelli a ciuffi
+    const sc = { cavaliere: ['#c8362c', '#a02820'], arciere: ['#d8a030', '#b07e20'], furfante: ['#8a3a9a', '#6a2a7a'], mago: ['#e0b040', '#b88a28'] }[c] || ['#c8362c', '#a02820'];
+    L.sciarpa = { c: sc[0], c2: sc[1] }; L.cuff = A.shade(L.boots, 1.32); L.buckle = '#ffd86a'; if (!L.robe) L.bracer = A.shade(L.boots, 0.86); if (L.hairStyle === 'short') L.hairStyle = 'ciuffi'; }
   return L;
 }
 
 // ---------- sprite ----------
 const POSE_N = 11;     // pose dell'eroe: ogni classe ha le sue (sg_class.js)
+// Nel Grande Viaggio (prova del disegno ricco) l'eroe è disegnato più fitto (112 punti invece di 72), con più gradini di luce e il bordo di controluce,
+// e ha due pose in più da fermo: la sciarpa si muove col vento. VENTO e ONDA dicono, posa per posa, quanto la sciarpa è tesa e come serpeggia.
+const POSE_M = 13, VENTO = [0.1, 0.6, 0.82, 0.3, 0.96, 0.18, 0.7, 0.35, 0.96, 0.35, 0.96, 0.22, 0.03], ONDA = [0, 0.2, 1.9, 0.5, 2.3, 0, 1, 0.5, 2.3, 0.5, 2.3, 1.4, 2.7];
+const nPose = () => MODO ? POSE_M : POSE_N, hsEroe = () => MODO ? Math.round(HS * 1.56) : HS;
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
 // otto direzioni: cinque disegnate, tre ottenute allo specchio (metà dello spazio nell'atlante)
@@ -360,6 +367,15 @@ function buildStatics() {
     SPR.sciaD = arco(26, 26, g => { const su = [], giu = []; for (let i = 0; i <= 16; i++) { const t = i / 16, a = -0.25 + t * 1.85, k = Math.sin(t * Math.PI); su.push([2 + Math.cos(a) * (21 + k * 2.5), 24 - Math.sin(a) * (21 + k * 2.5)]); giu.unshift([2 + Math.cos(a) * (21 - k * 3.5), 24 - Math.sin(a) * (21 - k * 3.5)]); } luna(g, su.concat(giu), '#fff8d0'); });
     // dall'alto: una falce in piedi
     SPR.sciaV = arco(12, 30, g => { const a = [], b = []; for (let i = 0; i <= 16; i++) { const t = i / 16, y = 1 + t * 28, k = Math.sin(t * Math.PI); a.push([6 + k * 5, y]); b.unshift([6 + k * 1.2, y]); } luna(g, a.concat(b), '#fff8d0'); }); }
+  if (MODO) {   // fulmini (tre, a zigzag, con il cuore bianco e il bordo azzurro), scintilla, polvere
+    const RF = rng(4242);   // (un caso a parte: non sposta quello degli alberi)
+    for (let v = 0; v < 3; v++) { const c = A.mk(28, 96), g = c.getContext('2d');
+      const tratto = (x0, y0, len, grosso) => { let xx = x0, pend = 0, resta = 0; for (let y = y0; y < y0 + len && y < 96; y++) { if (resta-- <= 0) { resta = 5 + Math.floor(RF() * 7); pend = (RF() < 0.5 ? -1 : 1) * (0.35 + RF() * 0.75) * (xx > 19 ? -1 : xx < 8 ? 1 : RF() < 0.5 ? -1 : 1) * (pend > 0 ? -1 : 1) * (pend === 0 ? 1 : 1); if (xx > 20) pend = -Math.abs(pend); if (xx < 7) pend = Math.abs(pend); }
+          xx += pend; const X = Math.round(xx); g.fillStyle = '#4a9cff'; g.fillRect(X - 1 - grosso, y, 3 + grosso * 2, 1); g.fillStyle = '#c4ecff'; g.fillRect(X - grosso, y, 1 + grosso * 2, 1); g.fillStyle = '#ffffff'; g.fillRect(X, y, 1, 1); } return xx; };
+      const x = tratto(14, 0, 96, 1); tratto(10 + v * 4, 34 + v * 7, 30, 0);
+      SPR['fulm' + v] = atlas.add(c); }
+    SPR.scint = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#9adcff', b: '#ffffff' }));
+    SPR.polv = atlas.add(A.pix(['.aa..', 'aabb.', 'abbba', '.aba.'], { a: '#cbb894', b: '#e6d8b8' })); }
   SPR.glint = atlas.add(A.pix(['...a...', '...a...', '..aba..', 'aabbbaa', '..aba..', '...a...', '...a...'], { a: '#fff4b0', b: '#ffffff' }));
   SPR.drop = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#7ac8f0', b: '#e0f4ff' }));
   SPR.leaf = [atlas.add(A.pix(['.aa', 'aab', 'ab.'], { a: '#e0702a', b: '#a8341c' })), atlas.add(A.pix(['aa.', 'baa', '.ba'], { a: '#f0c840', b: '#c8862a' })), atlas.add(A.pix(['.a.', 'aab', '.b.'], { a: '#c8342c', b: '#8a1e1a' }))];
@@ -403,7 +419,7 @@ function buildStatics() {
 }
 function* buildCharacters() {
   CHR.hero = null; heroRects = [];
-  for (let p = 0; p < POSE_N; p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(HS, HS))); heroRects.push(row); }
+  for (let p = 0; p < nPose(); p++) { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(hsEroe(), hsEroe()))); heroRects.push(row); }
   yield 0.05;
   const LK = SG.city.LOOKS;
   for (const id in W.FOLK) { const f = W.FOLK[id], L = LK[f.look], wk = !!(f.walk && L.walk); NPC[id] = { n: f.n, look: L, sc: L.sc, as: f.look + (wk ? '+' : ''), lines: f.lines, f, walk: wk }; }
@@ -448,9 +464,10 @@ function* buildCharacters() {
   yield 1;
 }
 function drawHeroSprites() {
-  const L = heroLook(), P = CC().poses;
-  for (let p = 0; p < POSE_N; p++) for (let d = 0; d < 8; d++) {
-    const c = A.figure(A.human(L, P[p]), d / 8 * TAU, HS, HS, { sc: SR }), r = heroRects[p][d];
+  const L = heroLook(), P = CC().poses, hs = hsEroe();
+  for (let p = 0; p < nPose(); p++) for (let d = 0; d < 8; d++) {
+    const pose = MODO ? Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p], bob: p === 11 ? 0.35 : 0 }) : P[p];
+    const c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, MODO ? { sc: SR * hs / HS, ricco: 1 } : { sc: SR }), r = heroRects[p][d];
     if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); }
   }
 }
@@ -1152,6 +1169,38 @@ function mestiere(e, T, dt, d, dx, dz) {
   }
   return false;
 }
+// ---------- il Grande Viaggio: luce ed effetti (prova del disegno ricco) ----------
+// Gli aloni si sommano al colore come quelli dei lampioni: «aloni» durano un momento e si spengono (lampi, scariche), «aloniOra» valgono per un solo fotogramma (la lama).
+let aloni = [], aloniOra = [], polvT = 0;
+const rgb01 = c => { const v = parseInt(c.slice(1), 16); return [(v >> 16) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; };
+// dove sta la lama, nel mondo: dalla posa del braccio armato (il gesto di lato qui non conta: basta sapere all'incirca dov'è)
+function lamaPos(t = 14.5) {
+  const h = hero, P = CC().poses[Math.min(POSE_N - 1, heroAnim())] || {}, Lg = P.leg || 0, AR = P.armR !== undefined ? P.armR : Lg * 0.85 + 0.25, mx = t * Math.sin(AR), mz = 18.6 - t * Math.cos(AR), my = -5.3 + (P.armRz ? Math.sin(P.armRz) * t * 0.6 : 0), k = 0.2, ca = Math.cos(h.yaw), sa = Math.sin(h.yaw);
+  return [h.x + (ca * mx + sa * my) * k, h.y - 0.5 + mz * k, h.z + (sa * mx - ca * my) * k];
+}
+// l'alone della lama: sempre, se l'arma brilla di suo; e mentre si carica il colpo cresce, col colore del mestiere
+function lamaLuce() {
+  const h = hero, w = heroLook().weapon; if (!w || D) return;
+  const c = w.glow && !(h.chg > 0) ? rgb01(w.glow) : [0.5, 0.74, 1], k = Math.max(w.glow ? 0.45 : 0, h.chg > 0 ? 0.25 + h.chg * 0.85 : 0, h.atk > 0 && h.forza === 3 ? 1.1 : 0); if (k < 0.05) return;
+  const p = lamaPos(13); aloniOra.push([p[0], p[1], p[2], 1.6 + k * 1.5, c[0], c[1], c[2], k * (0.8 + 0.2 * Math.sin(time * 31))]);
+}
+// la scarica del colpo caricato: fulmini che cadono attorno all'eroe, scintille, un lampo
+function scarica(x, z) {
+  const y = gH(x, z);
+  const va = Math.atan2(z - cam.z, x - cam.x);   // i fulmini cadono di fianco e dietro all'eroe (visti da chi guarda), mai tra lui e la visuale: da vicino sarebbero enormi
+  for (let i = 0; i < 5; i++) { const a = va + (i - 2) * 0.62 + (Math.random() - 0.5) * 0.4, r = 6 + Math.random() * 8, bx = x + Math.cos(a) * r, bz = z + Math.sin(a) * r, t = 0.16 + Math.random() * 0.16;
+    fx.push({ k: 'fulm' + (i % 3), x: bx, z: bz, y: gH(bx, bz) - 0.3, vy: 0, t, s: 0.11 + Math.random() * 0.04, fermo: 1 }); aloni.push({ x: bx, y: gH(bx, bz) + 1.2, z: bz, r: 2.6, c: [0.5, 0.75, 1], t, t0: t, k: 0.7 }); }
+  for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, v = 14 + Math.random() * 22; fx.push({ k: 'scint', x, z, y: y + 2 + Math.random() * 3, vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 8 + Math.random() * 16, t: 0.35 + Math.random() * 0.35, s: 0.2 }); }
+  aloni.push({ x, y: y + 3.2, z, r: 7, c: [0.6, 0.8, 1], t: 0.2, t0: 0.2, k: 0.8 });
+  quake = Math.max(quake, 0.3); noise(0.22, 0.1); tone(1760, 0.07, 'square', 0.035, 220); tone(110, 0.3, 'sawtooth', 0.05, 50);
+}
+function effettiUpdate(dt) {
+  for (const g of aloni) g.t -= dt; aloni = aloni.filter(g => g.t > 0);
+  const h = hero; if (!h || D || st !== 'play') return;
+  // la polvere sotto i piedi di chi corre, e le scintille attorno alla lama quando il colpo è carico
+  if (h.moving && !h.dash) { polvT -= dt; if (polvT <= 0) { polvT = 0.17; const a = h.yaw + Math.PI + (Math.random() - 0.5) * 1.2; fx.push({ k: 'polv', x: h.x + Math.cos(a) * 1.4, z: h.z + Math.sin(a) * 1.4, y: h.y + 0.3, vx: Math.cos(a) * 4, vz: Math.sin(a) * 4, vy: 3 + Math.random() * 2, t: 0.42, s: 0.3 + Math.random() * 0.1 }); } }
+  if (h.chg >= 1 && Math.random() < dt * 26) { const p = lamaPos(8 + Math.random() * 9), a = Math.random() * TAU; fx.push({ k: 'scint', x: p[0], z: p[2], y: p[1], vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, vy: 4 + Math.random() * 9, t: 0.25 + Math.random() * 0.2, s: 0.17 }); }
+}
 // ---------- il Grande Viaggio: cose da raccogliere, incontri sulla strada, la gente tra giorno e notte ----------
 // Le cose da raccogliere. La terra dice quali e quante (W.RACCOLTA): i nodi si sparpagliano per regione, vicino alle vie, sempre gli stessi a ogni partenza.
 // Si prendono con A, finiscono nella borsa e ricrescono dopo dieci minuti di gioco.
@@ -1507,7 +1556,7 @@ function heroCharged() {
 // il momento in cui il colpo va a segno
 function heroHit(a) {
   const h = hero, w = eqIt('arma'), att = MODO ? Math.max(1, Math.round(ATT() * (h.dmgK || 1))) : ATT(), beam = !!(w && w.beam);
-  forzaOra = MODO ? h.forza || 0 : 0;
+  forzaOra = MODO ? h.forza || 0 : 0; if (forzaOra === 3) scarica(h.x, h.z);   // il colpo caricato va a segno con una scarica
   // chi tira da lontano, nei santuari, colpisce anche quello che ha a portata di mano (un cristallo, un vaso, una crepa): come una spada
   if (D && (a === 'shot' || a === 'pshot' || a === 'bolt' || a === 'orb')) dSwing(10.5, 0.35, { noBoss: true });
   if (a === 'slash' && MODO) { const g = h.gesto || 0; meleeHit(g === 2 ? 11 : g === 0 ? 11.5 : 10.5, g === 2 ? -0.1 : g === 0 ? 0.55 : 0.35, att); scia(g); if (beam) lightBeam(att); }   // di traverso prende largo, dall'alto stretto e lungo
@@ -1869,8 +1918,8 @@ function ambUpdate(dt) {
   if (hero.moving && !D) { hero.dustT = (hero.dustT || 0) - dt; if (hero.dustT <= 0) { hero.dustT = BTN.b ? 0.16 : 0.34; if (hero.wade) fx.push({ k: 'drop', x: hero.x + (Math.random() - 0.5) * 2, y: 0.3, z: hero.z + (Math.random() - 0.5) * 2, vy: 7, t: 0.45, s: 0.3 }); else if (BTN.b) fx.push({ k: 'puff', x: hero.x - Math.cos(hero.yaw) * 1.5, y: hero.y + 0.4, z: hero.z - Math.sin(hero.yaw) * 1.5, vy: 2.5, t: 0.45, s: 0.3 }); } }
 }
 function fxUpdate(dt) {
-  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; if (p.vx) { p.x += p.vx * dt; p.z += (p.vz || 0) * dt; } p.vy -= (p.fermo ? 0 : p.k === 'smoke' ? -0.6 : p.k === 'puff' || p.k === 'glint' ? 4 : 30) * dt; }
-  fx = fx.filter(p => p.t > 0);
+  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; if (p.vx) { p.x += p.vx * dt; p.z += (p.vz || 0) * dt; } p.vy -= (p.fermo ? 0 : p.k === 'smoke' ? -0.6 : p.k === 'puff' || p.k === 'glint' || p.k === 'polv' ? 4 : 30) * dt; }
+  fx = fx.filter(p => p.t > 0); if (MODO) effettiUpdate(dt);
   if (fx.length > 300) fx.splice(0, fx.length - 300);
 }
 
@@ -2782,12 +2831,13 @@ function heroAnim() {
   if (h.atk > 0) { const pre = !h.hitDone; if (h.act === 'spin') return 4; if (h.act === 'knives' || h.act === 'orb') return pre ? 5 : 6; if (h.act === 'cast') return cls() === 'cavaliere' ? 5 : pre ? 5 : 6; const g = MODO && (h.act === 'slash' || h.act === 'stab') ? h.gesto || 0 : 0; return pre ? [3, 9, 7][g] : [4, 10, 8][g]; }
   if (h.block) return 5;
   if (h.chg > 0) return cls() === 'cavaliere' ? 6 : 5;
-  return h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
+  return h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : MODO ? [0, 11, 0, 12][Math.floor(time * 2.3) % 4] : 0;   // (da fermo, nel Grande Viaggio, la sciarpa si muove)
 }
 function drawHero(R) {
   const h = hero;
   if (h.inv > 0 && Math.floor(time * 16) % 2 && !h.dead && !h.dash) return;
   const spin = h.atk > 0 && h.act === 'spin' ? (1 - h.atk / h.atkT) * TAU * 1.5 : 0, hop = h.dash && h.dash.k === 'balzo' ? Math.sin(Math.max(0, h.dash.t) / 0.25 * Math.PI) * 2.6 : 0;
+  if (MODO) { R *= HS / hsEroe(); lamaLuce(); }
   pushBB(h.x, h.y - 0.5 + hop, h.z, heroRects[heroAnim()][dirOf(h.x, h.z, h.yaw + spin)], R, 1, h.flash > 0 ? 0.7 : h.chg >= 1 ? (Math.floor(time * 12) % 2 ? 0.5 : 0.15) : h.chg > 0 ? h.chg * 0.2 : 0, h.hid > 0 ? [0.5, 0.52, 0.64] : null);
 }
 // la linea di mira: puntini fin dove arriva la freccia (o fino al primo ostacolo); se sulla linea c'è una preda o un nemico, diventa d'oro e lo segna
@@ -3011,6 +3061,8 @@ function render3D() {
   { let n = 0; const ng = buio();
     for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;
       for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = g[0]; glowF[q++] = g[1]; glowF[q++] = g[2]; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = g[4]; glowF[q++] = g[5]; glowF[q++] = g[6]; glowF[q++] = it; } n++; }
+    if (MODO) { const metti = (x, y, z, r, cr, cg, cb, it) => { if (n >= 160) return; let q = n * 44; for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = x; glowF[q++] = y; glowF[q++] = z; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = cr; glowF[q++] = cg; glowF[q++] = cb; glowF[q++] = it; } n++; };
+      for (const g of aloni) metti(g.x, g.y, g.z, g.r, g.c[0], g.c[1], g.c[2], g.k * g.t / g.t0); for (const g of aloniOra) metti(...g); aloniOra.length = 0; }
     if (n) { p = P.glow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF);
       gl.blendFunc(gl.ONE, gl.ONE); gl.bindBuffer(gl.ARRAY_BUFFER, glowBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, glowF.subarray(0, n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, n * 6, gl.UNSIGNED_SHORT, 0); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); } }
@@ -3537,7 +3589,10 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
+  eroeFig(p, d, vecchio) { const L = heroLook(), P = CC().poses; if (vecchio) { const L0 = Object.assign({}, L); for (const k of ['sciarpa', 'cuff', 'buckle', 'bracer']) delete L0[k]; if (L0.hairStyle === 'ciuffi') L0.hairStyle = 'short'; return A.figure(A.human(L0, P[Math.min(p, POSE_N - 1)]), d / 8 * TAU, HS, HS, { sc: SR }).toDataURL(); }
+    const hs = Math.round(HS * 1.56); return A.figure(A.human(L, Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p] })), d / 8 * TAU, hs, hs, { sc: SR * hs / HS, ricco: 1 }).toDataURL(); },
+  figura(look, pose, d, ricco) { const k = ricco ? 1.56 : 1; return A.figure(A.human(look, pose || {}), d / 8 * TAU, Math.round(66 * k), Math.round(78 * k), { sc: SR * k, ricco: ricco ? 1 : 0 }).toDataURL(); }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
   va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
