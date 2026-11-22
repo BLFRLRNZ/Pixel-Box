@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.24", "id": "2.24-42d4f717", "date": "22/11/2026", "pwa": true};
+const APP = {"v": "2.25", "id": "2.25-65a32cf3", "date": "22/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -12366,8 +12366,8 @@ const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RAR
 let SAVEKEY = 'sg_save1';
 // Lo stesso motore fa due giochi: Pixel Saga (MODO null) e l'anteprima del Grande Viaggio, sulla terra nuova di Lumen (MODO 'lumen').
 // Il mondo in memoria è uno solo: per passare dall'uno all'altro Pixel Box si ricarica, con il gioco voluto già scelto.
-let MODO = null, SALA = false, modoScelto = false;
-const INIZIO = () => SALA ? { x: 6200, z: 5282 } : MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
+let MODO = null, modoScelto = false;
+const INIZIO = () => MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
 
 // ---------- oggetti ----------
 const IT = {
@@ -12912,18 +12912,18 @@ function setupWorld() {
   // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
   GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
-function scegliModo(m, sala) {
-  if (st === 'boot' && !modoScelto) { MODO = m; SALA = !!sala; modoScelto = true; SAVEKEY = sala ? 'gv_sala1' : m ? 'gv_save1' : 'sg_save1'; return true; }
-  if (MODO === m && SALA === !!sala) return true;
-  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (sala ? 'sala' : m ? 'viaggio' : 'saga')))); } catch (e) {}
+function scegliModo(m) {
+  if (st === 'boot' && !modoScelto) { MODO = m; modoScelto = true; SAVEKEY = m ? 'gv_save1' : 'sg_save1'; return true; }
+  if (MODO === m) return true;
+  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (m ? 'viaggio' : 'saga')))); } catch (e) {}
   location.reload(); return false;
 }
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
-  if (MODO) {   // nel Grande Viaggio non c'è ancora chi regala la prima spada: si parte con spada e scudo (nella sala d'armi, di ferro, e con qualche cuore in più)
+  if (MODO) {   // nel Grande Viaggio non c'è ancora chi regala la prima spada: si parte con spada e scudo di legno
     const dai = (slot, id) => { if (!save.eq[slot]) { save.eq[slot] = id; if (!save.inv.includes(id)) save.inv.push(id); } };
-    dai('arma', SALA ? 'ferro' : 'legno'); dai('scudo', SALA ? 'scudoFerro' : 'scudoLegno'); if (SALA && fresh) { save.hearts = 2; save.hp = 10; save.coins = 100; save.pot = 3; }
+    dai('arma', 'legno'); dai('scudo', 'scudoLegno');
   }
   else loadSeen(save.seen || '', save.seenN || '');
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
@@ -13897,7 +13897,7 @@ function classKey(name) {
       save.coins -= cost; save.flags.clsCambi = (save.flags.clsCambi || 0) + 1;
     }
     setClass(id); clsUI = null; st = 'play'; jingle(); banner = U.mode === 'gilda' ? { t: CL[id].n, s: 'LE TUE ARMI ORA SONO QUELLE DELLA NUOVA CLASSE', life: 3.4, c: CL[id].col } : null;
-    if (U.mode === 'new') toast(SALA ? "PARLA COL MAESTRO D'ARMI (A)" : "PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f');
+    if (U.mode === 'new') toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f');
     if (U.mode !== 'gilda') help = 11;
   }
 }
@@ -15761,7 +15761,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, get SALA() { return SALA; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -15781,7 +15781,7 @@ return {
   },
   modo: scegliModo,
   enter() {
-    if (!scegliModo(this.terra || null, !!this.sala)) return;
+    if (!scegliModo(this.terra || null)) return;
     if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); MIS.t0 = performance.now(); MIS.calc = 0; MIS.fasi = {}; }
     else if (st === 'play') { menu = null; }
   },
@@ -15840,18 +15840,6 @@ GAMES.push((() => {
     full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
     icon(c, x, y, s) { S.icon(c, x, y, s); },
     enter() { S.enter.call(G2); }, leave() { S.leave(); }, hidden() { S.hidden(); }, update(dt) { S.update(dt); }, draw(c, w, h) { S.draw(c, w, h); },
-  });
-})());
-
-// ---------- LA SALA D'ARMI ----------
-// La prova del combattimento nuovo: stesso motore e stessa terra del Grande Viaggio, ma si parte nella sala, davanti al maestro, con un salvataggio a parte.
-GAMES.push((() => {
-  const S = GAMES.find(g => g.id === 'saga'), G3 = Object.create(S);
-  return Object.assign(G3, {
-    id: 'sala', name: "LA SALA D'ARMI", desc: 'PROVA: IL COMBATTIMENTO NUOVO', terra: 'lumen', sala: true,
-    full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
-    icon(c, x, y, s) { S.icon(c, x, y, s); },
-    enter() { S.enter.call(G3); }, leave() { S.leave(); }, hidden() { S.hidden(); }, update(dt) { S.update(dt); }, draw(c, w, h) { S.draw(c, w, h); },
   });
 })());
 
