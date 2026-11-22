@@ -13,7 +13,7 @@ SG.terre.svuota = W => {
 // T porta un punto della Lumen di oggi al suo posto nella terra nuova.
 const S = 1.9, T = (x, z) => [Math.round((x - 128) * S + 387), Math.round((z - 192) * S + 352)];
 SG.terre.lumen = m => {
-  const W = m.world, B = W.B;
+  const W = m.world, B = W.B, C = m.city;
   SG.terre.svuota(W);
   // la costa: il corpo dell'isola, e a nord il massiccio che arriva fino al bordo della carta (oltre c'è la terra dei monti)
   const corpo = [[3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500], [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880],
@@ -49,19 +49,27 @@ SG.terre.lumen = m => {
   W.CARVE.push({ pts: [[3250, -930, 180], [3850, -900, 180]], w: 230, w2: 560 });
   // i luoghi
   const BORGO = [3944, 5022], ROCCA = [6300, 4750], SOLIS = T(3360, 1670), ALBERO = T(1080, 1420), FARO = T(1440, 3700), PONTE = [7560, 3790], GHIACCIO = T(660, 598), GRIFONE = T(3700, 900);
-  W.FLAT.push([BORGO[0], BORGO[1], 330, null], [ROCCA[0], ROCCA[1], 560, null], [SOLIS[0], SOLIS[1], 430, null], [2300, 5000, 90, null], [4704, 7150, 90, null], [5450, 3300, 90, null]);
+  W.FLAT.push([SOLIS[0], SOLIS[1], 430, null], [2300, 5000, 90, null], [4704, 7150, 90, null], [5450, 3300, 90, null]);
   W.PLACES.push([BORGO[0], BORGO[1], 330, 'BORGO AURORA'], [ROCCA[0], ROCCA[1], 560, 'ROCCA DI LUMEN'], [SOLIS[0], SOLIS[1], 430, 'ROVINE DI SOLIS'], [ALBERO[0], ALBERO[1], 200, "L'ALBERO MADRE"], [lago[0], lago[1], 110, 'ISOLA DEL LAGO'],
     [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA'], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
     [2300, 5000, 150, 'PRATOLUNGO'], [4704, 7150, 150, 'CALA DELLE CONCHIGLIE'], [5450, 3300, 150, 'GIRASOLE'], [FARO[0], FARO[1], 150, 'APPRODO DEL FARO']);
-  W.TOWNS.push({ x: BORGO[0], z: BORGO[1], name: 'BORGO AURORA', big: true, home: true }, { x: ROCCA[0], z: ROCCA[1], name: 'ROCCA DI LUMEN', big: true });
+  // le città: il generatore di sempre, con misure nuove
+  // Borgo Aurora: il doppio di oggi, aperto, senza mura
+  C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
+    shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]] });
+  // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
+  C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, style: 'lumen', gates: 'nesw', plaza: { w: 130, d: 110 }, board: [22, 20],
+    shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
+      ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] });
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
   const via = (w, pts) => W.ROADS.push({ w, pts });
-  via(9, [BORGO, [4700, 5150], [5500, 4950], ROCCA]);
-  via(9, [ROCCA, [6900, 4350], [7300, 3950], PONTE]);
-  via(9, [BORGO, [4150, 4300], [4450, 3600], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
-  via(9, [ROCCA, [6200, 4250], [6129, 3844], [6350, 3450], SOLIS]);
-  via(5, [BORGO, [3300, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [BORGO, [3700, 5900], [3200, 6500], FARO]);
-  via(5, [FARO, [3800, 7150], [4704, 7180], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [ROCCA, [6450, 5300], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
-  via(5, [BORGO, [3100, 5050], [2300, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5450, 3300], [6129, 3844]]);
+  const BE = [4160, 5022], BN = [3944, 4846], BS = [3944, 5198], BW2 = [3728, 5022], RW = [5866, 4750], RE = [6734, 4750], RN = [6300, 4366], RS = [6300, 5134];   // dove le strade toccano le città (le porte)
+  via(9, [BE, [4700, 5120], [5450, 4880], RW]);
+  via(9, [RE, [7050, 4420], [7350, 3990], PONTE]);
+  via(9, [BN, [4150, 4300], [4450, 3600], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
+  via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], SOLIS]);
+  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
+  via(5, [FARO, [3800, 7150], [4704, 7180], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [RS, [6430, 5450], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
+  via(5, [BW2, [3100, 5050], [2300, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5450, 3300], [6129, 3844]]);
 };
 })();
