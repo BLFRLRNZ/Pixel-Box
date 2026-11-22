@@ -543,6 +543,7 @@ function setupWorld() {
   npcs = W.NPCS.map(([id, x, z, yaw]) => { const [X, Z] = id === 'biscotto' ? [x, z] : fixSpot(x, z); return { id, x: X, z: Z, yaw, base: yaw, hx: X, hz: Z, t: Math.random() * 3, walk: 0, moving: false }; });
   chests = W.CHESTS.map(([id, x, z, c, r]) => { const fixed = ['c06', 'c07', 'c09', 'c10'].includes(id); const [X, Z] = fixed ? [x, z] : fixSpot(x, z, 4); return { id, x: X, z: Z, c, r, yaw: Math.atan2(2650 - Z, 2000 - X) }; });
   for (const c of chests) W.addCircle(c.x, c.z, 3);
+  inc = null; incT = 45; semina(); abitudini();   // (solo nel Grande Viaggio: altrove non fanno niente)
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
@@ -563,7 +564,7 @@ function scegliModo(m) {
   location.reload(); return false;
 }
 function startGame(fresh) {
-  D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
+  D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0; incVia(); incT = 45;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
   if (MODO) {   // nel Grande Viaggio non c'è ancora chi regala la prima spada: si parte con spada e scudo di legno
     const dai = (slot, id) => { if (!save.eq[slot]) { save.eq[slot] = id; if (!save.inv.includes(id)) save.inv.push(id); } };
@@ -744,7 +745,7 @@ function toast(t, c = '#ffffff') { toasts.push({ t, c, life: 3 }); if (toasts.le
 function say(id, lines, then) { dialog = { id, name: id && NPC[id] ? NPC[id].n : id === 'biscotto' ? 'BISCOTTO' : '', lines: lines.map(l => A.wrap(l, Math.max(120, dialogW() - 16))), i: 0, ch: 0, then }; }
 // una domanda con le risposte da scegliere (croce su/giù, A conferma, B = l'ultima)
 function ask(id, lines, opts, pick) { say(id, lines); dialog.opts = opts; dialog.sel = 0; dialog.pick = pick; }
-const npcHidden = n => n.id === 're' && (!save || save.q.main < 4);
+const npcHidden = n => !!n.via || (n.id === 're' && (!save || save.q.main < 4));
 function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; camBehind(); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
@@ -755,6 +756,8 @@ function talkFolk(n, N) {
     if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
     save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; setDay(save.tod); if (inCasa() && D.letto) { hero.x = D.letto[0]; hero.z = D.letto[1]; hero.yaw = D.letto[2]; hero.vx = hero.vz = 0; camBehind(); } toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); writeSave(); }); });
   if (f.role === 'sala') return salaMenu(id);
+  if (f.role === 'incontro') return incParla(n, f);
+  if (f.role === 'scambio') return scambia(n, f);
   if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
     return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
@@ -777,7 +780,7 @@ function talkFolk(n, N) {
       if (L[0] === 'ambra') { save.pot += 3; toast('+3 POZIONI', '#ff8aa0'); } else if (L[0] === 'sole') { save.coins += 150; toast('+150 MONETE', '#ffd23f'); } else if (L[0] === 'porto') { save.eli = (save.eli || 0) + 2; toast('+2 ELISIR', '#ff8aa0'); } else openLoot('cuore');
       toast('ALLEANZA: ' + n2 + ' SU 5', '#9af0b0'); jingle(); if (n2 >= 5) { q.viaggio = 2; toast('TORNA DAL RE ALDRIC!', '#ffd23f'); } });
   }
-  const LL = f.lines; if (!LL || !LL.length) return say(id, ['...']);
+  const LL = MODO && f.notte && day.night > 0.6 ? f.notte : f.lines; if (!LL || !LL.length) return say(id, ['...']);
   n.li = ((n.li === undefined ? -1 : n.li) + 1) % LL.length; return say(id, [LL[n.li]]);
 }
 function talk(n) {
@@ -1149,6 +1152,127 @@ function mestiere(e, T, dt, d, dx, dz) {
   }
   return false;
 }
+// ---------- il Grande Viaggio: cose da raccogliere, incontri sulla strada, la gente tra giorno e notte ----------
+// Le cose da raccogliere. La terra dice quali e quante (W.RACCOLTA): i nodi si sparpagliano per regione, vicino alle vie, sempre gli stessi a ogni partenza.
+// Si prendono con A, finiscono nella borsa e ricrescono dopo dieci minuti di gioco.
+let nodi = [];
+const RICRESCE = 600;
+const presa = n => !!save && !!save.racc && save.racc[n.id] !== undefined && save.time - save.racc[n.id] < RICRESCE;
+function semina() {
+  nodi = []; if (!MODO || !W.RACCOLTA) return;
+  let s = 90210; const R = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const rb = W.ROADS.map(r => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of r.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return [x0, z0, x1, z1]; });
+  const strada = (x, z, m) => { let d = 1e9; W.ROADS.forEach((r, i) => { const b = rb[i]; if (x > b[0] - m && x < b[2] + m && z > b[1] - m && z < b[3] + m) d = Math.min(d, W.segDist(x, z, r.pts)); }); return d; };
+  const citta = new Set(W.TOWNS.map(t => t.name)), inCitta = (x, z) => W.PLACES.some(p => citta.has(p[3]) && Math.hypot(x - p[0], z - p[1]) < p[2] + 20);
+  for (const k in W.RACCOLTA) { const T = W.RACCOLTA[k]; let n = 0;
+    const metti = (x, z) => { nodi.push({ id: k + n, k, x, z, y: gH(x, z, -1e9) }); n++; };
+    if (T.punti) for (const [x, z] of T.punti) { const q = W.grotta(x, z); if (q && q.f) metti(x, z); }   // i punti fissi stanno sul fondo delle grotte
+    if (!T.bio) continue; const tot = n + T.quanti;
+    for (let i = 0; i < T.quanti * 60 && n < tot; i++) { const x = 200 + R() * (W.WS - 400), z = W.Z0 + 200 + R() * 9800;
+      if (!T.bio.includes(W.biomeAt(x, z))) continue;
+      const y = gH(x, z, -1e9); if (y < W.wlAt(x, z) + 0.6 || W.slope(x, z) > 0.45 || W.blocked(x, z, 2.5) || W.roadAt(x, z) > 0.04) continue;
+      const q = W.grotta(x, z); if (q && q.f) continue;
+      if (W.GROTTE.some(g => g.roccia && Math.hypot((x - g.roccia[0]) / (g.roccia[2] + 40), (z - g.roccia[1]) / (g.roccia[3] + 40)) < 1)) continue;   // non sulle rupi delle grotte
+      const ds = strada(x, z, T.strada); if (ds > T.strada || ds < 14 || inCitta(x, z)) continue;
+      if (nodi.some(o => Math.abs(o.x - x) < 46 && Math.abs(o.z - z) < 46)) continue;
+      metti(x, z); } }
+}
+function raccogli(n) {
+  const T = W.RACCOLTA[n.k]; save.racc = save.racc || {}; save.borsa = save.borsa || {}; save.racc[n.id] = save.time; save.borsa[n.k] = (save.borsa[n.k] || 0) + 1;
+  puffAt(n.x, n.z, 5, n.y + 2); toast(T.n + '  x' + save.borsa[n.k], T.c || '#9af0b0'); seq([659, 988], 0.06, 0.06);
+}
+const borsaTxt = () => Object.keys(W.RACCOLTA || {}).filter(k => save.borsa && save.borsa[k] > 0).map(k => W.RACCOLTA[k].n + '  x' + save.borsa[k]);
+// chi scambia o compra quel che si raccoglie: f.scambi = [{ dai: { erba: 3 }, prendi: 'pozione', nome: 'UNA POZIONE' } | { vendi: 'ferro', prezzo: 18 }]
+function scambia(n, f) {
+  const id = n.id, B = save.borsa || (save.borsa = {}), ha = k => B[k] || 0, RN = W.RACCOLTA;
+  const tutto = s => Object.keys(s.vendiTutto).reduce((t, k) => t + ha(k) * s.vendiTutto[k], 0);
+  const voce = s => s.compra ? 'COMPRA ' + s.nome + ' (' + s.prezzo + ' MONETE)' : s.vendiTutto ? 'VENDI QUEL CHE HAI RACCOLTO (' + tutto(s) + ' MONETE)' : s.vendi ? 'VENDI ' + RN[s.vendi].n + ' (' + ha(s.vendi) + ' x ' + s.prezzo + ' MONETE)' : Object.keys(s.dai).map(k => s.dai[k] + ' ' + RN[k].n).join(' + ') + ' PER ' + s.nome;
+  n.li = ((n.li === undefined ? -1 : n.li) + 1) % f.lines.length;
+  ask(id, [f.lines[n.li]], f.scambi.map(voce).concat(['NIENTE, GRAZIE']), i => { const s = f.scambi[i]; if (!s) return;
+    if (s.compra) { if (save.coins < s.prezzo) return say(id, ['SERVONO ' + s.prezzo + ' MONETE. IO ASPETTO.']); save.coins -= s.prezzo; openLoot(s.compra, 1); writeSave(); return; }
+    if (s.vendiTutto) { const v = tutto(s); if (!v) return say(id, ['LA TUA BORSA È VUOTA. ERBE, FUNGHI, FERRO: COMPRO TUTTO, QUANDO NE AVRAI.']); for (const k in s.vendiTutto) B[k] = 0; save.coins += v; toast('+' + v + ' MONETE', '#ffd23f'); seq([1318, 1760, 2093], 0.06, 0.06); writeSave(); return; }
+    if (s.vendi) { const q = ha(s.vendi); if (!q) return say(id, ['NON NE HAI. TORNA QUANDO LA BORSA PESA.']); B[s.vendi] = 0; save.coins += q * s.prezzo; toast('+' + q * s.prezzo + ' MONETE', '#ffd23f'); seq([1318, 1760, 2093], 0.06, 0.06); writeSave(); return; }
+    if (Object.keys(s.dai).some(k => ha(k) < s.dai[k])) return say(id, ['NON NE HAI ABBASTANZA. MI SERVONO ' + Object.keys(s.dai).map(k => s.dai[k] + ' ' + RN[k].n).join(' E ') + '.']);
+    for (const k in s.dai) B[k] -= s.dai[k];
+    if (s.prendi === 'elisir') { save.eli = (save.eli || 0) + 1; toast('+1 ELISIR', '#ff8aa0'); jingle(); } else openLoot(s.prendi, 1);
+    writeSave(); });
+}
+// Gli incontri sulla strada. Ogni tanto, camminando su una via lontano dagli abitati, più avanti compare qualcuno: si può tirare dritto.
+// La terra mette a disposizione le persone (W.FOLK «inc_…», con role 'incontro' e tipo) e le storie del cantastorie (W.STORIE).
+let inc = null, incT = 45, incUlt = '';
+const INC_C = { x: 0, z: 0, type: 'bandit', n: 0, r: 90, alive: [], dead: 0, cool: 1e9, on: true };
+function stradaAvanti(dist) {
+  let best = null, bd = 30;
+  for (const r of W.ROADS) for (let i = 0; i < r.pts.length - 1; i++) { const a = r.pts[i], b = r.pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; if (!L2) continue;
+    const t = Math.max(0, Math.min(1, ((hero.x - a[0]) * dx + (hero.z - a[1]) * dz) / L2)), d = Math.hypot(hero.x - a[0] - dx * t, hero.z - a[1] - dz * t); if (d < bd) { bd = d; best = { r, i, t }; } }
+  if (!best) return null;
+  const r = best.r, a = r.pts[best.i], b = r.pts[best.i + 1], verso = Math.cos(hero.yaw) * (b[0] - a[0]) + Math.sin(hero.yaw) * (b[1] - a[1]) >= 0 ? 1 : -1;
+  let i = best.i, t = best.t, resto = dist;
+  for (let giri = 0; giri < 40; giri++) { const p = r.pts[i], q = r.pts[i + 1], Ls = Math.hypot(q[0] - p[0], q[1] - p[1]), av = (verso > 0 ? 1 - t : t) * Ls;
+    if (av >= resto) { t += verso * resto / Ls; return { x: p[0] + (q[0] - p[0]) * t, z: p[1] + (q[1] - p[1]) * t, ux: (q[0] - p[0]) / Ls * verso, uz: (q[1] - p[1]) / Ls * verso }; }
+    resto -= av; i += verso; if (i < 0 || i >= r.pts.length - 1) return null; t = verso > 0 ? 0 : 1; }
+  return null;
+}
+const incLibero = (x, z) => { const q = W.grotta(x, z); if (q && q.f) return false; if (gH(x, z, -1e9) < W.wlAt(x, z) + 0.5 || W.roadAt(x, z) < 0.05) return false;
+  if (npcs.some(n => Math.hypot(n.x - x, n.z - z) < 230)) return false; if (W.PLACES.some(p => Math.hypot(p[0] - x, p[1] - z) < p[2] + 60)) return false;
+  return !foes.some(e => e.st !== 'dead' && Math.hypot(e.x - x, e.z - z) < 150); };
+function incNasce(tipo, p) {
+  const px = -p.uz, pz = p.ux, lato = Math.random() < 0.5 ? -1 : 1;
+  inc = { tipo, x: p.x, z: p.z, nato: save.time, fatto: 0, cose: [], n: null };
+  if (tipo === 'imboscata') { INC_C.x = p.x; INC_C.z = p.z; INC_C.alive = []; INC_C.dead = 0; inc.cose.push({ k: 'cart', x: p.x + px * 7, z: p.z + pz * 7 }, { k: 'crate', x: p.x - px * 5 + p.ux * 4, z: p.z - pz * 5 + p.uz * 4 }, { k: 'barrel', x: p.x + px * 2 - p.ux * 6, z: p.z + pz * 2 - p.uz * 6 }); return inc; }
+  const s = fixSpot(p.x + px * 8 * lato, p.z + pz * 8 * lato), id = 'inc_' + tipo, yaw = Math.atan2(hero.z - s[1], hero.x - s[0]);
+  inc.n = { id, x: s[0], z: s[1], yaw, base: yaw, hx: s[0], hz: s[1], t: 0, walk: 0, moving: false, inc: 1 }; npcs.push(inc.n);
+  if (tipo === 'carro') inc.cose.push({ k: 'cart', x: s[0] + p.ux * 9, z: s[1] + p.uz * 9 }, { k: 'crate', x: s[0] - p.ux * 6 + px * 3 * lato, z: s[1] - p.uz * 6 + pz * 3 * lato });
+  if (tipo === 'ambulante') inc.cose.push({ k: 'cart', x: s[0] + px * 6 * lato, z: s[1] + pz * 6 * lato }, { k: 'barrel', x: s[0] + p.ux * 7, z: s[1] + p.uz * 7 });
+  if (tipo === 'cantastorie') inc.cose.push({ k: 'campfire', x: s[0] - px * 6 * lato, z: s[1] - pz * 6 * lato });
+  return inc;
+}
+function incVia() { if (!inc) return; if (inc.n) npcs = npcs.filter(n => n !== inc.n); for (const e of foes) if (e.camp === INC_C) e.gone = true; INC_C.alive = []; if (dialog && inc.n && dialog.id === inc.n.id) dialog = null; incUlt = inc.tipo; inc = null; }
+function incUpdate(dt) {
+  if (!MODO || D || !W.FOLK.inc_carro) return;
+  if (inc) { const d = Math.hypot(hero.x - inc.x, hero.z - inc.z);
+    if (inc.tipo === 'imboscata') {
+      if (!inc.fatto && d < 46) { inc.fatto = 1; toast("È UN'IMBOSCATA!", '#ff6a5a'); seq([196, 185, 174], 0.09, 0.07); for (let i = 0; i < 3; i++) { const a = hero.yaw + 1.2 + i * 1.9; salaNemico('bandit', INC_C, hero.x + Math.cos(a) * 34, hero.z + Math.sin(a) * 34).st = 'chase'; } }
+      else if (inc.fatto === 1 && !foes.some(e => e.camp === INC_C && e.st !== 'dead')) { inc.fatto = 2; save.coins += 40; toast('I PREDONI SONO IN FUGA: +40 MONETE', '#ffd23f'); jingle(); } }
+    if (d > 470 || (inc.fatto && inc.fatto !== 1 && d > 230) || (save.time - inc.nato > 300 && d > 170)) { incVia(); incT = 50 + Math.random() * 50; }
+    return; }
+  if (st !== 'play' || dialog || !hero.moving || W.roadAt(hero.x, hero.z) < 0.05) return;
+  incT -= dt * (BTN.b ? 1.5 : 1); if (incT > 0) return;
+  const p = stradaAvanti(150 + Math.random() * 40); if (!p || !incLibero(p.x, p.z)) { incT = 6; return; }
+  const notte = day.night > 0.6, segreti = W.PLACES.some(q => q[4] && !save.flags['v:' + q[3]]);
+  const pesi = notte ? { imboscata: 3, ronda: 2, ferito: 1, cantastorie: 1 } : { carro: 2, pellegrino: segreti ? 2 : 0.3, ferito: 1.5, cantastorie: 1.5, ambulante: 2, ronda: 1.5, imboscata: 1.5 };
+  delete pesi[incUlt]; let tot = 0; for (const k in pesi) tot += pesi[k]; let r = Math.random() * tot, tipo = Object.keys(pesi)[0]; for (const k in pesi) { r -= pesi[k]; if (r <= 0) { tipo = k; break; } }
+  incNasce(tipo, p);
+}
+function incParla(n, f) {
+  const id = n.id, B = save.borsa || (save.borsa = {}), fine = () => { if (inc) inc.fatto = 2; };
+  if (inc && inc.fatto === 2 && f.dopo) return say(id, [f.dopo]);
+  if (f.tipo === 'carro') return ask(id, f.lines, [(B.ferro > 0 ? 'DAGLI UN MINERALE DI FERRO' : '(NON HAI FERRO NELLA BORSA)'), 'COMPRA UNA POZIONE (12 MONETE)', 'BUON VIAGGIO'], i => {
+    if (i === 0) { if (!(B.ferro > 0)) return say(id, ['SE NE TROVI UN PEZZO SUI MONTI, O DAI NANI, IO SONO QUI. NON VADO LONTANO, CON TRE RUOTE.']); B.ferro--; save.coins += 70; fine(); say(id, ['ECCO FATTO: UN COLPO QUI, UNO LÀ... TIENE! PRENDI QUESTE SETTANTA MONETE, E CHE LA STRADA TI SIA LEGGERA.']); toast('+70 MONETE', '#ffd23f'); jingle(); }
+    else if (i === 1) { if (save.coins < 12) return say(id, ['DODICI MONETE, NON UNA DI MENO. HO UNA RUOTA DA RIFARE.']); save.coins -= 12; save.pot++; toast('+1 POZIONE', '#ff8aa0'); seq([659, 880], 0.08, 0.08); } });
+  if (f.tipo === 'pellegrino') return ask(id, f.lines, ['PAGA 25 MONETE', 'NO, GRAZIE'], i => { if (i) return;
+    const L = W.PLACES.filter(q => q[4] && !save.flags['v:' + q[3]]); if (!L.length) return say(id, ['HAI GIÀ VISTO TUTTO QUEL CHE SO. ANZI: DOVREI PAGARTI IO.']);
+    if (save.coins < 25) return say(id, ['VENTICINQUE MONETE. I SEGRETI COSTANO, E I SANDALI ANCHE.']);
+    const q = L[Math.floor(Math.random() * L.length)]; save.coins -= 25; save.flags['v:' + q[3]] = 1; save.segno = [q[0], q[1]]; fine();
+    say(id, ['ALLORA ASCOLTA: ' + q[3] + '. TE LO SEGNO SULLA CARTA, E LA BUSSOLA TI CI PORTA.', 'NON DIRE IN GIRO CHI TE LO HA DETTO.']); toast('SULLA CARTA: ' + q[3], '#7af0ff'); jingle(); });
+  if (f.tipo === 'ferito') return ask(id, f.lines, [save.pot > 0 ? 'DAGLI UNA POZIONE' : '(NON HAI POZIONI)', 'NON POSSO AIUTARTI'], i => { if (i) return;
+    if (save.pot < 1) return say(id, ['NON FA NIENTE. MI RIPOSO UN PO\' E POI PROVO AD ARRIVARE AL PROSSIMO PAESE.']);
+    save.pot--; fine(); let c = null, cd = 1e9; for (const k of chests) if (!save.chests[k.id]) { const q = W.grotta(k.x, k.z); if (q && q.f) continue; const d = Math.hypot(k.x - hero.x, k.z - hero.z); if (d > 120 && d < cd) { cd = d; c = k; } }
+    save.coins += 30; if (c) save.segno = [Math.round(c.x), Math.round(c.z)];
+    say(id, ['GRAZIE... MI SENTO GIÀ MEGLIO. NON HO MOLTO: PRENDI QUESTE TRENTA MONETE.'].concat(c ? ['E UN\'ALTRA COSA: SCAPPANDO HO VISTO UN FORZIERE NASCOSTO, NON LONTANO. TE LO SEGNO SULLA CARTA.'] : [])); toast('+30 MONETE', '#ffd23f'); jingle(); });
+  if (f.tipo === 'cantastorie') { const S = W.STORIE || [['...']]; n.li = ((n.li === undefined ? Math.floor(Math.random() * S.length) - 1 : n.li) + 1) % S.length; fine(); return say(id, [f.lines[0]].concat(S[n.li])); }
+  if (f.tipo === 'ambulante') return scambia(n, f);
+  n.li = ((n.li === undefined ? -1 : n.li) + 1) % f.lines.length; fine(); return say(id, [f.lines[n.li]]);
+}
+// La gente tra giorno e notte: quando fa buio la gente comune rientra (ognuno alla sua ora, i bambini per primi) e torna fuori al mattino.
+// Restano guardie, sentinelle, frati, elfi, nani e chi sta in una grotta. Nessuno sparisce sotto gli occhi dell'eroe.
+const SVEGLI = ['guardia', 'lanciere', 'spadaccino', 'montanaro', 'capitano', 'vecchia', 'monaco', 'cacciatore', 'nano', 'nano2', 'nano3', 'nana', 'elfo', 'elfa', 'elfoarciere', 'elfosaggio', 'maestro'];
+function abitudini() {
+  for (const n of npcs) { const N = NPC[n.id], f = N && N.f; n.via = false; n.diurno = false; if (!MODO || !f || f.role || f.sveglio || SVEGLI.includes(f.look)) continue;
+    const q = W.grotta(n.x, n.z); if (q && q.f) continue;
+    const h = Math.abs(Math.sin(n.x * 12.9898 + n.z * 78.233) * 43758.5453) % 1; n.diurno = true; n.sonno = f.look === 'bimbo' ? 0.34 + h * 0.1 : 0.5 + h * 0.3; }
+}
+function sonno(n, d) { if (!n.diurno) return; const nt = day.night; if (!n.via && nt > n.sonno && d > 60) n.via = true; else if (n.via && nt < n.sonno - 0.15 && d > 40) n.via = false; }
 // ---------- la sala d'armi ----------
 const SALA_C = { x: 6200, z: 5320, type: 'sf', n: 0, r: 60, alive: [], dead: 0, cool: 1e9, on: true, sala: true };
 function salaNemico(t, c, x, z) {
@@ -1248,7 +1372,7 @@ function heroUpdate(dt) {
     if (h.wade && Math.random() < 0.3) fx.push({ k: 'drop', x: h.x, z: h.z, y: D ? -1 : W.wlAt(h.x, h.z) + 0.3, vy: 8 + Math.random() * 6, t: 0.4, s: 0.35 });
   } else { h.vx = h.vz = 0; h.pushT = 0; }
   // spinta via dagli abitanti
-  if (!D) for (const n of npcs) { const ddx = h.x - n.x, ddz = h.z - n.z, d = Math.hypot(ddx, ddz); if (d < 4.2 && d > 0.01) { move(h, ddx / d * (4.2 - d), ddz / d * (4.2 - d), 1.6); } }
+  if (!D) for (const n of npcs) { if (n.via) continue; const ddx = h.x - n.x, ddz = h.z - n.z, d = Math.hypot(ddx, ddz); if (d < 4.2 && d > 0.01) { move(h, ddx / d * (4.2 - d), ddz / d * (4.2 - d), 1.6); } }
   h.y += (gH(h.x, h.z) - h.y) * Math.min(1, 18 * dt);
   // attacco
   if (h.atk > 0) {
@@ -1690,6 +1814,7 @@ function npcsUpdate(dt) {
   for (const n of npcs) {
     n.t -= dt;
     const d = Math.hypot(hero.x - n.x, hero.z - n.z);
+    if (MODO) { sonno(n, d); if (n.via) continue; }
     if (d > 420 && n.id !== 'biscotto') continue;
     if (n.id === 'biscotto' && save.q.gatto >= 2) { n.x = n.hx = 2032; n.z = n.hz = 2662; }
     if (d < 22 || (dialog && dialog.id === n.id)) { n.yaw += angDiff(Math.atan2(hero.z - n.z, hero.x - n.x), n.yaw) * Math.min(1, 5 * dt); n.moving = false; continue; }
@@ -1771,6 +1896,7 @@ function findTarget() {
   }
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
+  if (MODO) for (const o of nodi) if (Math.abs(o.x - hero.x) < 20 && !presa(o)) consider(o.x, o.z, 'racc', o, 10);
   for (const p of props) {
     if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
@@ -1783,6 +1909,7 @@ function findTarget() {
 function interact(t) {
   if (t.kind === 'npc') { talk(t.obj); tone(660, 0.04); return; }
   if (t.kind === 'chest') { openChest(t.obj); return; }
+  if (t.kind === 'racc') { raccogli(t.obj); return; }
   if (t.kind === 'door') { templeDoor(t.obj); return; }
   if (t.kind === 'board') { shop = { board: t.obj, sel: 0 }; tone(660, 0.05); return; }
   if (t.kind === 'shop') { tone(520, 0.06, 'triangle', 0.04, 660); startFade(() => enterShop(t.obj)); return; }
@@ -1820,7 +1947,7 @@ function playUpdate(dt) {
   if (D) dungeonUpdate(dt); else { campsUpdate(dt); fauna.update(dt, hero, hero.moving && !!BTN.b, day.night > 0.55); }
   for (const e of foes) foeUpdate(e, dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
-  if (!D) { npcsUpdate(dt); jobsUpdate(); }
+  if (!D) { npcsUpdate(dt); jobsUpdate(); incUpdate(dt); }
   dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt); thingsUpdate(dt);
   if (!D && quake > 0) quake = Math.max(0, quake - dt * 1.6);
   if (!D) {
@@ -2913,6 +3040,9 @@ function buildDynamic() {
   for (const c of chests) { if (!near(c.x, c.z, 420)) continue; pushBB(c.x, gH(c.x, c.z) - 0.3, c.z, CHR.chest[c.r][opened(c.id) ? 1 : 0][dirOf(c.x, c.z, c.yaw)], 0.24 / SR); if (!opened(c.id) && c.r >= 2 && Math.floor(time * 3 + c.x) % 4 === 0) pushBB(c.x + Math.sin(time * 5) * 2, gH(c.x, c.z) + 6, c.z, SPR.glint, 0.3); }
   for (const e of foes) if (near(e.x, e.z, 520)) drawFoe(e);
   if (st !== 'title') fauna.draw(cam, time);
+  if (MODO) {   // le cose da raccogliere (con il loro luccichio) e gli oggetti di un incontro sulla strada
+    for (const o of nodi) if (near(o.x, o.z, 330) && !presa(o)) { const T = W.RACCOLTA[o.k], sp = SPR[T.spr]; pushBB(o.x, o.y - 0.3, o.z, sp.r[0], sp.s * (T.sc || 1), T.lit || 1); if (near(o.x, o.z, 200) && Math.floor(time * 2.5 + o.x) % 3 === 0) pushBB(o.x, o.y + (T.alto || 4), o.z, SPR.glint, 0.3); }
+    if (inc) for (const c of inc.cose) { const sp = SPR[c.k]; if (sp && sp.r) pushBB(c.x, gH(c.x, c.z) - 0.3, c.z, sp.r[0], sp.s); } }
   for (const p of props) if (p.k === 'ore' && !taken(p) && near(p.x, p.z, 420)) { pushBB(p.x, gH(p.x, p.z) - 0.4, p.z, SPR.ore.r[0], SPR.ore.s); if (near(p.x, p.z, 200) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, gH(p.x, p.z) + 4, p.z, SPR.glint, 0.3); }
   for (const p of picks) { const js = jst(p.job); if (!js || js.s !== 1 || (js.got && js.got[p.i]) || !near(p.x, p.z, 420)) continue; const y = gH(p.x, p.z); pushBB(p.x, y - 0.2, p.z, SPR.pick[p.what], 0.46); if (near(p.x, p.z, 280) && Math.floor(time * 2.5 + p.x) % 3 === 0) pushBB(p.x, y + 4.4, p.z, SPR.glint, 0.3); }
   if (save) for (const b of W.BOARDS) if (near(b.x, b.z, 340)) { const m = boardMark(b.id); if (m) pushBB(b.x, gH(b.x, b.z) + 12.6 + Math.sin(time * 3.2) * 0.6, b.z, SPR.bang[m - 1], 0.36, 1.2); }
@@ -2986,7 +3116,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
+    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
@@ -3192,6 +3322,7 @@ function drawMenu() {
     hg.drawImage(ICOIN, x + 8, yy - 3); T('MONETE  ' + save.coins, x + 26, yy, '#ffd23f'); yy += 14;
     if (save.q.ferro === 1 || save.q.ferro === 2) { hg.drawImage(IORE, x + 8, yy - 3); T('MINERALE DI FERRO  ' + Math.min(3, save.ore) + '/3', x + 26, yy, '#ffb070'); yy += 14; }
     T('CUORI DI CRISTALLO TROVATI: ' + save.hearts, x + 8, yy + 2, '#ff8aa0');
+    if (MODO) for (const riga of borsaTxt()) { yy += 12; T(riga, x + 8, yy + 2, '#9af0b0'); }   // quel che si è raccolto per strada
     if (save.q.main >= 4) { yy += 14; T("PIETRE DELL'ALBA", x + 8, yy + 2, '#ffd23f'); DS.ORDER.forEach((id, i) => { hg.globalAlpha = sanctDone(id) ? 1 : 0.22; hg.drawImage(itemIcon(DS.DEF[id].gem), x + 104 + i * 15, yy - 1); hg.globalAlpha = 1; }); }
     T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI PIÙ RICCHI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
   } else if (menu.tab === 2) {
@@ -3406,7 +3537,8 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
+  va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
