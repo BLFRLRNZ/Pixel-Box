@@ -91,7 +91,8 @@ Una voce nuova nel menu di Pixel Box: è il cantiere del gioco che verrà dopo P
 - **Le città:** **Borgo Aurora** grande il doppio (case a graticcio, la piazza con la fontana, la locanda, l'emporio di Nino e la fucina di Bruno) e la **Rocca di Lumen** grande quattro volte: le mura con le torri, tre porte, una sessantina di isolati fitti di case tagliati dai vicoli, e contro le mura di levante il **mastio del Re** con la sua terrazza, le mura interne, il palazzo e la torre grande. Le strade maestre lastricate arrivano alle porte.
 - **Il villaggio degli elfi:** nel Bosco Antico, lungo il sentiero che va all'Albero Madre: case strette di legno dai tetti ripidi e verdi tra le querce grandi, una quercia in mezzo alla radura, lanterne. (Prima stesura: lo stile degli elfi è fatto con i pezzi che c'erano.)
 - **Ponti e strade:** tre ponti di pietra passano il fiume dove lo incontrano le strade (vicino al Borgo, sulla via del nord, sulla costa). Tutte e tredici le strade della terra si percorrono a piedi da un capo all'altro: lo verifica un robot, compresa la salita al Valico dei Giganti.
-- **Per ora si cammina e si guarda:** non ci sono ancora storia, gente, nemici, forzieri e grotte. Nelle botteghe si entra.
+- **La prima gente:** a Borgo Aurora l'anziana Mirta, Nino nel suo emporio, Bruno alla fucina, l'ostessa dell'Aurora e qualche abitante che indica le strade; il pozzo dove bere. Alla Rocca guardie, botteghe aperte (orafo, erborista, armaiolo), la locanda del Leone dove si dorme, e nel cortile del mastio Re Aldric. Nel villaggio degli elfi il Custode della Radura. Si può comprare e dormire.
+- **Per ora niente storia:** non ci sono ancora missioni, nemici, forzieri e grotte. Nelle botteghe si entra.
 - **Salvataggio a parte:** quello di Pixel Saga non viene toccato. Passando da un gioco all'altro Pixel Box si ricarica da solo (il mondo in memoria è uno alla volta), e basta premere di nuovo A.
 
 ## Comandi

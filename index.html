@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.17", "id": "2.17-3773ea74", "date": "22/11/2026", "pwa": true};
+const APP = {"v": "2.18", "id": "2.18-6130651e", "date": "22/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -10175,16 +10175,40 @@ SG.terre.lumen = m => {
   // le città: il generatore di sempre, con misure nuove
   // Borgo Aurora: il doppio di oggi, aperto, senza mura
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
-    shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]] });
+    shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]],
+    people: [
+      ['donna', "L'ANZIANA MIRTA", ["CHE TU SIA IL BENVENUTO NEL BORGO NUOVO. È CRESCIUTO, VERO? E ANCHE LA TERRA TUTT'ATTORNO.", 'IL VIAGGIO NON È ANCORA COMINCIATO. PER ORA CAMMINA, GUARDA, E RICORDA QUEL CHE NON VA.'], 'p'],
+      ['ostessa', "L'OSTESSA DELL'AURORA", ["UN LETTO PULITO E UNA ZUPPA CALDA. BENVENUTO ALLA LOCANDA DELL'AURORA!"], 'in:aurora', { role: 'inn', cost: 8 }],
+      ['mercante', 'NINO', ["POZIONI, CAPPUCCI, QUEL CHE SERVE A CHI PARTE. L'EMPORIO È PICCOLO, MA C'È TUTTO."], 'in:nino', { role: 'shop', shop: 'nino' }],
+      ['fabbro', 'BRUNO', ['IL FERRO BUONO SI BATTE DUE VOLTE. GUARDA PURE.'], 'in:bruno', { role: 'shop', shop: 'bruno' }],
+      ['boscaiolo', 'IL BOSCAIOLO', ['NEL BOSCO ANTICO, A NORD-OVEST, GLI ELFI HANNO UN VILLAGGIO. SEGUI IL SENTIERO E, AL BIVIO, PRENDI A SINISTRA.'], 'd'],
+      ['borghese', 'IL CARRETTIERE', ['A EST, OLTRE IL PONTE DI PIETRA, LA VIA MAESTRA PORTA ALLA ROCCA DI LUMEN. È UN MINUTO DI CORSA, NON DI PIÙ.'], 'p'],
+      ['donna', 'LA LAVANDAIA', ['A NORD LA STRADA PASSA IL FIUME, COSTEGGIA IL LAGO DI CRISTALLO E SALE AL VALICO DEI GIGANTI. LASSÙ FA FREDDO.'], 'd'],
+      ['bimbo', 'IL PICCOLO TOBIA', ['DICONO CHE TRA I MONTI DEL NORD CI SIA UNA VALLE CHE NESSUNO HA MAI TROVATO. IO DA GRANDE LA TROVO!'], 'p', { walk: 1 }]] });
+  W.PROPS.push(['well', BORGO[0] + 27, BORGO[1] - 19]);   // il pozzo del Borgo: chi beve si rimette in forze
   // il villaggio degli elfi nel Bosco Antico: case strette di legno dai tetti ripidi e muschiati, tra le querce grandi, con le lanterne
   const TL = m.town.TL, ELFI = [1750, 3180];
   C.STYLES.elfi = { walls: [3, 3, TL.TIMBER2], roofs: [TL.ROOF_MOSS, TL.ROOF_MOSS, TL.ROOF_GREEN], rt: ['gable'], steep: 0.95, h: [12, 19], wd: [12, 17], chim: 0, win: [8, TL.WIN_PAPER], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_MOSS,
     pave: 'g', trees: ['oakbig', 'oakbig', 'oak'], lamp: 'lantern', yard: ['pot', 'bench', 'barrel'], flag: 0, ban: TL.BAN_RED };
-  C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 46, d: 40 } });
+  C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 46, d: 40 },
+    people: [['saggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS."], 'p'],
+      ['donna', 'UNA DONNA DEL BOSCO', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd']] });
   W.PROPS.push(['oakbig', ELFI[0], ELFI[1]], ['lantern', ELFI[0] - 14, ELFI[1] - 10], ['lantern', ELFI[0] + 14, ELFI[1] - 10], ['lantern', ELFI[0] - 14, ELFI[1] + 12], ['lantern', ELFI[0] + 14, ELFI[1] + 12]);
   // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
   W.FLAT.push([ROCCA[0], ROCCA[1], 640, 30]);   // il pianoro della città
-  C.city(Object.assign({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, y: 30, style: 'lumen', gates: 'nsw', fitto: true, plaza: { w: 130, d: 110 }, board: [22, 20], reserve: [[222, -126, 410, 126]],
+  C.city(Object.assign({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, y: 30, style: 'lumen', gates: 'nsw', fitto: true, plaza: { w: 130, d: 110 }, reserve: [[222, -126, 410, 126]],
+    people: [
+      ['guardia', 'GUARDIA DELLA PORTA', ['BENVENUTO ALLA ROCCA DI LUMEN, LA CITTÀ DEL RE. È QUATTRO VOLTE QUELLA CHE RICORDI.', 'IL MASTIO È IN FONDO AL VIALE, CONTRO LE MURA DI LEVANTE.'], 'p'],
+      ['oste', 'OSTE DEL LEONE', ['BENVENUTO ALLA LOCANDA DEL LEONE!'], 'in:leone', { role: 'inn', cost: 10 }],
+      ['borghese', 'MASTRO ORAFO', ['ANELLI, AMULETI, PIETRE CHE PORTANO FORTUNA. GUARDA PURE!'], 'in:orafo', { role: 'shop', shop: 'orafo' }],
+      ['mercantessa', "L'ERBORISTA", ['ERBE DEI PRATI DI LUMEN, DISTILLATE CON CURA.'], 'in:erbe', { role: 'shop', shop: 'erbe' }],
+      ['fabbro', "L'ARMAIOLO DEL RE", ['LE GUARDIE DEL MASTIO SI ARMANO QUI. SE HAI MONETE, ANCHE TU.'], 'in:rocca_armi', { role: 'shop', shop: 'rocca_armi' }],
+      ['dama', 'DAMA ISOTTA', ['HAI VISTO QUANTE CASE NUOVE? CI SI PERDE, ORMAI. IO MI ORIENTO CON LA TORRE DEL RE.'], 'p'],
+      ['bimbo', 'PAGGIO TEO', ['DA GRANDE FARÒ LA GUARDIA DEL MASTIO!'], 'p', { walk: 1 }],
+      ['monaco', 'FRATE ANSELMO', ['A NORD, OLTRE LA FONTE DEI GIRASOLI, CI SONO LE ROVINE DI SOLIS. NESSUNO CI ABITA PIÙ DA MILLE ANNI.'], 'd'],
+      ['borghese', 'IL CARRETTIERE', ["LA VIA DEL PONTE DEI RE ESCE DALLA PORTA DI TRAMONTANA E PIEGA A LEVANTE. IL PONTE, PERÒ, NON C'È ANCORA."], 'd'],
+      ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.'], [245, 14, Math.PI]],
+      ['re', 'RE ALDRIC DI LUMEN', ['IL MIO REGNO È CRESCIUTO, VIANDANTE. E OLTRE IL VALICO DEI GIGANTI CI SONO TERRE CHE NEMMENO IO HO MAI VISTO.', 'QUANDO IL VIAGGIO COMINCERÀ AVRÒ UN INCARICO PER TE. PER ORA GUARDA LA MIA CITTÀ, E DIMMI SE TI PIACE.'], [260, -13, Math.PI], { id: 're_gv' }]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
       ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
