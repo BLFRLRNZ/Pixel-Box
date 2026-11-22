@@ -370,8 +370,21 @@ W.ground = (x, z) => {
   const fx = x / CELL, fz = (z - Z0) / CELL, i = Math.floor(fx), j = Math.floor(fz);
   if (i < 0 || j < 0 || i >= N || j >= NZ) return -40;
   const u = fx - i, v = fz - j, k = j * V + i, H = W.H, h00 = H[k], h10 = H[k + 1], h01 = H[k + V], h11 = H[k + V + 1];
-  return u > v ? h00 + (h10 - h00) * u + (h11 - h10) * v : h00 + (h11 - h01) * u + (h01 - h00) * v;
+  const h = u > v ? h00 + (h10 - h00) * u + (h11 - h10) * v : h00 + (h11 - h01) * u + (h01 - h00) * v;
+  if (GROTTE.length) { const t = grDorso(x, z, i, j, u, v); if (t - h > 0.05 && Math.abs(W.rif - t) < Math.abs(W.rif - h)) return t; }
+  return h;
 };
+// Sopra una grotta aperta il suolo ha due quote: il fondo della grotta e il dorso della volta. Vale quella più vicina a W.rif, la quota di chi
+// sta camminando (l'eroe): chi arriva dal monte resta sul dorso, chi entra dalla bocca resta sul fondo. Mentre il mondo nasce W.rif è bassissimo: vale il fondo.
+W.rif = -1e9;
+const grDorso = (x, z, i, j, u, v) => {
+  for (const g of GROTTE) { const b = g.box; if (!g.TP || x <= b[0] || x >= b[2] || z <= b[1] || z >= b[3]) continue;
+    const T = g.TP, k = (j - g.j0) * g.nw + i - g.i0, t00 = T[k], t10 = T[k + 1], t01 = T[k + g.nw], t11 = T[k + g.nw + 1];
+    return u > v ? t00 + (t10 - t00) * u + (t11 - t10) * v : t00 + (t11 - t01) * u + (t01 - t00) * v; }
+  return -1e9;
+};
+// si sta camminando sul dorso di una volta? (lì sopra non c'è niente contro cui sbattere: gli ostacoli sono tutti sotto, nella grotta)
+W.sopra = (x, z) => { for (const g of GROTTE) { const b = g.box; if (g.TP && x > b[0] && x < b[2] && z > b[1] && z < b[3]) { const r = W.rif; W.rif = -1e9; const h = W.ground(x, z); W.rif = r; return W.ground(x, z) - h > 0.05; } } return false; };
 W.slope = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.SL[j * V + i]; };
 W.biomeAt = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))), j = Math.max(0, Math.min(NZ, Math.round((z - Z0) / CELL))); return W.biome[j * V + i]; };
 // gli stagni in quota: quale copre quel punto, e a che altezza sta l'acqua lì (il mare, oppure lo stagno se ci si sta dentro)
@@ -404,6 +417,7 @@ W.addBox = (x0, z0, x1, z1, top, b) => {
   return bx;
 };
 W.blocked = (x, z, r) => {
+  if (GROTTE.length && W.sopra(x, z)) return false;
   const i0 = Math.floor((x - r - 20) / GC), i1 = Math.floor((x + r + 20) / GC), j0 = Math.floor((z - r - 20 - Z0) / GC), j1 = Math.floor((z + r + 20 - Z0) / GC);
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { if (i < 0 || j < 0 || i >= GN || j >= GNZ) continue; const L = W.colliders[j * GN + i]; if (L) for (const c of L) if ((x - c[0]) ** 2 + (z - c[1]) ** 2 < (r + c[2]) ** 2) return c; }
   return W.inBox(x, z, r);
@@ -483,6 +497,7 @@ function grVolte() {
   W.volte = [];
   for (const g of GROTTE) {
     const { i0, j0, nw, nh, F, CE, BS } = g, out = [];
+    g.TP = new Float32Array(nw * nh); for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) g.TP[j * nw + i] = grFuori(g, i0 + i, j0 + j);   // il dorso: ci si cammina
     const coperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; let r = false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) { if (F[k] === 1) return false; if (F[k] >= 2) r = true; } return r; };
     const aperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) if (F[k] === 1) return true; return false; };
     const su = (i, j) => { const s = grSole(g, i0 + i, j0 + j); return [(i0 + i) * CELL, grFuori(g, i0 + i, j0 + j), Z0 + (j0 + j) * CELL, s[0], s[1], s[2]]; };

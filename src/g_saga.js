@@ -188,7 +188,7 @@ let atlasUse = 0, fauna = null;
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
 const glowF = new Float32Array(160 * 44), WLP = new Float32Array(32), WLQ = new Float32Array(24);
-let grK = 0, grMus = null;                                      // quanto è al buio l'eroe: 0 all'aperto, 1 in fondo a una grotta aperta
+let grK = 0, grMus = null, rifX = 0, rifZ = 0;                                      // quanto è al buio l'eroe: 0 all'aperto, 1 in fondo a una grotta aperta
 const buio = () => Math.max(day.night, grK);      // il buio che conta per lanterna, lumi e aloni: la notte, oppure la grotta
 
 // ---------- il giorno e la notte ----------
@@ -993,7 +993,7 @@ function placeCam(snap) {
   if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), cd = 20 - up * 7, ex = hero.x - fx2 * cd, ez = hero.z - fz2 * cd, ey = Math.max(hero.y, -2) + 16 + up * 15, k = snap ? 1 : 0.25, lf = 8 * (1 - 0.6 * up); cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * lf; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * lf; return; }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = (CAM_D - up * 7 - dn * 3) * (1 - 0.3 * aimK);
   // in una grotta aperta la visuale resta dentro: non sale sopra le pareti (si avvicina all'eroe) e sta sotto il soffitto
-  let gf = 0, gce = 0; if (W.GROTTE.length) { const q = W.grotta(hero.x, hero.z); if (q && q.f) { gf = q.f; gce = q.ce; } }
+  let gf = 0, gce = 0; if (W.GROTTE.length) { const q = W.grotta(hero.x, hero.z); if (q && q.f && hero.y < q.ce) { gf = q.f; gce = q.ce; } }
   let d = CD * 0.24;
   for (let t = 0.24; t <= 1.001; t += 0.08) { const px = hero.x - fx * CD * t, pz = hero.z - fz * CD * t; if (W.inBox(px, pz, 1.5) || (gf && gH(px, pz) > hero.y + 3.5)) break; d = CD * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
@@ -1012,7 +1012,6 @@ function canStand(e, nx, nz, r, steep) {
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.wlAt(nx, nz) - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
-  if (h0 - h1 > 5 && W.GROTTE.length) { const q = W.grotta(nx, nz); if (q && q.f) return false; }   // in una grotta aperta si entra dalla bocca, non cadendoci dal monte
   return !W.blocked(nx, nz, r);
 }
 function move(e, dx, dz, r, steep = 1.25) {
@@ -1589,6 +1588,7 @@ function fxUpdate(dt) {
 
 // ---------- interazione: cosa c'è davanti all'eroe? ----------
 function findTarget() {
+  if (!D && W.GROTTE.length && W.sopra(hero.x, hero.z)) return null;   // sul dorso di una grotta non si tocca quel che c'è sotto
   let best = null, bs = -1;
   const consider = (x, z, kind, obj, r = 11) => {
     const dx = x - hero.x, dz = z - hero.z, d = Math.hypot(dx, dz); if (d > r) return;
@@ -1689,7 +1689,9 @@ function playUpdate(dt) {
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
   saveT += dt; if (saveT > 20) { saveT = 0; writeSave(); }
-  { const q = !D && W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; grK += ((q ? q.bu : 0) - grK) * Math.min(1, 4 * dt); if (grK < 0.004) grK = 0; if (q && q.bu > 0) grMus = q.g.musica || 'grotta'; }
+  // la quota di riferimento per le grotte aperte (chi è sul dorso di una volta ci resta, chi è dentro resta dentro); dopo un salto di posto si riparte dal fondo
+  if (!D && W.GROTTE.length) { if (Math.hypot(hero.x - rifX, hero.z - rifZ) > 12) { W.rif = -1e9; hero.y = gH(hero.x, hero.z); } W.rif = hero.y; rifX = hero.x; rifZ = hero.z; }
+  { const q = !D && W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; grK += ((q && hero.y < q.ce ? q.bu : 0) - grK) * Math.min(1, 4 * dt); if (grK < 0.004) grK = 0; if (q && q.bu > 0 && hero.y < q.ce) grMus = q.g.musica || 'grotta'; }
   camUpdate(dt);
   if (dialog) { const L = dialog.lines[dialog.i]; const tot = L.join(' ').length; if (dialog.ch < tot) { dialog.ch = Math.min(tot, dialog.ch + dt * 70); if (Math.floor(dialog.ch) % 3 === 0) tone(820 + Math.random() * 120, 0.012, 'square', 0.012); } }
   if (loot) loot.t += dt;
@@ -2537,7 +2539,7 @@ function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   const n = pushBB.n; if (n >= 3000) return;
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
   let tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
-  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
+  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0 && y < q.ce + 0.6) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
   pushBB.n = n + 1;
@@ -3234,7 +3236,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
