@@ -519,7 +519,7 @@ function setupWorld() {
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
-  for (const id in JOBS) { const j = JOBS[id];
+  for (const id in MODO ? {} : JOBS) { const j = JOBS[id];   // (i lavori della bacheca sono di Pixel Saga: nel Grande Viaggio non ci sono ancora)
     if (j.boss) { const [X, Z] = fixSpot(j.boss.x, j.boss.z, 5); camps.push({ x: X, z: Z, type: 'J_' + id, n: 1, r: 44, alive: [], dead: 0, cool: 0, on: false, job: id }); }
     if (j.pts) j.pts.forEach((q, i) => { const [X, Z] = fixSpot(q[0], q[1], 3); picks.push({ job: id, i, x: X, z: Z, what: j.what }); }); }
   for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
@@ -1009,7 +1009,7 @@ function placeCam(snap) {
 function canStand(e, nx, nz, r, steep) {
   if (D) return dCanStand(e, nx, nz, r);
   if (nx < 10 || nz < W.Z0 + 10 || nx > W.WS - 10 || nz > W.WS - 10) return false;
-  const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
+  const h0 = gH(e.x, e.z, e.y), h1 = gH(nx, nz, e.y), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.wlAt(nx, nz) - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
   return !W.blocked(nx, nz, r);
@@ -1445,6 +1445,7 @@ function drawSkills() {
 // ---------- nemici ----------
 // soft: un danno che non sposta e non sveglia (il fuoco che brucia, la pioggia di frecce)
 function hitFoe(e, dmg, a, soft) {
+  if (altroPiano(e)) return;
   const T = FOE[e.type];
   e.hp -= dmg; e.flash = 0.16;
   if (!soft) { e.kb = T.champ ? 0.05 : T.elite ? 0.08 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase'; }
@@ -1468,8 +1469,8 @@ function spawnCamp(c) {
   for (let i = c.alive.length; i < c.n - c.dead; i++) {
     for (let tries = 0; tries < 10; tries++) {
       const a = Math.random() * TAU, r = Math.random() * c.r * 0.7, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-      if (gH(x, z) < 0.3 || W.blocked(x, z, T.r)) continue;
-      const e = { type: c.type, camp: c, x, z, y: gH(x, z), yaw: Math.random() * TAU, hp: T.hp, st: 'idle', t: Math.random() * 2, cd: 0, flash: 0, kb: 0, walk: 0, hop: Math.random(), wx: x, wz: z };
+      if (gH(x, z, -1e9) < 0.3 || W.blocked(x, z, T.r)) continue;
+      const e = { type: c.type, camp: c, x, z, y: gH(x, z, -1e9), yaw: Math.random() * TAU, hp: T.hp, st: 'idle', t: Math.random() * 2, cd: 0, flash: 0, kb: 0, walk: 0, hop: Math.random(), wx: x, wz: z };
       foes.push(e); c.alive.push(e); break;
     }
   }
@@ -1485,21 +1486,21 @@ function campsUpdate(dt) {
   foes = foes.filter(e => !e.gone && !(e.st === 'dead' && e.fade <= 0));
 }
 function foeUpdate(e, dt) {
-  const T = FOE[e.type], dx = hero.x - e.x, dz = hero.z - e.z, d = Math.hypot(dx, dz), homeD = Math.hypot(e.camp.x - e.x, e.camp.z - e.z), leash = e.camp.r * 2.6;
+  const T = FOE[e.type], dx = hero.x - e.x, dz = hero.z - e.z, d = Math.hypot(dx, dz) + (altroPiano(e) ? 9999 : 0), homeD = Math.hypot(e.camp.x - e.x, e.camp.z - e.z), leash = e.camp.r * 2.6;
   if (e.flash > 0) e.flash -= dt; if (e.cd > 0) e.cd -= dt; e.t -= dt;
   if (e.st === 'dead') { e.fade -= dt; if (e.fade <= 0 && !e.counted) { e.counted = true; e.camp.dead++; e.camp.alive = e.camp.alive.filter(x => x !== e); } return; }
   // in fiamme, stordito o congelato (abilità delle classi)
   if (e.rage > 0) e.rage -= dt;
   if (e.burn > 0) { e.burn -= dt; e.burnT -= dt; if (Math.random() < 0.4) fx.push({ k: 'ember', x: e.x + (Math.random() - 0.5) * 3, z: e.z + (Math.random() - 0.5) * 3, y: e.y + 2 + Math.random() * 3, vy: 9, t: 0.4, s: 0.4 }); if (e.burnT <= 0) { e.burnT = 0.8; hitFoe(e, e.burnD || 1, 0, true); if (e.st === 'dead') return; } }
-  if (e.stun > 0) { e.stun -= dt; if (e.frz > 0) e.frz -= dt; e.y += (gH(e.x, e.z) + (T.fly ? 2 : 0) - e.y) * Math.min(1, 12 * dt); if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); } return; }
+  if (e.stun > 0) { e.stun -= dt; if (e.frz > 0) e.frz -= dt; e.y += (gH(e.x, e.z, e.y) + (T.fly ? 2 : 0) - e.y) * Math.min(1, 12 * dt); if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); } return; }
   // le piante carnivore non si muovono: sputano semi
   if (T.shoot) {
-    e.y = gH(e.x, e.z); if (e.open > 0) e.open -= dt; e.kb = 0;
+    e.y = gH(e.x, e.z, e.y); if (e.open > 0) e.open -= dt; e.kb = 0;
     if (st === 'play' && !hero.dead && (!D || D.room === e.room) && d < T.aggro) { const a = Math.atan2(dz, dx); e.yaw += angDiff(a, e.yaw) * Math.min(1, 6 * dt); e.sh -= dt; if (e.sh <= 0) { e.sh = T.shoot; e.open = 0.45; shoot('seed', e.x, e.z, a, 40, 1, e); tone(520, 0.05, 'square', 0.03, 300); } }
     return;
   }
   const fly = T.fly ? T.fly + Math.sin(time * 4 + e.hop * 9) * 1.5 : 0;
-  e.y += (gH(e.x, e.z) + fly - e.y) * Math.min(1, 12 * dt);
+  e.y += (gH(e.x, e.z, e.y) + fly - e.y) * Math.min(1, 12 * dt);
   if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); return; }
   if (e.st === 'wind') { e.yaw = Math.atan2(dz, dx); if (e.t <= 0) { if (d < T.range + 3 && st === 'play') hurtHero(T.dmg, e); e.st = 'chase'; e.cd = 1.1; } return; }
   // chi è stato colpito da lontano insegue più a lungo; col fumogeno nessuno vede l'eroe
@@ -1703,7 +1704,9 @@ let D = null, DID = null, DAT = null, DTEX = null, DCH = {}, DSP = {}, DBOSS = n
 let shots = [], boss = null, fade = null, hazards = [], quake = 0;
 const dynF2 = new Float32Array(1500 * 44), dmF = new Float32Array(900 * 32);
 let dynBuf2 = null, dmBuf = null, dmN = 0;
-const gH = (x, z) => D ? dGround(x, z) : W.ground(x, z);
+const gH = (x, z, ref) => D ? dGround(x, z) : W.ground(x, z, ref);   // ref: la quota di chi chiede (conta solo sopra le grotte aperte, dove il suolo ha due quote)
+// un nemico su un altro piano di una grotta aperta (l'eroe sul dorso della volta e lui sotto, o viceversa): non si vedono e non si toccano
+const altroPiano = e => !D && W.GROTTE.length > 0 && Math.abs(hero.y - e.y) > 18 && !!W.grotta(e.x, e.z);
 const CASA = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 };       // le botteghe non lasciano tracce nel salvataggio
 const inCasa = () => !!(D && D.def.casa);
 function dsave(id) { if (DS.DEF[id] && DS.DEF[id].casa) return CASA; if (!save.dun) save.dun = {}; return save.dun[id] || (save.dun[id] = { keys: 0, big: 0, open: {}, ch: {}, sol: {}, br: {}, clr: {}, xs: 0, boss: 0, heart: 0, done: 0, seen: '', vis: 0 }); }
@@ -2539,7 +2542,7 @@ function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   const n = pushBB.n; if (n >= 3000) return;
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
   let tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
-  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0 && y < q.ce + 0.6) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
+  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0 && y < q.ce + 4) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
   pushBB.n = n + 1;

@@ -366,16 +366,17 @@ const W = {
   WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, VOLC, OLDN, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, LATESHAPE, FINE, GROTTE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
-W.ground = (x, z) => {
+W.ground = (x, z, ref) => {
   const fx = x / CELL, fz = (z - Z0) / CELL, i = Math.floor(fx), j = Math.floor(fz);
   if (i < 0 || j < 0 || i >= N || j >= NZ) return -40;
   const u = fx - i, v = fz - j, k = j * V + i, H = W.H, h00 = H[k], h10 = H[k + 1], h01 = H[k + V], h11 = H[k + V + 1];
   const h = u > v ? h00 + (h10 - h00) * u + (h11 - h10) * v : h00 + (h11 - h01) * u + (h01 - h00) * v;
-  if (GROTTE.length) { const t = grDorso(x, z, i, j, u, v); if (t - h > 0.05 && Math.abs(W.rif - t) < Math.abs(W.rif - h)) return t; }
+  if (GROTTE.length) { const t = grDorso(x, z, i, j, u, v), r = ref === undefined ? W.rif : ref; if (t - h > 0.05 && Math.abs(r - t) < Math.abs(r - h)) return t; }
   return h;
 };
 // Sopra una grotta aperta il suolo ha due quote: il fondo della grotta e il dorso della volta. Vale quella più vicina a W.rif, la quota di chi
-// sta camminando (l'eroe): chi arriva dal monte resta sul dorso, chi entra dalla bocca resta sul fondo. Mentre il mondo nasce W.rif è bassissimo: vale il fondo.
+// sta camminando (l'eroe; oppure la quota data come terzo argomento, per chi ha la sua): chi arriva dal monte resta sul dorso, chi entra dalla bocca resta sul fondo.
+// Mentre il mondo nasce W.rif è bassissimo: vale il fondo.
 W.rif = -1e9;
 const grDorso = (x, z, i, j, u, v) => {
   for (const g of GROTTE) { const b = g.box; if (!g.TP || x <= b[0] || x >= b[2] || z <= b[1] || z >= b[3]) continue;

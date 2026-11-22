@@ -14,6 +14,19 @@ SG.terre.svuota = W => {
 const S = 1.9, T = (x, z) => [Math.round((x - 128) * S + 387), Math.round((z - 192) * S + 352)];
 SG.terre.lumen = m => {
   const W = m.world, B = W.B, C = m.city;
+  // i pezzi di Pixel Saga che tornano al loro posto nuovo (santuari, rovine, faro): si prendono dal mondo di sempre prima di svuotarlo
+  const dentro = (x, z, b) => x >= b[0] && x <= b[2] && z >= b[1] && z <= b[3];
+  const prendi = b => ({ build: W.BUILD.filter(q => dentro(q.x, q.z, b)), props: W.PROPS.filter(q => dentro(q[1], q[2], b)), late: W.LATE.props.filter(q => dentro(q[1], q[2], b)),
+    chests: W.CHESTS.filter(q => dentro(q[1], q[2], b)), pave: W.PAVE.filter(q => (q[1] === 'rect' || q[1] === 'disc') && dentro(q[2], q[3], b)) });
+  const posa = (P, dx, dz) => {
+    for (const q of P.build) W.BUILD.push(Object.assign({}, q, { x: q.x + dx, z: q.z + dz }));
+    for (const q of P.props) W.PROPS.push([q[0], q[1] + dx, q[2] + dz].concat(q.slice(3)));
+    for (const q of P.late) W.LATE.props.push([q[0], q[1] + dx, q[2] + dz].concat(q.slice(3)));
+    for (const q of P.chests) W.CHESTS.push(['gv_' + q[0], q[1] + dx, q[2] + dz].concat(q.slice(3)));
+    for (const q of P.pave) W.PAVE.push(q[1] === 'rect' ? [q[0], 'rect', q[2] + dx, q[3] + dz, q[4] + dx, q[5] + dz].concat(q.slice(6)) : [q[0], 'disc', q[2] + dx, q[3] + dz].concat(q.slice(4)));
+  };
+  const SOLIS0 = prendi([3150, 1450, 3600, 1900]), GHIACCIO0 = prendi([500, 440, 830, 760]), ISOLA0 = prendi([2070, 1260, 2230, 1420]), FARO0 = prendi([1200, 3500, 1420, 3720]);
+  const CAMPI0 = W.CAMPS.filter(c => c[0] < 4000 && c[1] < 4000);   // i nemici dell'isola di Lumen di sempre
   SG.terre.svuota(W);
   // la costa: il corpo dell'isola, e a nord il massiccio che arriva fino al bordo della carta (oltre c'è la terra dei monti)
   const corpo = [[3800, 560], [3940, 1000], [3960, 1500], [3930, 1900], [4020, 2000], [3930, 2100], [3960, 2500], [3880, 3000], [3700, 3450], [3350, 3750], [2900, 3880], [2450, 3940], [2050, 3980], [1600, 3880],
@@ -52,7 +65,7 @@ SG.terre.lumen = m => {
   W.FLAT.push([SOLIS[0], SOLIS[1], 430, null], [2300, 5000, 90, null], [4704, 7150, 90, null], [5450, 3300, 90, null]);
   W.PLACES.push([BORGO[0], BORGO[1], 330, 'BORGO AURORA'], [ROCCA[0], ROCCA[1], 560, 'ROCCA DI LUMEN'], [SOLIS[0], SOLIS[1], 430, 'ROVINE DI SOLIS'], [ALBERO[0], ALBERO[1], 200, "L'ALBERO MADRE"], [lago[0], lago[1], 110, 'ISOLA DEL LAGO'],
     [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA'], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
-    [2300, 5000, 150, 'PRATOLUNGO'], [4704, 7150, 150, 'CALA DELLE CONCHIGLIE'], [5450, 3300, 150, 'GIRASOLE'], [FARO[0], FARO[1], 150, 'APPRODO DEL FARO']);   // (il villaggio degli elfi il nome lo riceve dal generatore delle città)
+    [2790, 7120, 70, 'FARO DEL SUD'], [GRIFONE[0], GRIFONE[1], 110, 'NIDO DEL GRIFONE']);   // (villaggi e città il nome lo ricevono dal generatore delle città)
   // gente nuova: gli elfi (orecchie a punta, capelli lunghi, verdi del bosco) e i nani (bassi, larghi, barbuti)
   Object.assign(C.LOOKS, {
     elfo: { walk: 1, skin: '#f4e0c4', ears: 1, hairStyle: 'long', hair: '#e8dc9a', shirt: '#3e8a4a', cape: '#1e4a2a', belt: '#6a4a2a', pants: '#3a4a2a', boots: '#5a4a2a' },
@@ -145,16 +158,67 @@ SG.terre.lumen = m => {
     W.LATE.props.push(['cervopietra', X - 19, Z1 + 24, { r: 5.6 }], ['cervopietra2', X + 19, Z1 + 24, { r: 5.6 }], ['custode', X - 19, Z1 + 39, { r: 3.6 }], ['custode', X + 19, Z1 + 39, { r: 3.6 }], ['braciereV', X - 9, Z1 + 20.5], ['braciereV', X + 9, Z1 + 20.5]); }
   C.folk('elfoarciere', 'LA CUSTODE DEL SANTUARIO', SB[0] + 30, SB[1] + 44, Math.PI / 2, ['IL SANTUARIO DEL BOSCO HA DORMITO MILLE ANNI. ORA LE RUNE SI ACCENDONO PER CHI ARRIVA FIN QUI.', 'DENTRO CI SONO PORTE CHIUSE, TRAPPOLE E UN GUARDIANO. NON ENTRARE SENZA POZIONI.']);
   C.folk('elfosaggio', "IL CANTORE DELL'ALBERO", AM[0] - 30, AM[1] + 40, 0, ["QUESTO È L'ALBERO MADRE. ERA GIÀ VECCHIO QUANDO GLI UOMINI ALZARONO LA PRIMA PIETRA DI SOLIS.", 'IL SANTUARIO È LÌ DIETRO, A TRAMONTANA: SEGUI LE LASTRE CHIARE.']);
+  // i quattro villaggi: poche case attorno a una piazzetta, sulla strada
+  const paese = (id, name, x, z, style, gates, people) => C.city({ id, name, x, z, w: 190, d: 150, style, open: true, small: true, plaza: { w: 44, d: 36 }, gates, people });
+  paese('pratolungo', 'PRATOLUNGO', 2300, 5000, 'ambra', 'ew', [
+    ['borghese', 'IL FATTORE', ["PRATOLUNGO È TUTTO QUI: QUATTRO CASE, UNA FONTANA E L'ERBA PIÙ ALTA DI LUMEN."], 'p'],
+    ['donna', 'LA PASTORA', ['LE PECORE SCENDONO AL MARE DA SOLE E DA SOLE TORNANO. IO LE CONTO SOLO LA SERA.'], 'd', { walk: 1 }],
+    ['boscaiolo', 'IL TAGLIALEGNA', ["A PONENTE COMINCIA LA PALUDE D'OMBRA. CI VADO SOLO DI GIORNO, E SOLO FINO AL PRIMO SALICE."], 'd'],
+    ['bimbo', 'LA PICCOLA LIA', ['DA GRANDE VOGLIO ANDARE AL BORGO, DOVE CI SONO LE BOTTEGHE. QUI CI SONO SOLO LE PECORE!'], 'p', { walk: 1 }],
+    ['mercantessa', 'LA FORMAGGIAIA', ['FORMAGGIO DI PRATOLUNGO: LO COMPRA PERFINO IL CUOCO DEL RE.'], 'p']]);
+  paese('cala', 'CALA DELLE CONCHIGLIE', 4704, 7160, 'porto', 'ew', [
+    ['pescivendola', 'LA PESCATRICE', ['LE CONCHIGLIE PIÙ BELLE LE PORTA IL MARE DOPO LE BURRASCHE. LE VENDIAMO ALLA ROCCA, PER LE COLLANE DELLE DAME.'], 'p'],
+    ['traghettatore', 'IL VECCHIO PESCATORE', ['NELLE GIORNATE LIMPIDE, DALLA SPIAGGIA, SI VEDONO LE ISOLE DEI MARI DEL SUD. UN GIORNO CI ARRIVERÀ UNA NAVE.'], 'd'],
+    ['bimbo', 'IL PICCOLO LEO', ['HO TROVATO UNA CONCHIGLIA CHE FA IL RUMORE DEL MARE ANCHE IN CASA!'], 'p', { walk: 1 }],
+    ['donna', 'LA RETAIA', ["RAMMENDO LE RETI. OGNI BUCO È UN PESCE CHE SE N'È ANDATO."], 'd'],
+    ['borghese', 'IL SALATORE', ['IL PESCE SOTTO SALE ARRIVA FINO AL VALICO SENZA GUASTARSI. IL SALE LO PRENDIAMO DALLE POZZE, A LEVANTE.'], 'd', { walk: 1 }]]);
+  paese('girasole', 'GIRASOLE', 5450, 3300, 'sole', 'ew', [
+    ['fioraia', 'LA CONTADINA DEI GIRASOLI', ['I GIRASOLI GUARDANO TUTTI VERSO SOLIS. I VECCHI DICONO CHE ASPETTANO CHE IL SOLE CI TORNI.'], 'p'],
+    ['borghese', 'IL FRANTOIANO', ["DAI SEMI FACCIAMO L'OLIO PER LE LAMPADE DELLA ROCCA. BRUCIA CHIARO E NON FA FUMO."], 'd', { walk: 1 }],
+    ['saggio', 'IL VECCHIO DEL PAESE', ['LE ROVINE DI SOLIS SONO A LEVANTE, OLTRE LE COLLINE. DI NOTTE, TRA LE COLONNE, QUALCOSA CAMMINA ANCORA.', 'IN MEZZO ALLE ROVINE C\'È IL SANTUARIO DEL SOLE. I RE DI SOLIS CI SALIVANO SCALZI.'], 'p'],
+    ['bimbo', 'IL PICCOLO NILO', ['IL GIRASOLE PIÙ ALTO DEL PAESE È PIÙ ALTO DI MIO PADRE!'], 'p', { walk: 1 }],
+    ['mercante', 'UN MERCANTE DI PASSAGGIO', ['DALLA VIA MAESTRA SI TAGLIA DI QUI PER LA ROCCA. SI RISPARMIA MEZZA GIORNATA, E SI BEVE MEGLIO.'], 'd']]);
+  paese('faro', 'APPRODO DEL FARO', 2900, 6990, 'porto', 'ne', [
+    ['traghettatore', 'IL GUARDIANO DEL FARO', ['ACCENDO IL FARO OGNI SERA. DA QUANDO LE NAVI NON PASSANO PIÙ, LO ACCENDO PER ABITUDINE.', 'IL FARO È LÌ, SULLA PUNTA A LIBECCIO. AI SUOI PIEDI QUALCUNO HA DIMENTICATO UN BAULE.'], 'p'],
+    ['pescivendola', 'LA MOGLIE DEL GUARDIANO', ['QUI UNA VOLTA ATTRACCAVANO I VELIERI DEL SUD. IL MOLO SE L\'È PORTATO VIA UNA MAREGGIATA.'], 'd'],
+    ['spadaccino', 'UN MARINAIO A TERRA', ['ASPETTO UN IMBARCO PER I MARI DEL SUD. DICONO CHE IL MOLO NUOVO SI FARÀ: IO INTANTO ASPETTO.'], 'p'],
+    ['donna', 'LA LOCANDIERA', ['NON HO PIÙ LA LOCANDA, MA UN PIATTO DI ZUPPA PER CHI ARRIVA A PIEDI DAL BORGO C\'È SEMPRE.'], 'd']]);
+  // il faro (quello di Pixel Saga), sulla punta a libeccio dell'Approdo
+  W.FLAT.push([2790, 7120, 38, null]); posa(FARO0, 2790 - 1310, 7120 - 3610);
+  // le rovine di Solis con il Santuario del Sole: il nucleo è quello di Pixel Saga; attorno, i resti della città (muri smozzicati, colonne, ossa)
+  posa(SOLIS0, SOLIS[0] - 3360, SOLIS[1] - 1670);
+  for (const [dx, dz, w, d, h, gate] of [[-190, -40, 70, 6, 8], [-170, 60, 6, 80, 10], [-90, -150, 90, 6, 7, 1], [150, -130, 6, 70, 9], [200, 30, 80, 6, 8], [130, 150, 6, 60, 7], [-60, 190, 100, 6, 9, 1], [-250, 150, 6, 70, 6], [260, -70, 6, 60, 10], [20, -240, 110, 6, 8, 1], [-300, -120, 60, 6, 7], [300, 170, 60, 6, 6]])
+    W.BUILD.push({ k: 'ruin', x: SOLIS[0] + dx, z: SOLIS[1] + dz, w, d, h, wall: 10, gate: !!gate });
+  for (const [dx, dz] of [[-120, -90], [-100, -90], [-80, -90], [110, -40], [110, -20], [110, 0], [-140, 120], [-120, 120], [60, 210], [80, 210], [230, -150], [250, -150], [-220, -200], [180, 230]]) W.PROPS.push(['menhir', SOLIS[0] + dx, SOLIS[1] + dz]);
+  for (const [dx, dz] of [[-150, 20], [90, 90], [-40, -180], [210, -20], [-230, 90], [40, 260]]) W.PROPS.push(['bones', SOLIS[0] + dx, SOLIS[1] + dz]);
+  // il Santuario del Lago sull'isola, con il passaggio di pietre dalla riva di mezzogiorno
+  posa(ISOLA0, lago[0] - 2150, lago[1] - 1340);
+  { const guado = [[lago[0] + 20, lago[1] + 90], [lago[0] + 60, lago[1] + 300], [lago[0] + 106, lago[1] + 497]];   // approda sulla riva a levante della foce del fiume
+    W.SHAPERS.push({ box: [lago[0] - 30, lago[1] + 60, lago[0] + 150, lago[1] + 540], free: () => true, f: (x, z, h) => h < -1.1 && W.segDist(x, z, guado) < 12 ? -1.1 : h });
+    for (let i = 0; i < guado.length - 1; i++) { const [ax, az] = guado[i], [bx, bz] = guado[i + 1], L = Math.hypot(bx - ax, bz - az); for (let t = 6; t < L; t += 11) W.PROPS.push(['stepstone', ax + (bx - ax) * t / L + Math.sin(t * 1.7) * 2, az + (bz - az) * t / L + Math.cos(t * 2.3) * 2, { y: W.WL + 0.15, sink: 0 }]); }
+    W.ROADS.push({ w: 5, pts: [[4520, 3620], [4440, 3300], [lago[0] + 121, lago[1] + 530]] }); }
+  // il Santuario del Ghiaccio nella Valle Gelata, con la capanna dell'eremita
+  W.FLAT.push([GHIACCIO[0] + 30, GHIACCIO[1] + 62, 110, null]); posa(GHIACCIO0, GHIACCIO[0] - 660, GHIACCIO[1] - 598);
+  C.folk('montanaro', "L'EREMITA DELLA VALLE", GHIACCIO[0] + 88, GHIACCIO[1] + 114, 3.4, ['QUASSÙ NON SALE NESSUNO DA ANNI. TU SEI IL PRIMO CHE VEDO DA QUANDO HO SMESSO DI CONTARE GLI INVERNI.', 'IL SANTUARIO DEL GHIACCIO È APERTO, MA DENTRO IL FREDDO MORDE. PORTA QUALCOSA DI CALDO, E UNA BUONA SPADA.']);
+  // il Nido del Grifone: in cima alle rupi, un forziere
+  W.FLAT.push([GRIFONE[0], GRIFONE[1], 70, null]); W.CHESTS.push(['gv_c10', GRIFONE[0] + 2, GRIFONE[1] + 5, 'monete:300', 2]);
+  // i nemici: quelli dell'isola di sempre al loro posto nuovo, e attorno a ogni branco altri due (la terra è più grande); niente branchi addosso a città e villaggi
+  { const abitati = [[3944, 5022, 210, 170], [6300, 4750, 410, 360], [1750, 3180, 125, 105], [2300, 5000, 95, 75], [4704, 7160, 95, 75], [5450, 3300, 95, 75], [2900, 6990, 95, 75], [3660, 4350, 215, 165], [AM[0] + 15, AM[1] - 40, 110, 110], [2790, 7120, 40, 40]];
+    const libero = (x, z) => !abitati.some(c => Math.abs(x - c[0]) < c[2] + 170 && Math.abs(z - c[1]) < c[3] + 170);
+    for (const [x, z, t, n, r] of CAMPI0) { const q = T(x, z), tipo = t === 'imp' ? 'bandit' : t;
+      [[0, 0, n], [310, 2.1, Math.max(2, n - 1)], [310, 4.2, Math.max(2, n - 1)]].forEach(([d, a, k]) => { const ang = a + x * 0.01, cx = Math.round(q[0] + Math.cos(ang) * d), cz = Math.round(q[1] + Math.sin(ang) * d); if (libero(cx, cz)) W.CAMPS.push([cx, cz, tipo, k, Math.round(r * 1.2)]); }); }
+    W.CAMPS.push([5400, 150, 'icewolf', 3, 100], [5000, -650, 'icewolf', 3, 100], [5380, -1250, 'icewolf', 2, 90], [3520, -760, 'icewolf', 3, 100]);   // la gola del Valico e la valle nascosta
+    W.CAMPS.push([3650, 4400, 'bat', 3, 28], [3566, 4320, 'slimeB', 2, 18], [3750, 4326, 'slimeB', 2, 16]); }                                      // nella Tana del Tasso
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
   const via = (w, pts) => W.ROADS.push({ w, pts });
   const BE = [4160, 5022], BN = [3944, 4846], BS = [3944, 5198], BW2 = [3728, 5022], RW = [5866, 4750], RE = [6734, 4750], RN = [6300, 4366], RS = [6300, 5134];   // dove le strade toccano le città (le porte)
   via(9, [BE, [4440, 5090], [4630, 5090], [5450, 4880], RW]);
   via(9, [[6230, 4100], [6750, 4130], [7200, 4020], PONTE]);   // la via del Ponte dei Re si stacca da quella di Solis, fuori dalla porta di tramontana
   via(9, [BN, [4120, 4350], [4190, 4000], [4380, 4000], [4520, 3620], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
-  via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], SOLIS]);
-  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [ALBERO, [AM[0], AM[1] + 46]]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
-  via(5, [FARO, [3800, 7160], [4030, 7160], [4210, 7160], [4704, 7180], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [RS, [6430, 5450], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
-  via(5, [BW2, [3100, 5050], [2300, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5450, 3300], [6129, 3844]]);
+  via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], [SOLIS[0] - 30, SOLIS[1] + 64]]);   // fino alla porta nel muro delle rovine
+  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], [GHIACCIO[0], GHIACCIO[1] + 50]]); via(5, [ALBERO, [AM[0], AM[1] + 46]]); via(5, [BS, [3700, 5900], [3200, 6500], [2900, 6909]]);
+  via(5, [[3001, 6990], [3800, 7160], [4030, 7160], [4210, 7160], [4603, 7160]]); via(5, [[4805, 7160], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [RS, [6430, 5450], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
+  via(5, [BW2, [3100, 5050], [2401, 5000]]); via(5, [[2199, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5349, 3300]]); via(5, [[5551, 3300], [6129, 3844]]);
   // il Poggio del Tasso: una rupe a nord-ovest del Borgo, lungo il sentiero del Bosco Antico. Dentro c'è la prima grotta aperta (di prova):
   // un invito tra due pareti, la bocca, un corridoio, una sala e due rami. Ci si entra a piedi, senza cambiare mondo.
   const POG = [3660, 4350];
