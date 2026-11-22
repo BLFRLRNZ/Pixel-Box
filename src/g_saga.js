@@ -188,6 +188,8 @@ let atlasUse = 0, fauna = null;
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
 const glowF = new Float32Array(160 * 44), WLP = new Float32Array(32), WLQ = new Float32Array(24);
+let grK = 0, grMus = null;                                      // quanto è al buio l'eroe: 0 all'aperto, 1 in fondo a una grotta aperta
+const buio = () => Math.max(day.night, grK);      // il buio che conta per lanterna, lumi e aloni: la notte, oppure la grotta
 
 // ---------- il giorno e la notte ----------
 // Un giorno intero dura 12 minuti: l'alba alle 6, il tramonto verso le 19. Ogni ora ha la sua luce.
@@ -895,6 +897,7 @@ function musicPick() {
   if (st === 'title' || st === 'intro') return 'title';
   if ((st !== 'play' && st !== 'class') || musQuiet > 0) return null;
   if (D) { if (D.def.casa) return MUS_PLACE[D.town] || 'borgo'; if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
+  if (grK > 0.45 && grMus) return grMus;   // in fondo a una grotta aperta: la sua musica
   return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
 }
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
@@ -989,11 +992,14 @@ function placeCam(snap) {
   const up = Math.max(0, orb.p), dn = D ? 0 : Math.max(0, -orb.p);
   if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), cd = 20 - up * 7, ex = hero.x - fx2 * cd, ez = hero.z - fz2 * cd, ey = Math.max(hero.y, -2) + 16 + up * 15, k = snap ? 1 : 0.25, lf = 8 * (1 - 0.6 * up); cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * lf; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * lf; return; }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = (CAM_D - up * 7 - dn * 3) * (1 - 0.3 * aimK);
+  // in una grotta aperta la visuale resta dentro: non sale sopra le pareti (si avvicina all'eroe) e sta sotto il soffitto
+  let gf = 0, gce = 0; if (W.GROTTE.length) { const q = W.grotta(hero.x, hero.z); if (q && q.f) { gf = q.f; gce = q.ce; } }
   let d = CD * 0.24;
-  for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CD * t, hero.z - fz * CD * t, 1.5)) break; d = CD * t; }
+  for (let t = 0.24; t <= 1.001; t += 0.08) { const px = hero.x - fx * CD * t, pz = hero.z - fz * CD * t; if (W.inBox(px, pz, 1.5) || (gf && gH(px, pz) > hero.y + 3.5)) break; d = CD * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
   let ey = hero.y + CAM_H + up * 24 - dn * 8.5;
   ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2, W.WL + 1.5);
+  if (gf) { if (gf === 2) ey = Math.min(ey, gce - 1.6); const q = W.grotta(ex, ez); if (q && q.f >= 2) ey = Math.min(ey, q.ce - 1.6); }
   const k = snap ? 1 : 0.25, lf = LOOK_F * (1 - 0.6 * up) * (1 + 2.4 * aimK);
   cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k;
   cam.tx = hero.x + fx * lf; cam.ty = hero.y + LOOK_H + dn * 5 + 1.5 * aimK; cam.tz = hero.z + fz * lf;
@@ -1006,6 +1012,7 @@ function canStand(e, nx, nz, r, steep) {
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.wlAt(nx, nz) - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
+  if (h0 - h1 > 5 && W.GROTTE.length) { const q = W.grotta(nx, nz); if (q && q.f) return false; }   // in una grotta aperta si entra dalla bocca, non cadendoci dal monte
   return !W.blocked(nx, nz, r);
 }
 function move(e, dx, dz, r, steep = 1.25) {
@@ -1682,6 +1689,7 @@ function playUpdate(dt) {
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
   saveT += dt; if (saveT > 20) { saveT = 0; writeSave(); }
+  { const q = !D && W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; grK += ((q ? q.bu : 0) - grK) * Math.min(1, 4 * dt); if (grK < 0.004) grK = 0; if (q && q.bu > 0) grMus = q.g.musica || 'grotta'; }
   camUpdate(dt);
   if (dialog) { const L = dialog.lines[dialog.i]; const tot = L.join(' ').length; if (dialog.ch < tot) { dialog.ch = Math.min(tot, dialog.ch + dt * 70); if (Math.floor(dialog.ch) % 3 === 0) tone(820 + Math.random() * 120, 0.012, 'square', 0.012); } }
   if (loot) loot.t += dt;
@@ -1834,6 +1842,8 @@ function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(
 function templeDoor(d) {
   if (d.cave) { if (dsave(d.id).vis) startFade(() => enterDungeon(d.id)); else say(null, d.intro || ["UN'APERTURA BUIA TRA LE ROCCE. DA DENTRO ARRIVA UN'ARIA FREDDA E UMIDA...", 'ENTRI CON CAUTELA.'], () => startFade(() => enterDungeon(d.id))); return; }
   const id = d.id, q = save.q.main, nm = SANCT[id];
+  // nel Grande Viaggio (anteprima) non c'è ancora la storia che apre i sigilli: il santuario si apre a chi arriva
+  if (MODO) { if (dsave(id).vis) startFade(() => enterDungeon(id)); else say(null, ['LE RUNE DEL ' + nm + ' SI ACCENDONO UNA DOPO L\'ALTRA. LA PIETRA SI APRE...'], () => startFade(() => enterDungeon(id))); return; }
   if (q < 4) { say(null, ['UN ANTICO SIGILLO CHIUDE LA PORTA DEL ' + nm + '. LE RUNE BRILLANO DEBOLMENTE.', q === 3 ? 'FORSE IL CAPITANO ARDEA SA COME SPEZZARLO.' : 'SOLO IL SANGUE DEI RE DI LUMEN PUÒ SPEZZARLO.']); return; }
   const nx = nextSanct();
   if (sanctDone(id) || id === nx) {
@@ -2526,7 +2536,8 @@ function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   if (!r) return;
   const n = pushBB.n; if (n >= 3000) return;
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
-  const tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
+  let tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
+  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
   pushBB.n = n + 1;
@@ -2538,7 +2549,7 @@ const FOGC = [0, 0, 0], ZENC = [0, 0, 0];
 let nearGlows = null;
 // le otto luci più vicine (la prima è la lanterna dell'eroe) illuminano terreno, case e personaggi quando fa buio
 function pickLights() {
-  const ng = day.night, L = [], cx = hero && st !== 'title' ? hero.x : cam.tx, cz = hero && st !== 'title' ? hero.z : cam.tz;
+  const ng = buio(), L = [], cx = hero && st !== 'title' ? hero.x : cam.tx, cz = hero && st !== 'title' ? hero.z : cam.tz;
   nearGlows = [];
   for (const g of W.glows) { const d = (g[0] - cx) ** 2 + (g[2] - cz) ** 2; if (d < 520 * 520) { nearGlows.push(g); if (d < 240 * 240) L.push([d, g]); } }
   WLQ.fill(0); let n = 0;
@@ -2548,7 +2559,7 @@ function pickLights() {
   for (let k = 0; k < L.length && n < 8; k++, n++) { const g = L[k][1]; WLP[n * 4] = g[0]; WLP[n * 4 + 1] = g[1]; WLP[n * 4 + 2] = g[2]; WLP[n * 4 + 3] = g[3] * 5.5; WLQ[n * 3] = g[4] * 0.9 * ng; WLQ[n * 3 + 1] = g[5] * 0.9 * ng; WLQ[n * 3 + 2] = g[6] * 0.9 * ng; }
 }
 function setWL(p) {
-  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, day.night > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
+  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, buio() > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
 }
 const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.x), yaw) / (TAU / 8)) % 8) + 8) % 8;
 // ---------- le terre vicine: altri mondi nati dalla stessa fabbrica, posati accanto a quello dove si cammina (per ora solo nelle prove) ----------
@@ -2651,6 +2662,8 @@ function render3D() {
     gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
+  // le volte delle grotte aperte: stessa roccia del terreno, sopra lo scavo
+  for (const v of W.volte) { if (!v.buf || !v.n || Math.hypot(v.x - cam.x, v.z - cam.z) - v.r > far || !boxVisible(v.box[0], v.lo, v.box[1], v.box[2], v.hi, v.box[3])) continue; gl.bindBuffer(gl.ARRAY_BUFFER, v.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]); gl.drawArrays(gl.TRIANGLES, 0, v.n); }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
@@ -2700,7 +2713,7 @@ function render3D() {
   for (const t of TERRE) if (t.ok) passaTerra(t, 2);
   acqua3D(fogC, fogN, fogF);
   // aloni di lampioni, fuochi e fari: si sommano al colore (di notte forti, di giorno appena accennati)
-  { let n = 0; const ng = day.night;
+  { let n = 0; const ng = buio();
     for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;
       for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = g[0]; glowF[q++] = g[1]; glowF[q++] = g[2]; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = g[4]; glowF[q++] = g[5]; glowF[q++] = g[6]; glowF[q++] = it; } n++; }
     if (n) { p = P.glow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF);
@@ -3221,7 +3234,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },

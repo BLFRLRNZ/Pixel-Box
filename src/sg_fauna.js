@@ -398,7 +398,8 @@ function create(env) {
   }
 
   // --- il terreno visto dagli animali
-  const dry = (x, z, S) => { const g = gH(x, z); return g > (S.wet ? 0.15 : 0.4) && W.slope(x, z) < (S.steep ? 1.8 : 1.15) && !W.blocked(x, z, S.cr || 1.3); };
+  const inGrotta = (x, z) => { if (!W.GROTTE.length) return false; const q = W.grotta(x, z); return !!(q && q.f); };   // nelle grotte aperte gli animali dei prati non entrano
+  const dry = (x, z, S) => { const g = gH(x, z); return g > (S.wet ? 0.15 : 0.4) && W.slope(x, z) < (S.steep ? 1.8 : 1.15) && !W.blocked(x, z, S.cr || 1.3) && !inGrotta(x, z); };
   const wet = (x, z) => { const g = gH(x, z); return g < -0.7 && g > -40 && !W.inBox(x, z, 2); };
   const shallow = (x, z) => { const g = gH(x, z); return g < 1.5 && g > -1.7 && !W.blocked(x, z, 1.3); };
   // il suolo delle città: i rettangoli di città e villaggi (W.URBAN), più Borgo Aurora attorno alle sue case
@@ -669,6 +670,7 @@ function create(env) {
     const an = rnd() * TAU, d = rr(18, 95), x = h.x + Math.cos(an) * d, z = h.z + Math.sin(an) * d, g = gH(x, z), bio = W.biomeAt(x, z);
     const dragon = bio === 6 || (g < 0.6 && g > -2 && W.coastDist(x, z) > 60);
     if (!dragon && (!FLOWERS.has(bio) || g < 0.5)) return;
+    if (inGrotta(x, z)) return;
     const C = dragon ? [[0.5, 1.2, 1.5], [1.4, 0.6, 0.5], [0.6, 1.5, 0.7]] : [[1.5, 1.3, 0.4], [1.5, 0.7, 0.3], [0.6, 0.9, 1.6], [1.5, 1.5, 1.5], [1.5, 0.6, 1.1], [1.1, 0.6, 1.5]];
     for (let i = 0, n = 1 + Math.floor(rnd() * 3); i < n; i++) { const tw = shade(C[Math.floor(rnd() * C.length)]); flut.push({ k: dragon ? 'libellula' : 'farfalla', x: x + rr(-6, 6), z: z + rr(-6, 6), hx: x, hz: z, y: 0, vx: 0, vz: 0, h: rr(2, 5.5), wt: dragon, s: rnd() * 9, ph: rnd() * 9, t: rr(18, 40), tint: tw[0], wh: tw[1] }); }
   }

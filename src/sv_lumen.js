@@ -53,6 +53,13 @@ SG.terre.lumen = m => {
   W.PLACES.push([BORGO[0], BORGO[1], 330, 'BORGO AURORA'], [ROCCA[0], ROCCA[1], 560, 'ROCCA DI LUMEN'], [SOLIS[0], SOLIS[1], 430, 'ROVINE DI SOLIS'], [ALBERO[0], ALBERO[1], 200, "L'ALBERO MADRE"], [lago[0], lago[1], 110, 'ISOLA DEL LAGO'],
     [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA'], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
     [2300, 5000, 150, 'PRATOLUNGO'], [4704, 7150, 150, 'CALA DELLE CONCHIGLIE'], [5450, 3300, 150, 'GIRASOLE'], [FARO[0], FARO[1], 150, 'APPRODO DEL FARO']);   // (il villaggio degli elfi il nome lo riceve dal generatore delle città)
+  // gente nuova: gli elfi (orecchie a punta, capelli lunghi, verdi del bosco) e i nani (bassi, larghi, barbuti)
+  Object.assign(C.LOOKS, {
+    elfo: { walk: 1, skin: '#f4e0c4', ears: 1, hairStyle: 'long', hair: '#e8dc9a', shirt: '#3e8a4a', cape: '#1e4a2a', belt: '#6a4a2a', pants: '#3a4a2a', boots: '#5a4a2a' },
+    elfa: { walk: 1, skin: '#f6e4cc', ears: 1, hairStyle: 'long', hair: '#b8d8a0', robe: '#6aa86a', shirt: '#a8d8a0', pants: '#4a7a4a', boots: '#5a4a2a' },
+    elfoarciere: { skin: '#f0d8b8', ears: 1, hairStyle: 'long', hair: '#b08a4a', cap: '#2e6a3a', feather: '#f0e8d8', shirt: '#4a7a3a', quiver: '#6a4a2a', belt: '#3a2a1a', pants: '#3a4a2a', boots: '#4a3a22', weapon: { kind: 'bow', col: '#8a6a3a' } },
+    elfosaggio: { sc: 1.04, skin: '#f4e4d0', ears: 1, hairStyle: 'long', hair: '#f0f0f8', robe: '#e8e8d8', shirt: '#f4f4e8', cape: '#7ab87a', pants: '#c8c8b0', boots: '#8a8a6a', staff: '#c8c8a0', orb: '#a8f0c0' },
+    nano: { sc: 0.8, wide: 0.9, skin: '#e0b088', helm: { c: '#8a8a96', nose: 1 }, beard: '#c8642a', shirt: '#7a3a2a', plate: '#8a8a96', belt: '#3a2a1a', pants: '#4a4a52', boots: '#3a2a1a', weapon: { kind: 'hammer', col: '#6a6e78' } } });
   // le città: il generatore di sempre, con misure nuove
   // Borgo Aurora: il doppio di oggi, aperto, senza mura
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
@@ -65,15 +72,33 @@ SG.terre.lumen = m => {
       ['boscaiolo', 'IL BOSCAIOLO', ['NEL BOSCO ANTICO, A NORD-OVEST, GLI ELFI HANNO UN VILLAGGIO. SEGUI IL SENTIERO E, AL BIVIO, PRENDI A SINISTRA.'], 'd'],
       ['borghese', 'IL CARRETTIERE', ['A EST, OLTRE IL PONTE DI PIETRA, LA VIA MAESTRA PORTA ALLA ROCCA DI LUMEN. È UN MINUTO DI CORSA, NON DI PIÙ.'], 'p'],
       ['donna', 'LA LAVANDAIA', ['A NORD LA STRADA PASSA IL FIUME, COSTEGGIA IL LAGO DI CRISTALLO E SALE AL VALICO DEI GIGANTI. LASSÙ FA FREDDO.'], 'd'],
-      ['bimbo', 'IL PICCOLO TOBIA', ['DICONO CHE TRA I MONTI DEL NORD CI SIA UNA VALLE CHE NESSUNO HA MAI TROVATO. IO DA GRANDE LA TROVO!'], 'p', { walk: 1 }]] });
+      ['bimbo', 'IL PICCOLO TOBIA', ['DICONO CHE TRA I MONTI DEL NORD CI SIA UNA VALLE CHE NESSUNO HA MAI TROVATO. IO DA GRANDE LA TROVO!'], 'p', { walk: 1 }],
+      ['borgomastro', 'IL BORGOMASTRO', ['IN POCHI ANNI IL BORGO È RADDOPPIATO: CASE NUOVE, GENTE NUOVA. E IO DEVO RICORDARMI TUTTI I NOMI!', 'PRESTO APPENDEREMO UNA BACHECA IN PIAZZA, PER CHI CERCA LAVORO E PER CHI NE OFFRE.'], 'p'],
+      ['fioraia', 'ROSA LA FIORAIA', ['FIORI DEI PRATI DI LUMEN, COLTI STAMATTINA! QUELLI AZZURRI CRESCONO SOLO VERSO IL LAGO DI CRISTALLO.'], 'p', { walk: 1 }],
+      ['minatore', 'IL VECCHIO MINATORE', ["A NORD-OVEST, LUNGO IL SENTIERO DEL BOSCO, C'È UN POGGIO DI ROCCIA CON DUE TORCE ALL'IMBOCCO: È LA TANA DEL TASSO.", 'DENTRO È BUIO PESTO. IN FONDO AL RAMO DI PONENTE HO LASCIATO LA MIA LANTERNA: SE LA TROVI, TIENILA.'], 'd'],
+      ['guardia', 'LA GUARDIA DEL BORGO', ['QUI NON CI SONO MURA: CI SONO IO. DI NOTTE ACCENDO LE LANTERNE E FACCIO IL GIRO DELLE CASE.'], 'd'],
+      ['pescivendola', 'LA PESCIVENDOLA', ["TROTE DEL FIUME, PESCATE ALL'ALBA SOTTO IL PONTE DI PIETRA!"], 'p'],
+      ['bimbo', 'LA PICCOLA NINA', ['GIOCO A NASCONDINO CON TOBIA TRA LE CASE NUOVE. NON DIRGLI CHE SONO QUI!'], 'd', { walk: 1 }],
+      ['donna', 'LA FORNAIA', ['IL MIO FORNO È LA PRIMA LUCE CHE SI ACCENDE NEL BORGO. IL PANE MIGLIORE È QUELLO CHE SCOTTA ANCORA.'], 'd'],
+      ['monaco', 'FRATE ILARIO', ['UNA VOLTA AL MESE VADO A PIEDI FINO ALLA ROCCA. LA VIA MAESTRA È LARGA E LASTRICATA: NON CI SI PERDE NEMMENO COL BUIO.'], 'd'],
+      ['borghese', 'IL MUGNAIO', ["IL GRANO ARRIVA DAI CAMPI DORATI, A LEVANTE. QUEST'ANNO LE SPIGHE SONO ALTE COSÌ."], 'd', { walk: 1 }],
+      ['spadaccino', 'UN VIANDANTE', ['VENGO DAL VALICO DEI GIGANTI. LASSÙ LA NEVE NON SI SCIOGLIE MAI, E LA GOLA SALE TRA PARETI ALTE COME TORRI.', "OLTRE IL VALICO C'È UN'ALTRA TERRA. MA LA STRADA, PER ORA, FINISCE LÌ."], 'p'],
+      ['traghettatore', 'IL BARCAIOLO', ['UN GIORNO PORTERÒ LA GENTE GIÙ PER IL FIUME, FINO ALLA CALA DELLE CONCHIGLIE. PER ORA RATTOPPO LA BARCA.'], 'd'],
+      ['mercantessa', 'LA MERCIAIA', ['AGHI, FILO, NASTRI E BOTTONI. E QUALCHE CHIACCHIERA, SE HAI TEMPO.', 'DICONO CHE GLI ELFI SIANO TORNATI NEL BOSCO ANTICO. LA MIA BISNONNA LI AVEVA VISTI DA BAMBINA.'], 'p', { walk: 1 }]] });
   W.PROPS.push(['well', BORGO[0] + 27, BORGO[1] - 19]);   // il pozzo del Borgo: chi beve si rimette in forze
   // il villaggio degli elfi nel Bosco Antico: case strette di legno dai tetti ripidi e muschiati, tra le querce grandi, con le lanterne
   const TL = m.town.TL, ELFI = [1750, 3180];
   C.STYLES.elfi = { walls: [3, 3, TL.TIMBER2], roofs: [TL.ROOF_MOSS, TL.ROOF_MOSS, TL.ROOF_GREEN], rt: ['gable'], steep: 0.95, h: [12, 19], wd: [12, 17], chim: 0, win: [8, TL.WIN_PAPER], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_MOSS,
     pave: 'g', trees: ['oakbig', 'oakbig', 'oak'], lamp: 'lantern', yard: ['pot', 'bench', 'barrel'], flag: 0, ban: TL.BAN_RED };
   C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 46, d: 40 },
-    people: [['saggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS."], 'p'],
-      ['donna', 'UNA DONNA DEL BOSCO', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd']] });
+    people: [['elfosaggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS.", 'ACCANTO ALL\'ALBERO C\'È IL SANTUARIO DEL BOSCO. CHI HA CORAGGIO PUÒ ENTRARE.'], 'p'],
+      ['elfa', 'LIRIEL', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd'],
+      ['elfo', 'THALION', ['CAMMINIAMO SENZA RUMORE E PARLIAMO POCO. MA CHI PORTA RISPETTO AL BOSCO È SEMPRE IL BENVENUTO.'], 'p', { walk: 1 }],
+      ['elfoarciere', 'LA SENTINELLA', ['DAGLI ALBERI VEDIAMO CHI ARRIVA DAL SENTIERO MOLTO PRIMA CHE LUI VEDA NOI. TI ABBIAMO VISTO GIÀ AL BIVIO.'], 'd'],
+      ['elfa', 'LA TESSITRICE DI LANTERNE', ['INTRECCIAMO LE LANTERNE CON LA SETA DEI RAGNI E LA RESINA DELLE QUERCE: NON SI SPENGONO NEMMENO CON LA PIOGGIA.'], 'd'],
+      ['elfo', 'UN GIOVANE ELFO', ["HO CENT'ANNI APPENA COMPIUTI. GLI ANZIANI DICONO CHE SONO ANCORA UN RAGAZZINO."], 'p', { walk: 1 }],
+      ['elfa', 'LA CANTORA', ["A OGNI LUNA NUOVA CANTIAMO PER L'ALBERO MADRE. LE SUE RADICI ARRIVANO FIN SOTTO IL VILLAGGIO."], 'p'],
+      ['elfoarciere', "L'ARCIERE DELLA RADURA", ['UNA FRECCIA SOLA, E SOLO QUANDO SERVE. IL BOSCO NON AMA CHI SPRECA.'], 'd']] });
   W.PROPS.push(['oakbig', ELFI[0], ELFI[1]], ['lantern', ELFI[0] - 14, ELFI[1] - 10], ['lantern', ELFI[0] + 14, ELFI[1] - 10], ['lantern', ELFI[0] - 14, ELFI[1] + 12], ['lantern', ELFI[0] + 14, ELFI[1] + 12]);
   // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
   W.FLAT.push([ROCCA[0], ROCCA[1], 640, 30]);   // il pianoro della città
@@ -89,9 +114,37 @@ SG.terre.lumen = m => {
       ['monaco', 'FRATE ANSELMO', ['A NORD, OLTRE LA FONTE DEI GIRASOLI, CI SONO LE ROVINE DI SOLIS. NESSUNO CI ABITA PIÙ DA MILLE ANNI.'], 'd'],
       ['borghese', 'IL CARRETTIERE', ["LA VIA DEL PONTE DEI RE ESCE DALLA PORTA DI TRAMONTANA E PIEGA A LEVANTE. IL PONTE, PERÒ, NON C'È ANCORA."], 'd'],
       ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.'], [245, 14, Math.PI]],
-      ['re', 'RE ALDRIC DI LUMEN', ['IL MIO REGNO È CRESCIUTO, VIANDANTE. E OLTRE IL VALICO DEI GIGANTI CI SONO TERRE CHE NEMMENO IO HO MAI VISTO.', 'QUANDO IL VIAGGIO COMINCERÀ AVRÒ UN INCARICO PER TE. PER ORA GUARDA LA MIA CITTÀ, E DIMMI SE TI PIACE.'], [260, -13, Math.PI], { id: 're_gv' }]],
+      ['re', 'RE ALDRIC DI LUMEN', ['IL MIO REGNO È CRESCIUTO, VIANDANTE. E OLTRE IL VALICO DEI GIGANTI CI SONO TERRE CHE NEMMENO IO HO MAI VISTO.', 'QUANDO IL VIAGGIO COMINCERÀ AVRÒ UN INCARICO PER TE. PER ORA GUARDA LA MIA CITTÀ, E DIMMI SE TI PIACE.'], [260, -13, Math.PI], { id: 're_gv' }],
+      ['guardia', 'GUARDIA DI TRAMONTANA', ['DALLA PORTA DI TRAMONTANA SI VA ALLE ROVINE DI SOLIS E, PIEGANDO A LEVANTE, VERSO IL PONTE DEI RE.'], 'd'],
+      ['guardia', 'GUARDIA DI MEZZOGIORNO', ["LA PORTA DI MEZZOGIORNO GUARDA IL MONTE BRACE. È UN VULCANO SPENTO DA SECOLI: NEL CRATERE, ORA, C'È UN LAGO."], 'd'],
+      ['lanciere', 'IL LANCIERE DI RONDA', ['FACCIO IL GIRO DELLE MURA TRE VOLTE AL GIORNO. DA QUANDO LA CITTÀ È CRESCIUTA, NON FINISCO PIÙ.'], 'p'],
+      ['dama', 'DAMA ELEONORA', ['RE ALDRIC RICEVE CHIUNQUE, NEL CORTILE DEL MASTIO. NON TUTTI I RE LO FANNO.'], 'p'],
+      ['borghese', 'IL BANDITORE', ["UDITE, UDITE! LA ROCCA CERCA MURATORI, FABBRI E CARPENTIERI: C'È UN PONTE DA COSTRUIRE, IL PIÙ LUNGO DEL REGNO!"], 'p', { walk: 1 }],
+      ['mercante', 'IL MERCANTE DI STOFFE', ['SETE DI ZAFIRA, LANE DEI MONTI... ARRIVERANNO, QUANDO SI POTRÀ PASSARE. PER ORA VENDO QUEL CHE HO.'], 'p', { walk: 1 }],
+      ['fioraia', 'LA FIORAIA DELLA PIAZZA', ['GIRASOLI APPENA COLTI! IL PAESE DI GIRASOLE È A NORD-OVEST, SULLA STRADA CHE TAGLIA VERSO IL LAGO.'], 'p'],
+      ['mercantessa', 'LA FRUTTIVENDOLA', ['MELE, PERE E UVA DELLE COLLINE DI SOLIS. ASSAGGIA, ASSAGGIA!'], 'd', { walk: 1 }],
+      ['saggio', "L'ARCHIVISTA DEL RE", ["NELLE CARTE ANTICHE LUMEN È SOLO UNA DI QUATTRO TERRE: I MONTI DEL CIELO A NORD, L'ORIENTE OLTRE IL PONTE, I MARI DEL SUD.", 'QUATTRO TERRE IN CERCHIO. E IN MEZZO... LÌ LE CARTE SONO BRUCIATE.'], 'd'],
+      ['nano', 'UN NANO DI PASSAGGIO', ['VENGO DA FONDOFERRO, SOTTO I MONTI DEL CIELO. HO FATTO IL GIRO LUNGO, PER MARE: IL VALICO È ANCORA CHIUSO DALLA NEVE.', 'VOI UOMINI COSTRUITE IN ALTO. NOI SCAVIAMO. VEDREMO CHI ARRIVA PRIMA DALL\'ALTRA PARTE.'], 'p'],
+      ['spadaccino', "IL MAESTRO D'ARMI", ["LE RECLUTE SI ALLENANO DIETRO L'ARMERIA. TU HAI IL PASSO DI UNO CHE HA GIÀ COMBATTUTO."], 'd'],
+      ['monaco', 'FRATE BENIAMINO', ['CURIAMO I VIANDANTI CHE ARRIVANO STANCHI DALLA VIA MAESTRA. SE CERCHI UN LETTO, LA LOCANDA DEL LEONE È QUI VICINO.'], 'd'],
+      ['bimbo', 'LA PICCOLA GIADA', ['HO CONTATO LE TORRI DELLE MURA: SONO PIÙ DELLE MIE DITA!'], 'p', { walk: 1 }],
+      ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
+      ['borgomastro', 'IL SINISCALCO', ["TENGO I CONTI DEL REGNO. IL PONTE DEI RE COSTERÀ QUANTO TUTTE LE MURA: MA UNIRÀ LUMEN ALL'ORIENTE."], 'd'],
+      ['elfa', "UN'ELFA IN VISITA", ['SONO SCESA DAL BOSCO ANTICO PER VEDERE LA CITTÀ DI PIETRA. QUANTO RUMORE FATE, VOI UOMINI!'], 'p', { walk: 1 }]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
       ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
+  // l'Albero Madre e, poco a nord, il Santuario del Bosco: quelli di Pixel Saga, al loro posto nuovo (accanto al bivio dei sentieri, in una radura)
+  const AM = [ALBERO[0] + 70, ALBERO[1] - 50], SB = [AM[0] + 35, AM[1] - 90];
+  W.FLAT.push([AM[0] + 15, AM[1] - 40, 175, null]); W.CLEAR.push([AM[0] - 95, AM[1] - 150, AM[0] + 125, AM[1] + 75]);
+  W.BUILD.push({ k: 'albero', x: AM[0], z: AM[1] }, { k: 'temple', x: SB[0], z: SB[1], w: 26, d: 22, h: 16, wall: 11, door: 's', id: 'bosco' });
+  W.PROPS.push(['giant', AM[0], AM[1]]); W.bigShadows.push([AM[0], AM[1], 52]);
+  for (const deg of [20, 60, 120, 160, 200, 340]) { const a = deg / 360 * Math.PI * 2; W.LATE.props.push(['runa', AM[0] + Math.cos(a) * 44, AM[1] + Math.sin(a) * 44]); }
+  W.LATE.props.push(['braciereV', AM[0] - 11, AM[1] + 26], ['braciereV', AM[0] + 11, AM[1] + 26]);
+  { const X = SB[0], Z1 = SB[1] + 11;   // il sagrato: lastre dal pronao ai piedi dell'albero, cervi di pietra, custodi, bracieri
+    W.PAVE.push(['g', 'rect', X - 30, Z1, X + 30, Z1 + 33], ['g', 'rect', X - 12, Z1 + 33, X + 12, Z1 + 53], ['b', 'rect', X - 7.5, Z1, X + 7.5, Z1 + 53], ['b', 'rect', X - 22, Z1, X + 22, Z1 + 19], ['g', 'disc', X, Z1 + 39, 14], ['b', 'disc', X, Z1 + 39, 10.5]);
+    W.LATE.props.push(['cervopietra', X - 19, Z1 + 24, { r: 5.6 }], ['cervopietra2', X + 19, Z1 + 24, { r: 5.6 }], ['custode', X - 19, Z1 + 39, { r: 3.6 }], ['custode', X + 19, Z1 + 39, { r: 3.6 }], ['braciereV', X - 9, Z1 + 20.5], ['braciereV', X + 9, Z1 + 20.5]); }
+  C.folk('elfoarciere', 'LA CUSTODE DEL SANTUARIO', SB[0] + 30, SB[1] + 44, Math.PI / 2, ['IL SANTUARIO DEL BOSCO HA DORMITO MILLE ANNI. ORA LE RUNE SI ACCENDONO PER CHI ARRIVA FIN QUI.', 'DENTRO CI SONO PORTE CHIUSE, TRAPPOLE E UN GUARDIANO. NON ENTRARE SENZA POZIONI.']);
+  C.folk('elfosaggio', "IL CANTORE DELL'ALBERO", AM[0] - 30, AM[1] + 40, 0, ["QUESTO È L'ALBERO MADRE. ERA GIÀ VECCHIO QUANDO GLI UOMINI ALZARONO LA PRIMA PIETRA DI SOLIS.", 'IL SANTUARIO È LÌ DIETRO, A TRAMONTANA: SEGUI LE LASTRE CHIARE.']);
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
   const via = (w, pts) => W.ROADS.push({ w, pts });
   const BE = [4160, 5022], BN = [3944, 4846], BS = [3944, 5198], BW2 = [3728, 5022], RW = [5866, 4750], RE = [6734, 4750], RN = [6300, 4366], RS = [6300, 5134];   // dove le strade toccano le città (le porte)
@@ -99,9 +152,28 @@ SG.terre.lumen = m => {
   via(9, [[6230, 4100], [6750, 4130], [7200, 4020], PONTE]);   // la via del Ponte dei Re si stacca da quella di Solis, fuori dalla porta di tramontana
   via(9, [BN, [4120, 4350], [4190, 4000], [4380, 4000], [4520, 3620], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
   via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], SOLIS]);
-  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
+  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [ALBERO, [AM[0], AM[1] + 46]]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
   via(5, [FARO, [3800, 7160], [4030, 7160], [4210, 7160], [4704, 7180], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [RS, [6430, 5450], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
   via(5, [BW2, [3100, 5050], [2300, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5450, 3300], [6129, 3844]]);
+  // il Poggio del Tasso: una rupe a nord-ovest del Borgo, lungo il sentiero del Bosco Antico. Dentro c'è la prima grotta aperta (di prova):
+  // un invito tra due pareti, la bocca, un corridoio, una sala e due rami. Ci si entra a piedi, senza cambiare mondo.
+  const POG = [3660, 4350];
+  W.SHAPERS.push({ box: [POG[0] - 260, POG[1] - 210, POG[0] + 260, POG[1] + 210], free: () => true,
+    f: (x, z, h) => { const s = Math.hypot((x - POG[0]) / 215, (z - POG[1]) / 165) * (1 + (W.fbm(x / 80, z / 80, 2) - 0.5) * 0.14); return s >= 1 ? h : h + (58 + 14 * (W.fbm(x / 45, z / 45, 3) - 0.5)) * W.smooth(1, 0.78, s); } });
+  W.GROTTE.push({ id: 'tasso', y: 25, musica: 'grotta:cristalli', rami: [
+    [[3656, 4544, 12], [3656, 4496, 14], [3656, 4448, 15], [3650, 4398, 36]],
+    [[3650, 4398, 36], [3600, 4350, 15], [3566, 4316, 28]],
+    [[3650, 4398, 36], [3712, 4362, 15], [3752, 4322, 26]]] });
+  W.PLACES.push([3656, 4400, 150, 'TANA DEL TASSO']);
+  via(5, [[3656, 4622], [3656, 4504]]);   // il viottolo che si stacca dal sentiero e arriva alla bocca
+  { const buio = { lit: 0.46 }, luce = (r, g, b) => ({ glow: [5, 8, r, g, b, 1] });
+    W.PROPS.push(['torch', 3640, 4520], ['torch', 3672, 4520],
+      ['crystal', 3758, 4310, luce(0.3, 0.7, 1)], ['crystal', 3768, 4326, luce(0.3, 0.7, 1)], ['crystal', 3744, 4302, luce(0.55, 0.4, 1)], ['crystal', 3738, 4336, {}], ['crystal', 3764, 4338, {}],
+      ['crystal', 3664, 4374, luce(0.3, 0.7, 1)], ['crystal', 3624, 4388, {}], ['crystal', 3548, 4302, luce(0.55, 0.4, 1)], ['crystal', 3580, 4296, {}],
+      ['menhir', 3632, 4416, buio], ['menhir', 3672, 4408, buio], ['menhir', 3640, 4376, buio], ['menhir', 3588, 4328, buio], ['menhir', 3552, 4330, buio], ['menhir', 3724, 4348, buio],
+      ['rock', 3664, 4460, buio], ['rock', 3644, 4432, buio], ['rock', 3676, 4384, buio], ['rock', 3610, 4364, buio], ['rock', 3574, 4334, buio], ['rock', 3700, 4372, buio], ['rock', 3742, 4318, buio], ['bones', 3562, 4322, buio], ['bones', 3654, 4404, buio]);
+    for (const [x, z] of [[3662, 4470], [3636, 4402], [3660, 4420], [3608, 4352], [3560, 4306], [3572, 4322], [3716, 4358], [3750, 4330], [3734, 4310]]) W.PROPS.push(['mushroom', x, z, { lit: 1.15 }]); }
+  W.CHESTS.push(['gv_tasso', 3560, 4312, 'lanterna', 2]);   // in fondo al ramo di ponente: la lanterna del minatore
   // i ponti di pietra sul fiume, dove lo passano le strade: quello del Borgo, quello della via del nord, quello della costa
   for (const [a0, a1, c] of [[4474, 4594, 5090], [4223, 4343, 4000], [4058, 4178, 7160]]) m.town.addBridge({ axis: 'x', a0, a1, c, y: 6, towers: false, ramps: false });
 };

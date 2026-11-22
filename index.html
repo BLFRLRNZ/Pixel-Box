@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.19", "id": "2.19-080e0e34", "date": "22/11/2026", "pwa": true};
+const APP = {"v": "2.20", "id": "2.20-7ba8a050", "date": "22/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -7042,6 +7042,8 @@ const BRIDGES = [];                                // ponti: { x0, z0, x1, z1, y
 const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 1720], ['b', 'disc', 1080, 1420, 40], ['b', 'disc', 2150, 1340, 30]];
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
+// le grotte aperte (vedi più sotto): { id, y, rami }
+const GROTTE = [];
 // aggiunte recenti alle terre di sempre: oggetti e ostacoli che entrano per ultimi, con una sequenza di numeri tutta loro (nient'altro si sposta)
 const LATE = { props: [], boxes: [], circles: [] };
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
@@ -7245,7 +7247,7 @@ function gradeRoads(H, pads) {
 }
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, VOLC, OLDN, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, LATESHAPE, FINE,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, VOLC, OLDN, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, LATESHAPE, FINE, GROTTE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
@@ -7296,6 +7298,104 @@ W.inBox = (x, z, m = 0) => {
   return null;
 };
 
+// ---------- le grotte aperte ----------
+// Una grotta aperta è scavata nel rilievo e coperta da una volta di roccia: ci si entra a piedi, senza cambiare mondo.
+// Ogni grotta: { id, y (quota del fondo), rami: [[[x, z, raggio, scarto di quota], ...], ...] }. Il primo tratto del primo ramo è l'invito
+// a cielo aperto: la volta comincia al suo secondo punto (la bocca). Sopra la volta non si cammina.
+// Per ogni grotta c'è una griglia sui vertici del rilievo che tocca. F: 0 roccia, 1 fondo a cielo aperto, 2 fondo sotto la volta, 3 spalla
+// (il piede della parete, sotto la volta). FL: la quota scavata. CE: la quota del soffitto. BU: quanto è buio (0-1).
+const GR_BUIO = 0.13;
+function grPrepara() {
+  for (const g of GROTTE) {
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const P of g.rami) for (const p of P) { x0 = Math.min(x0, p[0] - p[2]); x1 = Math.max(x1, p[0] + p[2]); z0 = Math.min(z0, p[1] - p[2]); z1 = Math.max(z1, p[1] + p[2]); }
+    const M = 48, i0 = Math.max(2, Math.floor((x0 - M) / CELL)), i1 = Math.min(N - 2, Math.ceil((x1 + M) / CELL)), j0 = Math.max(2, Math.floor((z0 - M - Z0) / CELL)), j1 = Math.min(NZ - 2, Math.ceil((z1 + M - Z0) / CELL)), nw = i1 - i0 + 1, nh = j1 - j0 + 1, n = nw * nh;
+    const F = new Uint8Array(n), FL = new Float32Array(n), CE = new Float32Array(n), BU = new Float32Array(n), bocca = g.rami[0][1];
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) {
+      const x = (i0 + i) * CELL, z = Z0 + (j0 + j) * CELL, k = j * nw + i;
+      let bd = 1e9, open = 0, dy = 0;
+      for (let b = 0; b < g.rami.length; b++) { const P = g.rami[b];
+        for (let s = 0; s < P.length - 1; s++) { const A = P[s], Q = P[s + 1], dx = Q[0] - A[0], dz = Q[1] - A[1], t = Math.max(0, Math.min(1, ((x - A[0]) * dx + (z - A[1]) * dz) / (dx * dx + dz * dz))), d = Math.hypot(x - A[0] - dx * t, z - A[1] - dz * t) - (A[2] + (Q[2] - A[2]) * t);
+          if (d < bd) { bd = d; open = b === 0 && s === 0 && t < 1 ? 1 : 0; dy = (A[3] || 0) + ((Q[3] || 0) - (A[3] || 0)) * t; } } }
+      const d = bd + (open ? 0 : (fbm(x / 26, z / 26, 2) - 0.5) * 9), fl = g.y + dy + (fbm(x / 19, z / 19, 2) - 0.5) * 1.2;   // le pareti non sono dritte, il fondo non è un tavolo
+      FL[k] = fl; CE[k] = fl + Math.max(3.5, 9.5 + (d < 0 ? Math.min(-d, 28) * 0.42 : -d * 0.5) + (fbm(x / 14, z / 14, 2) - 0.5) * 3);   // il soffitto: basso alle pareti, alto in mezzo alle sale
+      if (d < 0) { F[k] = open ? 1 : 2; if (!open) BU[k] = smooth(4, 64, Math.hypot(x - bocca[0], z - bocca[1])); }
+    }
+    // la spalla: i vertici di roccia che toccano il fondo coperto scendono a mezza parete (così la parete che si vede è tutta in ombra)
+    const tocca = (i, j, min) => { let b = -1; for (let q = 0; q < 9; q++) { const a = i + q % 3 - 1, c = j + Math.floor(q / 3) - 1; if (a < 0 || c < 0 || a >= nw || c >= nh) continue; const kk = c * nw + a; if (F[kk] >= min && F[kk] < 4) b = Math.max(b, BU[kk]); } return b; };
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const k = j * nw + i; if (F[k]) continue; const b = tocca(i, j, 2); if (b >= 0) { F[k] = 4; BU[k] = b; FL[k] += 22; } }
+    for (let k = 0; k < n; k++) if (F[k] === 4) F[k] = 3;
+    // il buio del soffitto arriva anche dove il soffitto entra nella roccia
+    const BS = BU.slice(); for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const k = j * nw + i; if (!F[k]) BS[k] = Math.max(0, tocca(i, j, 2)); }
+    Object.assign(g, { i0, j0, nw, nh, F, FL, CE, BU, BS, box: [i0 * CELL, Z0 + j0 * CELL, i1 * CELL, Z0 + j1 * CELL] });
+    FINE.push([g.box[0] - 130, g.box[1] - 130, g.box[2] + 130, g.box[3] + 130]);   // attorno alla grotta il rilievo resta preciso anche da lontano
+  }
+}
+// scava: il rilievo di prima resta in H0 (è il dorso della volta)
+function grScava(H, H0) {
+  for (const g of GROTTE) for (let j = 0; j < g.nh; j++) for (let i = 0; i < g.nw; i++) { const k = j * g.nw + i, f = g.F[k]; if (!f) continue; const K = (g.j0 + j) * V + g.i0 + i;
+    H0[K] = H[K]; H[K] = f === 2 ? g.FL[k] : Math.min(H[K], g.FL[k]); }
+}
+// dove la roccia sopra è troppo poca la volta non c'è (resta un pozzo di luce); altrove il soffitto sta sotto il dorso
+function grChiudi() {
+  const H0 = W.H0;
+  for (const g of GROTTE) for (let k = 0; k < g.F.length; k++) { const f = g.F[k]; if (f < 2) continue; const K = (g.j0 + Math.floor(k / g.nw)) * V + g.i0 + k % g.nw, base = f === 3 ? g.FL[k] - 22 : g.FL[k];
+    if (H0[K] - base < 7.5) g.F[k] = f === 2 ? 1 : 0; else g.CE[k] = Math.min(g.CE[k], H0[K] - 1.2); }
+}
+// il rilievo «di fuori» in un vertice (quello di prima sotto la volta, quello di adesso altrove) e la sua luce
+const grFuori = (g, i, j) => { const a = i - g.i0, b = j - g.j0; return a >= 0 && b >= 0 && a < g.nw && b < g.nh && g.F[b * g.nw + a] >= 2 ? W.H0[j * V + i] : W.H[j * V + i]; };
+const grSole = (g, i, j) => { const gx = (grFuori(g, i + 1, j) - grFuori(g, i - 1, j)) / (2 * CELL), gz = (grFuori(g, i, j + 1) - grFuori(g, i, j - 1)) / (2 * CELL), n = Math.hypot(gx, 1, gz), dot = (-gx * SUN[0] + SUN[1] - gz * SUN[2]) / (n * Math.hypot(SUN[0], SUN[1], SUN[2])); return [Math.max(0.42, Math.min(1.12, 0.38 + 0.74 * Math.max(0, dot))), gx, gz]; };
+// la luce: buio sotto la volta; sull'orlo, quella che ci sarebbe senza la grotta (il dorso della volta e il monte attorno combaciano)
+function grLuce() {
+  const SH = W.SH;
+  for (const g of GROTTE) for (let j = 0; j < g.nh; j++) for (let i = 0; i < g.nw; i++) { const k = j * g.nw + i, f = g.F[k], K = (g.j0 + j) * V + g.i0 + i;
+    if (f >= 2) SH[K] = lerp(0.6, GR_BUIO, g.BU[k]);
+    else if (!f) { let orlo = false; for (let q = 0; q < 9 && !orlo; q++) { const a = i + q % 3 - 1, b = j + Math.floor(q / 3) - 1; orlo = a >= 0 && b >= 0 && a < g.nw && b < g.nh && g.F[b * g.nw + a] >= 2; } if (orlo) SH[K] = grSole(g, g.i0 + i, g.j0 + j)[0]; } }
+}
+// dove il terreno prende il colore della roccia: tutta la grotta, e sfumando un po' attorno
+function grColore() {
+  if (!GROTTE.length) return null;
+  const GM = new Uint8Array(V * VZ);
+  for (const g of GROTTE) { const { nw, nh, F } = g, m = new Float32Array(nw * nh);
+    for (let k = 0; k < m.length; k++) m[k] = F[k] ? 1 : 0;
+    for (let it = 0; it < 2; it++) { const p = m.slice(); for (let j = 1; j < nh - 1; j++) for (let i = 1; i < nw - 1; i++) { const k = j * nw + i; if (p[k] > 0) continue; let b = 0; for (let q = 0; q < 9; q++) b = Math.max(b, p[k + q % 3 - 1 + (Math.floor(q / 3) - 1) * nw]); m[k] = b * 0.6; } }
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const K = (g.j0 + j) * V + g.i0 + i; GM[K] = Math.max(GM[K], m[j * nw + i] * 255); } }
+  return GM;
+}
+// la volta: il dorso (il monte com'era), il soffitto, e la fronte dove la volta finisce sull'invito a cielo aperto. La disegna lo stesso programma del terreno.
+function grVolte() {
+  W.volte = [];
+  for (const g of GROTTE) {
+    const { i0, j0, nw, nh, F, CE, BS } = g, out = [];
+    const coperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; let r = false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) { if (F[k] === 1) return false; if (F[k] >= 2) r = true; } return r; };
+    const aperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) if (F[k] === 1) return true; return false; };
+    const su = (i, j) => { const s = grSole(g, i0 + i, j0 + j); return [(i0 + i) * CELL, grFuori(g, i0 + i, j0 + j), Z0 + (j0 + j) * CELL, s[0], s[1], s[2]]; };
+    const giu = (i, j) => { const k = j * nw + i; return [(i0 + i) * CELL, CE[k], Z0 + (j0 + j) * CELL, lerp(0.55, GR_BUIO, BS[k]), 0, 0]; };
+    const tri = (a, b, c) => { for (const v of [a, b, c]) for (let q = 0; q < 6; q++) out.push(v[q]); };
+    let lo = 1e9, hi = -1e9;
+    for (let j = 0; j < nh - 1; j++) for (let i = 0; i < nw - 1; i++) {
+      if (!coperta(i, j)) continue;
+      const P = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]], rk = P.map(([a, b]) => F[b * nw + a] === 0);
+      for (const [p, q, r] of [[0, 3, 1], [0, 2, 3]]) { if (rk[p] && rk[q] && rk[r]) continue;   // tutta roccia: lì c'è già il terreno
+        const A = su(...P[p]), B2 = su(...P[q]), C = su(...P[r]); tri(A, B2, C); tri(giu(...P[p]), giu(...P[q]), giu(...P[r])); lo = Math.min(lo, CE[P[p][1] * nw + P[p][0]]); hi = Math.max(hi, A[1], B2[1], C[1]); }
+      for (const [di, dj, a, b] of [[0, -1, 0, 1], [0, 1, 2, 3], [-1, 0, 0, 2], [1, 0, 1, 3]]) { if (!aperta(i + di, j + dj)) continue;
+        const A = su(...P[a]), B2 = su(...P[b]), A2 = giu(...P[a]), B3 = giu(...P[b]), sh = faceLight(di, 0, dj);
+        for (const v of [A, B2, A2, B3]) { v[3] = sh; v[4] = di * 2.5; v[5] = dj * 2.5; }
+        if (A[1] > A2[1] || B2[1] > B3[1]) { tri(A2, B3, B2); tri(A2, B2, A); } }
+    }
+    W.volte.push({ data: new Float32Array(out), n: out.length / 6, x: (g.box[0] + g.box[2]) / 2, z: (g.box[1] + g.box[3]) / 2, r: Math.hypot(g.box[2] - g.box[0], g.box[3] - g.box[1]) / 2, box: g.box, lo, hi, buf: null });
+  }
+}
+// in che punto di una grotta si è (o niente): f come sopra, ce la quota del soffitto, bu il buio. Il risultato va letto subito (è sempre lo stesso oggetto)
+const GQ = { f: 0, ce: 0, bu: 0, g: null };
+W.grotta = (x, z) => {
+  for (const g of GROTTE) { const b = g.box; if (!b || x <= b[0] || x >= b[2] || z <= b[1] || z >= b[3]) continue;
+    const fx = x / CELL - g.i0, fz = (z - Z0) / CELL - g.j0, k = Math.floor(fz) * g.nw + Math.floor(fx), kn = Math.round(fz) * g.nw + Math.round(fx);
+    GQ.g = g; GQ.f = g.F[kn]; GQ.bu = GQ.f >= 2 ? g.BU[kn] : 0; GQ.ce = Math.min(g.CE[k], g.CE[k + 1], g.CE[k + g.nw], g.CE[k + g.nw + 1]); return GQ; }
+  return null;
+};
+W.volte = [];
+
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
   '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262', '#74a644', '#a4b850'];
@@ -7304,13 +7404,15 @@ const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
+  grPrepara();
   // rilievo, strade e colori si calcolano una volta sola per versione: poi il gioco li conserva sul telefono (W.cache) e la volta dopo si rileggono.
   // Case, alberi e ombre si rifanno ogni volta, sugli stessi numeri: il mondo esce identico.
   const cache = W.cache; let old = null;
   if (cache) { while (cache.busy()) yield -1; old = cache.take(); }
   if (old && !unpack(old)) old = null;
-  if (!old) { yield* terrain(); if (cache) cache.put(pack()); }
+  if (!old) { yield* terrain(); if (cache) cache.put(pack()); } else grChiudi();
   W.cached = !!old;
+  grVolte();
   if (window.__SG_DEBUG) W.dbgSum = PACK.map(([k]) => { const a = W[k], u = new Uint8Array(a.buffer, a.byteOffset, a.byteLength); let h = 0; for (let i = 0; i < u.length; i += 7) h = (h * 31 + u[i]) | 0; return k + ':' + h; }).join(' ');
   yield 0.82;
   // edifici e collisioni
@@ -7397,6 +7499,7 @@ function* terrain() {
       for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) H[j * V + i] = s.f(i * CELL, Z0 + j * CELL, H[j * V + i]);
     }
     gradeRoads(H, pads);
+    grScava(H, W.H0); grChiudi();   // per ultime le grotte aperte
   }
   // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
   const shore = W.shore = new Uint8Array(N * NZ);
@@ -7421,6 +7524,7 @@ function* terrain() {
     }
     if (j % 32 === 0) yield 0.35 + 0.1 * j / VZ;
   }
+  grLuce(); const GM = grColore();
   // maschera delle strade visibili e dei pavimenti (risoluzione della texture)
   const tm = SG.art.mk(TEX, TEXZ), tx = tm.getContext('2d');
   tx.lineCap = 'round'; tx.lineJoin = 'round';
@@ -7508,6 +7612,7 @@ function* terrain() {
           if (wMesa > 0.05) { const bd = Math.floor((h + n1 * 10) / 6) % 4, K = [[178, 86, 54], [204, 112, 66], [150, 70, 50], [226, 164, 110]][bd]; r0 = lerp(r0, K[0], wMesa); r1 = lerp(r1, K[1], wMesa); r2 = lerp(r2, K[2], wMesa); }
           c[0] = lerp(c[0], r0, rk); c[1] = lerp(c[1], r1, rk); c[2] = lerp(c[2], r2, rk); for (let q = 0; q < 4; q++) m[q] *= 1 - rk; m[2] += rk;
         }
+        if (GM) { const gk = (GM[k00] * w00 + GM[k00 + 1] * w10 + GM[k00 + V] * w01 + GM[k00 + V + 1] * w11) / 255; if (gk > 0) { c[0] = lerp(c[0], 112, gk); c[1] = lerp(c[1], 104, gk); c[2] = lerp(c[2], 98, gk); for (let q = 0; q < 4; q++) m[q] *= 1 - gk; m[2] += gk; } }
         const pl = W.pondAt(x, z), hw = pl ? h - pl.wl : h;
         if (pl ? hw < 1.3 : h < 4.5 && h > -2.5 && wSw < 0.4) { const sd = pl ? smooth(1.3, 0.3, hw) : smooth(4.5, 1.5, h); c[0] = lerp(c[0], 232, sd); c[1] = lerp(c[1], 212, sd); c[2] = lerp(c[2], 152, sd); for (let q = 0; q < 4; q++) m[q] *= 1 - sd; m[1] += sd * 0.7; m[3] += sd * 0.3; }
         if (hw < -0.4) { const dd = smooth(-0.4, -14, hw * (pl ? 2.2 : 1)); c[0] = lerp(196, 70, dd); c[1] = lerp(180, 110, dd); c[2] = lerp(128, 120, dd); m[0] = 0; m[1] = 0.4; m[2] = 0; m[3] = 0.6; }
@@ -7695,7 +7800,7 @@ function* placeObjects(S) {
   let R = rng(4242);
   // si decide sul mondo com'era (vedi «ritocchi tardivi»), si posa su quello di adesso
   const gD = W.ground0, sD = W.slope0, rD = W.road0At; let hand = 0;
-  const veto = (x, z) => { if (W.roadAt(x, z) > 0.05 && rD(x, z) <= 0.05) return true; const L = W.pondAt(x, z); return !!L && W.ground(x, z) < L.wl + 0.5; };
+  const veto = (x, z) => { if (W.roadAt(x, z) > 0.05 && rD(x, z) <= 0.05) return true; if (GROTTE.length) { const q = W.grotta(x, z); if (q && q.f) return true; } const L = W.pondAt(x, z); return !!L && W.ground(x, z) < L.wl + 0.5; };
   W.nObjs = 0;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
@@ -7703,8 +7808,8 @@ function* placeObjects(S) {
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
     let ri = RI.get(rect); if (ri === undefined) { ri = RL.length; RI.set(rect, ri); RL.push(rect); }
     const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CHZ - 1, Math.floor((z - Z0) / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
-    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, ri, sp.lit || 1, sp.sway || 0);
-    if (sp.glow) W.glows.push([x, y + sp.glow[0], z, sp.glow[1], sp.glow[2], sp.glow[3], sp.glow[4], 0]);
+    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, ri, o.lit || sp.lit || 1, sp.sway || 0);
+    const gw = o.glow || sp.glow; if (gw) W.glows.push([x, y + gw[0], z, gw[1], gw[2], gw[3], gw[4], gw[5] || 0]);
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
     W.nObjs++;
   };
@@ -7756,7 +7861,7 @@ function* placeObjects(S) {
     if (k === 'giant') add('giant', x, z, { r: 14.5, sink: 2 });
     else if (k === 'well') add('well', x, z, { r: 6 });
     else if (k === 'anvil') add('anvil', x, z, { r: 2 });
-    else if (k === 'menhir') add('menhir', x, z, { r: 3 });
+    else if (k === 'menhir') add('menhir', x, z, Object.assign({ r: 3 }, o || {}));
     else if (k === 'statue') add('statue', x, z, { r: 4 });
     else add(k, x, z, Object.assign({ r: k === 'tent' ? 9 : k === 'sign' ? 1.2 : k === 'snowman' ? 3.5 : k === 'campfire' ? 2 : S[k] && S[k].col ? S[k].col : S[k] && S[k].small ? 0 : 1 }, o || {}));
   };
@@ -7878,6 +7983,7 @@ W.upload = (G) => {
     const ccx = (ci + 0.5) * CS, ccz = Z0 + (cj + 0.5) * CS;
     W.chunks.push({ ci, cj, cx: ccx, cz: ccz, fine: FINE.some(f => ccx > f[0] && ccx < f[2] && ccz > f[1] && ccz < f[3]), lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
   }
+  for (const v of W.volte) v.buf = G.buffer(v.data);
   const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null; if (window.__SG_DEBUG) W.meshDbg = m;
   // acqua: un grande quadrato fino all'orizzonte
   W.waterBuf = G.buffer(new Float32Array([-3000, Z0 - 3000, WS + 3000, Z0 - 3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
@@ -9428,7 +9534,7 @@ W.NORDN.nooks[1] = W.NOOKS.length; W.NORDN.props[1] = W.PROPS.length;
 const W = SG.world, TN = SG.town, TL = TN.TL, K = W.kit, { quad, box, boxTop, onWall, prism } = K;
 const { oct, decal, pyramid } = TN;
 const TAU = Math.PI * 2, lerp = (a, b, t) => a + (b - a) * t, c01 = v => Math.max(0, Math.min(1, v));
-const TX = 1080, TZ = 1420;       // il piede dell'Albero Madre
+let TX = 1080, TZ = 1420;         // il piede dell'Albero Madre (chi lo costruisce altrove dice dove: vedi il costruttore)
 const late = (x0, z0, x1, z1, top, b) => W.LATE.boxes.push([x0, z0, x1, z1, top, b]);
 // i riquadri disegnati da fn brillano di luce propria (rune, lanterne, il cuore dell'albero); dec: staccati dal muro come le insegne
 function acceso(fn, dec) { const n0 = W.mesh.length; fn(); for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] = 0.995 + (dec ? 2 : 0); }
@@ -9477,6 +9583,7 @@ const pende = y => [Math.sin(y * 0.05) * 1.2, Math.cos(y * 0.04) * 0.9];      //
 function pelle(a, y, e = 0) { const l = pende(y), r = raggio(y, false) + e; return [TX + l[0] + Math.cos(a) * r, TZ + l[1] + Math.sin(a) * r]; }
 function raggio(y, rad) { let i = 0; while (i < TRUNK.length - 2 && y > TRUNK[i + 1][0]) i++; const a = TRUNK[i], b = TRUNK[i + 1], t = c01((y - a[0]) / (b[0] - a[0])), r = lerp(a[1], b[1], t), l = lerp(a[2], b[2], t); return r * (rad ? 1 + l : 1 - l * 0.4); }
 W.builders.albero = (b, g) => {
+  TX = b.x; TZ = b.z;
   const y0 = g(TX, TZ), R = rng(1420), N = NR * 2, jit = []; for (let k = 0; k < N; k++) jit.push(0.97 + R() * 0.06);
   // il tronco: sedici spigoli, uno sì e uno no sporge a contrafforte sopra una radice
   const anello = ([y, r, l], i) => { const out = [], lean = pende(y); for (let k = 0; k < N; k++) { const a = k / N * TAU, rr = r * (k % 2 === 1 ? 1 + l : 1 - l * 0.4) * jit[k]; out.push([TX + lean[0] + Math.cos(a) * rr, y0 + y, TZ + lean[1] + Math.sin(a) * rr]); } return out; };
@@ -10172,6 +10279,13 @@ SG.terre.lumen = m => {
   W.PLACES.push([BORGO[0], BORGO[1], 330, 'BORGO AURORA'], [ROCCA[0], ROCCA[1], 560, 'ROCCA DI LUMEN'], [SOLIS[0], SOLIS[1], 430, 'ROVINE DI SOLIS'], [ALBERO[0], ALBERO[1], 200, "L'ALBERO MADRE"], [lago[0], lago[1], 110, 'ISOLA DEL LAGO'],
     [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA'], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
     [2300, 5000, 150, 'PRATOLUNGO'], [4704, 7150, 150, 'CALA DELLE CONCHIGLIE'], [5450, 3300, 150, 'GIRASOLE'], [FARO[0], FARO[1], 150, 'APPRODO DEL FARO']);   // (il villaggio degli elfi il nome lo riceve dal generatore delle città)
+  // gente nuova: gli elfi (orecchie a punta, capelli lunghi, verdi del bosco) e i nani (bassi, larghi, barbuti)
+  Object.assign(C.LOOKS, {
+    elfo: { walk: 1, skin: '#f4e0c4', ears: 1, hairStyle: 'long', hair: '#e8dc9a', shirt: '#3e8a4a', cape: '#1e4a2a', belt: '#6a4a2a', pants: '#3a4a2a', boots: '#5a4a2a' },
+    elfa: { walk: 1, skin: '#f6e4cc', ears: 1, hairStyle: 'long', hair: '#b8d8a0', robe: '#6aa86a', shirt: '#a8d8a0', pants: '#4a7a4a', boots: '#5a4a2a' },
+    elfoarciere: { skin: '#f0d8b8', ears: 1, hairStyle: 'long', hair: '#b08a4a', cap: '#2e6a3a', feather: '#f0e8d8', shirt: '#4a7a3a', quiver: '#6a4a2a', belt: '#3a2a1a', pants: '#3a4a2a', boots: '#4a3a22', weapon: { kind: 'bow', col: '#8a6a3a' } },
+    elfosaggio: { sc: 1.04, skin: '#f4e4d0', ears: 1, hairStyle: 'long', hair: '#f0f0f8', robe: '#e8e8d8', shirt: '#f4f4e8', cape: '#7ab87a', pants: '#c8c8b0', boots: '#8a8a6a', staff: '#c8c8a0', orb: '#a8f0c0' },
+    nano: { sc: 0.8, wide: 0.9, skin: '#e0b088', helm: { c: '#8a8a96', nose: 1 }, beard: '#c8642a', shirt: '#7a3a2a', plate: '#8a8a96', belt: '#3a2a1a', pants: '#4a4a52', boots: '#3a2a1a', weapon: { kind: 'hammer', col: '#6a6e78' } } });
   // le città: il generatore di sempre, con misure nuove
   // Borgo Aurora: il doppio di oggi, aperto, senza mura
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
@@ -10184,15 +10298,33 @@ SG.terre.lumen = m => {
       ['boscaiolo', 'IL BOSCAIOLO', ['NEL BOSCO ANTICO, A NORD-OVEST, GLI ELFI HANNO UN VILLAGGIO. SEGUI IL SENTIERO E, AL BIVIO, PRENDI A SINISTRA.'], 'd'],
       ['borghese', 'IL CARRETTIERE', ['A EST, OLTRE IL PONTE DI PIETRA, LA VIA MAESTRA PORTA ALLA ROCCA DI LUMEN. È UN MINUTO DI CORSA, NON DI PIÙ.'], 'p'],
       ['donna', 'LA LAVANDAIA', ['A NORD LA STRADA PASSA IL FIUME, COSTEGGIA IL LAGO DI CRISTALLO E SALE AL VALICO DEI GIGANTI. LASSÙ FA FREDDO.'], 'd'],
-      ['bimbo', 'IL PICCOLO TOBIA', ['DICONO CHE TRA I MONTI DEL NORD CI SIA UNA VALLE CHE NESSUNO HA MAI TROVATO. IO DA GRANDE LA TROVO!'], 'p', { walk: 1 }]] });
+      ['bimbo', 'IL PICCOLO TOBIA', ['DICONO CHE TRA I MONTI DEL NORD CI SIA UNA VALLE CHE NESSUNO HA MAI TROVATO. IO DA GRANDE LA TROVO!'], 'p', { walk: 1 }],
+      ['borgomastro', 'IL BORGOMASTRO', ['IN POCHI ANNI IL BORGO È RADDOPPIATO: CASE NUOVE, GENTE NUOVA. E IO DEVO RICORDARMI TUTTI I NOMI!', 'PRESTO APPENDEREMO UNA BACHECA IN PIAZZA, PER CHI CERCA LAVORO E PER CHI NE OFFRE.'], 'p'],
+      ['fioraia', 'ROSA LA FIORAIA', ['FIORI DEI PRATI DI LUMEN, COLTI STAMATTINA! QUELLI AZZURRI CRESCONO SOLO VERSO IL LAGO DI CRISTALLO.'], 'p', { walk: 1 }],
+      ['minatore', 'IL VECCHIO MINATORE', ["A NORD-OVEST, LUNGO IL SENTIERO DEL BOSCO, C'È UN POGGIO DI ROCCIA CON DUE TORCE ALL'IMBOCCO: È LA TANA DEL TASSO.", 'DENTRO È BUIO PESTO. IN FONDO AL RAMO DI PONENTE HO LASCIATO LA MIA LANTERNA: SE LA TROVI, TIENILA.'], 'd'],
+      ['guardia', 'LA GUARDIA DEL BORGO', ['QUI NON CI SONO MURA: CI SONO IO. DI NOTTE ACCENDO LE LANTERNE E FACCIO IL GIRO DELLE CASE.'], 'd'],
+      ['pescivendola', 'LA PESCIVENDOLA', ["TROTE DEL FIUME, PESCATE ALL'ALBA SOTTO IL PONTE DI PIETRA!"], 'p'],
+      ['bimbo', 'LA PICCOLA NINA', ['GIOCO A NASCONDINO CON TOBIA TRA LE CASE NUOVE. NON DIRGLI CHE SONO QUI!'], 'd', { walk: 1 }],
+      ['donna', 'LA FORNAIA', ['IL MIO FORNO È LA PRIMA LUCE CHE SI ACCENDE NEL BORGO. IL PANE MIGLIORE È QUELLO CHE SCOTTA ANCORA.'], 'd'],
+      ['monaco', 'FRATE ILARIO', ['UNA VOLTA AL MESE VADO A PIEDI FINO ALLA ROCCA. LA VIA MAESTRA È LARGA E LASTRICATA: NON CI SI PERDE NEMMENO COL BUIO.'], 'd'],
+      ['borghese', 'IL MUGNAIO', ["IL GRANO ARRIVA DAI CAMPI DORATI, A LEVANTE. QUEST'ANNO LE SPIGHE SONO ALTE COSÌ."], 'd', { walk: 1 }],
+      ['spadaccino', 'UN VIANDANTE', ['VENGO DAL VALICO DEI GIGANTI. LASSÙ LA NEVE NON SI SCIOGLIE MAI, E LA GOLA SALE TRA PARETI ALTE COME TORRI.', "OLTRE IL VALICO C'È UN'ALTRA TERRA. MA LA STRADA, PER ORA, FINISCE LÌ."], 'p'],
+      ['traghettatore', 'IL BARCAIOLO', ['UN GIORNO PORTERÒ LA GENTE GIÙ PER IL FIUME, FINO ALLA CALA DELLE CONCHIGLIE. PER ORA RATTOPPO LA BARCA.'], 'd'],
+      ['mercantessa', 'LA MERCIAIA', ['AGHI, FILO, NASTRI E BOTTONI. E QUALCHE CHIACCHIERA, SE HAI TEMPO.', 'DICONO CHE GLI ELFI SIANO TORNATI NEL BOSCO ANTICO. LA MIA BISNONNA LI AVEVA VISTI DA BAMBINA.'], 'p', { walk: 1 }]] });
   W.PROPS.push(['well', BORGO[0] + 27, BORGO[1] - 19]);   // il pozzo del Borgo: chi beve si rimette in forze
   // il villaggio degli elfi nel Bosco Antico: case strette di legno dai tetti ripidi e muschiati, tra le querce grandi, con le lanterne
   const TL = m.town.TL, ELFI = [1750, 3180];
   C.STYLES.elfi = { walls: [3, 3, TL.TIMBER2], roofs: [TL.ROOF_MOSS, TL.ROOF_MOSS, TL.ROOF_GREEN], rt: ['gable'], steep: 0.95, h: [12, 19], wd: [12, 17], chim: 0, win: [8, TL.WIN_PAPER], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_MOSS,
     pave: 'g', trees: ['oakbig', 'oakbig', 'oak'], lamp: 'lantern', yard: ['pot', 'bench', 'barrel'], flag: 0, ban: TL.BAN_RED };
   C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 46, d: 40 },
-    people: [['saggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS."], 'p'],
-      ['donna', 'UNA DONNA DEL BOSCO', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd']] });
+    people: [['elfosaggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS.", 'ACCANTO ALL\'ALBERO C\'È IL SANTUARIO DEL BOSCO. CHI HA CORAGGIO PUÒ ENTRARE.'], 'p'],
+      ['elfa', 'LIRIEL', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd'],
+      ['elfo', 'THALION', ['CAMMINIAMO SENZA RUMORE E PARLIAMO POCO. MA CHI PORTA RISPETTO AL BOSCO È SEMPRE IL BENVENUTO.'], 'p', { walk: 1 }],
+      ['elfoarciere', 'LA SENTINELLA', ['DAGLI ALBERI VEDIAMO CHI ARRIVA DAL SENTIERO MOLTO PRIMA CHE LUI VEDA NOI. TI ABBIAMO VISTO GIÀ AL BIVIO.'], 'd'],
+      ['elfa', 'LA TESSITRICE DI LANTERNE', ['INTRECCIAMO LE LANTERNE CON LA SETA DEI RAGNI E LA RESINA DELLE QUERCE: NON SI SPENGONO NEMMENO CON LA PIOGGIA.'], 'd'],
+      ['elfo', 'UN GIOVANE ELFO', ["HO CENT'ANNI APPENA COMPIUTI. GLI ANZIANI DICONO CHE SONO ANCORA UN RAGAZZINO."], 'p', { walk: 1 }],
+      ['elfa', 'LA CANTORA', ["A OGNI LUNA NUOVA CANTIAMO PER L'ALBERO MADRE. LE SUE RADICI ARRIVANO FIN SOTTO IL VILLAGGIO."], 'p'],
+      ['elfoarciere', "L'ARCIERE DELLA RADURA", ['UNA FRECCIA SOLA, E SOLO QUANDO SERVE. IL BOSCO NON AMA CHI SPRECA.'], 'd']] });
   W.PROPS.push(['oakbig', ELFI[0], ELFI[1]], ['lantern', ELFI[0] - 14, ELFI[1] - 10], ['lantern', ELFI[0] + 14, ELFI[1] - 10], ['lantern', ELFI[0] - 14, ELFI[1] + 12], ['lantern', ELFI[0] + 14, ELFI[1] + 12]);
   // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
   W.FLAT.push([ROCCA[0], ROCCA[1], 640, 30]);   // il pianoro della città
@@ -10208,9 +10340,37 @@ SG.terre.lumen = m => {
       ['monaco', 'FRATE ANSELMO', ['A NORD, OLTRE LA FONTE DEI GIRASOLI, CI SONO LE ROVINE DI SOLIS. NESSUNO CI ABITA PIÙ DA MILLE ANNI.'], 'd'],
       ['borghese', 'IL CARRETTIERE', ["LA VIA DEL PONTE DEI RE ESCE DALLA PORTA DI TRAMONTANA E PIEGA A LEVANTE. IL PONTE, PERÒ, NON C'È ANCORA."], 'd'],
       ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.'], [245, 14, Math.PI]],
-      ['re', 'RE ALDRIC DI LUMEN', ['IL MIO REGNO È CRESCIUTO, VIANDANTE. E OLTRE IL VALICO DEI GIGANTI CI SONO TERRE CHE NEMMENO IO HO MAI VISTO.', 'QUANDO IL VIAGGIO COMINCERÀ AVRÒ UN INCARICO PER TE. PER ORA GUARDA LA MIA CITTÀ, E DIMMI SE TI PIACE.'], [260, -13, Math.PI], { id: 're_gv' }]],
+      ['re', 'RE ALDRIC DI LUMEN', ['IL MIO REGNO È CRESCIUTO, VIANDANTE. E OLTRE IL VALICO DEI GIGANTI CI SONO TERRE CHE NEMMENO IO HO MAI VISTO.', 'QUANDO IL VIAGGIO COMINCERÀ AVRÒ UN INCARICO PER TE. PER ORA GUARDA LA MIA CITTÀ, E DIMMI SE TI PIACE.'], [260, -13, Math.PI], { id: 're_gv' }],
+      ['guardia', 'GUARDIA DI TRAMONTANA', ['DALLA PORTA DI TRAMONTANA SI VA ALLE ROVINE DI SOLIS E, PIEGANDO A LEVANTE, VERSO IL PONTE DEI RE.'], 'd'],
+      ['guardia', 'GUARDIA DI MEZZOGIORNO', ["LA PORTA DI MEZZOGIORNO GUARDA IL MONTE BRACE. È UN VULCANO SPENTO DA SECOLI: NEL CRATERE, ORA, C'È UN LAGO."], 'd'],
+      ['lanciere', 'IL LANCIERE DI RONDA', ['FACCIO IL GIRO DELLE MURA TRE VOLTE AL GIORNO. DA QUANDO LA CITTÀ È CRESCIUTA, NON FINISCO PIÙ.'], 'p'],
+      ['dama', 'DAMA ELEONORA', ['RE ALDRIC RICEVE CHIUNQUE, NEL CORTILE DEL MASTIO. NON TUTTI I RE LO FANNO.'], 'p'],
+      ['borghese', 'IL BANDITORE', ["UDITE, UDITE! LA ROCCA CERCA MURATORI, FABBRI E CARPENTIERI: C'È UN PONTE DA COSTRUIRE, IL PIÙ LUNGO DEL REGNO!"], 'p', { walk: 1 }],
+      ['mercante', 'IL MERCANTE DI STOFFE', ['SETE DI ZAFIRA, LANE DEI MONTI... ARRIVERANNO, QUANDO SI POTRÀ PASSARE. PER ORA VENDO QUEL CHE HO.'], 'p', { walk: 1 }],
+      ['fioraia', 'LA FIORAIA DELLA PIAZZA', ['GIRASOLI APPENA COLTI! IL PAESE DI GIRASOLE È A NORD-OVEST, SULLA STRADA CHE TAGLIA VERSO IL LAGO.'], 'p'],
+      ['mercantessa', 'LA FRUTTIVENDOLA', ['MELE, PERE E UVA DELLE COLLINE DI SOLIS. ASSAGGIA, ASSAGGIA!'], 'd', { walk: 1 }],
+      ['saggio', "L'ARCHIVISTA DEL RE", ["NELLE CARTE ANTICHE LUMEN È SOLO UNA DI QUATTRO TERRE: I MONTI DEL CIELO A NORD, L'ORIENTE OLTRE IL PONTE, I MARI DEL SUD.", 'QUATTRO TERRE IN CERCHIO. E IN MEZZO... LÌ LE CARTE SONO BRUCIATE.'], 'd'],
+      ['nano', 'UN NANO DI PASSAGGIO', ['VENGO DA FONDOFERRO, SOTTO I MONTI DEL CIELO. HO FATTO IL GIRO LUNGO, PER MARE: IL VALICO È ANCORA CHIUSO DALLA NEVE.', 'VOI UOMINI COSTRUITE IN ALTO. NOI SCAVIAMO. VEDREMO CHI ARRIVA PRIMA DALL\'ALTRA PARTE.'], 'p'],
+      ['spadaccino', "IL MAESTRO D'ARMI", ["LE RECLUTE SI ALLENANO DIETRO L'ARMERIA. TU HAI IL PASSO DI UNO CHE HA GIÀ COMBATTUTO."], 'd'],
+      ['monaco', 'FRATE BENIAMINO', ['CURIAMO I VIANDANTI CHE ARRIVANO STANCHI DALLA VIA MAESTRA. SE CERCHI UN LETTO, LA LOCANDA DEL LEONE È QUI VICINO.'], 'd'],
+      ['bimbo', 'LA PICCOLA GIADA', ['HO CONTATO LE TORRI DELLE MURA: SONO PIÙ DELLE MIE DITA!'], 'p', { walk: 1 }],
+      ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
+      ['borgomastro', 'IL SINISCALCO', ["TENGO I CONTI DEL REGNO. IL PONTE DEI RE COSTERÀ QUANTO TUTTE LE MURA: MA UNIRÀ LUMEN ALL'ORIENTE."], 'd'],
+      ['elfa', "UN'ELFA IN VISITA", ['SONO SCESA DAL BOSCO ANTICO PER VEDERE LA CITTÀ DI PIETRA. QUANTO RUMORE FATE, VOI UOMINI!'], 'p', { walk: 1 }]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
       ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
+  // l'Albero Madre e, poco a nord, il Santuario del Bosco: quelli di Pixel Saga, al loro posto nuovo (accanto al bivio dei sentieri, in una radura)
+  const AM = [ALBERO[0] + 70, ALBERO[1] - 50], SB = [AM[0] + 35, AM[1] - 90];
+  W.FLAT.push([AM[0] + 15, AM[1] - 40, 175, null]); W.CLEAR.push([AM[0] - 95, AM[1] - 150, AM[0] + 125, AM[1] + 75]);
+  W.BUILD.push({ k: 'albero', x: AM[0], z: AM[1] }, { k: 'temple', x: SB[0], z: SB[1], w: 26, d: 22, h: 16, wall: 11, door: 's', id: 'bosco' });
+  W.PROPS.push(['giant', AM[0], AM[1]]); W.bigShadows.push([AM[0], AM[1], 52]);
+  for (const deg of [20, 60, 120, 160, 200, 340]) { const a = deg / 360 * Math.PI * 2; W.LATE.props.push(['runa', AM[0] + Math.cos(a) * 44, AM[1] + Math.sin(a) * 44]); }
+  W.LATE.props.push(['braciereV', AM[0] - 11, AM[1] + 26], ['braciereV', AM[0] + 11, AM[1] + 26]);
+  { const X = SB[0], Z1 = SB[1] + 11;   // il sagrato: lastre dal pronao ai piedi dell'albero, cervi di pietra, custodi, bracieri
+    W.PAVE.push(['g', 'rect', X - 30, Z1, X + 30, Z1 + 33], ['g', 'rect', X - 12, Z1 + 33, X + 12, Z1 + 53], ['b', 'rect', X - 7.5, Z1, X + 7.5, Z1 + 53], ['b', 'rect', X - 22, Z1, X + 22, Z1 + 19], ['g', 'disc', X, Z1 + 39, 14], ['b', 'disc', X, Z1 + 39, 10.5]);
+    W.LATE.props.push(['cervopietra', X - 19, Z1 + 24, { r: 5.6 }], ['cervopietra2', X + 19, Z1 + 24, { r: 5.6 }], ['custode', X - 19, Z1 + 39, { r: 3.6 }], ['custode', X + 19, Z1 + 39, { r: 3.6 }], ['braciereV', X - 9, Z1 + 20.5], ['braciereV', X + 9, Z1 + 20.5]); }
+  C.folk('elfoarciere', 'LA CUSTODE DEL SANTUARIO', SB[0] + 30, SB[1] + 44, Math.PI / 2, ['IL SANTUARIO DEL BOSCO HA DORMITO MILLE ANNI. ORA LE RUNE SI ACCENDONO PER CHI ARRIVA FIN QUI.', 'DENTRO CI SONO PORTE CHIUSE, TRAPPOLE E UN GUARDIANO. NON ENTRARE SENZA POZIONI.']);
+  C.folk('elfosaggio', "IL CANTORE DELL'ALBERO", AM[0] - 30, AM[1] + 40, 0, ["QUESTO È L'ALBERO MADRE. ERA GIÀ VECCHIO QUANDO GLI UOMINI ALZARONO LA PRIMA PIETRA DI SOLIS.", 'IL SANTUARIO È LÌ DIETRO, A TRAMONTANA: SEGUI LE LASTRE CHIARE.']);
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
   const via = (w, pts) => W.ROADS.push({ w, pts });
   const BE = [4160, 5022], BN = [3944, 4846], BS = [3944, 5198], BW2 = [3728, 5022], RW = [5866, 4750], RE = [6734, 4750], RN = [6300, 4366], RS = [6300, 5134];   // dove le strade toccano le città (le porte)
@@ -10218,9 +10378,28 @@ SG.terre.lumen = m => {
   via(9, [[6230, 4100], [6750, 4130], [7200, 4020], PONTE]);   // la via del Ponte dei Re si stacca da quella di Solis, fuori dalla porta di tramontana
   via(9, [BN, [4120, 4350], [4190, 4000], [4380, 4000], [4520, 3620], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
   via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], SOLIS]);
-  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
+  via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [[2350, 3000], [2060, 3110], [1880, 3180]]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [ALBERO, [AM[0], AM[1] + 46]]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);
   via(5, [FARO, [3800, 7160], [4030, 7160], [4210, 7160], [4704, 7180], [5600, 7000], [6300, 6500], [6450, 6150]]); via(5, [RS, [6430, 5450], [6500, 5760]]); via(5, [SOLIS, [6900, 2500], GRIFONE]);
   via(5, [BW2, [3100, 5050], [2300, 5000], [1500, 4900]]); via(5, [[4950, 3050], [5450, 3300], [6129, 3844]]);
+  // il Poggio del Tasso: una rupe a nord-ovest del Borgo, lungo il sentiero del Bosco Antico. Dentro c'è la prima grotta aperta (di prova):
+  // un invito tra due pareti, la bocca, un corridoio, una sala e due rami. Ci si entra a piedi, senza cambiare mondo.
+  const POG = [3660, 4350];
+  W.SHAPERS.push({ box: [POG[0] - 260, POG[1] - 210, POG[0] + 260, POG[1] + 210], free: () => true,
+    f: (x, z, h) => { const s = Math.hypot((x - POG[0]) / 215, (z - POG[1]) / 165) * (1 + (W.fbm(x / 80, z / 80, 2) - 0.5) * 0.14); return s >= 1 ? h : h + (58 + 14 * (W.fbm(x / 45, z / 45, 3) - 0.5)) * W.smooth(1, 0.78, s); } });
+  W.GROTTE.push({ id: 'tasso', y: 25, musica: 'grotta:cristalli', rami: [
+    [[3656, 4544, 12], [3656, 4496, 14], [3656, 4448, 15], [3650, 4398, 36]],
+    [[3650, 4398, 36], [3600, 4350, 15], [3566, 4316, 28]],
+    [[3650, 4398, 36], [3712, 4362, 15], [3752, 4322, 26]]] });
+  W.PLACES.push([3656, 4400, 150, 'TANA DEL TASSO']);
+  via(5, [[3656, 4622], [3656, 4504]]);   // il viottolo che si stacca dal sentiero e arriva alla bocca
+  { const buio = { lit: 0.46 }, luce = (r, g, b) => ({ glow: [5, 8, r, g, b, 1] });
+    W.PROPS.push(['torch', 3640, 4520], ['torch', 3672, 4520],
+      ['crystal', 3758, 4310, luce(0.3, 0.7, 1)], ['crystal', 3768, 4326, luce(0.3, 0.7, 1)], ['crystal', 3744, 4302, luce(0.55, 0.4, 1)], ['crystal', 3738, 4336, {}], ['crystal', 3764, 4338, {}],
+      ['crystal', 3664, 4374, luce(0.3, 0.7, 1)], ['crystal', 3624, 4388, {}], ['crystal', 3548, 4302, luce(0.55, 0.4, 1)], ['crystal', 3580, 4296, {}],
+      ['menhir', 3632, 4416, buio], ['menhir', 3672, 4408, buio], ['menhir', 3640, 4376, buio], ['menhir', 3588, 4328, buio], ['menhir', 3552, 4330, buio], ['menhir', 3724, 4348, buio],
+      ['rock', 3664, 4460, buio], ['rock', 3644, 4432, buio], ['rock', 3676, 4384, buio], ['rock', 3610, 4364, buio], ['rock', 3574, 4334, buio], ['rock', 3700, 4372, buio], ['rock', 3742, 4318, buio], ['bones', 3562, 4322, buio], ['bones', 3654, 4404, buio]);
+    for (const [x, z] of [[3662, 4470], [3636, 4402], [3660, 4420], [3608, 4352], [3560, 4306], [3572, 4322], [3716, 4358], [3750, 4330], [3734, 4310]]) W.PROPS.push(['mushroom', x, z, { lit: 1.15 }]); }
+  W.CHESTS.push(['gv_tasso', 3560, 4312, 'lanterna', 2]);   // in fondo al ramo di ponente: la lanterna del minatore
   // i ponti di pietra sul fiume, dove lo passano le strade: quello del Borgo, quello della via del nord, quello della costa
   for (const [a0, a1, c] of [[4474, 4594, 5090], [4223, 4343, 4000], [4058, 4178, 7160]]) m.town.addBridge({ axis: 'x', a0, a1, c, y: 6, towers: false, ramps: false });
 };
@@ -10783,7 +10962,8 @@ function create(env) {
   }
 
   // --- il terreno visto dagli animali
-  const dry = (x, z, S) => { const g = gH(x, z); return g > (S.wet ? 0.15 : 0.4) && W.slope(x, z) < (S.steep ? 1.8 : 1.15) && !W.blocked(x, z, S.cr || 1.3); };
+  const inGrotta = (x, z) => { if (!W.GROTTE.length) return false; const q = W.grotta(x, z); return !!(q && q.f); };   // nelle grotte aperte gli animali dei prati non entrano
+  const dry = (x, z, S) => { const g = gH(x, z); return g > (S.wet ? 0.15 : 0.4) && W.slope(x, z) < (S.steep ? 1.8 : 1.15) && !W.blocked(x, z, S.cr || 1.3) && !inGrotta(x, z); };
   const wet = (x, z) => { const g = gH(x, z); return g < -0.7 && g > -40 && !W.inBox(x, z, 2); };
   const shallow = (x, z) => { const g = gH(x, z); return g < 1.5 && g > -1.7 && !W.blocked(x, z, 1.3); };
   // il suolo delle città: i rettangoli di città e villaggi (W.URBAN), più Borgo Aurora attorno alle sue case
@@ -11054,6 +11234,7 @@ function create(env) {
     const an = rnd() * TAU, d = rr(18, 95), x = h.x + Math.cos(an) * d, z = h.z + Math.sin(an) * d, g = gH(x, z), bio = W.biomeAt(x, z);
     const dragon = bio === 6 || (g < 0.6 && g > -2 && W.coastDist(x, z) > 60);
     if (!dragon && (!FLOWERS.has(bio) || g < 0.5)) return;
+    if (inGrotta(x, z)) return;
     const C = dragon ? [[0.5, 1.2, 1.5], [1.4, 0.6, 0.5], [0.6, 1.5, 0.7]] : [[1.5, 1.3, 0.4], [1.5, 0.7, 0.3], [0.6, 0.9, 1.6], [1.5, 1.5, 1.5], [1.5, 0.6, 1.1], [1.1, 0.6, 1.5]];
     for (let i = 0, n = 1 + Math.floor(rnd() * 3); i < n; i++) { const tw = shade(C[Math.floor(rnd() * C.length)]); flut.push({ k: dragon ? 'libellula' : 'farfalla', x: x + rr(-6, 6), z: z + rr(-6, 6), hx: x, hz: z, y: 0, vx: 0, vz: 0, h: rr(2, 5.5), wt: dragon, s: rnd() * 9, ph: rnd() * 9, t: rr(18, 40), tint: tw[0], wh: tw[1] }); }
   }
@@ -12277,6 +12458,8 @@ let atlasUse = 0, fauna = null;
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
 const glowF = new Float32Array(160 * 44), WLP = new Float32Array(32), WLQ = new Float32Array(24);
+let grK = 0, grMus = null;                                      // quanto è al buio l'eroe: 0 all'aperto, 1 in fondo a una grotta aperta
+const buio = () => Math.max(day.night, grK);      // il buio che conta per lanterna, lumi e aloni: la notte, oppure la grotta
 
 // ---------- il giorno e la notte ----------
 // Un giorno intero dura 12 minuti: l'alba alle 6, il tramonto verso le 19. Ogni ora ha la sua luce.
@@ -12984,6 +13167,7 @@ function musicPick() {
   if (st === 'title' || st === 'intro') return 'title';
   if ((st !== 'play' && st !== 'class') || musQuiet > 0) return null;
   if (D) { if (D.def.casa) return MUS_PLACE[D.town] || 'borgo'; if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
+  if (grK > 0.45 && grMus) return grMus;   // in fondo a una grotta aperta: la sua musica
   return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
 }
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
@@ -13078,11 +13262,14 @@ function placeCam(snap) {
   const up = Math.max(0, orb.p), dn = D ? 0 : Math.max(0, -orb.p);
   if (D) { const fx2 = Math.cos(cam.yaw), fz2 = Math.sin(cam.yaw), cd = 20 - up * 7, ex = hero.x - fx2 * cd, ez = hero.z - fz2 * cd, ey = Math.max(hero.y, -2) + 16 + up * 15, k = snap ? 1 : 0.25, lf = 8 * (1 - 0.6 * up); cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k; cam.tx = hero.x + fx2 * lf; cam.ty = hero.y + 6.5; cam.tz = hero.z + fz2 * lf; return; }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), CD = (CAM_D - up * 7 - dn * 3) * (1 - 0.3 * aimK);
+  // in una grotta aperta la visuale resta dentro: non sale sopra le pareti (si avvicina all'eroe) e sta sotto il soffitto
+  let gf = 0, gce = 0; if (W.GROTTE.length) { const q = W.grotta(hero.x, hero.z); if (q && q.f) { gf = q.f; gce = q.ce; } }
   let d = CD * 0.24;
-  for (let t = 0.24; t <= 1.001; t += 0.08) { if (W.inBox(hero.x - fx * CD * t, hero.z - fz * CD * t, 1.5)) break; d = CD * t; }
+  for (let t = 0.24; t <= 1.001; t += 0.08) { const px = hero.x - fx * CD * t, pz = hero.z - fz * CD * t; if (W.inBox(px, pz, 1.5) || (gf && gH(px, pz) > hero.y + 3.5)) break; d = CD * t; }
   const ex = hero.x - fx * d, ez = hero.z - fz * d;
   let ey = hero.y + CAM_H + up * 24 - dn * 8.5;
   ey = Math.max(ey, gH(ex, ez) + 2.5, gH((ex + hero.x) / 2, (ez + hero.z) / 2) + 2, W.WL + 1.5);
+  if (gf) { if (gf === 2) ey = Math.min(ey, gce - 1.6); const q = W.grotta(ex, ez); if (q && q.f >= 2) ey = Math.min(ey, q.ce - 1.6); }
   const k = snap ? 1 : 0.25, lf = LOOK_F * (1 - 0.6 * up) * (1 + 2.4 * aimK);
   cam.x += (ex - cam.x) * k; cam.y += (ey - cam.y) * k; cam.z += (ez - cam.z) * k;
   cam.tx = hero.x + fx * lf; cam.ty = hero.y + LOOK_H + dn * 5 + 1.5 * aimK; cam.tz = hero.z + fz * lf;
@@ -13095,6 +13282,7 @@ function canStand(e, nx, nz, r, steep) {
   const h0 = gH(e.x, e.z), h1 = gH(nx, nz), d = Math.hypot(nx - e.x, nz - e.z) || 1e-6;
   if (h1 < W.wlAt(nx, nz) - 2.2) return false;
   if ((h1 - h0) / d > steep) return false;
+  if (h0 - h1 > 5 && W.GROTTE.length) { const q = W.grotta(nx, nz); if (q && q.f) return false; }   // in una grotta aperta si entra dalla bocca, non cadendoci dal monte
   return !W.blocked(nx, nz, r);
 }
 function move(e, dx, dz, r, steep = 1.25) {
@@ -13771,6 +13959,7 @@ function playUpdate(dt) {
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
   saveT += dt; if (saveT > 20) { saveT = 0; writeSave(); }
+  { const q = !D && W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; grK += ((q ? q.bu : 0) - grK) * Math.min(1, 4 * dt); if (grK < 0.004) grK = 0; if (q && q.bu > 0) grMus = q.g.musica || 'grotta'; }
   camUpdate(dt);
   if (dialog) { const L = dialog.lines[dialog.i]; const tot = L.join(' ').length; if (dialog.ch < tot) { dialog.ch = Math.min(tot, dialog.ch + dt * 70); if (Math.floor(dialog.ch) % 3 === 0) tone(820 + Math.random() * 120, 0.012, 'square', 0.012); } }
   if (loot) loot.t += dt;
@@ -13923,6 +14112,8 @@ function startFade(then) { if (fade) return; fade = { t: 0, ph: 0, then }; tone(
 function templeDoor(d) {
   if (d.cave) { if (dsave(d.id).vis) startFade(() => enterDungeon(d.id)); else say(null, d.intro || ["UN'APERTURA BUIA TRA LE ROCCE. DA DENTRO ARRIVA UN'ARIA FREDDA E UMIDA...", 'ENTRI CON CAUTELA.'], () => startFade(() => enterDungeon(d.id))); return; }
   const id = d.id, q = save.q.main, nm = SANCT[id];
+  // nel Grande Viaggio (anteprima) non c'è ancora la storia che apre i sigilli: il santuario si apre a chi arriva
+  if (MODO) { if (dsave(id).vis) startFade(() => enterDungeon(id)); else say(null, ['LE RUNE DEL ' + nm + ' SI ACCENDONO UNA DOPO L\'ALTRA. LA PIETRA SI APRE...'], () => startFade(() => enterDungeon(id))); return; }
   if (q < 4) { say(null, ['UN ANTICO SIGILLO CHIUDE LA PORTA DEL ' + nm + '. LE RUNE BRILLANO DEBOLMENTE.', q === 3 ? 'FORSE IL CAPITANO ARDEA SA COME SPEZZARLO.' : 'SOLO IL SANGUE DEI RE DI LUMEN PUÒ SPEZZARLO.']); return; }
   const nx = nextSanct();
   if (sanctDone(id) || id === nx) {
@@ -14615,7 +14806,8 @@ function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   if (!r) return;
   const n = pushBB.n; if (n >= 3000) return;
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
-  const tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
+  let tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
+  if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
   for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
   pushBB.n = n + 1;
@@ -14627,7 +14819,7 @@ const FOGC = [0, 0, 0], ZENC = [0, 0, 0];
 let nearGlows = null;
 // le otto luci più vicine (la prima è la lanterna dell'eroe) illuminano terreno, case e personaggi quando fa buio
 function pickLights() {
-  const ng = day.night, L = [], cx = hero && st !== 'title' ? hero.x : cam.tx, cz = hero && st !== 'title' ? hero.z : cam.tz;
+  const ng = buio(), L = [], cx = hero && st !== 'title' ? hero.x : cam.tx, cz = hero && st !== 'title' ? hero.z : cam.tz;
   nearGlows = [];
   for (const g of W.glows) { const d = (g[0] - cx) ** 2 + (g[2] - cz) ** 2; if (d < 520 * 520) { nearGlows.push(g); if (d < 240 * 240) L.push([d, g]); } }
   WLQ.fill(0); let n = 0;
@@ -14637,7 +14829,7 @@ function pickLights() {
   for (let k = 0; k < L.length && n < 8; k++, n++) { const g = L[k][1]; WLP[n * 4] = g[0]; WLP[n * 4 + 1] = g[1]; WLP[n * 4 + 2] = g[2]; WLP[n * 4 + 3] = g[3] * 5.5; WLQ[n * 3] = g[4] * 0.9 * ng; WLQ[n * 3 + 1] = g[5] * 0.9 * ng; WLQ[n * 3 + 2] = g[6] * 0.9 * ng; }
 }
 function setWL(p) {
-  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, day.night > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
+  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, buio() > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
 }
 const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.x), yaw) / (TAU / 8)) % 8) + 8) % 8;
 // ---------- le terre vicine: altri mondi nati dalla stessa fabbrica, posati accanto a quello dove si cammina (per ora solo nelle prove) ----------
@@ -14740,6 +14932,8 @@ function render3D() {
     gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, L.buf); gl.drawElements(gl.TRIANGLES, L.n, gl.UNSIGNED_SHORT, 0);
   }
+  // le volte delle grotte aperte: stessa roccia del terreno, sopra lo scavo
+  for (const v of W.volte) { if (!v.buf || !v.n || Math.hypot(v.x - cam.x, v.z - cam.z) - v.r > far || !boxVisible(v.box[0], v.lo, v.box[1], v.box[2], v.hi, v.box[3])) continue; gl.bindBuffer(gl.ARRAY_BUFFER, v.buf); G.attribs(p, [['aPos', 3], ['aSh', 1], ['aG', 2]]); gl.drawArrays(gl.TRIANGLES, 0, v.n); }
   // edifici
   p = P.mesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
@@ -14789,7 +14983,7 @@ function render3D() {
   for (const t of TERRE) if (t.ok) passaTerra(t, 2);
   acqua3D(fogC, fogN, fogF);
   // aloni di lampioni, fuochi e fari: si sommano al colore (di notte forti, di giorno appena accennati)
-  { let n = 0; const ng = day.night;
+  { let n = 0; const ng = buio();
     for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;
       for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { glowF[q++] = g[0]; glowF[q++] = g[1]; glowF[q++] = g[2]; glowF[q++] = a * r; glowF[q++] = b * r; glowF[q++] = a; glowF[q++] = b; glowF[q++] = g[4]; glowF[q++] = g[5]; glowF[q++] = g[6]; glowF[q++] = it; } n++; }
     if (n) { p = P.glow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF);
@@ -15310,7 +15504,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },

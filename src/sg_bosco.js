@@ -8,7 +8,7 @@
 const W = SG.world, TN = SG.town, TL = TN.TL, K = W.kit, { quad, box, boxTop, onWall, prism } = K;
 const { oct, decal, pyramid } = TN;
 const TAU = Math.PI * 2, lerp = (a, b, t) => a + (b - a) * t, c01 = v => Math.max(0, Math.min(1, v));
-const TX = 1080, TZ = 1420;       // il piede dell'Albero Madre
+let TX = 1080, TZ = 1420;         // il piede dell'Albero Madre (chi lo costruisce altrove dice dove: vedi il costruttore)
 const late = (x0, z0, x1, z1, top, b) => W.LATE.boxes.push([x0, z0, x1, z1, top, b]);
 // i riquadri disegnati da fn brillano di luce propria (rune, lanterne, il cuore dell'albero); dec: staccati dal muro come le insegne
 function acceso(fn, dec) { const n0 = W.mesh.length; fn(); for (let i = n0 + 7; i < W.mesh.length; i += 8) W.mesh[i] = 0.995 + (dec ? 2 : 0); }
@@ -57,6 +57,7 @@ const pende = y => [Math.sin(y * 0.05) * 1.2, Math.cos(y * 0.04) * 0.9];      //
 function pelle(a, y, e = 0) { const l = pende(y), r = raggio(y, false) + e; return [TX + l[0] + Math.cos(a) * r, TZ + l[1] + Math.sin(a) * r]; }
 function raggio(y, rad) { let i = 0; while (i < TRUNK.length - 2 && y > TRUNK[i + 1][0]) i++; const a = TRUNK[i], b = TRUNK[i + 1], t = c01((y - a[0]) / (b[0] - a[0])), r = lerp(a[1], b[1], t), l = lerp(a[2], b[2], t); return r * (rad ? 1 + l : 1 - l * 0.4); }
 W.builders.albero = (b, g) => {
+  TX = b.x; TZ = b.z;
   const y0 = g(TX, TZ), R = rng(1420), N = NR * 2, jit = []; for (let k = 0; k < N; k++) jit.push(0.97 + R() * 0.06);
   // il tronco: sedici spigoli, uno sì e uno no sporge a contrafforte sopra una radice
   const anello = ([y, r, l], i) => { const out = [], lean = pende(y); for (let k = 0; k < N; k++) { const a = k / N * TAU, rr = r * (k % 2 === 1 ? 1 + l : 1 - l * 0.4) * jit[k]; out.push([TX + lean[0] + Math.cos(a) * rr, y0 + y, TZ + lean[1] + Math.sin(a) * rr]); } return out; };

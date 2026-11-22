@@ -158,6 +158,8 @@ const BRIDGES = [];                                // ponti: { x0, z0, x1, z1, y
 const PAVE = [['g', 'disc', 2000, 2650, 62], ['b', 'rect', 3290, 1610, 3430, 1720], ['b', 'disc', 1080, 1420, 40], ['b', 'disc', 2150, 1340, 30]];
 // zone senza alberi né sassi: [x0, z0, x1, z1]
 const CLEAR = [];
+// le grotte aperte (vedi più sotto): { id, y, rami }
+const GROTTE = [];
 // aggiunte recenti alle terre di sempre: oggetti e ostacoli che entrano per ultimi, con una sequenza di numeri tutta loro (nient'altro si sposta)
 const LATE = { props: [], boxes: [], circles: [] };
 const OLDN = { nooks: NOOKS.length, props: PROPS.length };
@@ -361,7 +363,7 @@ function gradeRoads(H, pads) {
 }
 // ---------- il mondo vero e proprio ----------
 const W = {
-  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, VOLC, OLDN, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, LATESHAPE, FINE,
+  WS, WSZ, Z0, ZN, N, NZ, CELL, V, TEX, TEXZ, WL, CH, CHZ, CS, OLD, B, NB, VOLC, OLDN, REG, PLACES, BUILD, PROPS, CHESTS, NOOKS, NPCS, CAMPS, ROADS, RIVER, RIVERS, STONES, ISLAND, COASTS, LAKES, FLAT, PEAKS, TERRA, BRIDGES, PAVE, CLEAR, LATE, CARVE, SHAPERS, LATESHAPE, FINE, GROTTE,
   H: null, SL: null, SH: null, col: null, mat: null, road: null, biome: null, nObjs: 0, colliders: null, boxes: [], mapImg: null, builders: {}, hooks: [], glows: [], smokes: [],
 };
 W.ground = (x, z) => {
@@ -412,6 +414,104 @@ W.inBox = (x, z, m = 0) => {
   return null;
 };
 
+// ---------- le grotte aperte ----------
+// Una grotta aperta è scavata nel rilievo e coperta da una volta di roccia: ci si entra a piedi, senza cambiare mondo.
+// Ogni grotta: { id, y (quota del fondo), rami: [[[x, z, raggio, scarto di quota], ...], ...] }. Il primo tratto del primo ramo è l'invito
+// a cielo aperto: la volta comincia al suo secondo punto (la bocca). Sopra la volta non si cammina.
+// Per ogni grotta c'è una griglia sui vertici del rilievo che tocca. F: 0 roccia, 1 fondo a cielo aperto, 2 fondo sotto la volta, 3 spalla
+// (il piede della parete, sotto la volta). FL: la quota scavata. CE: la quota del soffitto. BU: quanto è buio (0-1).
+const GR_BUIO = 0.13;
+function grPrepara() {
+  for (const g of GROTTE) {
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const P of g.rami) for (const p of P) { x0 = Math.min(x0, p[0] - p[2]); x1 = Math.max(x1, p[0] + p[2]); z0 = Math.min(z0, p[1] - p[2]); z1 = Math.max(z1, p[1] + p[2]); }
+    const M = 48, i0 = Math.max(2, Math.floor((x0 - M) / CELL)), i1 = Math.min(N - 2, Math.ceil((x1 + M) / CELL)), j0 = Math.max(2, Math.floor((z0 - M - Z0) / CELL)), j1 = Math.min(NZ - 2, Math.ceil((z1 + M - Z0) / CELL)), nw = i1 - i0 + 1, nh = j1 - j0 + 1, n = nw * nh;
+    const F = new Uint8Array(n), FL = new Float32Array(n), CE = new Float32Array(n), BU = new Float32Array(n), bocca = g.rami[0][1];
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) {
+      const x = (i0 + i) * CELL, z = Z0 + (j0 + j) * CELL, k = j * nw + i;
+      let bd = 1e9, open = 0, dy = 0;
+      for (let b = 0; b < g.rami.length; b++) { const P = g.rami[b];
+        for (let s = 0; s < P.length - 1; s++) { const A = P[s], Q = P[s + 1], dx = Q[0] - A[0], dz = Q[1] - A[1], t = Math.max(0, Math.min(1, ((x - A[0]) * dx + (z - A[1]) * dz) / (dx * dx + dz * dz))), d = Math.hypot(x - A[0] - dx * t, z - A[1] - dz * t) - (A[2] + (Q[2] - A[2]) * t);
+          if (d < bd) { bd = d; open = b === 0 && s === 0 && t < 1 ? 1 : 0; dy = (A[3] || 0) + ((Q[3] || 0) - (A[3] || 0)) * t; } } }
+      const d = bd + (open ? 0 : (fbm(x / 26, z / 26, 2) - 0.5) * 9), fl = g.y + dy + (fbm(x / 19, z / 19, 2) - 0.5) * 1.2;   // le pareti non sono dritte, il fondo non è un tavolo
+      FL[k] = fl; CE[k] = fl + Math.max(3.5, 9.5 + (d < 0 ? Math.min(-d, 28) * 0.42 : -d * 0.5) + (fbm(x / 14, z / 14, 2) - 0.5) * 3);   // il soffitto: basso alle pareti, alto in mezzo alle sale
+      if (d < 0) { F[k] = open ? 1 : 2; if (!open) BU[k] = smooth(4, 64, Math.hypot(x - bocca[0], z - bocca[1])); }
+    }
+    // la spalla: i vertici di roccia che toccano il fondo coperto scendono a mezza parete (così la parete che si vede è tutta in ombra)
+    const tocca = (i, j, min) => { let b = -1; for (let q = 0; q < 9; q++) { const a = i + q % 3 - 1, c = j + Math.floor(q / 3) - 1; if (a < 0 || c < 0 || a >= nw || c >= nh) continue; const kk = c * nw + a; if (F[kk] >= min && F[kk] < 4) b = Math.max(b, BU[kk]); } return b; };
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const k = j * nw + i; if (F[k]) continue; const b = tocca(i, j, 2); if (b >= 0) { F[k] = 4; BU[k] = b; FL[k] += 22; } }
+    for (let k = 0; k < n; k++) if (F[k] === 4) F[k] = 3;
+    // il buio del soffitto arriva anche dove il soffitto entra nella roccia
+    const BS = BU.slice(); for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const k = j * nw + i; if (!F[k]) BS[k] = Math.max(0, tocca(i, j, 2)); }
+    Object.assign(g, { i0, j0, nw, nh, F, FL, CE, BU, BS, box: [i0 * CELL, Z0 + j0 * CELL, i1 * CELL, Z0 + j1 * CELL] });
+    FINE.push([g.box[0] - 130, g.box[1] - 130, g.box[2] + 130, g.box[3] + 130]);   // attorno alla grotta il rilievo resta preciso anche da lontano
+  }
+}
+// scava: il rilievo di prima resta in H0 (è il dorso della volta)
+function grScava(H, H0) {
+  for (const g of GROTTE) for (let j = 0; j < g.nh; j++) for (let i = 0; i < g.nw; i++) { const k = j * g.nw + i, f = g.F[k]; if (!f) continue; const K = (g.j0 + j) * V + g.i0 + i;
+    H0[K] = H[K]; H[K] = f === 2 ? g.FL[k] : Math.min(H[K], g.FL[k]); }
+}
+// dove la roccia sopra è troppo poca la volta non c'è (resta un pozzo di luce); altrove il soffitto sta sotto il dorso
+function grChiudi() {
+  const H0 = W.H0;
+  for (const g of GROTTE) for (let k = 0; k < g.F.length; k++) { const f = g.F[k]; if (f < 2) continue; const K = (g.j0 + Math.floor(k / g.nw)) * V + g.i0 + k % g.nw, base = f === 3 ? g.FL[k] - 22 : g.FL[k];
+    if (H0[K] - base < 7.5) g.F[k] = f === 2 ? 1 : 0; else g.CE[k] = Math.min(g.CE[k], H0[K] - 1.2); }
+}
+// il rilievo «di fuori» in un vertice (quello di prima sotto la volta, quello di adesso altrove) e la sua luce
+const grFuori = (g, i, j) => { const a = i - g.i0, b = j - g.j0; return a >= 0 && b >= 0 && a < g.nw && b < g.nh && g.F[b * g.nw + a] >= 2 ? W.H0[j * V + i] : W.H[j * V + i]; };
+const grSole = (g, i, j) => { const gx = (grFuori(g, i + 1, j) - grFuori(g, i - 1, j)) / (2 * CELL), gz = (grFuori(g, i, j + 1) - grFuori(g, i, j - 1)) / (2 * CELL), n = Math.hypot(gx, 1, gz), dot = (-gx * SUN[0] + SUN[1] - gz * SUN[2]) / (n * Math.hypot(SUN[0], SUN[1], SUN[2])); return [Math.max(0.42, Math.min(1.12, 0.38 + 0.74 * Math.max(0, dot))), gx, gz]; };
+// la luce: buio sotto la volta; sull'orlo, quella che ci sarebbe senza la grotta (il dorso della volta e il monte attorno combaciano)
+function grLuce() {
+  const SH = W.SH;
+  for (const g of GROTTE) for (let j = 0; j < g.nh; j++) for (let i = 0; i < g.nw; i++) { const k = j * g.nw + i, f = g.F[k], K = (g.j0 + j) * V + g.i0 + i;
+    if (f >= 2) SH[K] = lerp(0.6, GR_BUIO, g.BU[k]);
+    else if (!f) { let orlo = false; for (let q = 0; q < 9 && !orlo; q++) { const a = i + q % 3 - 1, b = j + Math.floor(q / 3) - 1; orlo = a >= 0 && b >= 0 && a < g.nw && b < g.nh && g.F[b * g.nw + a] >= 2; } if (orlo) SH[K] = grSole(g, g.i0 + i, g.j0 + j)[0]; } }
+}
+// dove il terreno prende il colore della roccia: tutta la grotta, e sfumando un po' attorno
+function grColore() {
+  if (!GROTTE.length) return null;
+  const GM = new Uint8Array(V * VZ);
+  for (const g of GROTTE) { const { nw, nh, F } = g, m = new Float32Array(nw * nh);
+    for (let k = 0; k < m.length; k++) m[k] = F[k] ? 1 : 0;
+    for (let it = 0; it < 2; it++) { const p = m.slice(); for (let j = 1; j < nh - 1; j++) for (let i = 1; i < nw - 1; i++) { const k = j * nw + i; if (p[k] > 0) continue; let b = 0; for (let q = 0; q < 9; q++) b = Math.max(b, p[k + q % 3 - 1 + (Math.floor(q / 3) - 1) * nw]); m[k] = b * 0.6; } }
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const K = (g.j0 + j) * V + g.i0 + i; GM[K] = Math.max(GM[K], m[j * nw + i] * 255); } }
+  return GM;
+}
+// la volta: il dorso (il monte com'era), il soffitto, e la fronte dove la volta finisce sull'invito a cielo aperto. La disegna lo stesso programma del terreno.
+function grVolte() {
+  W.volte = [];
+  for (const g of GROTTE) {
+    const { i0, j0, nw, nh, F, CE, BS } = g, out = [];
+    const coperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; let r = false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) { if (F[k] === 1) return false; if (F[k] >= 2) r = true; } return r; };
+    const aperta = (i, j) => { if (i < 0 || j < 0 || i >= nw - 1 || j >= nh - 1) return false; for (const k of [j * nw + i, j * nw + i + 1, (j + 1) * nw + i, (j + 1) * nw + i + 1]) if (F[k] === 1) return true; return false; };
+    const su = (i, j) => { const s = grSole(g, i0 + i, j0 + j); return [(i0 + i) * CELL, grFuori(g, i0 + i, j0 + j), Z0 + (j0 + j) * CELL, s[0], s[1], s[2]]; };
+    const giu = (i, j) => { const k = j * nw + i; return [(i0 + i) * CELL, CE[k], Z0 + (j0 + j) * CELL, lerp(0.55, GR_BUIO, BS[k]), 0, 0]; };
+    const tri = (a, b, c) => { for (const v of [a, b, c]) for (let q = 0; q < 6; q++) out.push(v[q]); };
+    let lo = 1e9, hi = -1e9;
+    for (let j = 0; j < nh - 1; j++) for (let i = 0; i < nw - 1; i++) {
+      if (!coperta(i, j)) continue;
+      const P = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]], rk = P.map(([a, b]) => F[b * nw + a] === 0);
+      for (const [p, q, r] of [[0, 3, 1], [0, 2, 3]]) { if (rk[p] && rk[q] && rk[r]) continue;   // tutta roccia: lì c'è già il terreno
+        const A = su(...P[p]), B2 = su(...P[q]), C = su(...P[r]); tri(A, B2, C); tri(giu(...P[p]), giu(...P[q]), giu(...P[r])); lo = Math.min(lo, CE[P[p][1] * nw + P[p][0]]); hi = Math.max(hi, A[1], B2[1], C[1]); }
+      for (const [di, dj, a, b] of [[0, -1, 0, 1], [0, 1, 2, 3], [-1, 0, 0, 2], [1, 0, 1, 3]]) { if (!aperta(i + di, j + dj)) continue;
+        const A = su(...P[a]), B2 = su(...P[b]), A2 = giu(...P[a]), B3 = giu(...P[b]), sh = faceLight(di, 0, dj);
+        for (const v of [A, B2, A2, B3]) { v[3] = sh; v[4] = di * 2.5; v[5] = dj * 2.5; }
+        if (A[1] > A2[1] || B2[1] > B3[1]) { tri(A2, B3, B2); tri(A2, B2, A); } }
+    }
+    W.volte.push({ data: new Float32Array(out), n: out.length / 6, x: (g.box[0] + g.box[2]) / 2, z: (g.box[1] + g.box[3]) / 2, r: Math.hypot(g.box[2] - g.box[0], g.box[3] - g.box[1]) / 2, box: g.box, lo, hi, buf: null });
+  }
+}
+// in che punto di una grotta si è (o niente): f come sopra, ce la quota del soffitto, bu il buio. Il risultato va letto subito (è sempre lo stesso oggetto)
+const GQ = { f: 0, ce: 0, bu: 0, g: null };
+W.grotta = (x, z) => {
+  for (const g of GROTTE) { const b = g.box; if (!b || x <= b[0] || x >= b[2] || z <= b[1] || z >= b[3]) continue;
+    const fx = x / CELL - g.i0, fz = (z - Z0) / CELL - g.j0, k = Math.floor(fz) * g.nw + Math.floor(fx), kn = Math.round(fz) * g.nw + Math.round(fx);
+    GQ.g = g; GQ.f = g.F[kn]; GQ.bu = GQ.f >= 2 ? g.BU[kn] : 0; GQ.ce = Math.min(g.CE[k], g.CE[k + 1], g.CE[k + g.nw], g.CE[k + g.nw + 1]); return GQ; }
+  return null;
+};
+W.volte = [];
+
 // ---------- costruzione, a passi (per la barra di caricamento) ----------
 const BCH = ['#5aa83e', '#86c858', '#7cc24e', '#d9b44a', '#3e7a32', '#5e8e3a', '#8c8274', '#a29a8a', '#dce6f2', '#f2f6fc', '#e3c27a', '#d0a65c', '#4e5e34', '#6e7a3e', '#4a4242', '#5e5048',
   '#8e8438', '#b88a34', '#bfae4c', '#dcc866', '#c26238', '#e08c4c', '#2c8436', '#48a648', '#62b456', '#a2d676', '#56485c', '#6c5a68', '#5c9648', '#86b262', '#74a644', '#a4b850'];
@@ -420,13 +520,15 @@ const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
+  grPrepara();
   // rilievo, strade e colori si calcolano una volta sola per versione: poi il gioco li conserva sul telefono (W.cache) e la volta dopo si rileggono.
   // Case, alberi e ombre si rifanno ogni volta, sugli stessi numeri: il mondo esce identico.
   const cache = W.cache; let old = null;
   if (cache) { while (cache.busy()) yield -1; old = cache.take(); }
   if (old && !unpack(old)) old = null;
-  if (!old) { yield* terrain(); if (cache) cache.put(pack()); }
+  if (!old) { yield* terrain(); if (cache) cache.put(pack()); } else grChiudi();
   W.cached = !!old;
+  grVolte();
   if (window.__SG_DEBUG) W.dbgSum = PACK.map(([k]) => { const a = W[k], u = new Uint8Array(a.buffer, a.byteOffset, a.byteLength); let h = 0; for (let i = 0; i < u.length; i += 7) h = (h * 31 + u[i]) | 0; return k + ':' + h; }).join(' ');
   yield 0.82;
   // edifici e collisioni
@@ -513,6 +615,7 @@ function* terrain() {
       for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) H[j * V + i] = s.f(i * CELL, Z0 + j * CELL, H[j * V + i]);
     }
     gradeRoads(H, pads);
+    grScava(H, W.H0); grChiudi();   // per ultime le grotte aperte
   }
   // quanto è vicina la riva (per la schiuma): 255 a riva e sulla terra, 0 dove l'acqua è profonda 7 o più
   const shore = W.shore = new Uint8Array(N * NZ);
@@ -537,6 +640,7 @@ function* terrain() {
     }
     if (j % 32 === 0) yield 0.35 + 0.1 * j / VZ;
   }
+  grLuce(); const GM = grColore();
   // maschera delle strade visibili e dei pavimenti (risoluzione della texture)
   const tm = SG.art.mk(TEX, TEXZ), tx = tm.getContext('2d');
   tx.lineCap = 'round'; tx.lineJoin = 'round';
@@ -624,6 +728,7 @@ function* terrain() {
           if (wMesa > 0.05) { const bd = Math.floor((h + n1 * 10) / 6) % 4, K = [[178, 86, 54], [204, 112, 66], [150, 70, 50], [226, 164, 110]][bd]; r0 = lerp(r0, K[0], wMesa); r1 = lerp(r1, K[1], wMesa); r2 = lerp(r2, K[2], wMesa); }
           c[0] = lerp(c[0], r0, rk); c[1] = lerp(c[1], r1, rk); c[2] = lerp(c[2], r2, rk); for (let q = 0; q < 4; q++) m[q] *= 1 - rk; m[2] += rk;
         }
+        if (GM) { const gk = (GM[k00] * w00 + GM[k00 + 1] * w10 + GM[k00 + V] * w01 + GM[k00 + V + 1] * w11) / 255; if (gk > 0) { c[0] = lerp(c[0], 112, gk); c[1] = lerp(c[1], 104, gk); c[2] = lerp(c[2], 98, gk); for (let q = 0; q < 4; q++) m[q] *= 1 - gk; m[2] += gk; } }
         const pl = W.pondAt(x, z), hw = pl ? h - pl.wl : h;
         if (pl ? hw < 1.3 : h < 4.5 && h > -2.5 && wSw < 0.4) { const sd = pl ? smooth(1.3, 0.3, hw) : smooth(4.5, 1.5, h); c[0] = lerp(c[0], 232, sd); c[1] = lerp(c[1], 212, sd); c[2] = lerp(c[2], 152, sd); for (let q = 0; q < 4; q++) m[q] *= 1 - sd; m[1] += sd * 0.7; m[3] += sd * 0.3; }
         if (hw < -0.4) { const dd = smooth(-0.4, -14, hw * (pl ? 2.2 : 1)); c[0] = lerp(196, 70, dd); c[1] = lerp(180, 110, dd); c[2] = lerp(128, 120, dd); m[0] = 0; m[1] = 0.4; m[2] = 0; m[3] = 0.6; }
@@ -811,7 +916,7 @@ function* placeObjects(S) {
   let R = rng(4242);
   // si decide sul mondo com'era (vedi «ritocchi tardivi»), si posa su quello di adesso
   const gD = W.ground0, sD = W.slope0, rD = W.road0At; let hand = 0;
-  const veto = (x, z) => { if (W.roadAt(x, z) > 0.05 && rD(x, z) <= 0.05) return true; const L = W.pondAt(x, z); return !!L && W.ground(x, z) < L.wl + 0.5; };
+  const veto = (x, z) => { if (W.roadAt(x, z) > 0.05 && rD(x, z) <= 0.05) return true; if (GROTTE.length) { const q = W.grotta(x, z); if (q && q.f) return true; } const L = W.pondAt(x, z); return !!L && W.ground(x, z) < L.wl + 0.5; };
   W.nObjs = 0;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
@@ -819,8 +924,8 @@ function* placeObjects(S) {
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
     let ri = RI.get(rect); if (ri === undefined) { ri = RL.length; RI.set(rect, ri); RL.push(rect); }
     const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CHZ - 1, Math.floor((z - Z0) / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
-    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, ri, sp.lit || 1, sp.sway || 0);
-    if (sp.glow) W.glows.push([x, y + sp.glow[0], z, sp.glow[1], sp.glow[2], sp.glow[3], sp.glow[4], 0]);
+    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, ri, o.lit || sp.lit || 1, sp.sway || 0);
+    const gw = o.glow || sp.glow; if (gw) W.glows.push([x, y + gw[0], z, gw[1], gw[2], gw[3], gw[4], gw[5] || 0]);
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
     W.nObjs++;
   };
@@ -872,7 +977,7 @@ function* placeObjects(S) {
     if (k === 'giant') add('giant', x, z, { r: 14.5, sink: 2 });
     else if (k === 'well') add('well', x, z, { r: 6 });
     else if (k === 'anvil') add('anvil', x, z, { r: 2 });
-    else if (k === 'menhir') add('menhir', x, z, { r: 3 });
+    else if (k === 'menhir') add('menhir', x, z, Object.assign({ r: 3 }, o || {}));
     else if (k === 'statue') add('statue', x, z, { r: 4 });
     else add(k, x, z, Object.assign({ r: k === 'tent' ? 9 : k === 'sign' ? 1.2 : k === 'snowman' ? 3.5 : k === 'campfire' ? 2 : S[k] && S[k].col ? S[k].col : S[k] && S[k].small ? 0 : 1 }, o || {}));
   };
@@ -994,6 +1099,7 @@ W.upload = (G) => {
     const ccx = (ci + 0.5) * CS, ccz = Z0 + (cj + 0.5) * CS;
     W.chunks.push({ ci, cj, cx: ccx, cz: ccz, fine: FINE.some(f => ccx > f[0] && ccx < f[2] && ccz > f[1] && ccz < f[3]), lo, hi, buf: null, big: null, small: null, nb: L ? L.big.length / 7 : 0, ns: L ? L.small.length / 7 : 0, used: 0 });
   }
+  for (const v of W.volte) v.buf = G.buffer(v.data);
   const m = new Float32Array(W.mesh); W.meshBuf = G.buffer(m); W.meshQuads = m.length / 32; W.mesh = null; if (window.__SG_DEBUG) W.meshDbg = m;
   // acqua: un grande quadrato fino all'orizzonte
   W.waterBuf = G.buffer(new Float32Array([-3000, Z0 - 3000, WS + 3000, Z0 - 3000, WS + 3000, WS + 3000, -3000, WS + 3000]));
