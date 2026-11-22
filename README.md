@@ -83,6 +83,15 @@ Un'avventura fantasy in un mondo aperto, vista da dietro l'eroe come in Pixel Ka
 - **Tornare a Pixel Box:** START → OPZIONI → «TORNA AL MENU DI PIXEL BOX». Il gioco si salva da solo ogni 20 secondi.
 - **In arrivo:** nel capitolo 3 le creature leggendarie e lo scontro con il drago; l'interno del mastio.
 
+## Il Grande Viaggio (anteprima)
+
+Una voce nuova nel menu di Pixel Box: è il cantiere del gioco che verrà dopo Pixel Saga, sullo stesso motore. Il mondo nuovo avrà quattro terre, ognuna grande quanto tutta la mappa di Pixel Saga; questa anteprima mostra la prima, **Lumen**.
+
+- **La terra:** la Lumen di sempre ingrandita 1,9 volte per lato (da sola ha più terra di tutte quelle di Pixel Saga messe insieme), con a nord un massiccio nuovo: cime fino a quota 1100, la gola del **Valico dei Giganti** che sale verso la terra dei monti, e una **valle nascosta** con il suo lago. Il Lago di Cristallo con l'isola, il fiume, il Bosco Antico, la Palude d'Ombra, le Colline di Solis; Monte Brace è un vulcano spento, con un lago nel cratere.
+- **Le città:** **Borgo Aurora** grande il doppio (case a graticcio, la piazza con la fontana, la locanda, l'emporio di Nino e la fucina di Bruno) e la **Rocca di Lumen** grande quattro volte, con le mura, le torri e quattro porte. Le strade maestre lastricate arrivano alle porte.
+- **Per ora si cammina e si guarda:** non ci sono ancora storia, gente, nemici, forzieri, ponti e grotte. La Rocca ha ancora gli isolati vuoti e non ha il mastio. Nelle botteghe si entra.
+- **Salvataggio a parte:** quello di Pixel Saga non viene toccato. Passando da un gioco all'altro Pixel Box si ricarica da solo (il mondo in memoria è uno alla volta), e basta premere di nuovo A.
+
 ## Comandi
 
 Croce direzionale (in Pixel Saga una leva a otto direzioni), A, B, START e SELECT (torna al menu; in Pixel Saga apre la mappa). Sotto lo schermo c'è sempre l'elenco dei tasti del gioco in corso.

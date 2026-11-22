@@ -6,7 +6,11 @@ let W = SG.world;   // la terra dove si cammina (le terre possono essere più d'
 const angDiff = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 const hexf = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RARO', 'EPICO', 'LEGGENDARIO'];
-const SAVEKEY = 'sg_save1';
+let SAVEKEY = 'sg_save1';
+// Lo stesso motore fa due giochi: Pixel Saga (MODO null) e l'anteprima del Grande Viaggio, sulla terra nuova di Lumen (MODO 'lumen').
+// Il mondo in memoria è uno solo: per passare dall'uno all'altro Pixel Box si ricarica, con il gioco voluto già scelto.
+let MODO = null, modoScelto = false;
+const INIZIO = () => MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
 
 // ---------- oggetti ----------
 const IT = {
@@ -203,7 +207,7 @@ function setDay(tod) {
 
 // ---------- salvataggio ----------
 function newSave() {
-  return { v: 1, x: 2005, z: 2700, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
+  return { v: 1, x: INIZIO().x, z: INIZIO().z, yaw: -Math.PI / 2, hp: 6, hearts: 0, coins: 10, pot: 1, ore: 0, slimes: 0, oreTaken: {},
     eq: { arma: null, armatura: 'tunica', elmo: null, scudo: null, acc: null }, inv: ['tunica'], q: { main: 0, ferro: 0, gatto: 0, melme: 0, viaggio: 0 }, track: 'main',
     chests: {}, flags: {}, seen: '', time: 0, tod: 8, hint: 0, opt: { vib: true }, dun: {}, jobs: {}, cls: null, sk: {}, skSel: {} };
 }
@@ -428,6 +432,7 @@ const STO = (() => {
   const S = { stato: 'attesa', letto: 0, scritto: false, err: '' };   // attesa | nuovo (calcolato adesso) | letto (dal telefono) | spento (il telefono non offre spazio)
   const NOMI = ['H', 'H0', 'shore', 'SL', 'SH', 'biome', 'road0', 'pav', 'col', 'mat', 'road', 'map'];
   let db = null, data = null, busy = false;
+  const PRE = () => (MODO || 'classica') + '/';   // ogni terra ha i suoi vettori
   const msg = e => String(e && e.message || e || '').toUpperCase().replace(/[^A-Z0-9 .,:()-]/g, ' ').slice(0, 30);
   const fine = (st, e) => { if (!busy) return; busy = false; S.stato = st; if (e) S.err = msg(e); };
   S.begin = () => {
@@ -442,12 +447,12 @@ const STO = (() => {
         db = rq.result; db.onversionchange = () => { try { db.close(); } catch (e) {} db = null; };
         if (!busy) return;
         try {
-          const st = db.transaction('terra', 'readonly').objectStore('terra'), g = st.get('classica/meta');
+          const st = db.transaction('terra', 'readonly').objectStore('terra'), g = st.get(PRE() + 'meta');
           g.onerror = () => fine('nuovo', g.error);
           g.onsuccess = () => {
             const m = g.result; if (rotto || !m || m.id !== APP.id) return fine('nuovo');
             const out = {}; let n = 0;
-            NOMI.forEach(k => { const r = st.get('classica/' + k); r.onerror = () => fine('nuovo', r.error); r.onsuccess = () => { out[k] = r.result; if (++n === NOMI.length && busy) { data = out; S.letto = performance.now() - t0; fine('letto'); } }; });
+            NOMI.forEach(k => { const r = st.get(PRE() + k); r.onerror = () => fine('nuovo', r.error); r.onsuccess = () => { out[k] = r.result; if (++n === NOMI.length && busy) { data = out; S.letto = performance.now() - t0; fine('letto'); } }; });
           };
         } catch (e) { fine('nuovo', e); }
       };
@@ -461,7 +466,7 @@ const STO = (() => {
     if (!db) return;
     try {
       const tx = db.transaction('terra', 'readwrite'), st = tx.objectStore('terra');
-      st.clear(); NOMI.forEach(k => st.put(o[k], 'classica/' + k)); st.put({ id: APP.id, t: Date.now() }, 'classica/meta');
+      NOMI.forEach(k => st.put(o[k], PRE() + k)); st.put({ id: APP.id, t: Date.now() }, PRE() + 'meta');
       tx.oncomplete = () => { S.scritto = true; }; tx.onerror = tx.onabort = () => { S.err = msg(tx.error || 'non scritto'); };
       try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(() => {}, () => {}); } catch (e) {}
     } catch (e) { S.err = msg(e); }
@@ -470,6 +475,7 @@ const STO = (() => {
   return S;
 })();
 function* loader() {
+  if (MODO) SG.terre[MODO]({ world: W, town: SG.town, city: SG.city, shop: SG.shop });   // la scheda della terra nuova, prima che il mondo nasca
   W.cache = STO; STO.begin();
   progMsg = 'PREPARO LA GRAFICA 3D'; yield 0.005;
   G = SG.createGL();
@@ -521,6 +527,12 @@ function setupWorld() {
   // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
   GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
+function scegliModo(m) {
+  if (st === 'boot' && !modoScelto) { MODO = m; modoScelto = true; SAVEKEY = m ? 'gv_save1' : 'sg_save1'; return true; }
+  if (MODO === m) return true;
+  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (m ? 'viaggio' : 'saga')))); } catch (e) {}
+  location.reload(); return false;
+}
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
@@ -529,6 +541,7 @@ function startGame(fresh) {
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0,
     act: 'slash', atkT: 0.42, en: MAXEN(), enT: 0, enFl: 0, chg: 0, aDown: false, aHold: 0, cdC: 0, dash: null, block: false, guard: 0, hid: 0, nextShot: null, castFn: null };
   things = []; applyClass(); clsUI = null;
+  if (MODO) toasts.push({ t: 'ANTEPRIMA: LA TERRA È ANCORA VUOTA. PER ORA SI CAMMINA E SI GUARDA.', c: '#7af0ff', life: 12 });
   if (hero.hp <= 0) hero.hp = MAXHP();
   orb.id = null; orb.pBack = false; orb.p = Math.max(-1, Math.min(1, +save.opt.cam || 0));
   camBehind();
@@ -2959,7 +2972,7 @@ const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
-  if (menu.tab === 2) return QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
+  if (menu.tab === 2) return MODO ? [] : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
   return ['vol', 'mus', 'giorno', 'vib', 'comandi'].concat(bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
@@ -3044,8 +3057,8 @@ function drawDeath() {
 }
 function drawLoading() {
   hg.fillStyle = '#0b0d14'; hg.fillRect(0, 0, Wr, Hr);
-  T('PIXEL SAGA', Wr / 2, Hr / 2 - 34, '#ffd23f', 3, 'center', '#7a2a10');
-  T('LE TERRE DI LUMEN', Wr / 2, Hr / 2 - 8, '#a9c6e3', 1, 'center');
+  T(MODO ? 'IL GRANDE VIAGGIO' : 'PIXEL SAGA', Wr / 2, Hr / 2 - (MODO ? 28 : 34), '#ffd23f', MODO ? 2 : 3, 'center', '#7a2a10');
+  T(MODO ? 'ANTEPRIMA: LA TERRA NUOVA DI LUMEN' : 'LE TERRE DI LUMEN', Wr / 2, Hr / 2 - 8, '#a9c6e3', 1, 'center');
   const w = Math.min(220, Wr - 80); hg.fillStyle = '#26304a'; hg.fillRect(Wr / 2 - w / 2, Hr / 2 + 10, w, 6); hg.fillStyle = '#4ade80'; hg.fillRect(Wr / 2 - w / 2, Hr / 2 + 10, Math.round(w * prog), 6);
   T(progMsg, Wr / 2, Hr / 2 + 22, '#8a96aa', 1, 'center');
   T('COSTRUISCO IL MONDO: CI VUOLE QUALCHE SECONDO', Wr / 2, Hr - 14, '#4a5468', 1, 'center', null);
@@ -3053,8 +3066,8 @@ function drawLoading() {
 function drawTitle() {
   title.t += 1 / 60;
   hg.fillStyle = 'rgba(8,10,20,.25)'; hg.fillRect(0, 0, Wr, Hr);
-  T('PIXEL SAGA', Wr / 2, Math.round(Hr * 0.16), '#ffd23f', 4, 'center', '#7a2a10');
-  T('LE TERRE DI LUMEN', Wr / 2, Math.round(Hr * 0.16) + 34, '#ffffff', 1, 'center');
+  T(MODO ? 'IL GRANDE VIAGGIO' : 'PIXEL SAGA', Wr / 2, Math.round(Hr * 0.16) + (MODO ? 8 : 0), '#ffd23f', MODO ? 2 : 4, 'center', '#7a2a10');
+  T(MODO ? 'ANTEPRIMA: LA TERRA NUOVA DI LUMEN' : 'LE TERRE DI LUMEN', Wr / 2, Math.round(Hr * 0.16) + 34, '#ffffff', 1, 'center');
   const opts = title.opts;
   opts.forEach((o, i) => { const y = Math.round(Hr * 0.62) + i * 14, on = i === title.sel; if (on) { const w = A.textW(o) + 20; hg.fillStyle = 'rgba(10,12,22,.7)'; hg.fillRect(Wr / 2 - w / 2, y - 3, w, 13); } T((on ? '> ' : '') + o + (on ? ' <' : ''), Wr / 2, y, on ? '#ffffff' : '#a9b6cc', 1, 'center'); });
   if (title.confirm) { panel(Wr / 2 - 110, Hr / 2 - 22, 220, 44, '#ff8f8f'); T('CANCELLARE IL SALVATAGGIO?', Wr / 2, Hr / 2 - 14, '#ff8f8f', 1, 'center'); T('A: SÌ, RICOMINCIA    B: NO', Wr / 2, Hr / 2 + 4, '#ffffff', 1, 'center'); }
@@ -3196,14 +3209,14 @@ function measure(w, h) {
 function toTitle() { st = 'title'; title.t = 0; title.sel = 0; title.confirm = false; title.opts = loadSave() ? ['CONTINUA L\'AVVENTURA', 'NUOVA AVVENTURA'] : ['NUOVA AVVENTURA']; }
 function titleCam(dt) {
   title.t += dt; setDay(18.15);
-  const a = -0.6 + title.t * 0.035, cx = 2000, cz = 2660;
+  const a = -0.6 + title.t * 0.035, cx = INIZIO().x - 5, cz = INIZIO().z - 40;
   cam.x = cx + Math.cos(a) * 150; cam.z = cz + Math.sin(a) * 150; cam.y = gH(cx, cz) + 46;
   cam.tx = cx + Math.cos(a + Math.PI) * 120; cam.tz = cz + Math.sin(a + Math.PI) * 120; cam.ty = gH(cx, cz) + 10;
   const bw = W.atmo(cam.x, cam.z); for (let i = 0; i < 3; i++) { atm.fog[i] = ATMO[0][0][i]; atm.zen[i] = ATMO[0][1][i]; atm.wat[i] = ATMO[0][4][i]; } atm.near = 380; atm.far = 1250;
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -3221,7 +3234,9 @@ return {
     drawIcon(c, ['cccccccccccccccc', 'cccccccwwccccccc', 'ccwwccccccccsccc', 'ccccccccccccsccc', 'ccccccrrcccssscc', 'cccccrrrrccsscwc', 'ccccrrrrrrccsccc', 'cccrryrryrrccscc', 'ccrrrrrrrrrrcgcc', 'ggggmmmmmmgggggg', 'gggmmdddmmgggggg', 'ggggmmdmmgggtggg', 'gtggggggggggtttg', 'tttggggggggggtgg', 'gtgggggbbgggggtg', 'ggggggbbbbgggggg'],
       { c: '#5aa0e0', w: '#ffffff', r: '#8a8c96', y: '#ffd86a', s: '#e8eef6', g: '#58b048', m: '#c8c4bc', d: '#3a2416', t: '#2e7a30', b: '#3a7ac8' }, x, y, s, '#5aa0e0');
   },
+  modo: scegliModo,
   enter() {
+    if (!scegliModo(this.terra || null)) return;
     if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); MIS.t0 = performance.now(); MIS.calc = 0; MIS.fasi = {}; }
     else if (st === 'play') { menu = null; }
   },
