@@ -310,6 +310,7 @@ function human(o, pose = {}) {
   // braccia
   for (const s of [1, -1]) {
     const rot = [['y', s > 0 ? AL : AR, 0, s * 5.3, sh]], y = s * (5.25 + wide);
+    if (s < 0 && pose.armRz) rot.push(['z', pose.armRz, 0, s * 5.3, sh]);   // il fendente di lato: il braccio armato gira attorno alla spalla
     C([0, y, sh - 0.3], [0, y, 11.6], 1.38, o.sleeve || o.shirt, rot);
     E([0, y, 10.5], [1.4, 1.35, 1.4], o.hand || o.skin, rot);
     if (o.pauldron) E([0, s * (5.1 + wide), sh - 0.1], [2.25, 2.05, 1.75], o.pauldron, rot, 1.08);

@@ -269,7 +269,7 @@ function heroLook(c = cls(), demo) {
 }
 
 // ---------- sprite ----------
-const POSE_N = 7;      // pose dell'eroe: ogni classe ha le sue (sg_class.js)
+const POSE_N = 11;     // pose dell'eroe: ogni classe ha le sue (sg_class.js)
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
 // otto direzioni: cinque disegnate, tre ottenute allo specchio (metà dello spazio nell'atlante)
@@ -351,6 +351,14 @@ function buildStatics() {
   const HD = (c, old) => { const r = atlas.add(c); r.f = old / c.width; return r; };
   SPR.puff = HD(A.puff(), 7);
   SPR.spark = atlas.add(A.pix(['..a..', '..a..', 'aabaa', '..a..', '..a..'], { a: '#ffd23f', b: '#ffffff' }));
+  // le scie della lama (combattimento nuovo): un arco largo e basso, uno in diagonale, uno alto e stretto
+  { const arco = (w, h, f) => { const c = A.mk(w, h), g = c.getContext('2d'); f(g); return atlas.add(c); }, luna = (g, pts, col) => { g.fillStyle = col; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fill(); };
+    // orizzontale: una falce coricata, la gobba in alto
+    SPR.sciaO = arco(34, 13, g => { const su = [], giu = []; for (let i = 0; i <= 16; i++) { const t = i / 16, x = 1 + t * 32, k = Math.sin(t * Math.PI); su.push([x, 11 - k * 10]); giu.unshift([x, 11 - k * 5.5]); } luna(g, su.concat(giu), '#fff8d0'); const s2 = [], g2 = []; for (let i = 2; i <= 14; i++) { const t = i / 16, x = 1 + t * 32, k = Math.sin(t * Math.PI); s2.push([x, 11 - k * 9]); g2.unshift([x, 11 - k * 7]); } luna(g, s2.concat(g2), '#ffffff'); });
+    // diagonale: dall'alto a destra al basso a sinistra
+    SPR.sciaD = arco(26, 26, g => { const su = [], giu = []; for (let i = 0; i <= 16; i++) { const t = i / 16, a = -0.25 + t * 1.85, k = Math.sin(t * Math.PI); su.push([2 + Math.cos(a) * (21 + k * 2.5), 24 - Math.sin(a) * (21 + k * 2.5)]); giu.unshift([2 + Math.cos(a) * (21 - k * 3.5), 24 - Math.sin(a) * (21 - k * 3.5)]); } luna(g, su.concat(giu), '#fff8d0'); });
+    // dall'alto: una falce in piedi
+    SPR.sciaV = arco(12, 30, g => { const a = [], b = []; for (let i = 0; i <= 16; i++) { const t = i / 16, y = 1 + t * 28, k = Math.sin(t * Math.PI); a.push([6 + k * 5, y]); b.unshift([6 + k * 1.2, y]); } luna(g, a.concat(b), '#fff8d0'); }); }
   SPR.glint = atlas.add(A.pix(['...a...', '...a...', '..aba..', 'aabbbaa', '..aba..', '...a...', '...a...'], { a: '#fff4b0', b: '#ffffff' }));
   SPR.drop = atlas.add(A.pix(['.a.', 'aba', '.a.'], { a: '#7ac8f0', b: '#e0f4ff' }));
   SPR.leaf = [atlas.add(A.pix(['.aa', 'aab', 'ab.'], { a: '#e0702a', b: '#a8341c' })), atlas.add(A.pix(['aa.', 'baa', '.ba'], { a: '#f0c840', b: '#c8862a' })), atlas.add(A.pix(['.a.', 'aab', '.b.'], { a: '#c8342c', b: '#8a1e1a' }))];
@@ -1072,11 +1080,14 @@ function schiva() {
   h.dash = { k: 'schivata', t: 0.24, vx: Math.cos(a) * 78, vz: Math.sin(a) * 78, hit: new Set() };
   tone(520, 0.07, 'triangle', 0.03, 260); noise(0.06, 0.02);
 }
+// la scia della lama: orizzontale, diagonale o dritta dall'alto
+function scia(g) { const h = hero; fx.push({ k: ['sciaV', 'sciaD', 'sciaO'][g], x: h.x + Math.cos(h.yaw) * 6.5, z: h.z + Math.sin(h.yaw) * 6.5, y: h.y + (g === 2 ? 2.2 : 2.0), vy: 0, t: 0.17, s: g === 2 ? 0.42 : 0.36, fermo: 1 }); }
 // A dopo A: la catena. Il terzo colpo è più forte; subito dopo una schivata, il contrattacco
 function catena() {
   const h = hero; h.dmgK = 1; h.forza = 0;
-  if (h.ctr > 0) { h.ctr = 0; h.combo = 0; h.dmgK = 2.2; h.forza = 2; tone(1568, 0.05, 'square', 0.04); tone(2093, 0.08, 'square', 0.035, null, 0.05); for (let i = 0; i < 5; i++) fx.push({ k: 'glint', x: h.x + (Math.random() - 0.5) * 5, z: h.z + (Math.random() - 0.5) * 5, y: h.y + 3 + Math.random() * 4, vy: 7, t: 0.35, s: 0.3 }); }
-  else { h.combo = h.comboT < 0.45 ? (h.combo + 1) % 3 : 0; if (h.combo === 2) { h.dmgK = 1.8; h.forza = 1; tone(1175, 0.06, 'square', 0.04); } }
+  if (h.ctr > 0) { h.ctr = 0; h.combo = 0; h.dmgK = 2.2; h.forza = 2; h.gesto = 2; tone(1568, 0.05, 'square', 0.04); tone(2093, 0.08, 'square', 0.035, null, 0.05); for (let i = 0; i < 5; i++) fx.push({ k: 'glint', x: h.x + (Math.random() - 0.5) * 5, z: h.z + (Math.random() - 0.5) * 5, y: h.y + 3 + Math.random() * 4, vy: 7, t: 0.35, s: 0.3 }); }
+  else { h.combo = h.comboT < 0.45 ? (h.combo + 1) % 3 : 0; h.gesto = [1, 2, 0][h.combo];   // primo colpo in diagonale, secondo di traverso, terzo dall'alto
+    if (h.combo === 2) { h.dmgK = 1.8; h.forza = 1; tone(1175, 0.06, 'square', 0.04); } }
 }
 function togliGuardia(e, n) {
   const T = FOE[e.type]; if (!T.gd || e.st === 'dead' || e.rotto > 0) return;
@@ -1265,7 +1276,7 @@ const ACT = { slash: [0.42, 0.27], spin: [0.52, 0.38], shot: [0.4, 0.28], pshot:
 const ICE_T = [0.62, 0.95, 1.6], LIGHT_T = [1.6, 1.5, 0.9];
 let things = [], clsUI = null, clsPics = null, chip = null, chipM = null, btnC = null;
 function ringLite(x, z, r, k = 'spark', n = 14) { const gy = gH(x, z); for (let i = 0; i < n; i++) { const a = i / n * TAU; fx.push({ k, x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, y: gy + 2.5, vy: 5, t: 0.28, s: 0.3 }); } }
-function startAct(a, fn) { const h = hero; h.dmgK = 1; h.forza = 0; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
+function startAct(a, fn) { const h = hero; h.dmgK = 1; h.forza = 0; h.gesto = 0; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
 const tough = e => FOE[e.type].champ || FOE[e.type].elite;
 function stun(e, t) { if (e.st === 'dead') return; e.stun = Math.max(e.stun || 0, t * (tough(e) ? 0.4 : 1)); if (e.st === 'wind') { e.st = 'chase'; e.cd = Math.max(e.cd, 0.3); } }
 function freeze(e, t) { stun(e, t); e.frz = e.stun; }
@@ -1374,7 +1385,8 @@ function heroHit(a) {
   forzaOra = MODO ? h.forza || 0 : 0;
   // chi tira da lontano, nei santuari, colpisce anche quello che ha a portata di mano (un cristallo, un vaso, una crepa): come una spada
   if (D && (a === 'shot' || a === 'pshot' || a === 'bolt' || a === 'orb')) dSwing(10.5, 0.35, { noBoss: true });
-  if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
+  if (a === 'slash' && MODO) { const g = h.gesto || 0; meleeHit(g === 2 ? 11 : g === 0 ? 11.5 : 10.5, g === 2 ? -0.1 : g === 0 ? 0.55 : 0.35, att); scia(g); if (beam) lightBeam(att); }   // di traverso prende largo, dall'alto stretto e lungo
+  else if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
   else if (a === 'spin') { meleeHit(15.5, 0, Math.round(att * 2), { all: true, boss: 2 }); ringLite(h.x, h.z, 9); ringLite(h.x, h.z, 14, 'glint', 10); if (beam) lightBeam(att); }
   else if (a === 'stab') { meleeHit(9.5, 0.3, Math.max(1, Math.round(att * 0.75)), { back: true, boss: 0.65 }); if (beam) lightBeam(att * 0.75); }
   else if (a === 'shot') { const o = h.nextShot || {}; h.nextShot = null; heroShot('arrow', Object.assign({ dmg: Math.max(1, Math.round(att * 0.8)), bossD: 0.8, pierce: beam, tint: beam ? LIGHT_T : null }, o, h.free ? { noAim: true, turn: 0, sp: 190, life: AIM_R1 / 190 } : null)); }
@@ -1731,7 +1743,7 @@ function ambUpdate(dt) {
   if (hero.moving && !D) { hero.dustT = (hero.dustT || 0) - dt; if (hero.dustT <= 0) { hero.dustT = BTN.b ? 0.16 : 0.34; if (hero.wade) fx.push({ k: 'drop', x: hero.x + (Math.random() - 0.5) * 2, y: 0.3, z: hero.z + (Math.random() - 0.5) * 2, vy: 7, t: 0.45, s: 0.3 }); else if (BTN.b) fx.push({ k: 'puff', x: hero.x - Math.cos(hero.yaw) * 1.5, y: hero.y + 0.4, z: hero.z - Math.sin(hero.yaw) * 1.5, vy: 2.5, t: 0.45, s: 0.3 }); } }
 }
 function fxUpdate(dt) {
-  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; if (p.vx) { p.x += p.vx * dt; p.z += (p.vz || 0) * dt; } p.vy -= (p.k === 'smoke' ? -0.6 : p.k === 'puff' || p.k === 'glint' ? 4 : 30) * dt; }
+  for (const p of fx) { p.t -= dt; p.y += p.vy * dt; if (p.vx) { p.x += p.vx * dt; p.z += (p.vz || 0) * dt; } p.vy -= (p.fermo ? 0 : p.k === 'smoke' ? -0.6 : p.k === 'puff' || p.k === 'glint' ? 4 : 30) * dt; }
   fx = fx.filter(p => p.t > 0);
   if (fx.length > 300) fx.splice(0, fx.length - 300);
 }
@@ -2638,7 +2650,7 @@ function drawFoe(e) {
 function heroAnim() {
   const h = hero;
   if (h.dash) return h.dash.k === 'balzo' ? 6 : 5;
-  if (h.atk > 0) { const pre = !h.hitDone; if (h.act === 'spin') return 4; if (h.act === 'knives' || h.act === 'orb') return pre ? 5 : 6; if (h.act === 'cast') return cls() === 'cavaliere' ? 5 : pre ? 5 : 6; return pre ? 3 : 4; }
+  if (h.atk > 0) { const pre = !h.hitDone; if (h.act === 'spin') return 4; if (h.act === 'knives' || h.act === 'orb') return pre ? 5 : 6; if (h.act === 'cast') return cls() === 'cavaliere' ? 5 : pre ? 5 : 6; const g = MODO && (h.act === 'slash' || h.act === 'stab') ? h.gesto || 0 : 0; return pre ? [3, 9, 7][g] : [4, 10, 8][g]; }
   if (h.block) return 5;
   if (h.chg > 0) return cls() === 'cavaliere' ? 6 : 5;
   return h.moving ? 1 + (Math.floor(h.walk / 5) % 2) : 0;
@@ -3392,7 +3404,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get SALA() { return SALA; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, get SALA() { return SALA; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
