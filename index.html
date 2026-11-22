@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.18", "id": "2.18-6130651e", "date": "22/11/2026", "pwa": true};
+const APP = {"v": "2.19", "id": "2.19-080e0e34", "date": "22/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -14851,12 +14851,12 @@ function compass() {
   const mark = (a, s, c, k = 1) => { const d = angDiff(a, yaw); if (Math.abs(d) > 1.35) return; const x = cx + d / 1.35 * (w / 2 - 4); T(s, x, y + 2, c, k, 'center'); };
   mark(-Math.PI / 2, 'N', '#ff6a5a'); mark(0, 'E', '#e6e9f2'); mark(Math.PI / 2, 'S', '#e6e9f2'); mark(Math.PI, 'O', '#e6e9f2');
   for (const a of [-Math.PI / 4, Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4]) { const d = angDiff(a, yaw); if (Math.abs(d) < 1.35) { hg.fillStyle = '#8a96aa'; hg.fillRect(Math.round(cx + d / 1.35 * (w / 2 - 4)), y + 5, 1, 2); } }
-  const q = curTrack(), tg = q && !D ? questTarget(q) : null;
+  const q = curTrack(), tg = MODO ? (!D && save.segno ? save.segno : null) : q && !D ? questTarget(q) : null, tc = MODO ? '#ff8a2a' : '#ffd23f';
   if (tg) {
     const a = Math.atan2(tg[1] - hero.z, tg[0] - hero.x), d = angDiff(a, yaw), x = Math.round(cx + Math.max(-1, Math.min(1, d / 1.35)) * (w / 2 - 4));
-    hg.fillStyle = '#0b0a12'; hg.fillRect(x - 3, y + 1, 7, 9); hg.fillStyle = '#ffd23f'; hg.fillRect(x - 1, y + 2, 3, 7); hg.fillRect(x - 2, y + 3, 5, 5);
+    hg.fillStyle = '#0b0a12'; hg.fillRect(x - 3, y + 1, 7, 9); hg.fillStyle = tc; hg.fillRect(x - 1, y + 2, 3, 7); hg.fillRect(x - 2, y + 3, 5, 5);
     const dist = Math.hypot(tg[0] - hero.x, tg[1] - hero.z);
-    if (dist > 40) T(Math.round(dist / 10) * 10 + ' M', cx, y + 13, '#ffd23f', 1, 'center');
+    if (dist > 40) T(Math.round(dist / 10) * 10 + ' M', cx, y + 13, tc, 1, 'center'); else if (MODO) T('SEI ARRIVATO', cx, y + 13, tc, 1, 'center');
   }
   hg.fillStyle = '#ffffff'; hg.fillRect(cx, y + 9, 1, 2);
 }
@@ -15023,7 +15023,7 @@ function boardKey(name) {
 function statLine(it) { return it ? [it.att ? 'ATT ' + it.att : '', it.dif ? 'DIF ' + it.dif : '', it.hp ? '+' + it.hp / 2 + ' CUORE' : '', it.vel ? '+' + Math.round(it.vel * 100) + '% VEL' : '', it.regen ? 'RIGENERA' : '', it.luck ? 'MONETE x2' : ''].filter(Boolean).join('  ') : ''; }
 // la mappa è una finestra sul mondo: una zona (4096 unità) oppure tutto. La croce la sposta, A cambia ingrandimento
 const mapV = { x: 2048, z: 2048, span: 4096 };
-function clampMap() { const h = mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(W.Z0 + h, Math.min(W.WS - h, mapV.z)); }
+function clampMap() { const h = MODO && mapV.span < W.WS ? 0 : mapV.span / 2; mapV.x = Math.max(h, Math.min(W.WS - h, mapV.x)); mapV.z = Math.max(W.Z0 + h, Math.min(W.WS - h, mapV.z)); }   // (nel Grande Viaggio il mirino arriva fino ai bordi della terra)
 const mapMe = () => inCasa() ? { x: D.outX, z: D.outZ, yaw: D.outYaw } : hero;
 function openMap() { mapOpen = true; if (hero && (!D || D.def.casa)) { const m = mapMe(); mapV.span = 4096; mapV.x = m.x; mapV.z = m.z; clampMap(); } }
 function drawMap() {
@@ -15031,12 +15031,12 @@ function drawMap() {
   const hero = mapMe();
   const S = Math.min(Hr - 37, Wr - insetL - insetR - 10, 256), x0 = Math.round(Wr / 2 - S / 2), y0 = 16, span = mapV.span, k = S / span, wx0 = mapV.x - span / 2, wz0 = mapV.z - span / 2;
   hg.fillStyle = 'rgba(8,10,16,.88)'; hg.fillRect(0, 0, Wr, Hr);
-  T(span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
+  T(MODO ? (span < W.WS ? 'LA CARTA DI LUMEN' : 'TUTTA LA TERRA DI LUMEN') : span < W.WS ? 'LA MAPPA' : 'IL MONDO CONOSCIUTO', Wr / 2, 5, '#ffd23f', 1, 'center');
   const mk2 = W.mapImg.width / W.WS;
   hg.imageSmoothingEnabled = false; hg.drawImage(W.mapImg, wx0 * mk2, (wz0 - W.Z0) * mk2, span * mk2, span * mk2, x0, y0, S, S);
   const i0 = Math.floor(wx0 / 64), j0 = Math.floor(wz0 / 64), nc = Math.ceil(span / 64);
   for (let j = j0; j <= j0 + nc; j++) for (let i = i0; i <= i0 + nc; i++) {
-    if (i < 0 || j < -MGN || i >= MG || j >= MG || seen[(j + MGN) * MG + i]) continue;
+    if (MODO || i < 0 || j < -MGN || i >= MG || j >= MG || seen[(j + MGN) * MG + i]) continue;
     const ax = Math.max(x0, Math.floor(x0 + (i * 64 - wx0) * k)), ay = Math.max(y0, Math.floor(y0 + (j * 64 - wz0) * k)), bx = Math.min(x0 + S, Math.ceil(x0 + (i * 64 + 64 - wx0) * k)), by = Math.min(y0 + S, Math.ceil(y0 + (j * 64 + 64 - wz0) * k));
     if (bx > ax && by > ay) { hg.fillStyle = (i + j) % 2 ? '#2a2638' : '#24202f'; hg.fillRect(ax, ay, bx - ax, by - ay); }
   }
@@ -15045,17 +15045,21 @@ function drawMap() {
     if (!inV(x, z)) { if (!edge) return; x = Math.max(wx0, Math.min(wx0 + span, x)); z = Math.max(wz0, Math.min(wz0 + span, z)); }
     hg.fillStyle = '#0b0a12'; hg.fillRect(PX(x) - s, PZ(z) - s, s * 2 + 1, s * 2 + 1); hg.fillStyle = c; hg.fillRect(PX(x) - s + 1, PZ(z) - s + 1, s * 2 - 1, s * 2 - 1);
   };
-  const isSeen = (x, z) => seen[Math.max(0, Math.min(MGZ - 1, Math.floor(z / 64) + MGN)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
+  const isSeen = (x, z) => MODO || seen[Math.max(0, Math.min(MGZ - 1, Math.floor(z / 64) + MGN)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
+  if (MODO) {   // nel Grande Viaggio la carta è completa da subito: i luoghi con il loro nome, il mirino al centro, il segnalino
+    for (const p of W.PLACES) { if (W.TOWNS.some(t => t.name === p[3])) continue; dot(p[0], p[1], '#c9d3e6', 1); if (span < W.WS && inV(p[0], p[1])) T(p[3], Math.max(x0 + 2, Math.min(x0 + S - 2, PX(p[0]))), PZ(p[1]) - 10, '#c9d3e6', 1, 'center'); }
+  }
   for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r >= 2 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
-  const q = curTrack(), tg = q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3, true);
+  const q = curTrack(), tg = MODO ? null : q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3, true);
+  if (MODO) { if (save.segno) dot(save.segno[0], save.segno[1], '#ff8a2a', 3, true); const mx = Math.round(x0 + S / 2), my = Math.round(y0 + S / 2); hg.fillStyle = '#0b0a12'; hg.fillRect(mx - 6, my - 1, 13, 3); hg.fillRect(mx - 1, my - 6, 3, 13); hg.fillStyle = '#ffffff'; hg.fillRect(mx - 5, my, 11, 1); hg.fillRect(mx, my - 5, 1, 11); }
   // freccia dell'eroe
   if (inV(hero.x, hero.z)) { const hx = x0 + (hero.x - wx0) * k, hz = y0 + (hero.z - wz0) * k; for (let i = -1; i <= 5; i++) { const px = hx + Math.cos(hero.yaw) * i, pz = hz + Math.sin(hero.yaw) * i; hg.fillStyle = i > 3 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(px) - 1, Math.round(pz) - 1, 3, 3); } }
   else if (Math.floor(time * 4) % 2) dot(hero.x, hero.z, '#ff4a3a', 2, true);
   let n = 0, tot = 0; for (let i = 0; i < seen.length; i++) if (LAND[i]) { tot++; n += seen[i]; }
-  T(curPlace || '', x0, y0 + S + 3, '#e6e9f2'); T('ESPLORATO ' + Math.min(100, Math.round(n / Math.max(1, tot) * 100)) + '%', x0 + S, y0 + S + 3, '#9af0b0', 1, 'right');
-  T('A: ' + (span < W.WS ? 'MONDO' : 'ZONA') + '   CROCE: SPOSTA   B: CHIUDI', Wr / 2, Hr - 9, '#5a6478', 1, 'center', null);
+  T(MODO ? '' : curPlace || '', x0, y0 + S + 3, '#e6e9f2'); T(MODO ? (save.segno ? 'SEGNALINO A ' + Math.round(Math.hypot(save.segno[0] - hero.x, save.segno[1] - hero.z) / 10) * 10 + ' M' : 'NESSUN SEGNALINO') : 'ESPLORATO ' + Math.min(100, Math.round(n / Math.max(1, tot) * 100)) + '%', x0 + S, y0 + S + 3, MODO ? '#ff8a2a' : '#9af0b0', 1, 'right');
+  T('A: ' + (span < W.WS ? 'MONDO' : 'ZONA') + (MODO ? '   C: SEGNALINO AL CENTRO' : '   CROCE: SPOSTA') + '   B: CHIUDI', Wr / 2, Hr - 9, MODO ? '#a9c6e3' : '#5a6478', 1, 'center', null);
 }
 const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
@@ -15229,7 +15233,8 @@ function onKey(name) {
     return;
   }
   if (mapOpen) {
-    if (name === 'a' && (!D || D.def.casa)) { const m = mapMe(); mapV.span = mapV.span < W.WS ? W.WS : 4096; if (mapV.span < W.WS) { mapV.x = m.x; mapV.z = m.z; } clampMap(); tone(880, 0.04); }
+    if (name === 'c' && MODO && !D) { const s = save.segno; if (s && Math.hypot(s[0] - mapV.x, s[1] - mapV.z) < mapV.span * 0.04) { save.segno = null; tone(520, 0.05); } else { save.segno = [Math.round(mapV.x), Math.round(mapV.z)]; seq([784, 1046], 0.06, 0.06); } writeSave(); }
+    else if (name === 'a' && (!D || D.def.casa)) { const m = mapMe(); mapV.span = mapV.span < W.WS ? W.WS : 4096; if (mapV.span < W.WS) { mapV.x = m.x; mapV.z = m.z; } clampMap(); tone(880, 0.04); }
     else if (name === 'select' || name === 'b' || name === 'start' || name === 'a') { mapOpen = false; tone(660, 0.04); }
     return;
   }
