@@ -98,6 +98,15 @@ Una voce nuova nel menu di Pixel Box: è il cantiere del gioco che verrà dopo P
 - **Le rovine di Solis:** il nucleo di Pixel Saga (il santuario, i leoni di pietra, il muro con la porta) e attorno i resti della città: muri smozzicati, colonne, ossa.
 - **I quattro villaggi:** Pratolungo, Cala delle Conchiglie, Girasole e Approdo del Faro: poche case attorno a una piazzetta, sulla strada, con la loro gente. All'Approdo, sulla punta, il faro.
 - **I nemici:** una novantina di branchi con il combattimento di oggi. Melme nei prati, lupi e pipistrelli nel bosco, goblin verso la palude, scheletri a Solis, predoni sul Monte Brace, lupi dei ghiacci a nord e nella gola del Valico. Nella Tana del Tasso pipistrelli e melme blu: chi cammina sul dorso della volta non li sveglia.
+- **La sala d'armi (prova del combattimento nuovo):** una terza voce nel menu di Pixel Box, *La sala d'armi*: stessa terra, ma si parte davanti al Maestro d'armi, fuori dalla porta di mezzogiorno della Rocca, con spada e scudo di ferro e un salvataggio a parte. Il maestro mette in campo un manichino, un nemico per mestiere o una squadra, e cambia la difficoltà (facile, normale, difficile). Il combattimento nuovo vale in tutto il Grande Viaggio:
+  - **Fiato:** la barra verde sotto l'energia. La consumano schivate, colpi caricati e parate; torna piena in due secondi. Correre non la consuma.
+  - **B:** un tocco è la **schivata** nella direzione della leva (senza leva, un passo indietro), con un attimo in cui non si viene colpiti; tenuto resta la corsa.
+  - **A:** tre colpi a tempo fanno la **catena**, e il terzo è più forte; subito dopo una schivata è un **contrattacco**; tenuto e lasciato resta il colpo caricato, che ora costa fiato e rompe la guardia.
+  - **C tenuto (cavaliere):** la parata costa fiato; alzata all'ultimo momento è **perfetta**: non costa, lascia scoperto chi ha colpito e rimanda indietro le frecce.
+  - **I segnali:** prima di colpire ogni nemico si prepara e lampeggia. Bianco: si può parare o schivare. Rosso: si può solo schivare.
+  - **La guardia dei nemici:** i più robusti hanno una seconda barra (in alto, con il loro nome). Colpi caricati, l'ultimo della catena, contrattacchi e parate perfette la consumano: rotta, il nemico resta scoperto due secondi e prende danno doppio.
+  - **I sei mestieri:** il fante (attaccano uno alla volta), l'arciere (sta lontano e mira), lo scudiero (di fronte para tutto), lo stregone (sfere rosse, e rafforza i compagni), il bruto (lento, corazzato, colpi rossi), la vedetta (corre a suonare il corno: se ci riesce arrivano i rinforzi).
+  - Nel Grande Viaggio si parte ora con una spada e uno scudo di legno (non c'è ancora chi li regala).
 - **Per ora niente storia:** non ci sono ancora missioni (né la bacheca, che è delle missioni). Nelle botteghe si entra.
 - **Salvataggio a parte:** quello di Pixel Saga non viene toccato. Passando da un gioco all'altro Pixel Box si ricarica da solo (il mondo in memoria è uno alla volta), e basta premere di nuovo A.
 

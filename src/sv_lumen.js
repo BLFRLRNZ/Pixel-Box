@@ -138,7 +138,7 @@ SG.terre.lumen = m => {
       ['mercantessa', 'LA FRUTTIVENDOLA', ['MELE, PERE E UVA DELLE COLLINE DI SOLIS. ASSAGGIA, ASSAGGIA!'], 'd', { walk: 1 }],
       ['saggio', "L'ARCHIVISTA DEL RE", ["NELLE CARTE ANTICHE LUMEN È SOLO UNA DI QUATTRO TERRE: I MONTI DEL CIELO A NORD, L'ORIENTE OLTRE IL PONTE, I MARI DEL SUD.", 'QUATTRO TERRE IN CERCHIO. E IN MEZZO... LÌ LE CARTE SONO BRUCIATE.'], 'd'],
       ['nano', 'UN NANO DI PASSAGGIO', ['VENGO DA FONDOFERRO, SOTTO I MONTI DEL CIELO. HO FATTO IL GIRO LUNGO, PER MARE: IL VALICO È ANCORA CHIUSO DALLA NEVE.', 'VOI UOMINI COSTRUITE IN ALTO. NOI SCAVIAMO. VEDREMO CHI ARRIVA PRIMA DALL\'ALTRA PARTE.'], 'p'],
-      ['spadaccino', "IL MAESTRO D'ARMI", ["LE RECLUTE SI ALLENANO DIETRO L'ARMERIA. TU HAI IL PASSO DI UNO CHE HA GIÀ COMBATTUTO."], 'd'],
+      ['spadaccino', "L'ISTRUTTORE DELLE RECLUTE", ["LE RECLUTE SI ALLENANO NELLA SALA D'ARMI, FUORI DALLA PORTA DI MEZZOGIORNO. IL MAESTRO ACCETTA CHIUNQUE ABBIA DUE BRACCIA."], 'd'],
       ['monaco', 'FRATE BENIAMINO', ['CURIAMO I VIANDANTI CHE ARRIVANO STANCHI DALLA VIA MAESTRA. SE CERCHI UN LETTO, LA LOCANDA DEL LEONE È QUI VICINO.'], 'd'],
       ['bimbo', 'LA PICCOLA GIADA', ['HO CONTATO LE TORRI DELLE MURA: SONO PIÙ DELLE MIE DITA!'], 'p', { walk: 1 }],
       ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
@@ -202,8 +202,13 @@ SG.terre.lumen = m => {
   C.folk('montanaro', "L'EREMITA DELLA VALLE", GHIACCIO[0] + 88, GHIACCIO[1] + 114, 3.4, ['QUASSÙ NON SALE NESSUNO DA ANNI. TU SEI IL PRIMO CHE VEDO DA QUANDO HO SMESSO DI CONTARE GLI INVERNI.', 'IL SANTUARIO DEL GHIACCIO È APERTO, MA DENTRO IL FREDDO MORDE. PORTA QUALCOSA DI CALDO, E UNA BUONA SPADA.']);
   // il Nido del Grifone: in cima alle rupi, un forziere
   W.FLAT.push([GRIFONE[0], GRIFONE[1], 70, null]); W.CHESTS.push(['gv_c10', GRIFONE[0] + 2, GRIFONE[1] + 5, 'monete:300', 2]);
+  // la sala d'armi: uno spiazzo lastricato fuori dalla porta di mezzogiorno della Rocca, con il maestro. Qui si prova il combattimento nuovo
+  W.PAVE.push(['g', 'disc', 6200, 5320, 62], ['b', 'disc', 6200, 5320, 50]); W.PLACES.push([6200, 5320, 80, "LA SALA D'ARMI"]);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + 0.39; W.PROPS.push(['torch', 6200 + Math.cos(a) * 60, 5320 + Math.sin(a) * 60]); }
+  C.folk('spadaccino', "IL MAESTRO D'ARMI", 6200, 5262, Math.PI / 2, ["QUESTA È LA SALA D'ARMI."], { role: 'sala' });
+  W.ROADS.push({ w: 5, pts: [[6300, 5134], [6230, 5200], [6200, 5256]] });
   // i nemici: quelli dell'isola di sempre al loro posto nuovo, e attorno a ogni branco altri due (la terra è più grande); niente branchi addosso a città e villaggi
-  { const abitati = [[3944, 5022, 210, 170], [6300, 4750, 410, 360], [1750, 3180, 125, 105], [2300, 5000, 95, 75], [4704, 7160, 95, 75], [5450, 3300, 95, 75], [2900, 6990, 95, 75], [3660, 4350, 215, 165], [AM[0] + 15, AM[1] - 40, 110, 110], [2790, 7120, 40, 40]];
+  { const abitati = [[3944, 5022, 210, 170], [6300, 4750, 410, 360], [1750, 3180, 125, 105], [2300, 5000, 95, 75], [4704, 7160, 95, 75], [5450, 3300, 95, 75], [2900, 6990, 95, 75], [3660, 4350, 215, 165], [AM[0] + 15, AM[1] - 40, 110, 110], [2790, 7120, 40, 40], [6200, 5320, 70, 70]];
     const libero = (x, z) => !abitati.some(c => Math.abs(x - c[0]) < c[2] + 170 && Math.abs(z - c[1]) < c[3] + 170);
     for (const [x, z, t, n, r] of CAMPI0) { const q = T(x, z), tipo = t === 'imp' ? 'bandit' : t;
       [[0, 0, n], [310, 2.1, Math.max(2, n - 1)], [310, 4.2, Math.max(2, n - 1)]].forEach(([d, a, k]) => { const ang = a + x * 0.01, cx = Math.round(q[0] + Math.cos(ang) * d), cz = Math.round(q[1] + Math.sin(ang) * d); if (libero(cx, cz)) W.CAMPS.push([cx, cz, tipo, k, Math.round(r * 1.2)]); }); }

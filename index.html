@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.22", "id": "2.22-85af9c85", "date": "22/11/2026", "pwa": true};
+const APP = {"v": "2.23", "id": "2.23-29f1fbca", "date": "22/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -10380,7 +10380,7 @@ SG.terre.lumen = m => {
       ['mercantessa', 'LA FRUTTIVENDOLA', ['MELE, PERE E UVA DELLE COLLINE DI SOLIS. ASSAGGIA, ASSAGGIA!'], 'd', { walk: 1 }],
       ['saggio', "L'ARCHIVISTA DEL RE", ["NELLE CARTE ANTICHE LUMEN È SOLO UNA DI QUATTRO TERRE: I MONTI DEL CIELO A NORD, L'ORIENTE OLTRE IL PONTE, I MARI DEL SUD.", 'QUATTRO TERRE IN CERCHIO. E IN MEZZO... LÌ LE CARTE SONO BRUCIATE.'], 'd'],
       ['nano', 'UN NANO DI PASSAGGIO', ['VENGO DA FONDOFERRO, SOTTO I MONTI DEL CIELO. HO FATTO IL GIRO LUNGO, PER MARE: IL VALICO È ANCORA CHIUSO DALLA NEVE.', 'VOI UOMINI COSTRUITE IN ALTO. NOI SCAVIAMO. VEDREMO CHI ARRIVA PRIMA DALL\'ALTRA PARTE.'], 'p'],
-      ['spadaccino', "IL MAESTRO D'ARMI", ["LE RECLUTE SI ALLENANO DIETRO L'ARMERIA. TU HAI IL PASSO DI UNO CHE HA GIÀ COMBATTUTO."], 'd'],
+      ['spadaccino', "L'ISTRUTTORE DELLE RECLUTE", ["LE RECLUTE SI ALLENANO NELLA SALA D'ARMI, FUORI DALLA PORTA DI MEZZOGIORNO. IL MAESTRO ACCETTA CHIUNQUE ABBIA DUE BRACCIA."], 'd'],
       ['monaco', 'FRATE BENIAMINO', ['CURIAMO I VIANDANTI CHE ARRIVANO STANCHI DALLA VIA MAESTRA. SE CERCHI UN LETTO, LA LOCANDA DEL LEONE È QUI VICINO.'], 'd'],
       ['bimbo', 'LA PICCOLA GIADA', ['HO CONTATO LE TORRI DELLE MURA: SONO PIÙ DELLE MIE DITA!'], 'p', { walk: 1 }],
       ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
@@ -10444,8 +10444,13 @@ SG.terre.lumen = m => {
   C.folk('montanaro', "L'EREMITA DELLA VALLE", GHIACCIO[0] + 88, GHIACCIO[1] + 114, 3.4, ['QUASSÙ NON SALE NESSUNO DA ANNI. TU SEI IL PRIMO CHE VEDO DA QUANDO HO SMESSO DI CONTARE GLI INVERNI.', 'IL SANTUARIO DEL GHIACCIO È APERTO, MA DENTRO IL FREDDO MORDE. PORTA QUALCOSA DI CALDO, E UNA BUONA SPADA.']);
   // il Nido del Grifone: in cima alle rupi, un forziere
   W.FLAT.push([GRIFONE[0], GRIFONE[1], 70, null]); W.CHESTS.push(['gv_c10', GRIFONE[0] + 2, GRIFONE[1] + 5, 'monete:300', 2]);
+  // la sala d'armi: uno spiazzo lastricato fuori dalla porta di mezzogiorno della Rocca, con il maestro. Qui si prova il combattimento nuovo
+  W.PAVE.push(['g', 'disc', 6200, 5320, 62], ['b', 'disc', 6200, 5320, 50]); W.PLACES.push([6200, 5320, 80, "LA SALA D'ARMI"]);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + 0.39; W.PROPS.push(['torch', 6200 + Math.cos(a) * 60, 5320 + Math.sin(a) * 60]); }
+  C.folk('spadaccino', "IL MAESTRO D'ARMI", 6200, 5262, Math.PI / 2, ["QUESTA È LA SALA D'ARMI."], { role: 'sala' });
+  W.ROADS.push({ w: 5, pts: [[6300, 5134], [6230, 5200], [6200, 5256]] });
   // i nemici: quelli dell'isola di sempre al loro posto nuovo, e attorno a ogni branco altri due (la terra è più grande); niente branchi addosso a città e villaggi
-  { const abitati = [[3944, 5022, 210, 170], [6300, 4750, 410, 360], [1750, 3180, 125, 105], [2300, 5000, 95, 75], [4704, 7160, 95, 75], [5450, 3300, 95, 75], [2900, 6990, 95, 75], [3660, 4350, 215, 165], [AM[0] + 15, AM[1] - 40, 110, 110], [2790, 7120, 40, 40]];
+  { const abitati = [[3944, 5022, 210, 170], [6300, 4750, 410, 360], [1750, 3180, 125, 105], [2300, 5000, 95, 75], [4704, 7160, 95, 75], [5450, 3300, 95, 75], [2900, 6990, 95, 75], [3660, 4350, 215, 165], [AM[0] + 15, AM[1] - 40, 110, 110], [2790, 7120, 40, 40], [6200, 5320, 70, 70]];
     const libero = (x, z) => !abitati.some(c => Math.abs(x - c[0]) < c[2] + 170 && Math.abs(z - c[1]) < c[3] + 170);
     for (const [x, z, t, n, r] of CAMPI0) { const q = T(x, z), tipo = t === 'imp' ? 'bandit' : t;
       [[0, 0, n], [310, 2.1, Math.max(2, n - 1)], [310, 4.2, Math.max(2, n - 1)]].forEach(([d, a, k]) => { const ang = a + x * 0.01, cx = Math.round(q[0] + Math.cos(ang) * d), cz = Math.round(q[1] + Math.sin(ang) * d); if (libero(cx, cz)) W.CAMPS.push([cx, cz, tipo, k, Math.round(r * 1.2)]); }); }
@@ -12359,8 +12364,8 @@ const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RAR
 let SAVEKEY = 'sg_save1';
 // Lo stesso motore fa due giochi: Pixel Saga (MODO null) e l'anteprima del Grande Viaggio, sulla terra nuova di Lumen (MODO 'lumen').
 // Il mondo in memoria è uno solo: per passare dall'uno all'altro Pixel Box si ricarica, con il gioco voluto già scelto.
-let MODO = null, modoScelto = false;
-const INIZIO = () => MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
+let MODO = null, SALA = false, modoScelto = false;
+const INIZIO = () => SALA ? { x: 6200, z: 5282 } : MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
 
 // ---------- oggetti ----------
 const IT = {
@@ -12511,6 +12516,14 @@ const FOE = {
   iceskel: { n: 'SCHELETRO DI GHIACCIO', k: 'human', hp: 18, dmg: 3, sp: 24, aggro: 75, range: 9, r: 3, coins: [7, 12] },
   icebat: { n: 'PIPISTRELLO DI GHIACCIO', k: 'bat', hp: 7, dmg: 2, sp: 34, aggro: 65, range: 6, r: 2.5, coins: [3, 5], fly: 7 },
   firebat: { n: 'PIPISTRELLO DI FUOCO', k: 'bat', hp: 9, dmg: 2, sp: 36, aggro: 70, range: 6, r: 2.5, coins: [3, 6], fly: 7 },
+  // i mestieri della sala d'armi (Il Grande Viaggio): wind = quanto si preparano, rosso = colpo che non si para, gd = guardia, scudo = para di fronte
+  sm: { n: 'MANICHINO', k: 'human', as: 'sm', hp: 300, dmg: 0, sp: 0, aggro: 0, range: 0, r: 3, coins: [0, 0], gd: 3, fermo: 1 },
+  sf: { n: 'FANTE', k: 'human', as: 'sf', mest: 'fante', hp: 9, dmg: 2, sp: 25, aggro: 110, range: 8, r: 3, coins: [0, 0], wind: 0.5, turno: 1 },
+  sa: { n: 'ARCIERE', k: 'human', as: 'sa', mest: 'arciere', hp: 7, dmg: 2, sp: 22, aggro: 130, range: 0, r: 3, coins: [0, 0], wind: 0.8 },
+  ss: { n: 'SCUDIERO', k: 'human', as: 'ss', mest: 'scudiero', hp: 14, dmg: 2, sp: 19, aggro: 110, range: 8, r: 3.2, coins: [0, 0], wind: 0.6, scudo: 1, gd: 3 },
+  st: { n: 'STREGONE', k: 'human', as: 'st', mest: 'mago', hp: 8, dmg: 2, sp: 20, aggro: 130, range: 0, r: 3, coins: [0, 0], wind: 0.9 },
+  sb: { n: 'BRUTO', k: 'human', as: 'sb', sc: 0.29, mest: 'bruto', hp: 36, dmg: 4, sp: 14, aggro: 110, range: 11, r: 4.2, coins: [0, 0], wind: 0.95, rosso: 1, gd: 4 },
+  sv: { n: 'VEDETTA', k: 'human', as: 'sv', mest: 'vedetta', hp: 6, dmg: 1, sp: 33, aggro: 120, range: 7, r: 3, coins: [0, 0], wind: 0.5 },
   slimeR: { n: 'MELMA DI FUOCO', k: 'slime', hp: 12, dmg: 2, sp: 18, aggro: 60, range: 6, r: 3, coins: [4, 8] },
 };
 // ---------- aria delle regioni: nebbia, cielo, distanza, acqua ----------
@@ -12760,6 +12773,16 @@ function* buildCharacters() {
   CHR.slime2 = [0, 1].map(f => dirs(() => A.slime({ c: '#e8c83a' }, f), 34, 26));
   CHR.bandit = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d8a07a', hood: '#5a2a2a', shirt: '#3a3a44', sleeve: '#5a2a2a', pants: '#2a2a32', boots: '#1a1a1e', cape: '#5a2a2a', weapon: { col: '#d8dce4', guard: '#5a3a20' } }, p), 44, 48));
   CHR.mummy = POSE_FOE.map(p => dirs(() => A.human({ skin: '#d8cca8', hand: '#d8cca8', shirt: '#c8bc98', sleeve: '#d8cca8', pants: '#c8bc98', boots: '#a89c78', eyes: '#ffe14a' }, p), 44, 48));
+  if (MODO) {   // i mestieri della sala d'armi
+    const fig = (o, x) => POSE_FOE.map(p => dirs(() => A.human(o, p), 44, 48, x)), pelle = '#d8a07a', P = { pants: '#4a3a2a', boots: '#2a2a2a' };
+    CHR.sm = fig({ skin: '#c8a86a', hand: '#c8a86a', shirt: '#b8944a', sleeve: '#c8a86a', pants: '#8a6a3a', boots: '#6a4a2a', hood: '#8a6a3a' });
+    CHR.sf = fig(Object.assign({ skin: pelle, helm: { c: '#7a7a86' }, shirt: '#8a3a2a', weapon: { col: '#c8ccd4' } }, P));
+    CHR.sa = fig(Object.assign({ skin: pelle, hood: '#3a5a2a', shirt: '#4a6a3a', quiver: '#6a4a2a', weapon: { kind: 'bow', col: '#8a6a3a' } }, P));
+    CHR.ss = fig(Object.assign({ skin: pelle, helm: { c: '#8a8a96', nose: 1 }, plate: '#8a8a96', shirt: '#3a4a7a', shield: '#3a4a7a', emblem: '#ffd23f', weapon: { col: '#c8ccd4' } }, P));
+    CHR.st = fig(Object.assign({ skin: '#c8b8d8', hood: '#4a2a6a', robe: '#5a2a7a', shirt: '#6a3a8a', staff: '#8a6a3a', orb: '#ff5a5a', eyes: '#ffe14a' }, P));
+    CHR.sb = fig({ skin: '#c88a6a', helm: { c: '#4a4a52', nose: 1 }, plate: '#4a4a52', shirt: '#5a1e1a', pants: '#2a2a32', boots: '#1a1a1e', wide: 1.2, weapon: { kind: 'hammer', col: '#5a5e68' } });
+    CHR.sv = fig(Object.assign({ skin: pelle, cap: '#2a4a7a', feather: '#f0e8d8', shirt: '#2a4a7a', weapon: { col: '#c8ccd4' } }, P), { sc: 0.9 });
+  }
   CHR.wraith = POSE_FOE.map(p => dirs(() => A.human({ skin: '#b8a8e8', hand: '#b8a8e8', hood: '#3a2a5a', robe: '#2a1e44', shirt: '#3a2a5a', pants: '#2a1e44', boots: '#1e1630', eyes: '#ff4ae0', weapon: { kind: 'staff', col: '#c8a0ff' } }, p), 44, 52));
   CHR.dragon = [0, 1].map(f => dirs(() => A.dragon(f), 128, 96, { pitch: -0.3, base: 60, raw: true }));
   CHR.chest = [0, 1, 2, 3].map(r => [0, 1].map(o => dirs(() => A.chest(r, o), 28, 26)));
@@ -12879,15 +12902,19 @@ function setupWorld() {
   // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
   GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
-function scegliModo(m) {
-  if (st === 'boot' && !modoScelto) { MODO = m; modoScelto = true; SAVEKEY = m ? 'gv_save1' : 'sg_save1'; return true; }
-  if (MODO === m) return true;
-  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (m ? 'viaggio' : 'saga')))); } catch (e) {}
+function scegliModo(m, sala) {
+  if (st === 'boot' && !modoScelto) { MODO = m; SALA = !!sala; modoScelto = true; SAVEKEY = sala ? 'gv_sala1' : m ? 'gv_save1' : 'sg_save1'; return true; }
+  if (MODO === m && SALA === !!sala) return true;
+  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (sala ? 'sala' : m ? 'viaggio' : 'saga')))); } catch (e) {}
   location.reload(); return false;
 }
 function startGame(fresh) {
   D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
+  if (MODO) {   // nel Grande Viaggio non c'è ancora chi regala la prima spada: si parte con spada e scudo (nella sala d'armi, di ferro, e con qualche cuore in più)
+    const dai = (slot, id) => { if (!save.eq[slot]) { save.eq[slot] = id; if (!save.inv.includes(id)) save.inv.push(id); } };
+    dai('arma', SALA ? 'ferro' : 'legno'); dai('scudo', SALA ? 'scudoFerro' : 'scudoLegno'); if (SALA && fresh) { save.hearts = 2; save.hp = 10; save.coins = 100; save.pot = 3; }
+  }
   else loadSeen(save.seen || '', save.seenN || '');
   { const p = fixSpot(save.x, save.z, 3); save.x = p[0]; save.z = p[1]; }   // il mondo può essere cambiato: mai dentro un muro o un albero
   hero = { x: save.x, z: save.z, y: gH(save.x, save.z), yaw: save.yaw, hp: Math.min(save.hp, MAXHP()), atk: 0, hitDone: true, walk: 0, moving: false, kb: 0, kx: 0, kz: 0, inv: 0, burnT: 0, dead: false, regenT: 0, wade: false, vx: 0, vz: 0, fall: 0, pushT: 0,
@@ -13073,6 +13100,7 @@ function talkFolk(n, N) {
   if (f.role === 'inn') return ask(id, [f.lines[0], 'UN LETTO E UNA ZUPPA CALDA, E DOMATTINA SEI COME NUOVO. FANNO ' + f.cost + ' MONETE.'], ['RIPOSA (' + f.cost + ' MONETE)', 'NO, GRAZIE'], i => {
     if (i) return; if (save.coins < f.cost) return say(id, ['NON HAI ABBASTANZA MONETE. TORNA QUANDO NE AVRAI ' + f.cost + '.']);
     save.coins -= f.cost; startFade(() => { hero.hp = MAXHP(); save.time += 60; save.tod = 7.2; setDay(save.tod); if (inCasa() && D.letto) { hero.x = D.letto[0]; hero.z = D.letto[1]; hero.yaw = D.letto[2]; hero.vx = hero.vz = 0; camBehind(); } toast('HAI RIPOSATO: TUTTI I CUORI SONO PIENI', '#9af0b0'); jingle(); writeSave(); }); });
+  if (f.role === 'sala') return salaMenu(id);
   if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
     return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
@@ -13372,11 +13400,129 @@ function move(e, dx, dz, r, steep = 1.25) {
 }
 function puffAt(x, z, n = 6, y) { const gy = y !== undefined ? y : gH(x, z) + 2; for (let i = 0; i < n; i++) fx.push({ k: 'puff', x: x + (Math.random() - 0.5) * 4, z: z + (Math.random() - 0.5) * 4, y: gy, vy: 3 + Math.random() * 5, t: 0.6 + Math.random() * 0.3, s: 0.45 }); }
 
+// ---------- il combattimento nuovo (solo nel Grande Viaggio) ----------
+// Fiato (lo consumano schivate, colpi caricati e parate; torna pieno in due secondi), schivata con un tocco di B, catena di tre colpi a tempo,
+// contrattacco subito dopo una schivata, parata perfetta se lo scudo si alza all'ultimo momento; i nemici si preparano con un lampo
+// (bianco: si para o si schiva; rosso: si schiva soltanto) e i più robusti hanno una guardia da rompere.
+const DIFF = [{ n: 'FACILE', dmg: 0.5, wind: 1.35, hp: 0.8 }, { n: 'NORMALE', dmg: 1, wind: 1, hp: 1 }, { n: 'DIFFICILE', dmg: 1.5, wind: 0.8, hp: 1.3 }];
+const diffK = () => DIFF[save.opt.diff === undefined ? 1 : save.opt.diff] || DIFF[1];
+let forzaOra = 0;   // quanto rompe la guardia il colpo che sta andando a segno: 0 colpo normale, 1 l'ultimo della catena, 2 contrattacco, 3 colpo caricato, 9 parata perfetta
+function nuovoTick(dt) {
+  const h = hero; if (h.fi === undefined) { h.fi = 1; h.fiT = 9; h.fiFl = 0; h.combo = 0; h.comboT = 9; h.ctr = 0; h.bHold = 0; h.blockT = 0; h.dmgK = 1; h.forza = 0; }
+  h.fiT += dt; if (h.fiT > 0.4 && h.fi < 1) h.fi = Math.min(1, h.fi + dt / 2); if (h.fiFl > 0) h.fiFl -= dt;
+  if (h.atk > 0) h.comboT = 0; else h.comboT += dt;
+  if (h.ctr > 0) h.ctr -= dt; h.blockT = h.block ? h.blockT + dt : 0;
+  // B: un tocco è la schivata (tenuto resta la corsa)
+  const busy = dialog || shop || loot || menu || mapOpen || fade;
+  if (BTN.b && !busy) h.bHold += dt; else { if (h.bHold > 0 && h.bHold < 0.2 && !busy) schiva(); h.bHold = 0; }
+}
+function schiva() {
+  const h = hero; if (h.dash || h.fall > 0 || inCasa() || h.dead) return;
+  if (h.fi < 0.3) { h.fiFl = 0.5; tone(160, 0.08, 'square', 0.03); return; }
+  // nella direzione della leva; senza leva, un passo indietro
+  let a = h.yaw + Math.PI;
+  if (ctrl8()) { const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0); if (ix || iy) a = cam.yaw + Math.atan2(ix, -iy); }
+  else if (BTN.left) a = h.yaw - Math.PI / 2; else if (BTN.right) a = h.yaw + Math.PI / 2; else if (BTN.up) a = h.yaw;
+  h.fi -= 0.34; h.fiT = 0; h.atk = 0; h.chg = 0; h.aDown = false; h.aim = false; h.inv = Math.max(h.inv, 0.3);
+  h.dash = { k: 'schivata', t: 0.24, vx: Math.cos(a) * 78, vz: Math.sin(a) * 78, hit: new Set() };
+  tone(520, 0.07, 'triangle', 0.03, 260); noise(0.06, 0.02);
+}
+// A dopo A: la catena. Il terzo colpo è più forte; subito dopo una schivata, il contrattacco
+function catena() {
+  const h = hero; h.dmgK = 1; h.forza = 0;
+  if (h.ctr > 0) { h.ctr = 0; h.combo = 0; h.dmgK = 2.2; h.forza = 2; tone(1568, 0.05, 'square', 0.04); tone(2093, 0.08, 'square', 0.035, null, 0.05); for (let i = 0; i < 5; i++) fx.push({ k: 'glint', x: h.x + (Math.random() - 0.5) * 5, z: h.z + (Math.random() - 0.5) * 5, y: h.y + 3 + Math.random() * 4, vy: 7, t: 0.35, s: 0.3 }); }
+  else { h.combo = h.comboT < 0.45 ? (h.combo + 1) % 3 : 0; if (h.combo === 2) { h.dmgK = 1.8; h.forza = 1; tone(1175, 0.06, 'square', 0.04); } }
+}
+function togliGuardia(e, n) {
+  const T = FOE[e.type]; if (!T.gd || e.st === 'dead' || e.rotto > 0) return;
+  e.gd = (e.gd === undefined ? T.gd : e.gd) - n;
+  if (e.gd <= 0) { e.gd = T.gd; e.rotto = 2; e.stun = 2; if (e.st === 'wind') { e.st = 'chase'; e.cd = 0.4; } toast('GUARDIA ROTTA!', '#ffd23f'); critFx(e); quake = Math.max(quake, 0.25); vib(40); }
+}
+// un colpo dell'eroe contro la guardia di un nemico: quanto danno passa (null = parato del tutto)
+function guardiaNemico(e, dmg) {
+  const T = FOE[e.type], fz = forzaOra;
+  if (e.rotto > 0) return dmg * 2;
+  if (T.scudo && !(e.stun > 0) && fz < 3 && Math.cos(e.yaw - Math.atan2(hero.z - e.z, hero.x - e.x)) > 0.25) {
+    tone(1300, 0.05, 'square', 0.05); for (let i = 0; i < 3; i++) fx.push({ k: 'spark', x: e.x, z: e.z, y: e.y + 4 + Math.random() * 2, vy: 8, t: 0.2, s: 0.3 });
+    if (fz > 0) togliGuardia(e, fz); return null; }
+  if (T.gd) { if (fz > 0) togliGuardia(e, fz); return e.rotto > 0 ? dmg : Math.max(1, Math.round(dmg * 0.5)); }   // il colpo che rompe la guardia passa intero; i successivi valgono doppio
+  return dmg;
+}
+// la parata: costa fiato; alzata all'ultimo momento è perfetta (non costa, e chi ha colpito resta scoperto). I colpi rossi non si parano
+function parataNuova(src) {
+  const foe = src.type && FOE[src.type] ? src : src.src && src.src.type && FOE[src.src.type] ? src.src : null;
+  if (src.rosso || (foe === src && FOE[foe.type].rosso)) return false;
+  const perf = hero.blockT < 0.24;
+  if (!perf) { if (hero.fi < 0.2) { hero.guard = 1.6; hero.block = false; hero.fiFl = 0.6; toast('GUARDIA SPEZZATA!', '#ff8a8a'); tone(160, 0.2, 'square', 0.05, 80); return false; } hero.fi -= 0.25; hero.fiT = 0; }
+  tone(1400, 0.05, 'square', 0.05); tone(900, 0.08, 'square', 0.04, null, 0.04); vib(20);
+  for (let i = 0; i < 4; i++) fx.push({ k: 'spark', x: hero.x + Math.cos(hero.yaw) * 3, z: hero.z + Math.sin(hero.yaw) * 3, y: hero.y + 4 + Math.random() * 2, vy: 8, t: 0.22, s: 0.3 });
+  const a = Math.atan2(hero.z - src.z, hero.x - src.x); hero.kx = Math.cos(a) * 14; hero.kz = Math.sin(a) * 14; hero.kb = 0.08; hero.inv = 0.3;
+  if (perf) { toast('PARATA PERFETTA!', '#ffe14a'); seq([1568, 2093], 0.05, 0.05); if (foe && foe.st !== 'dead') { if (FOE[foe.type].gd) togliGuardia(foe, 9); else { foe.rotto = 2; foe.stun = 2; if (foe.st === 'wind') foe.st = 'chase'; critFx(foe); } } }
+  else if (foe && foe.camp && foe.st !== 'dead') { foe.kb = 0.16; foe.kx = -Math.cos(a) * 40; foe.kz = -Math.sin(a) * 40; stun(foe, 0.5); }
+  return true;
+}
+const perfetta = () => !!MODO && hero.block && hero.blockT < 0.24;
+// il segnale: il nemico sta per colpire
+function segnale(e) { const T = FOE[e.type]; tone(T.rosso ? 196 : 1320, 0.07, 'square', 0.035, T.rosso ? 147 : null); for (let i = 0; i < 3; i++) fx.push({ k: T.rosso ? 'ember' : 'glint', x: e.x + (Math.random() - 0.5) * 3, z: e.z + (Math.random() - 0.5) * 3, y: e.y + 9 + Math.random() * 2, vy: 4, t: 0.35, s: 0.34 }); }
+// i mestieri: chi sta lontano e tira, chi rafforza i compagni, chi corre a chiamare rinforzi. true = per questo giro ha già deciso lui
+function mestiere(e, T, dt, d, dx, dz) {
+  const calmo = st !== 'play' || hero.dead || dialog || shop || loot || hero.hid > 0;
+  if (T.fermo) { if (e.hp < 150) e.hp = T.hp; e.yaw += angDiff(Math.atan2(dz, dx), e.yaw) * Math.min(1, 2 * dt); return true; }
+  if (T.mest === 'arciere' || T.mest === 'mago') {
+    if (e.st === 'wind') { e.yaw = Math.atan2(dz, dx); if (e.t <= 0) { const a = Math.atan2(dz, dx);
+        if (T.mest === 'mago') shoot('fire', e.x, e.z, a, 62, T.dmg, e, { rosso: true, life: 3.2, r: 2.8, y: e.y + 5 }); else shoot('seed', e.x, e.z, a, 128, T.dmg, e, { life: 1.6, y: e.y + 5 });
+        tone(T.mest === 'mago' ? 300 : 520, 0.08, 'triangle', 0.04, 170); e.st = 'chase'; e.cd = T.mest === 'mago' ? 3 : 2.1; } return true; }
+    if (calmo || d > T.aggro) return false;
+    e.st = 'chase'; e.yaw += angDiff(Math.atan2(dz, dx), e.yaw) * Math.min(1, 8 * dt);
+    // tiene la distanza: arretra se l'eroe è addosso, si avvicina se è troppo lontano
+    const dir = d < 40 ? -1 : d > 68 ? 1 : 0; e.moving = false;
+    if (dir) { const a = Math.atan2(dz, dx) + (dir < 0 ? Math.PI : 0), m = T.sp * (dir < 0 ? 0.8 : 1) * dt; if (move(e, Math.cos(a) * m, Math.sin(a) * m, T.r, 1.6)) { e.moving = true; e.walk += m; } }
+    if (T.mest === 'mago') { e.buff = (e.buff || 4) - dt; if (e.buff <= 0) { e.buff = 7; let k = 0; for (const o of foes) if (o !== e && o.camp === e.camp && o.st !== 'dead' && Math.hypot(o.x - e.x, o.z - e.z) < 70) { o.rage = 4; k++; ringLite(o.x, o.z, 5, 'ember', 8); } if (k) { tone(233, 0.3, 'sawtooth', 0.04, 349); ringLite(e.x, e.z, 6, 'ember', 10); } } }
+    if (e.cd <= 0 && d < T.aggro * 0.8) { e.st = 'wind'; e.t = Math.max(0.4, T.wind) * diffK().wind; segnale(e); }
+    return true;
+  }
+  if (T.mest === 'vedetta' && e.vd !== 3) {
+    if (!e.vd) { if (calmo || d > T.aggro) return false; e.vd = 1; e.t = 3.2; const a = Math.atan2(-dz, -dx); e.wx = e.camp.x + Math.cos(a) * 40; e.wz = e.camp.z + Math.sin(a) * 40; tone(880, 0.08, 'square', 0.03); }
+    if (e.vd === 1) { const a = Math.atan2(e.wz - e.z, e.wx - e.x), m = T.sp * 1.25 * dt; e.yaw += angDiff(a, e.yaw) * Math.min(1, 10 * dt); e.moving = move(e, Math.cos(e.yaw) * m, Math.sin(e.yaw) * m, T.r, 1.6); if (e.moving) e.walk += m;
+      if (Math.hypot(e.wx - e.x, e.wz - e.z) < 5 || e.t <= 0) { e.vd = 2; e.t = 1.7; toast('LA VEDETTA PORTA IL CORNO ALLA BOCCA...', '#ffb070'); } return true; }
+    // suona il corno: se ci arriva, i rinforzi
+    e.moving = false; e.st = 'wind'; e.yaw = Math.atan2(dz, dx);
+    if (e.t <= 0) { e.vd = 3; e.st = 'chase'; e.cd = 1; seq([392, 392, 523], 0.16, 0.07); toast('IL CORNO! ARRIVANO I RINFORZI!', '#ff8a8a'); for (let i = 0; i < 2; i++) salaNemico('sf', e.camp, e.x + (i ? 14 : -14), e.z + 10); }
+    return true;
+  }
+  return false;
+}
+// ---------- la sala d'armi ----------
+const SALA_C = { x: 6200, z: 5320, type: 'sf', n: 0, r: 60, alive: [], dead: 0, cool: 1e9, on: true, sala: true };
+function salaNemico(t, c, x, z) {
+  const T = FOE[t], p = fixSpot(x, z, T.r), e = { type: t, camp: c, x: p[0], z: p[1], y: gH(p[0], p[1], -1e9), yaw: Math.atan2(hero.z - p[1], hero.x - p[0]), hp: Math.max(1, Math.round(T.hp * (T.fermo ? 1 : diffK().hp))), st: 'idle', t: 1 + Math.random(), cd: 0.8, flash: 0, kb: 0, walk: 0, hop: Math.random(), wx: p[0], wz: p[1] };
+  foes.push(e); c.alive.push(e); puffAt(e.x, e.z, 6); return e;
+}
+function salaVia() { for (const e of foes) if (e.camp === SALA_C) e.gone = true; foes = foes.filter(e => !e.gone); SALA_C.alive = []; SALA_C.dead = 0; shots = shots.filter(s => s.from !== 'foe'); }
+function salaMetti(tipi) { salaVia(); hero.hp = MAXHP(); hero.fi = 1; tipi.forEach((t, i) => { const a = Math.PI * (0.5 + (tipi.length > 1 ? (i / (tipi.length - 1) - 0.5) * 0.9 : 0)); salaNemico(t, SALA_C, SALA_C.x + Math.cos(a) * 30, SALA_C.z + Math.sin(a) * 30); }); seq([523, 659, 784], 0.07, 0.05); }
+const SALA_TXT = ['DUE FANTI. ATTACCANO UNO ALLA VOLTA: QUANDO UNO LAMPEGGIA DI BIANCO, SCHIVA CON UN TOCCO DI B (O PARA), POI COLPISCI TRE VOLTE DI FILA.',
+  "L'ARCIERE STA LONTANO E MIRA. CORRIGLI ADDOSSO, OPPURE ALZA LO SCUDO ALL'ULTIMO MOMENTO: LA FRECCIA TORNA INDIETRO.",
+  'LO SCUDIERO DI FRONTE PARA TUTTO. GIRAGLI ATTORNO, O ROMPIGLI LA GUARDIA CON UN COLPO CARICATO (A TENUTO E LASCIATO).',
+  'LE SFERE ROSSE DELLO STREGONE NON SI PARANO: SCHIVALE. E RAFFORZA IL FANTE CHE HA ACCANTO: VA PRESO PER PRIMO.',
+  'IL BRUTO È LENTO E CORAZZATO. I SUOI COLPI ROSSI NON SI PARANO: SCHIVA, E COLPISCI SUBITO DOPO. ROMPIGLI LA GUARDIA E IL DANNO RADDOPPIA.',
+  'LA VEDETTA SCAPPA A SUONARE IL CORNO. SE CI RIESCE ARRIVANO I RINFORZI: FERMALA PRIMA.'];
+function salaMenu(id) {
+  ask(id, ["QUESTA È LA SALA D'ARMI. CONTRO CHI TI ALLENI?"], ['IL MANICHINO', 'UN NEMICO PER MESTIERE', 'UNA SQUADRA', 'DIFFICOLTÀ: ' + diffK().n, 'SGOMBERA LA SALA', 'NIENTE'], i => {
+    if (i === 0) { salaMetti(['sm']); say(id, ['IL MANICHINO NON SI MUOVE E NON MUORE. PROVA LA CATENA (A, A, A A TEMPO), IL COLPO CARICATO (A TENUTO) E LA SCHIVATA (UN TOCCO DI B).', 'LA BARRA VERDE È IL FIATO. LA SUA GUARDIA SI ROMPE CON I COLPI CARICATI: POI IL DANNO RADDOPPIA.']); }
+    else if (i === 1) ask(id, ['QUALE MESTIERE?'], ['FANTE', 'ARCIERE', 'SCUDIERO', 'STREGONE', 'BRUTO', 'VEDETTA'], j => { salaMetti([['sf', 'sf'], ['sa'], ['ss'], ['st', 'sf'], ['sb'], ['sv']][j]); say(id, [SALA_TXT[j]]); });
+    else if (i === 2) { salaMetti(['sf', 'sa', 'ss', 'st', 'sf']); say(id, ['UNA SQUADRA INTERA: DUE FANTI, UN ARCIERE, UNO SCUDIERO, UNO STREGONE. BUONA FORTUNA.']); }
+    else if (i === 3) { save.opt.diff = ((save.opt.diff === undefined ? 1 : save.opt.diff) + 1) % 3; writeSave(); salaMenu(id); }
+    else if (i === 4) salaVia();
+  });
+}
+
 // ---------- eroe ----------
 function hurtHero(dmg, src, hard) {
   if (hero.inv > 0 || hero.dead || hero.dash) return;
+  if (MODO) dmg = Math.max(1, Math.round(dmg * diffK().dmg));
   // la guardia del cavaliere: ferma quello che arriva di fronte (i colpi più duri solo a metà); ogni parata costa energia
-  if (hero.block && src && Math.cos(Math.atan2(src.z - hero.z, src.x - hero.x) - hero.yaw) > 0.15) {
+  if (MODO && hero.block && src && Math.cos(Math.atan2(src.z - hero.z, src.x - hero.x) - hero.yaw) > 0.15) { if (parataNuova(src)) return; }
+  else if (hero.block && src && Math.cos(Math.atan2(src.z - hero.z, src.x - hero.x) - hero.yaw) > 0.15) {
     const cost = hard ? 2 : 1;
     if (hero.en >= cost) {
       hero.en -= cost; hero.enT = 0; tone(1400, 0.05, 'square', 0.05); tone(900, 0.08, 'square', 0.04, null, 0.04); vib(20);
@@ -13474,7 +13620,7 @@ const ACT = { slash: [0.42, 0.27], spin: [0.52, 0.38], shot: [0.4, 0.28], pshot:
 const ICE_T = [0.62, 0.95, 1.6], LIGHT_T = [1.6, 1.5, 0.9];
 let things = [], clsUI = null, clsPics = null, chip = null, chipM = null, btnC = null;
 function ringLite(x, z, r, k = 'spark', n = 14) { const gy = gH(x, z); for (let i = 0; i < n; i++) { const a = i / n * TAU; fx.push({ k, x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, y: gy + 2.5, vy: 5, t: 0.28, s: 0.3 }); } }
-function startAct(a, fn) { const h = hero; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
+function startAct(a, fn) { const h = hero; h.dmgK = 1; h.forza = 0; h.act = a; h.atkT = ACT[a][0]; h.atk = h.atkT; h.hitDone = false; h.castFn = fn || null; }
 const tough = e => FOE[e.type].champ || FOE[e.type].elite;
 function stun(e, t) { if (e.st === 'dead') return; e.stun = Math.max(e.stun || 0, t * (tough(e) ? 0.4 : 1)); if (e.st === 'wind') { e.st = 'chase'; e.cd = Math.max(e.cd, 0.3); } }
 function freeze(e, t) { stun(e, t); e.frz = e.stun; }
@@ -13558,10 +13704,11 @@ function aimRelease(full) {
 }
 // A: il colpo della classe (senz'arma si va a pugni, come sempre)
 function heroAttack() {
-  const h = hero; if (h.atk > 0 || inCasa() || h.dash || h.block || h.fall > 0) return;
+  const h = hero; if (MODO && h.atk > 0 && h.hitDone && h.atk < 0.2) h.atk = 0;   // la catena: si riparte sul finire del colpo
+  if (h.atk > 0 || inCasa() || h.dash || h.block || h.fall > 0) return;
   if (freeAim()) { h.aim = true; h.aDown = true; h.aHold = 0; h.aimT = 0; h.chg = 0.02; tone(180, 0.09, 'triangle', 0.02, 260); return; }
   const c = cls(), a = !eqIt('arma') || c === 'cavaliere' ? 'slash' : c === 'arciere' ? 'shot' : c === 'furfante' ? 'stab' : 'bolt';
-  startAct(a); h.aDown = true; h.aHold = 0; h.chg = 0;
+  startAct(a); h.aDown = true; h.aHold = 0; h.chg = 0; if (MODO) catena();
   if (a === 'slash') { noise(0.1, 0.04); tone(420, 0.08, 'triangle', 0.03, 200); }
   else if (a === 'shot') tone(300, 0.06, 'triangle', 0.035, 170);
   else if (a === 'stab') { noise(0.05, 0.03); tone(620, 0.05, 'triangle', 0.03, 320); }
@@ -13571,13 +13718,15 @@ function heroAttack() {
 // A tenuto premuto e poi lasciato: il colpo caricato
 function heroCharged() {
   const c = cls(), a = c === 'arciere' ? 'pshot' : c === 'furfante' ? 'knives' : c === 'mago' ? 'orb' : 'spin';
-  startAct(a);
+  if (MODO) { if (hero.fi < 0.3) { hero.fiFl = 0.5; tone(160, 0.08, 'square', 0.03); return; } hero.fi -= 0.34; hero.fiT = 0; }
+  startAct(a); if (MODO) hero.forza = 3;
   if (a === 'spin') { noise(0.2, 0.06); tone(300, 0.3, 'sawtooth', 0.04, 700); } else if (a === 'pshot') tone(220, 0.12, 'triangle', 0.05, 110); else if (a === 'knives') { noise(0.1, 0.04); tone(800, 0.1, 'triangle', 0.03, 400); } else tone(440, 0.25, 'sine', 0.05, 1320);
   if (!D) fauna.scare(hero.x, hero.z, 60);
 }
 // il momento in cui il colpo va a segno
 function heroHit(a) {
-  const h = hero, w = eqIt('arma'), att = ATT(), beam = !!(w && w.beam);
+  const h = hero, w = eqIt('arma'), att = MODO ? Math.max(1, Math.round(ATT() * (h.dmgK || 1))) : ATT(), beam = !!(w && w.beam);
+  forzaOra = MODO ? h.forza || 0 : 0;
   // chi tira da lontano, nei santuari, colpisce anche quello che ha a portata di mano (un cristallo, un vaso, una crepa): come una spada
   if (D && (a === 'shot' || a === 'pshot' || a === 'bolt' || a === 'orb')) dSwing(10.5, 0.35, { noBoss: true });
   if (a === 'slash') { meleeHit(10.5, 0.35, att); if (beam) lightBeam(att); }
@@ -13590,10 +13739,12 @@ function heroHit(a) {
   else if (a === 'orb') heroShot('orb', { dmg: Math.max(2, Math.round(att * 1.6)), sp: 120, life: 0.9, turn: 3, r: 3.2, pow: true, bossD: 1.6, big: 1.5, boom: { r: 11, dmg: Math.max(1, Math.round(att * 0.8)) } });
   else if (a === 'cast') { const fn = h.castFn; h.castFn = null; if (fn) fn(); }
   if (a !== 'cast') h.hid = 0;      // chi colpisce esce dal fumo
+  forzaOra = 0;
 }
 // energia che torna, colpo caricato (A resta premuto), guardia del cavaliere (C premuto)
 function heroTick(dt) {
   const h = hero, K = CC();
+  if (MODO) nuovoTick(dt);
   if (h.cdC > 0) h.cdC -= dt; if (h.guard > 0) h.guard -= dt; if (h.hid > 0) h.hid -= dt; if (h.enFl > 0) h.enFl -= dt;
   h.enT += dt; if (h.enT >= K.regen) { h.enT = 0; if (h.en < K.en && !h.block) h.en++; }
   if (h.en > K.en) h.en = K.en;
@@ -13631,7 +13782,7 @@ function dashStep(dt) {
       for (const p of D.pots) if (p.alive && Math.hypot(p.x - h.x, p.z - h.z) < 6) breakPot(p);
     }
   }
-  if (d.t <= 0) h.dash = null;
+  if (d.t <= 0) { if (d.k === 'schivata') h.ctr = 0.5; h.dash = null; }
 }
 // C: l'abilità scelta (la parata invece si tiene premuta)
 const SKILL = {
@@ -13732,7 +13883,7 @@ function classKey(name) {
       save.coins -= cost; save.flags.clsCambi = (save.flags.clsCambi || 0) + 1;
     }
     setClass(id); clsUI = null; st = 'play'; jingle(); banner = U.mode === 'gilda' ? { t: CL[id].n, s: 'LE TUE ARMI ORA SONO QUELLE DELLA NUOVA CLASSE', life: 3.4, c: CL[id].col } : null;
-    if (U.mode === 'new') toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f');
+    if (U.mode === 'new') toast(SALA ? "PARLA COL MAESTRO D'ARMI (A)" : "PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f');
     if (U.mode !== 'gilda') help = 11;
   }
 }
@@ -13796,6 +13947,7 @@ function drawSkills() {
 // soft: un danno che non sposta e non sveglia (il fuoco che brucia, la pioggia di frecce)
 function hitFoe(e, dmg, a, soft) {
   if (altroPiano(e)) return;
+  if (MODO) { const r = guardiaNemico(e, dmg); if (r === null) { e.flash = 0.08; return; } dmg = r; }
   const T = FOE[e.type];
   e.hp -= dmg; e.flash = 0.16;
   if (!soft) { e.kb = T.champ ? 0.05 : T.elite ? 0.08 : 0.18; e.kx = Math.cos(a) * 60; e.kz = Math.sin(a) * 60; if (e.st !== 'wind' || !T.champ) e.st = 'chase'; }
@@ -13837,7 +13989,7 @@ function campsUpdate(dt) {
 }
 function foeUpdate(e, dt) {
   const T = FOE[e.type], dx = hero.x - e.x, dz = hero.z - e.z, d = Math.hypot(dx, dz) + (altroPiano(e) ? 9999 : 0), homeD = Math.hypot(e.camp.x - e.x, e.camp.z - e.z), leash = e.camp.r * 2.6;
-  if (e.flash > 0) e.flash -= dt; if (e.cd > 0) e.cd -= dt; e.t -= dt;
+  if (e.flash > 0) e.flash -= dt; if (e.cd > 0) e.cd -= dt; e.t -= dt; if (e.rotto > 0) e.rotto -= dt; if (T.fermo) e.kb = 0;   // (il manichino non si sposta)
   if (e.st === 'dead') { e.fade -= dt; if (e.fade <= 0 && !e.counted) { e.counted = true; e.camp.dead++; e.camp.alive = e.camp.alive.filter(x => x !== e); } return; }
   // in fiamme, stordito o congelato (abilità delle classi)
   if (e.rage > 0) e.rage -= dt;
@@ -13852,13 +14004,15 @@ function foeUpdate(e, dt) {
   const fly = T.fly ? T.fly + Math.sin(time * 4 + e.hop * 9) * 1.5 : 0;
   e.y += (gH(e.x, e.z, e.y) + fly - e.y) * Math.min(1, 12 * dt);
   if (e.kb > 0) { e.kb -= dt; move(e, e.kx * dt, e.kz * dt, T.r, 3); return; }
+  if (MODO && (T.mest || T.fermo) && mestiere(e, T, dt, d, dx, dz)) return;
   if (e.st === 'wind') { e.yaw = Math.atan2(dz, dx); if (e.t <= 0) { if (d < T.range + 3 && st === 'play') hurtHero(T.dmg, e); e.st = 'chase'; e.cd = 1.1; } return; }
   // chi è stato colpito da lontano insegue più a lungo; col fumogeno nessuno vede l'eroe
   const calm = st !== 'play' || hero.dead || dialog || shop || loot || (D && D.room !== e.room) || hero.hid > 0, ag = T.aggro * (e.rage > 0 ? 2.4 : 1);
   if (!calm && d < ag && homeD < leash) e.st = 'chase';
   else if (e.st === 'chase' && (calm || d > ag * 1.7 || homeD > leash)) e.st = 'home';
   let tx = null, tz = null, sp = T.sp;
-  if (e.st === 'chase') { if (d < T.range && e.cd <= 0) { e.st = 'wind'; e.t = T.k === 'slime' ? 0.35 : 0.45; return; } if (d > T.range * 0.7) { tx = hero.x; tz = hero.z; } else e.yaw = Math.atan2(dz, dx); }
+  if (e.st === 'chase') { if (d < T.range && e.cd <= 0) { if (MODO && T.turno && foes.some(o => o !== e && o.camp === e.camp && o.st === 'wind')) { e.yaw = Math.atan2(dz, dx); return; }   // i fanti attaccano a turno
+      e.st = 'wind'; e.t = MODO ? Math.max(0.4, T.wind || 0.45) * diffK().wind : T.k === 'slime' ? 0.35 : 0.45; if (MODO) segnale(e); return; } if (d > T.range * 0.7) { tx = hero.x; tz = hero.z; } else e.yaw = Math.atan2(dz, dx); }
   else if (e.st === 'home') { tx = e.camp.x; tz = e.camp.z; sp *= 0.7; if (homeD < e.camp.r * 0.5) e.st = 'idle'; }
   else { if (e.t <= 0) { e.t = 2 + Math.random() * 3; const a = Math.random() * TAU, r = Math.random() * e.camp.r * 0.6; e.wx = e.camp.x + Math.cos(a) * r; e.wz = e.camp.z + Math.sin(a) * r; } if (Math.hypot(e.wx - e.x, e.wz - e.z) > 3) { tx = e.wx; tz = e.wz; sp *= 0.35; } }
   e.moving = false;
@@ -14599,7 +14753,7 @@ function shotsUpdate(dt) {
     if (s.from === 'foe') {
       const d = Math.hypot(hero.x - s.x, hero.z - s.z);
       if (d < s.r + 2.2 && !hero.dead && !hero.fall) {
-        if (canReflect() && hero.atk <= 0 && Math.cos(Math.atan2(s.z - hero.z, s.x - hero.x) - hero.yaw) > 0.45) {
+        if ((canReflect() || (perfetta() && !s.rosso && (toast('PARATA PERFETTA!', '#ffe14a'), true))) && hero.atk <= 0 && Math.cos(Math.atan2(s.z - hero.z, s.x - hero.x) - hero.yaw) > 0.45) {
           const src = s.src, a = src ? Math.atan2(src.z - s.z, src.x - s.x) : Math.atan2(-s.vz, -s.vx), sp = Math.hypot(s.vx, s.vz) * 1.35;
           s.vx = Math.cos(a) * sp; s.vz = Math.sin(a) * sp; s.from = 'hero'; s.life = 3; s.refl = true; s.dmg = Math.max(2, s.dmg); s.patch = false;
           tone(1568, 0.06, 'square', 0.05); for (let i = 0; i < 4; i++) fx.push({ k: 'spark', x: s.x, z: s.z, y: s.y, vy: 8, t: 0.25, s: 0.35 });
@@ -14609,7 +14763,7 @@ function shotsUpdate(dt) {
       // i colpi delle classi: possono trapassare, congelare, esplodere
       for (const e of foes) {
         if (e.st === 'dead' || (s.seen && s.seen.has(e)) || Math.hypot(e.x - s.x, e.z - s.z) >= FOE[e.type].r + s.r) continue;
-        e.rage = 6; if (!s.boomOnly) { hitFoe(e, s.dmg, Math.atan2(s.vz, s.vx)); if (s.frz) freeze(e, s.frz); }
+        e.rage = 6; if (!s.boomOnly) { forzaOra = MODO && s.pow ? 3 : 0; hitFoe(e, s.dmg, Math.atan2(s.vz, s.vx)); forzaOra = 0; if (s.frz) freeze(e, s.frz); }
         if (s.pierce) { (s.seen || (s.seen = new Set())).add(e); continue; }
         shotEnd(s, e); poof(s); break;
       }
@@ -14830,9 +14984,9 @@ function foeFrame(e) {
 function drawFoe(e) {
   const T2 = FOE[e.type], two = !!DCH[e.type] && !!D, set = two ? DCH[e.type] : CHR[T2.as || e.type]; if (!set) return;
   if (e.st === 'dead' && Math.floor(time * 20) % 2) return;
-  const k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? 0.25 : 0;
+  const rosso = MODO && e.st === 'wind' && T2.rosso, k = e.st === 'dead' ? Math.max(0, e.fade * 2) : 1, fl = e.flash > 0 ? 0.8 : e.st === 'wind' ? (MODO ? (rosso ? 0.12 : 0.3 + 0.5 * Math.abs(Math.sin(time * 16))) : 0.25) : 0;
   const r = set[Math.min(foeFrame(e), set.length - 1)][dirOf(e.x, e.z, e.yaw)], sc = (T2.sc || 0.2) / SR, ice = e.frz > 0 && e.st !== 'dead';
-  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, r, sc, k, ice ? 0.3 : fl, ice ? ICE_T : two ? undefined : T2.tint);
+  (two ? pushBB2 : pushBB)(e.x, e.y - 0.4, e.z, r, sc, k, ice ? 0.3 : fl, ice ? ICE_T : rosso ? [1.02, 0.3 + 0.25 * Math.abs(Math.sin(time * 16)), 0.25] : two ? undefined : T2.tint);
   if (e.stun > 0 && e.st !== 'dead') { const top = e.y + r.h * sc * (r.f || 1) * 0.92; if (ice) pushBB(e.x, e.y - 0.3, e.z, SPR.icefx, 0.5, 1.15); else for (let i = 0; i < 2; i++) { const a = time * 6 + i * Math.PI; pushBB(e.x + Math.cos(a) * 2.4, top + Math.sin(time * 9 + i) * 0.3, e.z + Math.sin(a) * 2.4, SPR.star, 0.3, 1.25); } }
 }
 // l'eroe: la posa dipende dalla classe e da quello che sta facendo
@@ -15148,8 +15302,12 @@ function drawHUD() {
   if (st === 'class') return drawClass();
   // indicatori
   drawHearts(6, 5);
-  const hy0 = 6 + Math.ceil(MAXHP() / 2 / 10) * 8, hy = hy0 + 8;
+  const hy0 = 6 + Math.ceil(MAXHP() / 2 / 10) * 8, hy = hy0 + (MODO ? 13 : 8);
   drawEnergy(6, hy0);
+  if (MODO) { const f = hero.fi === undefined ? 1 : Math.max(0, hero.fi), low = hero.fiFl > 0 && Math.floor(time * 10) % 2; hg.fillStyle = '#0b0a12'; hg.fillRect(5, hy0 + 6, 42, 4); hg.fillStyle = low ? '#ff5a5a' : '#6fdc8a'; hg.fillRect(6, hy0 + 7, Math.round(40 * f), 2);
+    let g = null, gd = 80; for (const e of foes) { const T2 = FOE[e.type]; if (!T2.gd || e.st === 'dead') continue; const d = Math.hypot(e.x - hero.x, e.z - hero.z); if (d < gd) { gd = d; g = e; } }
+    if (g && !D) { const T2 = FOE[g.type], w = 110, x = Math.round(Wr / 2 - w / 2), y = 19, n = T2.gd, cur = g.rotto > 0 ? 0 : g.gd === undefined ? n : g.gd; T(T2.n + (g.rotto > 0 ? ' - SCOPERTO!' : ''), Wr / 2, y, g.rotto > 0 ? '#ffe14a' : '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, g.hp) / Math.max(1, Math.round(T2.hp * (T2.fermo ? 1 : diffK().hp)))), 4);
+      for (let i = 0; i < n; i++) { hg.fillStyle = i < cur ? '#9ad0ff' : '#2a3448'; hg.fillRect(x + i * 9, y + 17, 7, 3); } } }
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
@@ -15470,7 +15628,7 @@ function onKey(name) {
   if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
       hero.en = MAXEN(); hero.atk = 0; hero.dash = null; hero.block = false; hero.chg = 0; hero.aDown = false; hero.hid = 0; things = [];
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
-      else { hero.x = 2005; hero.z = 2690; hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
+      else { if (MODO) { const p = INIZIO(); hero.x = p.x; hero.z = p.z; } else { hero.x = 2005; hero.z = 2690; } hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
       camBehind(); writeSave(); } return; }
   if (st !== 'play') return;
   if (loot) { if ((name === 'a' || name === 'b') && loot.t > 0.5) { loot = null; tone(880, 0.04); } return; }
@@ -15589,7 +15747,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get SALA() { return SALA; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -15609,7 +15767,7 @@ return {
   },
   modo: scegliModo,
   enter() {
-    if (!scegliModo(this.terra || null)) return;
+    if (!scegliModo(this.terra || null, !!this.sala)) return;
     if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); MIS.t0 = performance.now(); MIS.calc = 0; MIS.fasi = {}; }
     else if (st === 'play') { menu = null; }
   },
@@ -15668,6 +15826,18 @@ GAMES.push((() => {
     full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
     icon(c, x, y, s) { S.icon(c, x, y, s); },
     enter() { S.enter.call(G2); }, leave() { S.leave(); }, hidden() { S.hidden(); }, update(dt) { S.update(dt); }, draw(c, w, h) { S.draw(c, w, h); },
+  });
+})());
+
+// ---------- LA SALA D'ARMI ----------
+// La prova del combattimento nuovo: stesso motore e stessa terra del Grande Viaggio, ma si parte nella sala, davanti al maestro, con un salvataggio a parte.
+GAMES.push((() => {
+  const S = GAMES.find(g => g.id === 'saga'), G3 = Object.create(S);
+  return Object.assign(G3, {
+    id: 'sala', name: "LA SALA D'ARMI", desc: 'PROVA: IL COMBATTIMENTO NUOVO', terra: 'lumen', sala: true,
+    full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
+    icon(c, x, y, s) { S.icon(c, x, y, s); },
+    enter() { S.enter.call(G3); }, leave() { S.leave(); }, hidden() { S.hidden(); }, update(dt) { S.update(dt); }, draw(c, w, h) { S.draw(c, w, h); },
   });
 })());
 
