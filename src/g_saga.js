@@ -422,7 +422,54 @@ function drawHeroSprites() {
 }
 
 // ---------- caricamento ----------
+// ---------- il mondo conservato sul telefono: rilievo e colori si calcolano una volta per versione, poi si rileggono ----------
+const STO = (() => {
+  const S = { stato: 'attesa', letto: 0, scritto: false, err: '' };   // attesa | nuovo (calcolato adesso) | letto (dal telefono) | spento (il telefono non offre spazio)
+  const NOMI = ['H', 'H0', 'shore', 'SL', 'SH', 'biome', 'road0', 'pav', 'col', 'mat', 'road', 'map'];
+  let db = null, data = null, busy = false;
+  const msg = e => String(e && e.message || e || '').toUpperCase().replace(/[^A-Z0-9 .,:()-]/g, ' ').slice(0, 30);
+  const fine = (st, e) => { if (!busy) return; busy = false; S.stato = st; if (e) S.err = msg(e); };
+  S.begin = () => {
+    busy = true; S.stato = 'attesa'; data = null; const t0 = performance.now();
+    // se l'ultima volta il mondo non è arrivato in fondo (gioco chiuso o bloccato mentre nasceva), questa volta si ricalcola tutto
+    let rotto = false; try { rotto = localStorage.getItem('sg_nasce') === '1'; localStorage.setItem('sg_nasce', '1'); } catch (e) {}
+    try {
+      const rq = indexedDB.open('pixelsaga-mondo', 1);
+      rq.onupgradeneeded = () => { rq.result.createObjectStore('terra'); };
+      rq.onerror = rq.onblocked = () => fine('spento', rq.error || 'chiuso');
+      rq.onsuccess = () => {
+        db = rq.result; db.onversionchange = () => { try { db.close(); } catch (e) {} db = null; };
+        if (!busy) return;
+        try {
+          const st = db.transaction('terra', 'readonly').objectStore('terra'), g = st.get('classica/meta');
+          g.onerror = () => fine('nuovo', g.error);
+          g.onsuccess = () => {
+            const m = g.result; if (rotto || !m || m.id !== APP.id) return fine('nuovo');
+            const out = {}; let n = 0;
+            NOMI.forEach(k => { const r = st.get('classica/' + k); r.onerror = () => fine('nuovo', r.error); r.onsuccess = () => { out[k] = r.result; if (++n === NOMI.length && busy) { data = out; S.letto = performance.now() - t0; fine('letto'); } }; });
+          };
+        } catch (e) { fine('nuovo', e); }
+      };
+      setTimeout(() => fine(db ? 'nuovo' : 'spento', 'tempo scaduto'), 5000);
+    } catch (e) { fine('spento', e); }
+  };
+  S.busy = () => busy;
+  S.take = () => { const d = data; data = null; return d; };
+  S.put = o => {
+    if (S.stato === 'letto') S.stato = 'nuovo';   // quello che c'era non andava bene: si riscrive
+    if (!db) return;
+    try {
+      const tx = db.transaction('terra', 'readwrite'), st = tx.objectStore('terra');
+      st.clear(); NOMI.forEach(k => st.put(o[k], 'classica/' + k)); st.put({ id: APP.id, t: Date.now() }, 'classica/meta');
+      tx.oncomplete = () => { S.scritto = true; }; tx.onerror = tx.onabort = () => { S.err = msg(tx.error || 'non scritto'); };
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(() => {}, () => {}); } catch (e) {}
+    } catch (e) { S.err = msg(e); }
+  };
+  S.ok = () => { try { localStorage.removeItem('sg_nasce'); } catch (e) {} };
+  return S;
+})();
 function* loader() {
+  W.cache = STO; STO.begin();
   progMsg = 'PREPARO LA GRAFICA 3D'; yield 0.005;
   G = SG.createGL();
   if (!G) throw new Error('NOGL');
@@ -2940,9 +2987,10 @@ function misApri() {
 function drawMisure(x, top, w, bot) {
   const sec = v => (v / 1000).toFixed(1) + ' S', mb = b => b >= 1073741824 ? (b / 1073741824).toFixed(1) + ' GB' : (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB', dpr = window.devicePixelRatio || 1;
   const L = [['IL MONDO NASCE IN', sec(MIS.wall)], ['  DI CUI CALCOLO', sec(MIS.calc)], ['  SOLO TERRE E OGGETTI', sec(MIS.fasi['MODELLO LE TERRE DI LUMEN'] || 0)],
+    ['CONSERVATO', STO.stato === 'letto' ? 'SÌ, LETTO IN ' + sec(STO.letto) : STO.stato === 'spento' ? 'NON SI PUÒ' : STO.scritto ? 'DA ADESSO SÌ' : STO.err ? 'NO: ' + STO.err : 'LO STO SCRIVENDO'],
     ['IMMAGINI AL SECONDO', MIS.fps ? MIS.fps + ' (MINIMO ' + MIS.min + ')' : 'PRIMA GIOCA UN PO\''], ['SCATTI IN 10 SECONDI', MIS.fps ? String(MIS.scatti) : '-'],
-    ['SCHERMO', Math.round(screen.width * dpr) + ' X ' + Math.round(screen.height * dpr)], ['DISEGNO 3D', W3 + ' X ' + H3], ['GRAFICA', MIS.gpu || '?'], ['TRAMA MASSIMA', String(MIS.maxTex || '?')],
-    ['MONDO IN MEMORIA', 'CIRCA ' + mb(MIS.tex0 + MIS.dati)], ['SPAZIO SUL TELEFONO', MIS.sp ? mb(MIS.sp.usage || 0) + ' DI ' + mb(MIS.sp.quota || 0) : MIS.sp === false ? 'NON SI SA' : '...'], ['SPAZIO PROTETTO', MIS.pers === null ? '...' : MIS.pers ? 'SÌ' : 'NO']];
+    ['SCHERMO', Math.round(screen.width * dpr) + ' X ' + Math.round(screen.height * dpr)], ['DISEGNO 3D', W3 + ' X ' + H3], ['GRAFICA', (MIS.gpu || '?').slice(0, 16) + ', ' + (MIS.maxTex || '?')],
+    ['MONDO IN MEMORIA', 'CIRCA ' + mb(MIS.tex0 + MIS.dati)], ['SPAZIO USATO', MIS.sp ? mb(MIS.sp.usage || 0) + ' DI ' + mb(MIS.sp.quota || 0) : MIS.sp === false ? 'NON SI SA' : '...'], ['SPAZIO PROTETTO', MIS.pers === null ? '...' : MIS.pers ? 'SÌ' : 'NO']];
   T('MISURE DEL TELEFONO', x + 8, top, '#ffd23f');
   L.forEach((l, i) => { const yy = top + 12 + i * 9; T(l[0], x + 8, yy, '#a9c6e3', 1, 'left', null); T(l[1], x + w - 8, yy, '#ffffff', 1, 'right', null); });
   T('A: CONTATORE SULLO SCHERMO: ' + (save.opt.cnt ? 'SÌ' : 'NO'), x + 8, bot - 24, '#9af0b0', 1, 'left', null);
@@ -3114,7 +3162,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -3144,7 +3192,7 @@ return {
     MU.want(musicPick()); MU.tick(menu || mapOpen ? 0.55 : 1);
     if (st === 'loading') {
       const t0 = performance.now();
-      try { while (performance.now() - t0 < 40) { const fase = progMsg, t1 = performance.now(), r = gen.next(), d = performance.now() - t1; MIS.calc += d; MIS.fasi[fase] = (MIS.fasi[fase] || 0) + d; if (r.done) { MIS.wall = performance.now() - MIS.t0; misPeso(); toTitle(); break; } prog = r.value; } }
+      try { while (performance.now() - t0 < 40) { const fase = progMsg, t1 = performance.now(), r = gen.next(), d = performance.now() - t1; MIS.calc += d; MIS.fasi[fase] = (MIS.fasi[fase] || 0) + d; if (r.done) { MIS.wall = performance.now() - MIS.t0; misPeso(); STO.ok(); toTitle(); break; } if (r.value < 0) break; prog = r.value; } }
       catch (e) { st = 'error'; errMsg = e.message === 'NOGL' ? 'QUESTO TELEFONO NON SUPPORTA LA GRAFICA 3D (WEBGL). PIXEL SAGA NON PUÒ PARTIRE.' : 'ERRORE: ' + e.message; console.error(e); }
       return;
     }

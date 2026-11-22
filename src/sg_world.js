@@ -420,6 +420,37 @@ const BM = [[1, 0, 0, 0], [0.6, 0.4, 0, 0], [0.75, 0.25, 0, 0], [0, 0.25, 0.75, 
 function* build(atlas, sprites) {
   for (const f of W.hooks) f();   // le città preparano strade, spianate e case prima che nasca il terreno
   for (const p of prepCoarse()) yield 0.005 + 0.035 * p;
+  // rilievo, strade e colori si calcolano una volta sola per versione: poi il gioco li conserva sul telefono (W.cache) e la volta dopo si rileggono.
+  // Case, alberi e ombre si rifanno ogni volta, sugli stessi numeri: il mondo esce identico.
+  const cache = W.cache; let old = null;
+  if (cache) { while (cache.busy()) yield -1; old = cache.take(); }
+  if (old && !unpack(old)) old = null;
+  if (!old) { yield* terrain(); if (cache) cache.put(pack()); }
+  W.cached = !!old;
+  if (window.__SG_DEBUG) W.dbgSum = PACK.map(([k]) => { const a = W[k], u = new Uint8Array(a.buffer, a.byteOffset, a.byteLength); let h = 0; for (let i = 0; i < u.length; i += 7) h = (h * 31 + u[i]) | 0; return k + ':' + h; }).join(' ');
+  yield 0.82;
+  // edifici e collisioni
+  W.colliders = new Array(GN * GNZ); W.boxGrid = new Array(BGN * BGNZ); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
+  for (const p of buildMeshes()) yield 0.82 + 0.06 * p;
+  // oggetti messi a mano e sparsi
+  for (const p of placeObjects(sprites)) yield 0.88 + 0.08 * p;
+  // ombre di alberi ed edifici dipinte sul terreno
+  if (W.bakeShadows) W.bakeShadows();
+  yield 0.97;
+}
+// ---------- quel che si conserva sul telefono: i grandi vettori del rilievo e dei colori ----------
+const PACK = [['H', 1, V * VZ], ['H0', 1, V * VZ], ['shore', 0, N * NZ], ['SL', 1, V * VZ], ['SH', 1, V * VZ], ['biome', 0, V * VZ], ['road0', 0, TEX * TEXZ], ['pav', 0, TEX * TEXZ], ['col', 0, TEX * TEXZ * 4], ['mat', 0, TEX * TEXZ * 4], ['road', 0, TEX * TEXZ]];
+const MAPS = 512, MAPSZ = MAPS * WSZ / WS;
+function pack() { const o = {}; for (const [k] of PACK) o[k] = W[k]; o.map = W.mapImg.getContext('2d').getImageData(0, 0, MAPS, MAPSZ).data; return o; }
+function unpack(o) {
+  try {
+    for (const [k, f, n] of PACK) { const a = o[k]; if (!a || a.length !== n || !(f ? a instanceof Float32Array : a instanceof Uint8Array)) return false; }
+    if (!o.map || o.map.length !== MAPS * MAPSZ * 4) return false;
+    const mi = SG.art.mk(MAPS, MAPSZ), mx = mi.getContext('2d'), md = mx.createImageData(MAPS, MAPSZ); md.data.set(o.map); mx.putImageData(md, 0, 0);
+    for (const [k] of PACK) W[k] = o[k]; W.mapImg = mi; return true;
+  } catch (e) { return false; }
+}
+function* terrain() {
   const H = W.H = new Float32Array(V * VZ);
   for (let j = 0; j < VZ; j++) { for (let i = 0; i < V; i++) H[j * V + i] = height0(i * CELL, Z0 + j * CELL); if (j % 32 === 0) yield 0.04 + 0.26 * j / VZ; }
   // spianate (borgo, rocca, città...) e, dopo, una piazzola sotto ogni edificio isolato: niente case mezze sepolte nei pendii
@@ -623,15 +654,6 @@ function* build(atlas, sprites) {
     md.data[o + 3] = 255;
   }
   mx.putImageData(md, 0, 0); W.mapImg = mi;
-  yield 0.82;
-  // edifici e collisioni
-  W.colliders = new Array(GN * GNZ); W.boxGrid = new Array(BGN * BGNZ); W.boxes = []; W.mesh = []; W.lights = []; W.sites = []; W.glows = []; W.smokes = [];
-  for (const p of buildMeshes()) yield 0.82 + 0.06 * p;
-  // oggetti messi a mano e sparsi
-  for (const p of placeObjects(sprites)) yield 0.88 + 0.08 * p;
-  // ombre di alberi ed edifici dipinte sul terreno
-  if (W.bakeShadows) W.bakeShadows();
-  yield 0.97;
 }
 function W_groundRaw(H, x, z) { const i = Math.round(x / CELL), j = Math.round((z - Z0) / CELL); return H[Math.max(0, Math.min(NZ, j)) * V + Math.max(0, Math.min(N, i))]; }
 
