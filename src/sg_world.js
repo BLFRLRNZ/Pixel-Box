@@ -805,7 +805,7 @@ function* buildMeshes() {
 
 // ---------- oggetti: alberi, rocce, fiori... ----------
 // ogni oggetto sono 7 numeri nel pezzo di mondo a cui appartiene: x, y, z, scala, disegno, luce, vento
-const RL = [];
+const RL = [], RI = new Map();   // le figure usate da questo mondo, ognuna col suo numero (il numero è del mondo, non della figura: i mondi possono essere più d'uno)
 function* placeObjects(S) {
   const OB = W.OB = new Array(CH * CHZ), TAU2 = Math.PI * 2, isOld = (x, z) => x < OLD && z < OLD && z >= 0;
   let R = rng(4242);
@@ -817,9 +817,9 @@ function* placeObjects(S) {
     const sp = S[key]; if (!sp) return;
     if (!hand && veto(x, z)) { R(); return; }   // il posto è preso da una strada nuova o dall'acqua: il numero si consuma lo stesso, l'oggetto no
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
-    if (rect._i === undefined) { rect._i = RL.length; RL.push(rect); }
+    let ri = RI.get(rect); if (ri === undefined) { ri = RL.length; RI.set(rect, ri); RL.push(rect); }
     const ci = Math.max(0, Math.min(CH - 1, Math.floor(x / CS))), cj = Math.max(0, Math.min(CHZ - 1, Math.floor((z - Z0) / CS))), L = OB[cj * CH + ci] || (OB[cj * CH + ci] = { big: [], small: [] });
-    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, rect._i, sp.lit || 1, sp.sway || 0);
+    (o.small || sp.small ? L.small : L.big).push(x, y - (o.sink || 0.4), z, o.s || sp.s, ri, sp.lit || 1, sp.sway || 0);
     if (sp.glow) W.glows.push([x, y + sp.glow[0], z, sp.glow[1], sp.glow[2], sp.glow[3], sp.glow[4], 0]);
     if (o.r || sp.col) W.addCircle(x, z, o.r || sp.col);
     W.nObjs++;

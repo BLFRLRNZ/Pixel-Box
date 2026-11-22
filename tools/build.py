@@ -15,7 +15,9 @@ SRC = ROOT / 'src'
 # l'ordine conta: prima il nucleo, poi i giochi (si registrano in GAMES), infine menu e ciclo
 PARTS = ['sys_core.js', 'g_palline.js', 'g_rimbalzo.js', 'g_astro.js', 'g_snake.js',
          'g_roll.js', 'g_ovetto.js', 'g_kart.js',
-         'sg_gl.js', 'sg_art.js', 'sg_world.js', 'sg_town.js', 'sg_city.js', 'sg_lands.js', 'sg_nord.js', 'sg_bosco.js', 'sg_santi.js', 'sg_dun.js', 'sg_deep.js', 'sg_decor.js', 'sg_shop.js', 'sg_jobs.js', 'sg_fauna.js', 'sg_music.js', 'sg_class.js', 'g_saga.js', 'sys_main.js']
+         'sg_gl.js', 'sg_art.js', 'sg_dun.js', 'sg_deep.js', 'sg_decor.js', 'sg_world.js', 'sg_town.js', 'sg_city.js', 'sg_lands.js', 'sg_nord.js', 'sg_bosco.js', 'sg_santi.js', 'sg_shop.js', 'sg_jobs.js', 'sg_fauna.js', 'sg_music.js', 'sg_class.js', 'g_saga.js', 'sys_main.js']
+
+MONDO = ['sg_world.js', 'sg_town.js', 'sg_city.js', 'sg_lands.js', 'sg_nord.js', 'sg_bosco.js', 'sg_santi.js', 'sg_shop.js']
 
 PWA_HEAD = '''<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1b1f24">
@@ -33,7 +35,23 @@ if ('serviceWorker' in navigator) addEventListener('load', () => navigator.servi
 
 
 def build(pwa: bool):
-    code = '\n'.join((SRC / p).read_text(encoding='utf-8') for p in PARTS)
+    # il mondo di Pixel Saga è una fabbrica: i suoi file stanno dentro SG.mondo(), così se ne può far nascere più d'uno (le terre del mondo nuovo)
+    i0 = PARTS.index(MONDO[0]); assert PARTS[i0:i0 + len(MONDO)] == MONDO, 'i file del mondo devono stare di fila'
+    def parte(p):
+        t = (SRC / p).read_text(encoding='utf-8')
+        if p == MONDO[0]: t = 'SG.mondo = function () {\n' + t
+        if p == MONDO[-1]: t += r"""
+return { world: SG.world, town: SG.town, city: SG.city, shop: SG.shop };
+};
+SG.mondo();
+// un altro mondo, lasciando al loro posto i pezzi di quello che c'è
+SG.dentro = (m, f) => { const k = [SG.world, SG.town, SG.city, SG.shop]; SG.world = m.world; SG.town = m.town; SG.city = m.city; SG.shop = m.shop; try { return f(); } finally { SG.world = k[0]; SG.town = k[1]; SG.city = k[2]; SG.shop = k[3]; } };
+SG.altroMondo = () => { const k = { world: SG.world, town: SG.town, city: SG.city, shop: SG.shop }, m = SG.mondo(); return SG.dentro(k, () => m); };
+// lo fa nascere a passi: mentre lavora, i pezzi del mondo in vista sono i suoi
+SG.nasce = function* (m, atlas, sprites) { const g = m.world.build(atlas, sprites); for (;;) { const r = SG.dentro(m, () => g.next()); if (r.done) return; yield r.value; } };
+"""
+        return t
+    code = '\n'.join(parte(p) for p in PARTS)
     html = (SRC / 'shell.html').read_text(encoding='utf-8')
     assert '/*__CODE__*/' in html, 'segnaposto del codice mancante in shell.html'
     # la versione: numero scritto in VERSION + impronta del codice (cambia a ogni modifica)
