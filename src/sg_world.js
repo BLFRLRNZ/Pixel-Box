@@ -398,12 +398,15 @@ W.slope0 = (x, z) => { const i = Math.max(0, Math.min(N, Math.round(x / CELL))),
 W.road0At = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))); return (W.road0 || W.road)[j * TEX + i] / 255; };
 W.roadAt = (x, z) => { const i = Math.max(0, Math.min(TEX - 1, Math.floor(x / TC))), j = Math.max(0, Math.min(TEXZ - 1, Math.floor((z - Z0) / TC))); return W.road[j * TEX + i] / 255; };
 const WP = [0, 0];
-W.placeName = (x, z) => {
-  for (const p of PLACES) if (Math.hypot(x - p[0], z - p[1]) < p[2]) return p[3];
+W.regName = (x, z) => {
   warp(x, z, WP);
   let best = null, bd = 1e9;
   for (const r of REG) { const d = Math.hypot(WP[0] - r[0], WP[1] - r[1]) / r[2]; if (d < bd) { bd = d; best = r[4]; } }
   return best;
+};
+W.placeName = (x, z) => {
+  for (const p of PLACES) if (Math.hypot(x - p[0], z - p[1]) < p[2]) return p[3];
+  return W.regName(x, z);
 };
 // aria per regione: quanto pesa ogni bioma in quel punto
 W.atmo = (x, z) => biomeW(x, z, BW);
@@ -490,7 +493,11 @@ function grColore() {
   for (const g of GROTTE) { const { nw, nh, F } = g, m = new Float32Array(nw * nh);
     for (let k = 0; k < m.length; k++) m[k] = F[k] ? 1 : 0;
     for (let it = 0; it < 2; it++) { const p = m.slice(); for (let j = 1; j < nh - 1; j++) for (let i = 1; i < nw - 1; i++) { const k = j * nw + i; if (p[k] > 0) continue; let b = 0; for (let q = 0; q < 9; q++) b = Math.max(b, p[k + q % 3 - 1 + (Math.floor(q / 3) - 1) * nw]); m[k] = b * 0.6; } }
-    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const K = (g.j0 + j) * V + g.i0 + i; GM[K] = Math.max(GM[K], m[j * nw + i] * 255); } }
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const K = (g.j0 + j) * V + g.i0 + i; GM[K] = Math.max(GM[K], m[j * nw + i] * 255); }
+    if (g.roccia) { const [cx, cz, ra, rb] = g.roccia, a0 = Math.max(1, Math.floor((cx - ra) / CELL)), a1 = Math.min(N - 1, Math.ceil((cx + ra) / CELL)), b0 = Math.max(1, Math.floor((cz - rb - Z0) / CELL)), b1 = Math.min(NZ - 1, Math.ceil((cz + rb - Z0) / CELL));
+      for (let j = b0; j <= b1; j++) for (let i = a0; i <= a1; i++) { const x = i * CELL, z = Z0 + j * CELL, s = Math.hypot((x - cx) / ra, (z - cz) / rb) + (fbm(x / 60, z / 60, 2) - 0.5) * 0.2; if (s < 1) { const K = j * V + i; GM[K] = Math.max(GM[K], Math.round(255 * smooth(1, 0.7, s))); } } }
+    // il fondo di una dolina (g.prato = [x, z, raggio]): dove la volta non c'è cresce l'erba
+    if (g.prato) { const [px, pz, pr] = g.prato; for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { if (F[j * nw + i] !== 1) continue; const d = Math.hypot((g.i0 + i) * CELL - px, Z0 + (g.j0 + j) * CELL - pz); if (d < pr) { const K = (g.j0 + j) * V + g.i0 + i; GM[K] = Math.min(GM[K], Math.round(255 * smooth(pr * 0.6, pr, d))); } } } }
   return GM;
 }
 // la volta: il dorso (il monte com'era), il soffitto, e la fronte dove la volta finisce sull'invito a cielo aperto. La disegna lo stesso programma del terreno.
@@ -936,6 +943,7 @@ function* placeObjects(S) {
   W.nObjs = 0;
   const add = (key, x, z, o = {}) => {
     const sp = S[key]; if (!sp) return;
+    if (o.dentro) { const q = W.grotta(x, z); if (!q || !q.f || q.f > 2) return; }   // solo sul fondo di una grotta (altrimenti finirebbe sul monte, sopra la volta)
     if (!hand && veto(x, z)) { R(); return; }   // il posto è preso da una strada nuova o dall'acqua: il numero si consuma lo stesso, l'oggetto no
     const y = o.y !== undefined ? o.y : W.ground(x, z), rect = sp.r[Math.floor(R() * sp.r.length)];
     let ri = RI.get(rect); if (ri === undefined) { ri = RL.length; RI.set(rect, ri); RL.push(rect); }
@@ -994,7 +1002,7 @@ function* placeObjects(S) {
     else if (k === 'well') add('well', x, z, { r: 6 });
     else if (k === 'anvil') add('anvil', x, z, { r: 2 });
     else if (k === 'menhir') add('menhir', x, z, Object.assign({ r: 3 }, o || {}));
-    else if (k === 'statue') add('statue', x, z, { r: 4 });
+    else if (k === 'statue') add('statue', x, z, Object.assign({ r: 4 }, o || {}));
     else add(k, x, z, Object.assign({ r: k === 'tent' ? 9 : k === 'sign' ? 1.2 : k === 'snowman' ? 3.5 : k === 'campfire' ? 2 : S[k] && S[k].col ? S[k].col : S[k] && S[k].small ? 0 : 1 }, o || {}));
   };
   const TBL = {

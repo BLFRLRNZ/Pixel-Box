@@ -169,6 +169,7 @@ const FOE = {
   st: { n: 'STREGONE', k: 'human', as: 'st', mest: 'mago', hp: 8, dmg: 2, sp: 20, aggro: 130, range: 0, r: 3, coins: [0, 0], wind: 0.9 },
   sb: { n: 'BRUTO', k: 'human', as: 'sb', sc: 0.29, mest: 'bruto', hp: 36, dmg: 4, sp: 14, aggro: 110, range: 11, r: 4.2, coins: [0, 0], wind: 0.95, rosso: 1, gd: 4 },
   sv: { n: 'VEDETTA', k: 'human', as: 'sv', mest: 'vedetta', hp: 6, dmg: 1, sp: 33, aggro: 120, range: 7, r: 3, coins: [0, 0], wind: 0.5 },
+  grigio: { n: 'IL VECCHIO GRIGIO', k: 'beast', as: 'wolf', sc: 0.34, hp: 70, dmg: 4, sp: 38, aggro: 110, range: 10, r: 5, coins: [60, 90], champ: 1 },
   slimeR: { n: 'MELMA DI FUOCO', k: 'slime', hp: 12, dmg: 2, sp: 18, aggro: 60, range: 6, r: 3, coins: [4, 8] },
 };
 // ---------- aria delle regioni: nebbia, cielo, distanza, acqua ----------
@@ -510,7 +511,7 @@ function* loader() {
   if (!G) throw new Error('NOGL');
   gl = G.gl;
   { const tx = G.texture.bind(G); G.texture = (src, o) => { MIS.tex += (src.w || src.width || 0) * (src.h || src.height || 0) * (o && o.lum ? 1 : 4); return tx(src, o); }; }
-  atlas = A.Atlas(2048, 3520);
+  atlas = A.Atlas(2048, 4096);
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -929,7 +930,7 @@ function musicPick() {
   if ((st !== 'play' && st !== 'class') || musQuiet > 0) return null;
   if (D) { if (D.def.casa) return MUS_PLACE[D.town] || 'borgo'; if (boss && boss.on && !boss.dead) return boss.st === 'die' ? null : 'guardiano'; const r = DS.rootOf(D.id); return D.def.music || (D.def.cave ? 'grotta:' + r : MUS_DUN[r] || 'santuario:bosco'); }
   if (grK > 0.45 && grMus) return grMus;   // in fondo a una grotta aperta: la sua musica
-  return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || 'prati';
+  return MUS_PLACE[curPlace || W.placeName(hero.x, hero.z)] || (MODO && MUS_PLACE[W.regName(hero.x, hero.z)]) || 'prati';   // nelle terre nuove un luogo senza musica sua prende quella della regione
 }
 const vib = ms => { if (save && save.opt.vib && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} };
 
@@ -1802,6 +1803,7 @@ function interact(t) {
     return;
   }
   const p = t.obj;
+  { const tx = W.TESTI && W.TESTI[p.x + ',' + p.z]; if (tx) { say(null, tx); return; } }
   if (p.k === 'sign') { say(null, [SIGNS[p.x + ',' + p.z] || 'UN CARTELLO ROVINATO DALLA PIOGGIA.']); return; }
   if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); return; }
   if (p.k === 'kingstatue') { say(null, ['RE AURELIO IL FONDATORE, CON LA SPADA LEVATA VERSO IL PICCO DEL DRAGO.', 'SUL BASAMENTO: «FINCHÉ LA LUCE DURA, LUMEN DURA».']); return; }
@@ -1838,7 +1840,7 @@ function playUpdate(dt) {
     for (let b = 0; b < W.NB; b++) { const w = bw[b], a = ATMO[b]; for (let i = 0; i < 3; i++) { tgt.fog[i] += a[0][i] * w; tgt.zen[i] += a[1][i] * w; tgt.wat[i] += a[4][i] * w; } tgt.near += a[2] * w; tgt.far += a[3] * w; }
     atm.tgt = tgt;
     const name = W.placeName(hero.x, hero.z);
-    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; } } else { placeCand = name; placeHold = 0; } }
+    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; if (MODO && name) save.flags['v:' + name] = 1; } } else { placeCand = name; placeHold = 0; } }
   }
   if (atm.tgt) { const k = Math.min(1, dt * 1.5), T = atm.tgt; for (let i = 0; i < 3; i++) { atm.fog[i] += (T.fog[i] - atm.fog[i]) * k; atm.zen[i] += (T.zen[i] - atm.zen[i]) * k; atm.wat[i] += (T.wat[i] - atm.wat[i]) * k; } atm.near += (T.near - atm.near) * k; atm.far += (T.far - atm.far) * k; }
   if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
@@ -3141,7 +3143,7 @@ function drawMap() {
   };
   const isSeen = (x, z) => MODO || seen[Math.max(0, Math.min(MGZ - 1, Math.floor(z / 64) + MGN)) * MG + Math.min(MG - 1, Math.floor(x / 64))];
   if (MODO) {   // nel Grande Viaggio la carta è completa da subito: i luoghi con il loro nome, il mirino al centro, il segnalino
-    for (const p of W.PLACES) { if (W.TOWNS.some(t => t.name === p[3])) continue; dot(p[0], p[1], '#c9d3e6', 1); if (span < W.WS && inV(p[0], p[1])) T(p[3], Math.max(x0 + 2, Math.min(x0 + S - 2, PX(p[0]))), PZ(p[1]) - 10, '#c9d3e6', 1, 'center'); }
+    for (const p of W.PLACES) { if (W.TOWNS.some(t => t.name === p[3]) || (p[4] && !save.flags['v:' + p[3]])) continue; dot(p[0], p[1], '#c9d3e6', 1); if (span < W.WS && inV(p[0], p[1])) T(p[3], Math.max(x0 + 2, Math.min(x0 + S - 2, PX(p[0]))), PZ(p[1]) - 10, '#c9d3e6', 1, 'center'); }
   }
   for (const t of W.TOWNS) if (t.home || isSeen(t.x, t.z)) { dot(t.x, t.z, t.big ? '#ffffff' : '#c9d3e6', t.big ? 2 : 1); if (span < W.WS && inV(t.x, t.z)) T(t.name, Math.max(x0 + 2, Math.min(x0 + S - 2, PX(t.x))), PZ(t.z) - 11, '#ffffff', 1, 'center'); }
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');

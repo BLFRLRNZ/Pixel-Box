@@ -64,7 +64,7 @@ SG.terre.lumen = m => {
   const BORGO = [3944, 5022], ROCCA = [6300, 4750], SOLIS = T(3360, 1670), ALBERO = T(1080, 1420), FARO = T(1440, 3700), PONTE = [7560, 3790], GHIACCIO = T(660, 598), GRIFONE = T(3700, 900);
   W.FLAT.push([SOLIS[0], SOLIS[1], 430, null], [2300, 5000, 90, null], [4704, 7150, 90, null], [5450, 3300, 90, null]);
   W.PLACES.push([BORGO[0], BORGO[1], 330, 'BORGO AURORA'], [ROCCA[0], ROCCA[1], 560, 'ROCCA DI LUMEN'], [SOLIS[0], SOLIS[1], 430, 'ROVINE DI SOLIS'], [ALBERO[0], ALBERO[1], 200, "L'ALBERO MADRE"], [lago[0], lago[1], 110, 'ISOLA DEL LAGO'],
-    [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA'], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
+    [picco[0], picco[1], 250, 'VETTA DEL DRAGO'], [brace[0], brace[1], 220, 'CRATERE DEL BRACE'], [5200, -1750, 300, 'VALICO DEI GIGANTI'], [3520, -930, 400, 'VALLE NASCOSTA', 1], [PONTE[0], PONTE[1], 300, 'PONTE DEI RE'],
     [2790, 7120, 70, 'FARO DEL SUD'], [GRIFONE[0], GRIFONE[1], 110, 'NIDO DEL GRIFONE']);   // (villaggi e città il nome lo ricevono dal generatore delle città)
   // gente nuova: gli elfi (orecchie a punta, capelli lunghi, verdi del bosco) e i nani (bassi, larghi, barbuti)
   Object.assign(C.LOOKS, {
@@ -229,7 +229,7 @@ SG.terre.lumen = m => {
   const POG = [3660, 4350];
   W.SHAPERS.push({ box: [POG[0] - 260, POG[1] - 210, POG[0] + 260, POG[1] + 210], free: () => true,
     f: (x, z, h) => { const s = Math.hypot((x - POG[0]) / 215, (z - POG[1]) / 165) * (1 + (W.fbm(x / 80, z / 80, 2) - 0.5) * 0.14); return s >= 1 ? h : h + (58 + 14 * (W.fbm(x / 45, z / 45, 3) - 0.5)) * W.smooth(1, 0.78, s); } });
-  W.GROTTE.push({ id: 'tasso', y: 25, musica: 'grotta:cristalli', rami: [
+  W.GROTTE.push({ id: 'tasso', y: 25, musica: 'grotta:cristalli', roccia: [POG[0], POG[1], 215, 165], rami: [
     [[3656, 4544, 12], [3656, 4496, 14], [3656, 4448, 15], [3650, 4398, 36]],
     [[3650, 4398, 36], [3600, 4350, 15], [3566, 4316, 28]],
     [[3650, 4398, 36], [3712, 4362, 15], [3752, 4322, 26]]] });
@@ -245,5 +245,7 @@ SG.terre.lumen = m => {
   W.CHESTS.push(['gv_tasso', 3560, 4312, 'lanterna', 2]);   // in fondo al ramo di ponente: la lanterna del minatore
   // i ponti di pietra sul fiume, dove lo passano le strade: quello del Borgo, quello della via del nord, quello della costa
   for (const [a0, a1, c] of [[4474, 4594, 5090], [4223, 4343, 4000], [4058, 4178, 7160]]) m.town.addBridge({ axis: 'x', a0, a1, c, y: 6, towers: false, ramps: false });
+  // grotte, luoghi lungo le vie e gente fuori dalle città: stanno in sv_lumen2.js
+  SG.terre.lumenLuoghi(m, { via, T, BORGO, ROCCA, SOLIS, ALBERO, AM, GHIACCIO, GRIFONE, PONTE, lago, brace, picco });
 };
 })();
