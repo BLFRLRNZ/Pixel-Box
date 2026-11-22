@@ -1,7 +1,8 @@
 // ===================== PIXEL SAGA · il gioco =====================
 // Avventura fantasy in un mondo aperto: si esplora a schermo intero, in orizzontale.
 GAMES.push((() => {
-const A = SG.art, W = SG.world, MU = SG.music, TAU = Math.PI * 2;
+const A = SG.art, MU = SG.music, TAU = Math.PI * 2;
+let W = SG.world;   // la terra dove si cammina (le terre possono essere più d'una: vedi TERRE)
 const angDiff = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 const hexf = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RARO', 'EPICO', 'LEGGENDARIO'];
@@ -2537,12 +2538,51 @@ function setWL(p) {
   gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, day.night > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
 }
 const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.x), yaw) / (TAU / 8)) % 8) + 8) % 8;
+// ---------- le terre vicine: altri mondi nati dalla stessa fabbrica, posati accanto a quello dove si cammina (per ora solo nelle prove) ----------
+const TERRE = []; let soloTerra = 0;
+function terraNuova(ox, oz) { const m = SG.altroMondo(), t = { m, W: m.world, ox, oz, gen: SG.nasce(m, null, SPR), ok: false }; TERRE.push(t); return t; }
+function acquaTerre() {   // ogni terra ha il suo specchio d'acqua, largo fin dove comincia quello della vicina
+  const tutte = [{ W, ox: 0, oz: 0 }].concat(TERRE.filter(t => t.ok));
+  for (const a of tutte) {
+    const B = a.W; let x0 = -3000, x1 = B.WS + 3000, z0 = B.Z0 - 3000, z1 = B.WS + 3000;
+    for (const b of tutte) if (b !== a) { const dx = b.ox - a.ox, dz = b.oz - a.oz;
+      if (Math.abs(dx) >= Math.abs(dz)) { if (dx > 0) x1 = Math.min(x1, dx); else x0 = Math.max(x0, dx + b.W.WS); }
+      else if (dz > 0) z1 = Math.min(z1, dz + b.W.Z0); else z0 = Math.max(z0, dz + b.W.WS); }
+    B.wat = G.buffer(new Float32Array([x0, z0, x1, z0, x1, z1, x0, z1]));
+  }
+}
+function terreTick(ms) {   // una terra vicina nasce un poco per volta, mentre si gioca
+  for (const t of TERRE) if (t.gen) {
+    const t0 = performance.now();
+    while (performance.now() - t0 < ms) if (t.gen.next().done) { t.gen = null; const B = t.W; B.shoreTex = G.texture({ w: B.N, h: B.NZ, data: B.shore }, { linear: true, lum: true }); B.shore = null; SG.dentro(t.m, () => B.upload(G)); t.ok = true; acquaTerre(); break; }
+    return;
+  }
+}
+// disegna una terra vicina: lo stesso disegno, con la visuale spostata di quanto la terra dista (fase 1: terreno, case, alberi; fase 2: acqua)
+function passaTerra(t, fase) {
+  const k = [W, VP, planes, RX, RZ, cam.x, cam.z, cam.tx, cam.tz];
+  W = t.W; cam.x -= t.ox; cam.z -= t.oz; cam.tx -= t.ox; cam.tz -= t.oz; soloTerra = fase;
+  try { render3D(); } finally { soloTerra = 0; W = k[0]; VP = k[1]; planes = k[2]; RX = k[3]; RZ = k[4]; cam.x = k[5]; cam.z = k[6]; cam.tx = k[7]; cam.tz = k[8]; }
+}
+function acqua3D(fogC, fogN, fogF) {
+  const P = G.P; let p;
+  // acqua
+  p = P.water; gl.useProgram(p.p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform1f(p.u.uY, W.WL); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform3fv(p.u.uWat, atm.wat);
+  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, W.shoreTex || SHORE); gl.uniform1i(p.u.uShore, 1);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+  gl.bindBuffer(gl.ARRAY_BUFFER, W.wat || W.waterBuf); G.attribs(p, [['aP', 2]]); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  // gli stagni in quota: la stessa acqua, più su, dentro il contorno della conca
+  for (const q of W.PONDS) { if (Math.hypot(q.x - cam.x, q.z - cam.z) > fogF + 160) continue; gl.uniform1f(p.u.uY, q.y); gl.bindBuffer(gl.ARRAY_BUFFER, q.buf); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, q.n * 6, gl.UNSIGNED_SHORT, 0); }
+}
 function render3D() {
   if (D) return renderDungeon();
   const P = G.P;
   gl.viewport(0, 0, W3, H3);
   const fogC = FOGC, zenC = ZENC; for (let i = 0; i < 3; i++) { fogC[i] = atm.fog[i] + (day.hor[i] - atm.fog[i]) * day.horK; zenC[i] = atm.zen[i] + (day.zen[i] - atm.zen[i]) * day.zenK; }
-  gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  if (!soloTerra) { gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); }
   const proj = SG.M4.persp(FOV, W3 / H3, 1.2, Math.max(900, atm.far + 200)), view = SG.M4.look([cam.x, cam.y, cam.z], [cam.tx, cam.ty, cam.tz], [0, 1, 0]);
   VP = SG.M4.mul(proj, view);
   const m = VP, row = i => [m[i], m[4 + i], m[8 + i], m[12 + i]], r0 = row(0), r1 = row(1), r2 = row(2), r3 = row(3);
@@ -2550,10 +2590,13 @@ function render3D() {
   const yaw = Math.atan2(cam.tz - cam.z, cam.tx - cam.x), pitch = Math.atan2(cam.ty - cam.y, Math.hypot(cam.tx - cam.x, cam.tz - cam.z));
   RX = -Math.sin(yaw); RZ = Math.cos(yaw);
   const fogN = atm.near, fogF = atm.far;
+  if (soloTerra === 2) { acqua3D(fogC, fogN, fogF); return; }
+  let p;
+  if (!soloTerra) {
   if (frameN % 10 === 0 || !nearGlows) pickLights();
   // cielo
   gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
-  let p = P.sky; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
+  p = P.sky; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
   const foc = (H3 / 2) / Math.tan(FOV / 2);
   gl.uniform2f(p.u.uRes, W3, H3); gl.uniform1f(p.u.uHor, H3 / 2 - foc * Math.tan(pitch)); gl.uniform1f(p.u.uYaw, yaw); gl.uniform1f(p.u.uFovX, 2 * Math.atan(Math.tan(FOV / 2) * W3 / H3));
   gl.uniform1f(p.u.uPanoH, H3 * 0.3); gl.uniform1f(p.u.uTime, time); gl.uniform3fv(p.u.uZen, zenC); gl.uniform3fv(p.u.uHorC, fogC);
@@ -2572,11 +2615,13 @@ function render3D() {
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PANO); gl.uniform1i(p.u.uPano, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
-  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
+  }
+  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.BLEND);
+  if (!soloTerra) for (const t of TERRE) if (t.ok) passaTerra(t, 1);   // le terre vicine, prima della nostra
   // terreno
   p = P.terrain; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0);
-  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
+  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p); if (soloTerra) gl.uniform1f(p.u.uNt, 0);
   gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, W.tex.pav); gl.uniform1i(p.u.uPav, 3);
   gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, PAVT); gl.uniform1i(p.u.uPavT, 4);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
@@ -2604,11 +2649,13 @@ function render3D() {
   }
   // ombre
   shN = 0;
+  if (!soloTerra) {
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const s of W.bigShadows || []) if (near(s[0], s[1], 520)) pushShadow(s[0], s[1], s[2]);      // l'ombra della chioma dell'Albero Madre
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (st !== 'title') fauna.shadows(cam);
+  }
   if (shN) {
     p = P.shadow; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, VP);
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-2, -4);
@@ -2618,15 +2665,16 @@ function render3D() {
   }
   // oggetti fissi (alberi, rocce, fiori)
   p = P.bb; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p);
+  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p); if (soloTerra) gl.uniform1f(p.u.uNt, 0);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.uniform1i(p.u.uTex, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
-  const ghostOn = !!hero && (st === 'play' || st === 'dead');
+  const ghostOn = !soloTerra && !!hero && (st === 'play' || st === 'dead');
   gl.uniform1f(p.u.uNear, ghostOn ? 6 : 0); if (ghostOn) gl.uniform3f(p.u.uHero, hero.x, hero.y + 4.5, hero.z); gl.uniform1f(p.u.uGhost, 0);
   for (const [c, d] of vis) {
     if (c.big) { gl.bindBuffer(gl.ARRAY_BUFFER, c.big); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.nb * 6, gl.UNSIGNED_SHORT, 0); }
     if (c.small && d < 300) { gl.bindBuffer(gl.ARRAY_BUFFER, c.small); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.ns * 6, gl.UNSIGNED_SHORT, 0); }
   }
+  if (soloTerra) return;
   // personaggi, forzieri, effetti
   pushBB.n = 0;
   buildDynamic();
@@ -2635,16 +2683,9 @@ function render3D() {
     gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
     gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0);
   }
-  // acqua
-  p = P.water; gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform1f(p.u.uY, W.WL); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform3fv(p.u.uWat, atm.wat);
-  gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0); gl.uniform3f(p.u.uHi, 0.86 * (1 - day.night * 0.3), 0.95, 1); gl.uniform1f(p.u.uA, 0.74); setWL(p);
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, SHORE); gl.uniform1i(p.u.uShore, 1);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, DET); gl.uniform1i(p.u.uDet, 0);
-  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-  gl.bindBuffer(gl.ARRAY_BUFFER, W.waterBuf); G.attribs(p, [['aP', 2]]); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-  // gli stagni in quota: la stessa acqua, più su, dentro il contorno della conca
-  for (const q of W.PONDS) { if (Math.hypot(q.x - cam.x, q.z - cam.z) > fogF + 160) continue; gl.uniform1f(p.u.uY, q.y); gl.bindBuffer(gl.ARRAY_BUFFER, q.buf); G.attribs(p, [['aP', 2]]); gl.drawElements(gl.TRIANGLES, q.n * 6, gl.UNSIGNED_SHORT, 0); }
+  // acqua: prima quella delle terre vicine, poi la nostra
+  for (const t of TERRE) if (t.ok) passaTerra(t, 2);
+  acqua3D(fogC, fogN, fogF);
   // aloni di lampioni, fuochi e fari: si sommano al colore (di notte forti, di giorno appena accennati)
   { let n = 0; const ng = day.night;
     for (const g of nearGlows) { const it = (g[7] ? 0.22 + 0.78 * ng : ng) * (0.9 + 0.1 * Math.sin(time * 9 + g[0])) * 0.6; if (it < 0.03 || n >= 160) continue; const r = g[3]; let q = n * 44;
@@ -3162,7 +3203,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, terra: (ox, oz) => terraNuova(ox, oz), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
@@ -3199,6 +3240,7 @@ return {
     if (st === 'title') { titleCam(dt); return; }
     if (st === 'class') { clsUI.t += dt; return; }
     if (frozen) return;                      // (solo per le prove) il gioco avanza soltanto a comando
+    if (TERRE.length) terreTick(6);
     if (st === 'play' || st === 'dead') playUpdate(dt);
   },
   draw(c, w, h) {
