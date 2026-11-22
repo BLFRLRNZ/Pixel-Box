@@ -58,14 +58,15 @@ SG.terre.lumen = m => {
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
     shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]] });
   // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
-  C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, style: 'lumen', gates: 'nesw', plaza: { w: 130, d: 110 }, board: [22, 20],
+  W.FLAT.push([ROCCA[0], ROCCA[1], 640, 30]);   // il pianoro della città
+  C.city(Object.assign({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, y: 30, style: 'lumen', gates: 'nsw', fitto: true, plaza: { w: 130, d: 110 }, board: [22, 20], reserve: [[222, -126, 410, 126]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
-      ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] });
+      ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
   // le strade: maestre (lastricate) tra le città e verso i passaggi, minori verso villaggi e segreti
   const via = (w, pts) => W.ROADS.push({ w, pts });
   const BE = [4160, 5022], BN = [3944, 4846], BS = [3944, 5198], BW2 = [3728, 5022], RW = [5866, 4750], RE = [6734, 4750], RN = [6300, 4366], RS = [6300, 5134];   // dove le strade toccano le città (le porte)
   via(9, [BE, [4700, 5120], [5450, 4880], RW]);
-  via(9, [RE, [7050, 4420], [7350, 3990], PONTE]);
+  via(9, [[6230, 4100], [6750, 4130], [7200, 4020], PONTE]);   // la via del Ponte dei Re si stacca da quella di Solis, fuori dalla porta di tramontana
   via(9, [BN, [4150, 4300], [4450, 3600], [4950, 3050], [5250, 2300], [5200, 1400], [5144, 950], [5260, 100], [5150, -700], [5230, -1300], [5200, -2040]]);
   via(9, [RN, [6230, 4100], [6129, 3844], [6350, 3450], SOLIS]);
   via(5, [BN, [3500, 4500], [2800, 3700], [2350, 3000], ALBERO]); via(5, [ALBERO, [1900, 2000], [1600, 1500], GHIACCIO]); via(5, [BS, [3700, 5900], [3200, 6500], FARO]);

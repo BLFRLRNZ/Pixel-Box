@@ -56,32 +56,12 @@ W.PLACES.push([4186, 2000, 300, 'PONTE DEI RE'], [4370, 6400, 250, 'PONTE DELLE 
 
 // ---------- la Rocca di Lumen: una città murata con il mastio del Re su una terrazza ----------
 const RX = 2760, RZ = 2960;
-C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
-  specials: [['church', -128, 60, 30, 22, 'e', { m: 15 }]], board: [22, 20],
-  shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
-    ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]],
-  people: [
-    ['guardia', 'GUARDIA DELLA PORTA', ['BENVENUTO ALLA ROCCA DI LUMEN, LA CITTÀ DEL RE.', 'IL MASTIO È IN FONDO AL VIALE, SULLA TERRAZZA. NON SI PUÒ SBAGLIARE: È LA TORRE PIÙ ALTA DI TUTTA LUMEN.'], [-186, 16, 0]],
-    ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.', 'DALLA TORRE GRANDE, NELLE GIORNATE LIMPIDE, SI VEDE FINO AL PONTE DEI RE.'], [6, -16, Math.PI]],
-    ['oste', 'OSTE DEL LEONE', ['BENVENUTO ALLA LOCANDA DEL LEONE!'], 'in:leone', { role: 'inn', cost: 10 }],
-    ['guardia', 'IL VETERANO', ['IL MONTE BRACE, A SUD-EST, SCOTTA ANCHE DA LONTANO. MA A SUD DELLA ROCCA, TRA LE PRIME BRACI, QUALCUNO HA LASCIATO UN CUORE DI CRISTALLO.', 'IO NON CI TORNO. HO GIÀ DATO.'], 'in:leone:ospite1'],
-    ['mercantessa', 'LA MERCANTESSA DI PASSAGGIO', ['VUOI UN CONSIGLIO? GUARDA LA BACHECA IN PIAZZA. CHI SBRIGA GLI INCARICHI DI UNA CITTÀ SI FA VOLERE BENE...', '...E AI BOTTEGAI DI QUELLA CITTÀ, CHI SI FA VOLERE BENE, STRAPPA SEMPRE UNO SCONTO.'], 'in:leone:ospite2'],
-    ['borghese', 'MASTRO ORAFO', ['ANELLI, AMULETI, PIETRE CHE PORTANO FORTUNA. GUARDA PURE!'], 'in:orafo', { id: 'orafo', role: 'shop', shop: 'orafo' }],
-    ['mercantessa', "L'ERBORISTA", ['ERBE DEI PRATI DI LUMEN, DISTILLATE CON CURA.'], 'in:erbe', { id: 'erborista', role: 'shop', shop: 'erbe' }],
-    ['fabbro', "L'ARMAIOLO DEL RE", ['LE GUARDIE DEL MASTIO SI ARMANO QUI. SE HAI MONETE, ANCHE TU.'], 'in:rocca_armi', { role: 'shop', shop: 'rocca_armi' }],
-    ['dama', 'DAMA ISOTTA', ['DA QUANDO IL RE È TORNATO, LA CITTÀ È RINATA. HAI VISTO QUANTE BANDIERE?', "DICONO CHE OLTRE IL PONTE DEI RE CI SIANO CITTÀ PIÙ GRANDI DELLA NOSTRA. IO NON CI CREDO."], 'p'],
-    ['bimbo', 'PAGGIO TEO', ['DA GRANDE FARÒ LA GUARDIA DEL MASTIO!', 'IL CAPITANO ARDEA MI HA PROMESSO UNA SPADA DI LEGNO.'], 'p', { walk: 1 }],
-    ['monaco', 'FRATE ANSELMO', ["LE VETRATE DELLA CAPPELLA RACCONTANO LA STORIA DELLE CINQUE PIETRE DELL'ALBA.", 'DI NOTTE, CON LE CANDELE ACCESE, SEMBRANO VIVE.'], [-104, 62, 0]],
-    ['borghese', 'IL CARRETTIERE', ['PORTO IL GRANO DEI CAMPI DORATI FIN QUI OGNI MATTINA.', 'LA STRADA NUOVA PER IL PONTE PASSA DALLE COLLINE DI SOLIS: SEGUI I CARTELLI.'], 'd', { walk: 1 }],
-    ['dama', 'LA FORNAIA', ["IL PANE DELLA ROCCA SI IMPASTA PRIMA DELL'ALBA. SE SENTI PROFUMO, SEGUI IL NASO."], 'd'],
-    ['borghese', 'LO SCRIVANO', ['SONO IO CHE APPENDO GLI INCARICHI ALLA BACHECA. IL RE FIRMA, IO INCHIODO.', 'OGNI INCARICO SBRIGATO È UNO SCONTO IN PIÙ NELLE BOTTEGHE DELLA CITTÀ: PAROLA DI SCRIVANO.'], 'p'],
-    ['guardia', 'LA RONDA', ["TUTTO TRANQUILLO IN PIAZZA. SE CERCHI UNA BOTTEGA, GUARDA LE INSEGNE: LA PORTA È LÌ SOTTO."], 'p'],
-    ['bimbo', 'LA PICCOLA LIDIA', ['HO CONTATO LE INSEGNE DELLA PIAZZA: UN BOCCALE, UN ANELLO, UNA BOCCETTA E UNA SPADA. LA SPADA È LA PIÙ BELLA.'], 'p', { walk: 1 }],
-    ['re', 'RE ALDRIC DI LUMEN', [], [50, -13, Math.PI], { id: 're' }],
-  ],
+// il mastio del Re: la terrazza, le mura interne, il palazzo e la torre. Si posa dove si vuole (serve anche alla Rocca del mondo nuovo):
+// RX, RZ = dove starebbe il centro di una città larga 400, con il mastio appoggiato alle mura di levante.
+const mastio = (RX, RZ) => ({
   pre(P) {
     // la terrazza del mastio, più alta di 12, con la rampa davanti alla porta interna
-    W.TERRA.push({ x0: RX + 22, z0: RZ - 118, x1: RX + 190, z1: RZ + 118, y: 72 }, { x0: RX - 6, z0: RZ - 12, x1: RX + 22, z1: RZ + 12, y: 60, y1: 72, mode: 'rampx' });
+    W.TERRA.push({ x0: RX + 22, z0: RZ - 118, x1: RX + 190, z1: RZ + 118, y: P.y + 12 }, { x0: RX - 6, z0: RZ - 12, x1: RX + 22, z1: RZ + 12, y: P.y, y1: P.y + 12, mode: 'rampx' });
     W.PAVE.push(['g', 'rect', RX + 26, RZ - 44, RX + 66, RZ + 44], ['g', 'rect', RX - 10, RZ - 13, RX + 28, RZ + 13]);
     for (const [dx, dz] of [[30, -30], [30, 30], [56, -22], [56, 22]]) W.PROPS.push(['lamp', RX + dx, RZ + dz]);
     W.PROPS.push(['kingstatue', RX + 42, RZ - 62], ['statue', RX + 60, RZ - 24], ['statue', RX + 60, RZ + 24], ['oak', RX + 40, RZ + 70], ['oak', RX + 60, RZ + 88], ['birch', RX + 44, RZ - 92], ['pot', RX + 34, RZ - 10], ['pot', RX + 34, RZ + 10],
@@ -116,7 +96,33 @@ C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400,
     for (const k of [0, 2, 4, 6]) { faceDecal(dx, dz, 14, k, T + 100, 4, 10, TL.GLASS, true); faceDecal(dx, dz, 14, k, T + 70, 4, 9, TL.WIN_ARCH, true); }
     for (const k of [1, 3, 5, 7]) faceDecal(dx, dz, 14, k, T + 76, 5, 12, TL.BAN_RED);
     W.flags.push([dx, T + 164, dz, 1]); W.glows.push([dx, T + 106, dz, 16, 1, 0.9, 0.6, 1]); W.lights.push({ x: dx, z: dz, y: T + 106, beacon: true });
-  } });
+  }
+});
+W.mastio = mastio;
+C.city({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: RX, z: RZ, w: 400, d: 360, style: 'lumen', gates: 'ws', y: 60, plaza: { dx: -95 }, reserve: [[12, -126, 200, 126]],
+  specials: [['church', -128, 60, 30, 22, 'e', { m: 15 }]], board: [22, 20],
+  shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
+    ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]],
+  people: [
+    ['guardia', 'GUARDIA DELLA PORTA', ['BENVENUTO ALLA ROCCA DI LUMEN, LA CITTÀ DEL RE.', 'IL MASTIO È IN FONDO AL VIALE, SULLA TERRAZZA. NON SI PUÒ SBAGLIARE: È LA TORRE PIÙ ALTA DI TUTTA LUMEN.'], [-186, 16, 0]],
+    ['guardia', 'GUARDIA DEL MASTIO', ['IL RE RICEVE NEL CORTILE. PARLA CON RISPETTO.', 'DALLA TORRE GRANDE, NELLE GIORNATE LIMPIDE, SI VEDE FINO AL PONTE DEI RE.'], [6, -16, Math.PI]],
+    ['oste', 'OSTE DEL LEONE', ['BENVENUTO ALLA LOCANDA DEL LEONE!'], 'in:leone', { role: 'inn', cost: 10 }],
+    ['guardia', 'IL VETERANO', ['IL MONTE BRACE, A SUD-EST, SCOTTA ANCHE DA LONTANO. MA A SUD DELLA ROCCA, TRA LE PRIME BRACI, QUALCUNO HA LASCIATO UN CUORE DI CRISTALLO.', 'IO NON CI TORNO. HO GIÀ DATO.'], 'in:leone:ospite1'],
+    ['mercantessa', 'LA MERCANTESSA DI PASSAGGIO', ['VUOI UN CONSIGLIO? GUARDA LA BACHECA IN PIAZZA. CHI SBRIGA GLI INCARICHI DI UNA CITTÀ SI FA VOLERE BENE...', '...E AI BOTTEGAI DI QUELLA CITTÀ, CHI SI FA VOLERE BENE, STRAPPA SEMPRE UNO SCONTO.'], 'in:leone:ospite2'],
+    ['borghese', 'MASTRO ORAFO', ['ANELLI, AMULETI, PIETRE CHE PORTANO FORTUNA. GUARDA PURE!'], 'in:orafo', { id: 'orafo', role: 'shop', shop: 'orafo' }],
+    ['mercantessa', "L'ERBORISTA", ['ERBE DEI PRATI DI LUMEN, DISTILLATE CON CURA.'], 'in:erbe', { id: 'erborista', role: 'shop', shop: 'erbe' }],
+    ['fabbro', "L'ARMAIOLO DEL RE", ['LE GUARDIE DEL MASTIO SI ARMANO QUI. SE HAI MONETE, ANCHE TU.'], 'in:rocca_armi', { role: 'shop', shop: 'rocca_armi' }],
+    ['dama', 'DAMA ISOTTA', ['DA QUANDO IL RE È TORNATO, LA CITTÀ È RINATA. HAI VISTO QUANTE BANDIERE?', "DICONO CHE OLTRE IL PONTE DEI RE CI SIANO CITTÀ PIÙ GRANDI DELLA NOSTRA. IO NON CI CREDO."], 'p'],
+    ['bimbo', 'PAGGIO TEO', ['DA GRANDE FARÒ LA GUARDIA DEL MASTIO!', 'IL CAPITANO ARDEA MI HA PROMESSO UNA SPADA DI LEGNO.'], 'p', { walk: 1 }],
+    ['monaco', 'FRATE ANSELMO', ["LE VETRATE DELLA CAPPELLA RACCONTANO LA STORIA DELLE CINQUE PIETRE DELL'ALBA.", 'DI NOTTE, CON LE CANDELE ACCESE, SEMBRANO VIVE.'], [-104, 62, 0]],
+    ['borghese', 'IL CARRETTIERE', ['PORTO IL GRANO DEI CAMPI DORATI FIN QUI OGNI MATTINA.', 'LA STRADA NUOVA PER IL PONTE PASSA DALLE COLLINE DI SOLIS: SEGUI I CARTELLI.'], 'd', { walk: 1 }],
+    ['dama', 'LA FORNAIA', ["IL PANE DELLA ROCCA SI IMPASTA PRIMA DELL'ALBA. SE SENTI PROFUMO, SEGUI IL NASO."], 'd'],
+    ['borghese', 'LO SCRIVANO', ['SONO IO CHE APPENDO GLI INCARICHI ALLA BACHECA. IL RE FIRMA, IO INCHIODO.', 'OGNI INCARICO SBRIGATO È UNO SCONTO IN PIÙ NELLE BOTTEGHE DELLA CITTÀ: PAROLA DI SCRIVANO.'], 'p'],
+    ['guardia', 'LA RONDA', ["TUTTO TRANQUILLO IN PIAZZA. SE CERCHI UNA BOTTEGA, GUARDA LE INSEGNE: LA PORTA È LÌ SOTTO."], 'p'],
+    ['bimbo', 'LA PICCOLA LIDIA', ['HO CONTATO LE INSEGNE DELLA PIAZZA: UN BOCCALE, UN ANELLO, UNA BOCCETTA E UNA SPADA. LA SPADA È LA PIÙ BELLA.'], 'p', { walk: 1 }],
+    ['re', 'RE ALDRIC DI LUMEN', [], [50, -13, Math.PI], { id: 're' }],
+  ],
+  ...mastio(RX, RZ) });
 
 // ---------- le città del continente e del sud ----------
 C.city({ id: 'castelrosso', guild: true, name: 'CASTELROSSO', x: 5760, z: 3320, w: 420, d: 380, style: 'ambra', gates: 'wes',

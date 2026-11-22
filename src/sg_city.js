@@ -110,9 +110,12 @@ function city(o) {
   const blocks = [];
   for (const q of [[x0 + IN, z0 + IN, px - MS, pz - MS], [px + MS, z0 + IN, x1 - IN, pz - MS], [x0 + IN, pz + MS, px - MS, z1 - IN], [px + MS, pz + MS, x1 - IN, z1 - IN]]) {
     const w = q[2] - q[0], d = q[3] - q[1]; if (w < 22 || d < 22) continue;
-    const xs = w > 116 ? [q[0], Math.round(q[0] + w * rr(0.44, 0.56)), q[2]] : [q[0], q[2]], zs = d > 104 ? [q[1], Math.round(q[1] + d * rr(0.44, 0.56)), q[3]] : [q[1], q[3]];
-    if (xs.length === 3) W.PAVE.push([ch, 'line', SS * 2, [[xs[1], q[1] - 2], [xs[1], q[3] + 2]], 1]);
-    if (zs.length === 3) W.PAVE.push([ch, 'line', SS * 2, [[q[0] - 2, zs[1]], [q[2] + 2, zs[1]]], 1]);
+    // un quarto grande si taglia con un vicolo; uno molto grande (le città del mondo nuovo) con più vicoli, in isolati della misura di sempre
+    const tagli = (a0, L, lim) => { if (L <= lim) return [a0, a0 + L]; if (L <= lim * 2 || !o.fitto) return [a0, Math.round(a0 + L * rr(0.44, 0.56)), a0 + L];   // (o.fitto: solo le città grandi del mondo nuovo)
+      const n = Math.round(L / (lim * 0.84)), tg = [a0]; for (let k = 1; k < n; k++) tg.push(Math.round(a0 + L * (k + rr(-0.07, 0.07)) / n)); tg.push(a0 + L); return tg; };
+    const xs = tagli(q[0], w, 116), zs = tagli(q[1], d, 104);
+    for (let k = 1; k < xs.length - 1; k++) W.PAVE.push([ch, 'line', SS * 2, [[xs[k], q[1] - 2], [xs[k], q[3] + 2]], 1]);
+    for (let k = 1; k < zs.length - 1; k++) W.PAVE.push([ch, 'line', SS * 2, [[q[0] - 2, zs[k]], [q[2] + 2, zs[k]]], 1]);
     for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) blocks.push([xs[i] + (i ? SS : 0), zs[j] + (j ? SS : 0), xs[i + 1] - (i < xs.length - 2 ? SS : 0), zs[j + 1] - (j < zs.length - 2 ? SS : 0)]);
   }
   const mk = (r, side, shop) => {
