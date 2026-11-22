@@ -89,7 +89,9 @@ Una voce nuova nel menu di Pixel Box: è il cantiere del gioco che verrà dopo P
 
 - **La terra:** la Lumen di sempre ingrandita 1,9 volte per lato (da sola ha più terra di tutte quelle di Pixel Saga messe insieme), con a nord un massiccio nuovo: cime fino a quota 1100, la gola del **Valico dei Giganti** che sale verso la terra dei monti, e una **valle nascosta** con il suo lago. Il Lago di Cristallo con l'isola, il fiume, il Bosco Antico, la Palude d'Ombra, le Colline di Solis; Monte Brace è un vulcano spento, con un lago nel cratere.
 - **Le città:** **Borgo Aurora** grande il doppio (case a graticcio, la piazza con la fontana, la locanda, l'emporio di Nino e la fucina di Bruno) e la **Rocca di Lumen** grande quattro volte: le mura con le torri, tre porte, una sessantina di isolati fitti di case tagliati dai vicoli, e contro le mura di levante il **mastio del Re** con la sua terrazza, le mura interne, il palazzo e la torre grande. Le strade maestre lastricate arrivano alle porte.
-- **Per ora si cammina e si guarda:** non ci sono ancora storia, gente, nemici, forzieri, ponti e grotte. Nelle botteghe si entra.
+- **Il villaggio degli elfi:** nel Bosco Antico, lungo il sentiero che va all'Albero Madre: case strette di legno dai tetti ripidi e verdi tra le querce grandi, una quercia in mezzo alla radura, lanterne. (Prima stesura: lo stile degli elfi è fatto con i pezzi che c'erano.)
+- **Ponti e strade:** tre ponti di pietra passano il fiume dove lo incontrano le strade (vicino al Borgo, sulla via del nord, sulla costa). Tutte e tredici le strade della terra si percorrono a piedi da un capo all'altro: lo verifica un robot, compresa la salita al Valico dei Giganti.
+- **Per ora si cammina e si guarda:** non ci sono ancora storia, gente, nemici, forzieri e grotte. Nelle botteghe si entra.
 - **Salvataggio a parte:** quello di Pixel Saga non viene toccato. Passando da un gioco all'altro Pixel Box si ricarica da solo (il mondo in memoria è uno alla volta), e basta premere di nuovo A.
 
 ## Comandi
