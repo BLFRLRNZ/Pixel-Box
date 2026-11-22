@@ -10,15 +10,16 @@ function shade(h, f) {
 }
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
-function finish(c, outline = true, oc = '#16121c', ricco = false) {
+let RICCO = false;   // il disegno ricco: lo accende il gioco (nel Grande Viaggio) prima di disegnare gli sprite
+function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false) {
   const w = c.width, h = c.height, x = c.getContext('2d'), d = x.getImageData(0, 0, w, h), a = d.data;
   for (let i = 3; i < a.length; i += 4) a[i] = a[i] < 110 ? 0 : 255;
   if (outline) {
     const o = hex(oc), m = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) m[i] = a[i * 4 + 3] ? 1 : 0;
-    if (ricco) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
-      const k = !m[i + 1] ? 0.5 : (y > 0 && !m[i - w + 1] && !m[i - w]) ? 0.34 : 0; if (!k) continue;
-      a[i * 4] += (212 - a[i * 4]) * k; a[i * 4 + 1] += (236 - a[i * 4 + 1]) * k; a[i * 4 + 2] += (255 - a[i * 4 + 2]) * k; }
+    if (ricco && bordo) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
+      const k = !m[i + 1] ? 0.46 : (y > 0 && !m[i - w + 1] && !m[i - w]) ? 0.3 : 0; if (!k) continue;
+      a[i * 4] += (226 - a[i * 4]) * k; a[i * 4 + 1] += (241 - a[i * 4 + 1]) * k; a[i * 4 + 2] += (255 - a[i * 4 + 2]) * k; }
     for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) {
       const i = y * w + X; if (m[i]) continue;
       if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) {
@@ -219,7 +220,7 @@ function figure(parts, yaw, W, H, o = {}) {
   const V = [cy * cp, -sy * cp, -sp], Rg = [-sy, -cy, 0], U = [cy * sp, -sy * sp, cp];
   const L = [-0.5 * Rg[0] + 0.8 * U[0] - 0.42 * V[0], -0.5 * Rg[1] + 0.8 * U[1] - 0.42 * V[1], -0.5 * Rg[2] + 0.8 * U[2] - 0.42 * V[2]], ll = Math.hypot(...L);
   L[0] /= ll; L[1] /= ll; L[2] /= ll;
-  const ricco = !!o.ricco;   // il disegno ricco: più gradini di luce, ombre fredde e luci calde; il bordo di controluce lo mette finish() sul profilo
+  const ricco = o.ricco !== undefined ? !!o.ricco : RICCO;   // il disegno ricco: più gradini di luce, ombre fredde e luci calde; il bordo di controluce lo mette finish() sul profilo
   const c = mk(W, H), ctx = c.getContext('2d'), img = ctx.createImageData(W, H), px = img.data, zb = new Float32Array(W * H).fill(1e9), S0 = -300;
   for (const p of parts) {
     const q = prepPart(p), M = q.M, mt = v => [M[0] * v[0] + M[1] * v[1] + M[2] * v[2], M[3] * v[0] + M[4] * v[1] + M[5] * v[2], M[6] * v[0] + M[7] * v[1] + M[8] * v[2]];
@@ -260,7 +261,7 @@ function figure(parts, yaw, W, H, o = {}) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  return finish(c, o.outline !== false, undefined, ricco);
+  return finish(c, o.outline !== false, undefined, ricco, true);
 }
 
 // ---------- persone: tonde e tozze ----------
@@ -961,7 +962,7 @@ function Atlas(AW, AH) {
 
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
-SG.art = { SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
+SG.art = { get ricco() { return RICCO; }, set ricco(v) { RICCO = !!v; }, SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
   oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, paving, pano, icon, Atlas, TRUNK, BIRCH };
 })();

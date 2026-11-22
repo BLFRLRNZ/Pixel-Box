@@ -277,11 +277,12 @@ const POSE_N = 11;     // pose dell'eroe: ogni classe ha le sue (sg_class.js)
 // Nel Grande Viaggio (prova del disegno ricco) l'eroe è disegnato più fitto (112 punti invece di 72), con più gradini di luce e il bordo di controluce,
 // e ha due pose in più da fermo: la sciarpa si muove col vento. VENTO e ONDA dicono, posa per posa, quanto la sciarpa è tesa e come serpeggia.
 const POSE_M = 13, VENTO = [0.1, 0.6, 0.82, 0.3, 0.96, 0.18, 0.7, 0.35, 0.96, 0.35, 0.96, 0.22, 0.03], ONDA = [0, 0.2, 1.9, 0.5, 2.3, 0, 1, 0.5, 2.3, 0.5, 2.3, 1.4, 2.7];
-const nPose = () => MODO ? POSE_M : POSE_N, hsEroe = () => MODO ? Math.round(HS * 1.56) : HS;
+const FITTO = 1.56;   // quanto più fitte sono disegnate le figure nel Grande Viaggio
+const nPose = () => MODO ? POSE_M : POSE_N, hsEroe = () => MODO ? Math.round(HS * FITTO) : HS;
 const POSE_NPC = [{}, { leg: 0.45 }, { leg: -0.45 }];
 const POSE_FOE = [{}, { leg: 0.5 }, { leg: -0.5 }, { armR: 3.0 }, { armR: 1.4, leg: -0.3 }];
 // otto direzioni: cinque disegnate, tre ottenute allo specchio (metà dello spazio nell'atlante)
-function dirs(make, w, h, o = {}) { const k = o.raw ? 1 : SR, oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 5; d++) out.push(atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo))); for (let d = 3; d > 0; d--) out.push(Object.assign({}, out[d], { u0: out[d].u1, u1: out[d].u0 })); return out; }
+function dirs(make, w, h, o = {}) { const fitto = MODO && !o.raw ? FITTO : 1, k = (o.raw ? 1 : SR) * fitto, oo = Object.assign({}, o, { sc: (o.sc || 1) * k, base: o.base !== undefined ? Math.round(o.base * k) : undefined }), out = []; for (let d = 0; d < 5; d++) { const r = atlas.add(A.figure(make(), d / 8 * TAU, Math.round(w * k), Math.round(h * k), oo)); if (fitto !== 1) r.f = 1 / fitto; out.push(r); } for (let d = 3; d > 0; d--) out.push(Object.assign({}, out[d], { u0: out[d].u1, u1: out[d].u0 })); return out; }
 const SR = A.SR, HS = Math.round(48 * SR);
 function buildStatics() {
   const R = rng(99), S = SPR, SH = {};
@@ -528,7 +529,8 @@ function* loader() {
   if (!G) throw new Error('NOGL');
   gl = G.gl;
   { const tx = G.texture.bind(G); G.texture = (src, o) => { MIS.tex += (src.w || src.width || 0) * (src.h || src.height || 0) * (o && o.lum ? 1 : 4); return tx(src, o); }; }
-  atlas = A.Atlas(2048, 4096);
+  atlas = A.Atlas(MODO ? 4096 : 2048, 4096);   // (nel Grande Viaggio le figure sono più fitte e occupano più posto: l'atlante è largo il doppio)
+  A.ricco = !!MODO;   // nel Grande Viaggio tutto è disegnato col disegno ricco (figure, alberi, rocce, oggetti); in Pixel Saga no
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -3590,7 +3592,7 @@ function titleCam(dt) {
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
   get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
-  eroeFig(p, d, vecchio) { const L = heroLook(), P = CC().poses; if (vecchio) { const L0 = Object.assign({}, L); for (const k of ['sciarpa', 'cuff', 'buckle', 'bracer']) delete L0[k]; if (L0.hairStyle === 'ciuffi') L0.hairStyle = 'short'; return A.figure(A.human(L0, P[Math.min(p, POSE_N - 1)]), d / 8 * TAU, HS, HS, { sc: SR }).toDataURL(); }
+  eroeFig(p, d, vecchio) { const L = heroLook(), P = CC().poses; if (vecchio) { const L0 = Object.assign({}, L); for (const k of ['sciarpa', 'cuff', 'buckle', 'bracer']) delete L0[k]; if (L0.hairStyle === 'ciuffi') L0.hairStyle = 'short'; return A.figure(A.human(L0, P[Math.min(p, POSE_N - 1)]), d / 8 * TAU, HS, HS, { sc: SR, ricco: 0 }).toDataURL(); }
     const hs = Math.round(HS * 1.56); return A.figure(A.human(L, Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p] })), d / 8 * TAU, hs, hs, { sc: SR * hs / HS, ricco: 1 }).toDataURL(); },
   figura(look, pose, d, ricco) { const k = ricco ? 1.56 : 1; return A.figure(A.human(look, pose || {}), d / 8 * TAU, Math.round(66 * k), Math.round(78 * k), { sc: SR * k, ricco: ricco ? 1 : 0 }).toDataURL(); }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
   va(x, z, yaw) { hero.x = x; hero.z = z; W.rif = -1e9; hero.y = gH(x, z); rifX = x; rifZ = z; hero.vx = hero.vz = 0; if (yaw !== undefined) hero.yaw = yaw; camBehind(); }, terra: (ox, oz, s) => terraNuova(ox, oz, s), get TERRE() { return TERRE; }, get SPR() { return SPR; }, get D() { return D; }, get boss() { return boss; }, get shots() { return shots; }, get hazards() { return hazards; }, get fade() { return fade; }, enter: id => enterDungeon(id), level: (id, from) => gotoLevel(id, from || 'up'), exit: () => exitDungeon(), load() { save = loadSave(); startGame(false); }, get title() { return title; }, ds: id => dsave(id), swing() { hero.atk = 0; heroAttack(); hero.aDown = false; },       // (prove) il colpo della classe: spada, freccia, pugnalata o dardo
