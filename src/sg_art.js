@@ -309,7 +309,7 @@ function human(o, pose = {}) {
   const hip = 9.5, sh = 18.6, bob = pose.bob || 0, wide = o.wide || 0;
   // gambe e scarpe
   for (const s of [1, -1]) {
-    const rot = [['y', s > 0 ? L : -L, 0, s * 1.8, hip]];
+    const rot = pose.sella ? [['y', 0.42, 0, s * 1.8, hip], ['x', s * 0.52, 0, s * 1.8, hip]] : [['y', s > 0 ? L : -L, 0, s * 1.8, hip]];   // (in sella: gambe aperte attorno al cavallo, un po' avanti)
     C([0, s * 1.8, hip + 0.3], [0.1, s * 1.8, 2.8], 1.65, o.pants, rot);
     E([0.75, s * 1.85, 1.45], [2.45, 1.7, 1.5], o.boots, rot);
     if (o.cuff) E([0.15, s * 1.8, 3.7], [2.05, 1.95, 0.75], o.cuff, rot, 1.06);   // il risvolto dello stivale

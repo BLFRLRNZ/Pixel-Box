@@ -152,7 +152,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.30", "id": "2.30-d51bc896", "date": "23/11/2026", "pwa": true};
+const APP = {"v": "2.31", "id": "2.31-51bcad95", "date": "23/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4895,7 +4895,7 @@ function human(o, pose = {}) {
   const hip = 9.5, sh = 18.6, bob = pose.bob || 0, wide = o.wide || 0;
   // gambe e scarpe
   for (const s of [1, -1]) {
-    const rot = [['y', s > 0 ? L : -L, 0, s * 1.8, hip]];
+    const rot = pose.sella ? [['y', 0.42, 0, s * 1.8, hip], ['x', s * 0.52, 0, s * 1.8, hip]] : [['y', s > 0 ? L : -L, 0, s * 1.8, hip]];   // (in sella: gambe aperte attorno al cavallo, un po' avanti)
     C([0, s * 1.8, hip + 0.3], [0.1, s * 1.8, 2.8], 1.65, o.pants, rot);
     E([0.75, s * 1.85, 1.45], [2.45, 1.7, 1.5], o.boots, rot);
     if (o.cuff) E([0.15, s * 1.8, 3.7], [2.05, 1.95, 0.75], o.cuff, rot, 1.06);   // il risvolto dello stivale
@@ -10177,6 +10177,7 @@ function bottega(tipo, S) {
   SC.forEach((t, k) => { const pic = t === TL.SCUDI || t === TL.QUADRO || t === TL.PESCI || t === TL.PERGAMENA; s.dec('n', 5 + k * 10, t, pic ? 4.8 : 0.4, pic ? 7 : 11, pic ? 7 : 9.7); });
   // il banco (con il passaggio a destra) e chi ci sta dietro
   s.box(0, 0, X, 24, 0, PED, S.base, S.floor, false).box(0, 24, X, 28.2, 0, BH, TL.BANCO, TL.PIANO).posto('banco', 35, 19.4, SUD, PED);
+  s.posto('cliente1', 23, 32.6, NORD).posto('cliente2', 48, 32.6, NORD).posto('cliente3', 19, 45, OVEST).posto('cliente4', 51, 45, EST);   // i clienti: due al banco, due a guardare la merce
   s.spr('candle', 12, 26.1, { y: BH, r: 0 }).lume(12, BH + 2.1, 26.1, S.lume, 58, { flick: true, halo: 5 });
   s.applique('n', 64.5, 8.6).applique('w', 45).applique('e', 45);
   s.dec('w', 14, TL.FINESTRA, 4.6, 6.6, 7.4, true).dec('e', 14, TL.FINESTRA, 4.6, 6.6, 7.4, true);
@@ -10217,7 +10218,7 @@ function locanda(S) {
   s.flat(9, 36, 27, 56, S.rug, 1.2, 1.4);
   // tavoli e sgabelli
   for (const [x, z, v] of [[36, 46, 0], [22, 68, 1], [74, 58, 1], [94, 46, 0], [92, 70, 1]]) { s.spr('table', x, z, { v, r: 2.7 }); for (const [dx, dz] of [[-4.6, 0.4], [4.6, -0.4], [0.4, 4.4]]) s.spr('stool', x + dx, z + dz, { r: 0.9 }); }
-  s.posto('ospite1', 36, 41, SUD).posto('ospite2', 94, 41, SUD).posto('ospite3', 74, 53, SUD);
+  s.posto('ospite1', 36, 41, SUD).posto('ospite2', 94, 41, SUD).posto('ospite3', 74, 53, SUD).posto('ospite4', 22, 63, SUD).posto('ospite5', 92, 65, SUD).posto('bancone', 85, 32.4, NORD);
   s.spr('barrel', 105, 74).spr('barrel', 100, 76).spr('crate', 6, 75, { v: 1 }).spr('sack', 105, 62, { v: 1 });
   s.dec('s', 22, TL.FINESTRA, 4.8, 6.4, 7.4, true).dec('s', 88, TL.FINESTRA, 4.8, 6.4, 7.4, true).lume(22, 8, Z - 3, [0.62, 0.74, 0.95], 46, { day: 1, halo: 0 }).lume(88, 8, Z - 3, [0.62, 0.74, 0.95], 46, { day: 1, halo: 0 });
   s.dec('e', 44, TL.QUADRO, 4.8, 7, 7).dec('e', 64, TL.SCUDI, 4.8, 7, 7).dec('w', 68, TL.LIBRI, 0.4, 11, 9.7);
@@ -10249,14 +10250,17 @@ function piano(shop) {
       R.rects = s.rects.slice(); R.sprs = s.sprs; R.lumi = s.lumi; R.folk = []; R.letto = s.posti.letto || null;
       for (const p of s.sprs) if (p.r > 0) R.solids.push({ x: p.x, z: p.z, r: p.r });
       for (const l of s.lumi) R.lights.push({ x: l.x, y: l.y, z: l.z, r: l.r, c: l.c, flick: l.flick, day: l.day });
-      for (const id of shop.folk) { const f = W.FOLK[id] || {}, sp = s.posti[f.spot || 'banco']; if (!sp) continue; R.folk.push({ id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2] }); if (f.spot && f.spot !== 'banco') R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
+      const presi = {};
+      for (const id of shop.folk) { const f = W.FOLK[id] || {}, sp = s.posti[f.spot || 'banco']; if (!sp) continue; presi[f.spot || 'banco'] = 1; R.folk.push({ id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2] }); if (f.spot && f.spot !== 'banco') R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
+      if (W.ospiti) for (const q of W.ospiti(shop, Object.keys(s.posti).filter(k => !presi[k] && k !== 'banco' && k !== 'letto')) || []) { const sp = s.posti[q.spot]; if (!sp || presi[q.spot]) continue; presi[q.spot] = 1; R.folk.push({ id: q.id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2], dice: q.dice }); R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
     } };
   return { name: shop.name, casa, floor: S.floor, wall: S.wall, fog: '#0d0906', amb: 0.6, water: '#2a6a8a', torch: S.lume, glow: '#ffd89a', pot: ['#b8623a', '#8a4224'], foes: {},
     make(m) { m.room(0, 0, cw + 1, ch + 1); m.at(dc, ch + 1, '@'); } };
 }
 // ogni bottega dichiarata dalle città diventa un piano «in_<chiave>»
 W.SHOPS = W.SHOPS || {};
-function registra() { for (const k in W.SHOPS) if (!DS.DEF['in_' + k]) DS.DEF['in_' + k] = piano(W.SHOPS[k]); }
+// (tutte: il gioco, quando il mondo è pronto, rifà anche le stanze che una terra nuova ha ridichiarato con la stessa chiave: altrimenti dentro resterebbe la gente del mondo di prima)
+function registra(tutte) { for (const k in W.SHOPS) { const d = DS.DEF['in_' + k]; if (!d || (tutte && d.casa && d.casa.shop !== W.SHOPS[k])) DS.DEF['in_' + k] = piano(W.SHOPS[k]); } }
 
 // ---------- fuori: l'insegna sopra la porta e quella a bandiera ----------
 // side: da che parte guarda la porta; c: il centro della porta lungo il muro; y0: la soglia
@@ -10443,9 +10447,11 @@ SG.terre.lumen = m => {
       ['bimbo', 'LA PICCOLA GIADA', ['HO CONTATO LE TORRI DELLE MURA: SONO PIÙ DELLE MIE DITA!'], 'p', { walk: 1 }],
       ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
       ['borgomastro', 'IL SINISCALCO', ["TENGO I CONTI DEL REGNO. IL PONTE DEI RE COSTERÀ QUANTO TUTTE LE MURA: MA UNIRÀ LUMEN ALL'ORIENTE."], 'd'],
-      ['elfa', "UN'ELFA IN VISITA", ['SONO SCESA DAL BOSCO ANTICO PER VEDERE LA CITTÀ DI PIETRA. QUANTO RUMORE FATE, VOI UOMINI!'], 'p', { walk: 1 }]],
+      ['elfa', "UN'ELFA IN VISITA", ['SONO SCESA DAL BOSCO ANTICO PER VEDERE LA CITTÀ DI PIETRA. QUANTO RUMORE FATE, VOI UOMINI!'], 'p', { walk: 1 }],
+      ['dama', 'LA SARTA DELLA ROCCA', ['STOFFE, CAPPUCCI, MANTELLI: QUI SI VESTE MEZZA CORTE. GUARDA PURE, E TOCCA SOLO CON LE MANI PULITE.'], 'in:rocca_sarta', { role: 'shop', shop: 'rocca_sarta' }]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
-      ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
+      ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }],
+      ['rocca_sarta', 'sartoria', 'LA SARTORIA DELLA ROCCA', 's1', { wall: 1, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante
   // l'Albero Madre e, poco a nord, il Santuario del Bosco: quelli di Pixel Saga, al loro posto nuovo (accanto al bivio dei sentieri, in una radura)
   const AM = [ALBERO[0] + 70, ALBERO[1] - 50], SB = [AM[0] + 35, AM[1] - 90];
   W.FLAT.push([AM[0] + 15, AM[1] - 40, 175, null]); W.CLEAR.push([AM[0] - 95, AM[1] - 150, AM[0] + 125, AM[1] + 75]);
@@ -10547,6 +10553,8 @@ SG.terre.lumen = m => {
   for (const [a0, a1, c] of [[4474, 4594, 5090], [4223, 4343, 4000], [4058, 4178, 7160]]) m.town.addBridge({ axis: 'x', a0, a1, c, y: 6, towers: false, ramps: false });
   // grotte, luoghi lungo le vie e gente fuori dalle città: stanno in sv_lumen2.js
   SG.terre.lumenLuoghi(m, { via, T, BORGO, ROCCA, SOLIS, ALBERO, AM, GHIACCIO, GRIFONE, PONTE, lago, brace, picco });
+  // la vita dei paesi (passanti, clienti, bancarelle) e le scuderie: stanno in sv_lumen3.js
+  SG.terre.lumenVita(m, { BORGO, ROCCA });
 };
 })();
 
@@ -10979,6 +10987,117 @@ SG.terre.lumenLuoghi = (m, L) => {
   // nei luoghi abitati niente branchi: si tolgono quelli (di prima) che ci cadono dentro
   W.CAMPS.splice(0, W.CAMPS.length, ...W.CAMPS.filter(c => !vecchi.has(c) || !quieti.some(q => Math.hypot(c[0] - q[0], c[1] - q[1]) < q[2])));
   return { quieti, rnd, testo, rupe };
+};
+})();
+
+// ---------- IL GRANDE VIAGGIO · Terra I: Lumen — la vita dei paesi e le scuderie ----------
+// Qui sta la gente che non ha un nome: i passanti che girano per le città e i villaggi (vanno in piazza, guardano le bancarelle,
+// entrano nelle botteghe e alla locanda, la sera tornano a casa), i clienti che si trovano dentro le botteghe, le bancarelle
+// del mercato, i tavoli all'aperto, e le due scuderie dove si affitta o si compra un cavallo.
+// Come si muovono lo decide il gioco (g_saga.js, «la vita dei paesi»): qui ci sono solo gli elenchi e le frasi.
+(() => {
+SG.terre = SG.terre || {};
+SG.terre.lumenVita = (m, L) => {
+  const W = m.world, C = m.city, TN = m.town, TL = TN.TL, K = W.kit, LK = C.LOOKS, { BORGO, ROCCA } = L;
+  const P = (...a) => W.PROPS.push(...a);
+  W.TESTI = W.TESTI || {};
+
+  // ================= ASPETTI =================
+  // chi passeggia deve saper camminare (tre figure invece di una): dame, donne e marinai imparano adesso
+  for (const k of ['dama', 'donna', 'marinaio']) if (LK[k]) LK[k].walk = 1;
+  Object.assign(LK, {
+    signore: { walk: 1, skin: '#e8b890', hat: '#2a2a3a', hairStyle: 'short', hair: '#3a2a1a', beard: '#3a2a1a', shirt: '#3a3a5a', belt: '#b89030', pants: '#2a2a34', boots: '#1e1a1a' },
+    stalliere: { skin: '#d8a07a', hat: '#c8a04a', hairStyle: 'short', hair: '#6a3a1a', shirt: '#8a4a2a', sleeve: '#e8dcc0', belt: '#3a2a1a', pants: '#5a4a3a', boots: '#3a2418' } });
+
+  // ================= I PASSANTI =================
+  // per ogni paese: quanti, e con che aspetto. Il nome dice solo chi sono; quel che dicono dipende da quel che stanno facendo (W.VITA.detti)
+  const NOMI = { borghese: ['UN BORGHESE'], donna: ['UNA DONNA DEL PAESE', 'UNA MASSAIA'], contadino: ['UN CONTADINO'], mercantessa: ['UNA MERCANTESSA'], bimbo: ['UN BAMBINO', 'UNA BAMBINA'], signore: ['UN SIGNORE', 'UN NOTAIO'],
+    dama: ['UNA DAMA', 'UNA GENTILDONNA'], pastore: ['UN PASTORE'], mercante: ['UN MERCANTE'], fioraia: ['UNA RAGAZZA'], elfa: ["UN'ELFA"], elfo: ['UN ELFO'], marinaio: ['UN MARINAIO', 'UN PESCATORE'] };
+  const PAESI = {
+    borgo: [10, ['borghese', 'donna', 'contadino', 'mercantessa', 'bimbo', 'signore', 'dama', 'pastore', 'donna', 'bimbo']],
+    rocca: [16, ['dama', 'signore', 'borghese', 'mercante', 'mercantessa', 'donna', 'bimbo', 'fioraia', 'dama', 'signore', 'borghese', 'donna', 'bimbo', 'mercante', 'contadino', 'dama']],
+    elfi: [4, ['elfa', 'elfo', 'elfa', 'elfo']],
+    pratolungo: [4, ['contadino', 'donna', 'pastore', 'bimbo']], cala: [4, ['marinaio', 'donna', 'bimbo', 'marinaio']],
+    girasole: [4, ['contadino', 'donna', 'fioraia', 'mercante']], faro: [3, ['marinaio', 'donna', 'borghese']] };
+  const piani = {}; for (const b of W.BUILD) if (b.k === 'city' && b.plan) piani[b.plan.o.id] = b.plan;
+  let conta = 0;
+  for (const id in PAESI) { const pl = piani[id]; if (!pl) continue; const [n, looks] = PAESI[id], r = Math.min(pl.pl.w, pl.pl.d) * 0.42;
+    for (let i = 0; i < n; i++) { const look = looks[i % looks.length], nomi = NOMI[look] || ['UN PASSANTE'], a = i / n * Math.PI * 2 + 0.4;
+      C.folk(look, nomi[(conta++) % nomi.length], pl.px + Math.cos(a) * r, pl.pz + Math.sin(a) * r, a + Math.PI, ['BUONGIORNO, VIANDANTE.'], { id: 'v_' + id + '_' + i, walk: 1, vita: id, nott: i % 4 === 1 }); } }
+
+  // quel che dice un passante, secondo quel che sta facendo ({citta} diventa il nome del paese). Le dice chiunque, uomo o donna: niente parole che cambiano col genere
+  const detti = {
+    giro: ['DUE PASSI FANNO BENE, DOPO UNA GIORNATA COSÌ.', 'VADO DI FRETTA: SCUSA, VIANDANTE!', 'OGGI C\'È PIÙ GENTE DEL SOLITO, IN GIRO.', 'CERCO MIO CUGINO. SE VEDI UNO CHE MI SOMIGLIA, DIGLI CHE LO ASPETTO IN PIAZZA.', 'A {citta} CI SI CONOSCE TUTTI. TU, PERÒ, NON TI HO MAI VISTO.'],
+    piazza: ['IN PIAZZA SI SANNO TUTTE LE NOVITÀ. BASTA FERMARSI E ASCOLTARE.', 'ASPETTO UN\'AMICA. È SEMPRE IN RITARDO.', 'GUARDO PASSARE LA GENTE: È IL MIO PASSATEMPO PREFERITO.', 'DICONO CHE IL RE VOGLIA COSTRUIRE UN PONTE LUNGO COME UN FIUME. CHISSÀ.'],
+    fontana: ['L\'ACQUA DELLA FONTANA È LA PIÙ FRESCA DEL PAESE.', 'MI RIPOSO UN MOMENTO. LE GAMBE NON SONO PIÙ QUELLE DI UNA VOLTA.'],
+    bancarella: ['STO SCEGLIENDO. NON MI METTERE FRETTA!', 'QUESTE MELE SONO PIÙ CARE DI IERI, MA SONO ANCHE PIÙ BELLE.', 'IL FORMAGGIO DI PRATOLUNGO È IL MIGLIORE. NE PRENDO SEMPRE UNA FORMA.', 'CERCO UN REGALO PER MIA MADRE. TU CHE DICI: UN NASTRO O UN PETTINE?'],
+    vetrina: ['GUARDO SOLTANTO. I PREZZI, QUI, SONO DA SIGNORI.', 'VORREI ENTRARE, MA POI FINISCE CHE COMPRO.', 'CHE BELLA ROBA HANNO MESSO FUORI OGGI.'],
+    tavolo: ['UN BICCHIERE DI SIDRO ALL\'ARIA APERTA: NON CHIEDO DI MEGLIO.', 'ALLA TUA SALUTE, VIANDANTE!', 'L\'OSTE DICE CHE LA ZUPPA DI OGGI È LA PIÙ BUONA DELL\'ANNO. LO DICE TUTTI I GIORNI.', 'MI SIEDO UN ATTIMO: SE PASSA QUALCUNO DI CASA MIA, NON MI HAI VISTO.'],
+    chiacchiera: ['STAVAMO PARLANDO DEL TEMPO. DOMANI PIOVE, TE LO DICE IL MIO GINOCCHIO.', 'SHH: STO SENTENDO UNA STORIA INTERESSANTE.', 'HAI SAPUTO? ALLA ROCCA CERCANO GENTE PER IL PONTE.', 'CHIACCHIERE, CHIACCHIERE... E INTANTO IL PANE SI RAFFREDDA.'],
+    porta: ['ASPETTO IL CARRO DI MIO FRATELLO. DOVEVA ARRIVARE A MEZZOGIORNO.', 'DA QUI SI VEDE CHI ARRIVA. OGGI SEI ARRIVATO TU.'],
+    casa: ['TORNO A CASA: HO LASCIATO LA PENTOLA SUL FUOCO.', 'ABITO QUI. BEL POSTO, NO?'],
+    sera: ['SI FA SERA: È ORA DI RIENTRARE.', 'LA SERA LE STRADE NON SONO PIÙ SICURE COME UNA VOLTA. BUONANOTTE!', 'DOMANI SI LAVORA. BUONANOTTE, VIANDANTE.'],
+    notte: ['UN ULTIMO BICCHIERE E POI A LETTO. FORSE.', 'DI NOTTE {citta} È UN\'ALTRA COSA. SENTI CHE SILENZIO?'],
+    bimbo: ['GIOCHIAMO A NASCONDINO? CONTO IO!', 'DA GRANDE AVRÒ UNA SPADA COME LA TUA!', 'LA MAMMA DICE DI NON PARLARE CON GLI SCONOSCIUTI. TU PERÒ HAI LA FACCIA BUONA.', 'HO VISTO UN GATTO GRANDE COSÌ!'],
+    cavallo: ['CHE BEL CAVALLO! È TUO?', 'ATTENTO A NON TRAVOLGERE NESSUNO, CON QUELLA BESTIA.'],
+    // usciti da una bottega
+    esce: { sartoria: ['HO APPENA PRESO LA STOFFA PER UN MANTELLO NUOVO. LA SARTA HA LE MANI D\'ORO.', 'LA SARTA MI HA PRESO LE MISURE. FRA TRE GIORNI È PRONTO.'], locanda: ['HO MANGIATO COME UN RE. ADESSO DUE PASSI, O MI ADDORMENTO.', 'UN BOCCALE E VIA. NON DIRLO IN GIRO.'],
+      emporio: ['HO COMPRATO SALE, SPAGO E CANDELE. LE SOLITE COSE.', 'ALL\'EMPORIO SI TROVA TUTTO, TRANNE QUEL CHE CERCAVO.'], armeria: ['HO FATTO AFFILARE IL COLTELLO DI CASA. ADESSO TAGLIA ANCHE I PENSIERI.', 'UN ELMO COSTA QUANTO UNA MUCCA. HO SOLO GUARDATO.'],
+      fucina: ['HO FATTO AFFILARE LA FALCE: FRA POCO SI MIETE.', 'IL FABBRO DICE CHE IL FERRO BUONO SCARSEGGIA.'], erboristeria: ['HO PRESO UN INFUSO PER LA TOSSE. SA DI FIENO BAGNATO.', 'L\'ERBORISTA HA UN RIMEDIO PER TUTTO. PER LA POVERTÀ, PERÒ, NO.'], orafo: ['HO GUARDATO GLI ANELLI. SOLO GUARDATO.', 'PER LE NOZZE DI MIA FIGLIA CI VUOLE UN GIOIELLO. E UN PRESTITO.'] },
+    // dentro una bottega (i passanti entrati e i clienti di passaggio)
+    dentro: { sartoria: ['QUESTO COLORE MI STA BENE, O MI FA LA FACCIA GIALLA?', 'CERCO UNA STOFFA CHE NON SI SCIUPI: HO TRE FIGLI.', 'LA SETA DI ZAFIRA NON ARRIVA PIÙ. BISOGNA ACCONTENTARSI DELLA LANA.', 'UN CAPPUCCIO PER L\'INVERNO: QUELLO DELL\'ANNO SCORSO SE L\'È MANGIATO LA CAPRA.'],
+      locanda: ['LA ZUPPA È CALDA E IL BOCCALE È PIENO. CHE VUOI DI PIÙ?', 'ALLA SALUTE DEL RE! E ANCHE ALLA NOSTRA.', 'VENGO QUI OGNI SERA. A CASA MIA NON C\'È IL CAMINO.', 'L\'OSTE SA TUTTO DI TUTTI. MA NON GLIELO CHIEDERE A STOMACO VUOTO.', 'STO ASPETTANDO UN AMICO. INTANTO BEVO ANCHE PER LUI.', 'HAI LA FACCIA DI UNO CHE HA CAMMINATO TANTO. SIEDITI!'],
+      emporio: ['MI SERVE UNA CORDA LUNGA. MOLTO LUNGA. NON CHIEDERMI PERCHÉ.', 'GUARDO I PREZZI E POI TORNO DOMANI. FORSE.', 'QUI DENTRO C\'È ODORE DI SPEZIE E DI SAPONE. MI PIACE.'],
+      armeria: ['QUESTA LAMA È BEN BILANCIATA. PECCATO IL PREZZO.', 'NON SO USARE LA SPADA, MA MI PIACE GUARDARLE.', 'CERCO UNO SCUDO PER MIO FIGLIO: PARTE CON LA GUARDIA DEL RE.'],
+      fucina: ['ASPETTO CHE IL FABBRO MI AGGIUSTI IL VOMERE.', 'SENTI CHE CALDO, QUI DENTRO! D\'INVERNO CI VERREI A DORMIRE.', 'UNA BUONA LAMA SI RICONOSCE DAL SUONO. ASCOLTA!'],
+      erboristeria: ['CERCO QUALCOSA PER DORMIRE. LE RANE, DA ME, CANTANO TUTTA LA NOTTE.', 'QUELLE BOCCETTE VERDI FANNO MIRACOLI. O ALMENO COSÌ DICONO.', 'MIA NONNA CURAVA TUTTO CON IL MIELE. ERA PIÙ BUONO.'],
+      orafo: ['GUARDA COME BRILLA QUELLA PIETRA. COSTA QUANTO LA MIA CASA.', 'CERCO UN ANELLO. NON PER ME: PER UNA PERSONA.', 'DICONO CHE CERTI AMULETI PORTINO DAVVERO FORTUNA.'] } };
+
+  // ================= I CLIENTI DI PASSAGGIO =================
+  // gente che non gira per strada: la si trova solo dentro, ogni tanto. Per ogni tipo di bottega, qualche aspetto
+  const CL = { locanda: ['borghese', 'contadino', 'mercante', 'signore', 'donna', 'pastore', 'marinaio'], sartoria: ['dama', 'donna', 'signore', 'mercantessa'], emporio: ['donna', 'contadino', 'borghese', 'mercantessa'],
+    armeria: ['signore', 'borghese', 'contadino'], fucina: ['contadino', 'borghese', 'pastore'], erboristeria: ['donna', 'dama', 'contadino'], orafo: ['dama', 'signore', 'mercante'] };
+  const clienti = {};
+  for (const kind in CL) clienti[kind] = CL[kind].map((look, i) => { const id = 'cl_' + kind + '_' + i, nomi = NOMI[look] || ['UN CLIENTE']; W.FOLK[id] = { n: nomi[i % nomi.length], look, lines: detti.dentro[kind], cliente: kind }; return id; });
+
+  // ================= BANCARELLE E TAVOLI =================
+  const bancarelle = {}, tavoli = {};
+  const banco = (id, dx, dz, cloth, look, nome, righe, roba) => { const pl = piani[id]; if (!pl) return; const x = pl.px + dx, z = pl.pz + dz;
+    W.BUILD.push({ k: 'stall', x, z, w: 14, d: 8, h: 7, cloth }); P([roba || 'crate', x + 9.5, z - 1], ['sack', x - 9.5, z - 0.5]);
+    C.folk(look, nome, x, z - 6, Math.PI / 2, righe, { sveglio: 0 }); (bancarelle[id] = bancarelle[id] || []).push([x, z + 7.5]); };
+  banco('borgo', -24, 18, TL.AWN_GREEN, 'contadino', "L'ORTOLANO", ['CAVOLI, RAPE E CIPOLLE DEGLI ORTI DEL BORGO. TUTTA ROBA DI STAMATTINA.', 'IL MULINO HA RIPRESO A MACINARE: FRA POCO AVREMO ANCHE IL PANE BUONO.'], 'barrel');
+  banco('borgo', 24, 18, TL.AWN_YELLOW, 'donna', 'LA FORNAIA', ['PANE CALDO! FOCACCE! CHI PRIMA ARRIVA, MEGLIO MANGIA.', 'IL SEGRETO È IL LIEVITO DI MIA NONNA. HA PIÙ ANNI DI ME.'], 'crate');
+  banco('rocca', -46, 34, TL.AWN_BLUE, 'pescivendola', 'LA PESCIVENDOLA', ['PESCE DELLA CALA, ARRIVATO STANOTTE COL CARRO DEL GHIACCIO!', 'LE CONCHIGLIE LE REGALO AI BAMBINI. I PESCI NO.'], 'barrel');
+  banco('rocca', 46, 34, 13, 'mercante', 'IL VENDITORE DI NASTRI', ['NASTRI, BOTTONI, PETTINI D\'OSSO! TUTTO QUEL CHE SERVE A UNA DAMA.', 'LA SARTA COMPRA DA ME, MA NON DIRLO IN GIRO: POI ALZA I PREZZI.'], 'crate');
+  banco('rocca', 46, -34, TL.AWN_GREEN, 'contadino', 'IL FORMAGGIAIO', ['FORMAGGIO DI PRATOLUNGO, STAGIONATO NELLE GROTTE. ASSAGGIA!', 'IL CUOCO DEL RE NE PRENDE TRE FORME ALLA SETTIMANA.'], 'crate');
+  // i tavoli all'aperto davanti alla Locanda del Leone
+  { const pl = piani.rocca; if (pl) { tavoli.rocca = []; for (const [dx, dz] of [[-51, -43], [-53, -30]]) { const x = pl.px + dx, z = pl.pz + dz; P(['table', x, z], ['stool', x - 4.6, z + 0.4], ['stool', x + 4.6, z - 0.4], ['stool', x + 0.4, z + 4.6]); tavoli.rocca.push([x, z]); } P(['barrel', pl.px - 60, pl.pz - 37]); } }
+
+  // ================= LE SCUDERIE =================
+  // un recinto di legno: pali e due correnti, con un varco. b: { x, z, w, d, varco: [lato, da, a] }
+  W.builders.recinto = (b, gy) => { const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, z0 = b.z - b.d / 2, z1 = b.z + b.d / 2, y = gy(b.x, b.z), [vl, va, vb] = b.varco || [];
+    const tratto = (ax, az, bx, bz, lato) => { const Ln = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(Ln / 6));
+      for (let i = 0; i < n; i++) { const t0 = i / n * Ln, t1 = (i + 1) / n * Ln; if (lato === vl && t0 >= va - 0.01 && t1 <= vb + 0.01) continue;
+        const px0 = ax + (bx - ax) * t0 / Ln, pz0 = az + (bz - az) * t0 / Ln, px1 = ax + (bx - ax) * t1 / Ln, pz1 = az + (bz - az) * t1 / Ln;
+        for (const [qx, qz] of [[px0, pz0], [px1, pz1]]) K.box(qx - 0.45, qz - 0.45, qx + 0.45, qz + 0.45, y - 1.5, y + 4.4, 3);
+        for (const h of [1.5, 3.2]) K.box(Math.min(px0, px1) - 0.2, Math.min(pz0, pz1) - 0.2, Math.max(px0, px1) + 0.2, Math.max(pz0, pz1) + 0.2, y + h, y + h + 0.6, 3);
+        W.addBox(Math.min(px0, px1) - 0.5, Math.min(pz0, pz1) - 0.5, Math.max(px0, px1) + 0.5, Math.max(pz0, pz1) + 0.5, y + 4, b); } };
+    tratto(x0, z0, x1, z0, 'n'); tratto(x0, z1, x1, z1, 's'); tratto(x0, z0, x0, z1, 'w'); tratto(x1, z0, x1, z1, 'e'); };
+  W.CAVALLI = [];        // i cavalli nei recinti (solo da guardare): [x, z, verso, manto]
+  const scuderia = (x, z, nome, muro, tetto, chi, righe) => {
+    W.FLAT.push([x, z, 52, null]); W.CLEAR.push([x - 46, z - 40, x + 46, z + 42]); W.PLACES.push([x, z, 62, nome, 0]);
+    W.BUILD.push({ k: 'house', x: x - 8, z: z - 20, w: 34, d: 15, h: 11, wall: muro, roof: tetto, door: 's', chim: false });        // la stalla
+    W.BUILD.push({ k: 'recinto', x: x - 8, z: z + 6, w: 40, d: 26, varco: ['e', 6, 18] });                                           // il recinto, col varco a levante
+    P(['haybale', x - 22, z - 2], ['haybale', x - 17, z - 4], ['haybale', x + 16, z - 22], ['barrel', x + 15, z - 14], ['cart', x + 27, z - 18], ['sack', x + 21, z - 12], ['lantern', x + 14, z + 2], ['sign', x + 24, z + 30]);
+    W.TESTI[(x + 24) + ',' + (z + 30)] = [nome + '. CAVALLI A GIORNATA E DA COMPRARE.', 'CHI HA UN CAVALLO LO CHIAMA COL FISCHIO: IL FERRO DI CAVALLO ACCANTO AL TASTO C.'];
+    W.CAVALLI.push([x - 18, z + 8, 0.4, 1], [x - 2, z + 12, 2.6, 2]);
+    C.folk('stalliere', chi, x + 19, z + 12, Math.PI / 2, righe, { role: 'scuderia', posto: [x + 26, z + 16] });
+  };
+  scuderia(BORGO[0] + 281, BORGO[1] - 50, 'SCUDERIA DEL BORGO', 1, 4, 'LO STALLIERE DEL BORGO', ['CAVALLI BUONI, FERRATI DI FRESCO. A PIEDI, DI QUI ALLA ROCCA, CI VUOLE MEZZA GIORNATA: IN SELLA, UN\'ORA.']);
+  scuderia(ROCCA[0] - 500, ROCCA[1] + 130, 'SCUDERIE DEL RE', 16, 5, 'IL MAESTRO DI STALLA', ['LE SCUDERIE DEL RE SERVONO ANCHE I VIANDANTI, PURCHÉ PAGHINO. I NOSTRI CAVALLI CONOSCONO OGNI STRADA DI LUMEN.']);
+
+  W.VITA = { paesi: PAESI, detti, clienti, bancarelle, tavoli };
+  W.PLACES.sort((a, b) => a[2] - b[2]);
 };
 })();
 
@@ -11911,7 +12030,7 @@ function create(env) {
 }
 
 SG.faunaModels = { kit, quad, bird, frog, lizard, crab, turtle, penguin, seal, monkey, fish, dolphin };
-SG.fauna = { SPEC, LAND, create, model: { quad, bird, lizard, DEER, FOX } };
+SG.fauna = { SPEC, LAND, create, model: { quad, bird, lizard, DEER, FOX, HORSE } };
 })();
 
 // ===================== PIXEL SAGA · la musica =====================
@@ -13074,7 +13193,7 @@ function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY));
 function writeSave() {
   if (!save || !hero) return;
   if (D) { save.x = D.outX; save.z = D.outZ; save.yaw = D.outYaw; dsave(D.id).seen = b64(D.seen); } else { save.x = hero.x; save.z = hero.z; save.yaw = hero.yaw; }
-  save.hp = hero.hp; save.time = Math.round(save.time);
+  save.hp = hero.hp; save.time = Math.round(save.time); if (save.cav && cav) { save.cav.x = Math.round(cav.x); save.cav.z = Math.round(cav.z); }
   save.seen = b64(seen.subarray(MGN * MG)); save.seenN = b64(seen.subarray(0, MGN * MG));
   try { localStorage.setItem(SAVEKEY, JSON.stringify(save)); } catch (e) {}
 }
@@ -13276,6 +13395,10 @@ function* buildCharacters() {
   for (const id in NPC) { const N = NPC[id]; if (!N.as) continue; if (!made[N.as]) made[N.as] = POSE_NPC.slice(0, N.walk ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); CHR[id] = made[N.as]; }
   yield 0.2;
   for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
+  if (MODO) {   // il cavallo: sellato (baio) e, nei recinti, due senza sella; e lo spazio per l'eroe in sella
+    const hs = hsEroe(), sw = Math.round(SELLA_W * hs / 48), sh = Math.round(SELLA_H * hs / 48); sellaRects = CAV_POSE.map(() => { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(sw, sh))); return row; }); sellaVecchia = true; sellaK = 0;
+    CHR.cavallo = [CAV_POSE.map(p => dirs(() => cavParti(p, 0, true), 52, 50, { base: 41 })), [dirs(() => cavParti({}, 1, false), 52, 50, { base: 41 })], [dirs(() => cavParti({}, 2, false), 52, 50, { base: 41 })]];
+  }
   CHR.biscotto = [{}, { leg: 0.5 }].map(p => dirs(() => A.beast({ c: '#f0a050', c2: '#ffe0b0', eye: '#4ade80', s: 0.45, tailUp: 1.3 }, p), 26, 20));
   CHR.slime = [0, 1].map(f => dirs(() => A.slime({ c: '#5ad070' }, f), 34, 26));
   CHR.wolf = [{}, { leg: 0.5 }, { leg: -0.5 }, { lunge: 2.6, leg: 0.4 }].map(p => dirs(() => A.beast({ c: '#7a7a86', c2: '#b8b8c4' }, p), 44, 32));
@@ -13313,7 +13436,7 @@ function* buildCharacters() {
   yield 1;
 }
 function drawHeroSprites() {
-  const L = heroLook(), P = CC().poses, hs = hsEroe();
+  const L = heroLook(), P = CC().poses, hs = hsEroe(); sellaVecchia = true; sellaK = 0;
   for (let p = 0; p < nPose(); p++) for (let d = 0; d < 8; d++) {
     const pose = MODO ? Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p], bob: p === 11 ? 0.35 : 0 }) : P[p];
     const c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, MODO ? { sc: SR * hs / HS, ricco: 1 } : { sc: SR }), r = heroRects[p][d];
@@ -13419,7 +13542,8 @@ function setupWorld() {
     if (j.pts) j.pts.forEach((q, i) => { const [X, Z] = fixSpot(q[0], q[1], 3); picks.push({ job: id, i, x: X, z: Z, what: j.what }); }); }
   for (const p of props) if (p.k === 'torch' || p.k === 'campfire') W.glows.push([p.x, gH(p.x, p.z) + (p.k === 'torch' ? 8 : 1.6), p.z, 6, 1, 0.7, 0.36, 1]);
   doors = W.lights.filter(l => l.id);
-  SG.shop.registra(); botteghe = Object.values(W.SHOPS).filter(b => b.x !== undefined);      // le botteghe con la loro soglia
+  SG.shop.registra(true); botteghe = Object.values(W.SHOPS).filter(b => b.x !== undefined);      // le botteghe con la loro soglia
+  vitaPrepara();                                                                               // la vita dei paesi (solo nel Grande Viaggio): vuole le botteghe già al loro posto
   for (let j = 0; j < MGZ; j++) for (let i = 0; i < MG; i++) LAND[j * MG + i] = gH(i * 64 + 32, (j - MGN) * 64 + 32) > 0 ? 1 : 0;
   // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
   GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
@@ -13431,7 +13555,7 @@ function scegliModo(m) {
   location.reload(); return false;
 }
 function startGame(fresh) {
-  D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0; incVia(); incT = 45;
+  D = null; boss = null; shots = []; hazards = []; fade = null; quake = 0; incVia(); incT = 45; cav = null;
   if (fresh) { save = newSave(); seen.fill(0); try { localStorage.removeItem(SAVEKEY); } catch (e) {} }
   if (MODO) {   // nel Grande Viaggio non c'è ancora chi regala la prima spada: si parte con spada e scudo di legno
     const dai = (slot, id) => { if (!save.eq[slot]) { save.eq[slot] = id; if (!save.inv.includes(id)) save.inv.push(id); } };
@@ -13616,6 +13740,7 @@ const npcHidden = n => !!n.via || (n.id === 're' && (!save || save.q.main < 4));
 function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; camBehind(); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
+  if (MODO && (f.vita || f.cliente || n.dice)) return say(id, [vitaDice(n)]);
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
   // il maestro della gilda: cambia la classe e insegna le abilità
   if (f.role === 'guild') return ask(id, [f.lines[0], 'SE CAMBI, LE ARMI CHE HAI PRENDONO LA FORMA DELLA NUOVA CLASSE. E POSSO INSEGNARTI ABILITÀ CHE ANCORA NON CONOSCI.'], ['CAMBIA CLASSE' + (gildaCost() ? ' (' + gildaCost() + ' MONETE)' : ' (GRATIS)'), "IMPARA UN'ABILITÀ", 'NIENTE, GRAZIE'], i => { if (i === 0) openClass('gilda'); else if (i === 1) { shop = { sk: true, sel: 0 }; tone(660, 0.05); } });
@@ -13625,6 +13750,7 @@ function talkFolk(n, N) {
   if (f.role === 'sala') return salaMenu(id);
   if (f.role === 'incontro') return incParla(n, f);
   if (f.role === 'scambio') return scambia(n, f);
+  if (f.role === 'scuderia') return scuderia(n, f);
   if (f.role === 'ferry') { const here = f.dock, to = Object.keys(W.DOCKS).filter(k => k !== here), cost = 25;
     return ask(id, ['IL TRAGHETTO È PRONTO A SALPARE. OGNI TRATTA COSTA ' + cost + ' MONETE. DOVE TI PORTO?'], to.map(k => W.DOCKS[k].n).concat(['RESTO A TERRA']), i => {
       if (i >= to.length) return; if (save.coins < cost) return say(id, ['SENZA MONETE NON SI SALPA, AMICO.']);
@@ -13753,6 +13879,7 @@ const SHOPS = {
   orafo: { title: "L'OREFICERIA DELLA ROCCA", list: [['talismano', 90], ['trifoglio', 160], ['anello2', 260], ['anelloForza', 420]] },
   erbe: { title: "L'ERBORISTERIA DELLA ROCCA", list: [['pozione', 20], ['elisir', 100]] },
   rocca_armi: { title: "L'ARMERIA DEL RE", list: [['elmoFerro', 150], ['scudoFerro', 160], ['mazza', 190], ['cotta', 230], ['argento', 250]] },
+  rocca_sarta: { title: 'LA SARTORIA DELLA ROCCA', list: [['cappuccio', 40], ['giaco', 60], ['seta', 180], ['mantello', 380]] },
   ambra: { title: 'LA SARTORIA DELLA MERCIAIA', list: [['cappuccio', 40], ['seta', 180], ['mantello', 380]] },
   ambra_armi: { title: "L'ARMERIA DI CASTELROSSO", list: [['lancia', 120], ['mazza', 190], ['cotta', 230], ['torre', 270]] },
   ambra_erbe: { title: "L'ERBORISTERIA DELLE FOGLIE", list: [['pozione', 22], ['elisir', 110]] },
@@ -13941,7 +14068,7 @@ function nuovoTick(dt) {
   if (BTN.b && !busy) h.bHold += dt; else { if (h.bHold > 0 && h.bHold < 0.2 && !busy) schiva(); h.bHold = 0; }
 }
 function schiva() {
-  const h = hero; if (h.dash || h.fall > 0 || inCasa() || h.dead) return;
+  const h = hero; if (h.dash || h.fall > 0 || inCasa() || h.dead || h.sella) return;
   if (h.fi < 0.3) { h.fiFl = 0.5; tone(160, 0.08, 'square', 0.03); return; }
   // nella direzione della leva; senza leva, un passo indietro
   let a = h.yaw + Math.PI;
@@ -14018,6 +14145,242 @@ function mestiere(e, T, dt, d, dx, dz) {
     return true;
   }
   return false;
+}
+// ---------- il Grande Viaggio: la vita dei paesi ----------
+// I passanti (W.FOLK con «vita») non stanno fermi: scelgono una meta nel loro paese (la piazza, la fontana, una bancarella, una vetrina, un tavolo
+// all'aperto, la porta di una bottega o della locanda, qualcuno con cui fare due chiacchiere), ci vanno per le strade, si fermano un po' e ripartono.
+// Chi entra in una bottega sparisce dalla strada e, se l'eroe entra anche lui, lo trova dentro. La sera tornano a casa; qualcuno fa tardi alla locanda.
+// Per ogni paese c'è una griglia di passi liberi (VC passi per lato) su cui si cerca la strada più corta, meglio se lastricata.
+const VC = 4;
+let vita = {};
+const vitaDorme = T => { const t = save.tod || 0; return T.letto < 24 ? t >= T.letto || t < T.sveglia : t >= T.letto - 24 && t < T.sveglia; };
+const vHash = (s, k) => { let h = 2166136261 ^ k; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h ^ (h >>> 13)) >>> 0; };
+function vitaPrepara() {
+  vita = {}; W.ospiti = null; if (!MODO || !W.VITA) return;
+  const VT = W.VITA;
+  for (const b of W.BUILD) { if (b.k !== 'city' || !b.plan || !VT.paesi[b.plan.o.id]) continue;
+    const pl = b.plan, o = pl.o, id = o.id, big = !o.small, rx = big ? Math.min((pl.x1 - pl.x0) / 2 + 16, 236) : (pl.x1 - pl.x0) / 2 + 16, rz = big ? Math.min((pl.z1 - pl.z0) / 2 + 16, 204) : (pl.z1 - pl.z0) / 2 + 16;
+    const cx = big ? pl.px : (pl.x0 + pl.x1) / 2, cz = big ? pl.pz : (pl.z0 + pl.z1) / 2, x0 = cx - rx, z0 = cz - rz, nw = Math.ceil(rx * 2 / VC) + 1, nh = Math.ceil(rz * 2 / VC) + 1, ok = new Uint8Array(nw * nh);
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const x = x0 + i * VC, z = z0 + j * VC; if (W.blocked(x, z, 1.9) || gH(x, z) < W.wlAt(x, z) - 0.6) continue; ok[j * nw + i] = W.roadAt(x, z) > 0.3 ? 2 : 1; }
+    const V = vita[id] = { id, nome: o.name, x0, z0, nw, nh, ok, gc: new Float32Array(nw * nh), da: new Int32Array(nw * nh), giro: new Uint32Array(nw * nh), n: 0, mete: [], case: [], gente: [], cx, cz, px: pl.px, pz: pl.pz };
+    // una meta va su un passo libero: se non lo è si prende il più vicino (entro tre passi), altrimenti niente
+    const meta = (x, z, k, a, extra) => { const c = vitaCella(V, x, z, 3); if (c < 0) return null; const m = Object.assign({ x: V.x0 + (c % nw) * VC, z: V.z0 + Math.floor(c / nw) * VC, k, a, chi: null }, extra); (k === 'casa' ? V.case : V.mete).push(m); return m; };
+    const pw = pl.pl.w, pd = pl.pl.d, fontana = o.center !== 'none';
+    for (let k = 0; k < (big ? 12 : 6); k++) { const a = k * 2.399 + 0.7, r = 0.62 + 0.38 * ((k * 0.618) % 1), x = pl.px + Math.cos(a) * (pw / 2 - 4) * r, z = pl.pz + Math.sin(a) * (pd / 2 - 4) * r; if (Math.hypot(x - pl.px, z - pl.pz) > (fontana ? 13.5 : 4)) meta(x, z, 'piazza', a + 2.6); }
+    if (fontana) for (const a of [0.8, 2.9, 4.6]) meta(pl.px + Math.cos(a) * 13.5, pl.pz + Math.sin(a) * 13.5, 'fontana', a + Math.PI);
+    for (const [x, z] of VT.bancarelle[id] || []) for (const dx of [-3.5, 3.5]) meta(x + dx, z, 'bancarella', -Math.PI / 2);
+    for (const [x, z] of VT.tavoli[id] || []) { meta(x, z - 5.6, 'tavolo', Math.PI / 2); meta(x + 6.4, z + 3.4, 'tavolo', Math.PI + 0.5); }
+    for (const s of botteghe) if (s.city === o.name) { const a = Math.atan2(s.z - s.oz, s.x - s.ox), px = -Math.sin(a), pz = Math.cos(a);
+      meta(s.ox, s.oz, 'entra', a, { key: s.key, kind: s.kind }); for (const sg of [-1, 1]) meta(s.x - Math.cos(a) * 4 + px * 7.5 * sg, s.z - Math.sin(a) * 4 + pz * 7.5 * sg, 'vetrina', a, { kind: s.kind }); }
+    for (const h of pl.houses) { if (Math.abs(h.x - cx) > rx - 14 || Math.abs(h.z - cz) > rz - 14) continue; const v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[h.door]; if (v) meta(h.x + v[0] * (h.w / 2 + 3.4), h.z + v[1] * (h.d / 2 + 3.4), 'casa', Math.atan2(-v[1], -v[0])); }
+    for (const g of pl.gates || []) { const v = { n: [0, 1], s: [0, -1], w: [1, 0], e: [-1, 0] }[g.side]; meta(g.x + v[0] * 16 + v[1] * 6, g.z + v[1] * 16 + v[0] * 6, 'porta', Math.atan2(-v[1], -v[0])); }
+    for (const n of npcs) { const f = NPC[n.id] && NPC[n.id].f; if (!f || f.vita || f.walk || n.inc || Math.abs(n.x - cx) > rx - 8 || Math.abs(n.z - cz) > rz - 8) continue; meta(n.x + Math.cos(n.base) * 5.6, n.z + Math.sin(n.base) * 5.6, 'chiacchiera', n.base + Math.PI, { con: n }); }
+  }
+  for (const id in vita) { const V = vita[id], pl = V.pl, arriva = m => !!vitaStrada(V, V.px, V.pz, m.x, m.z); const c0 = vitaCella(V, V.px + 14, V.pz + 3, 6); if (c0 >= 0) { V.px = V.x0 + (c0 % V.nw) * VC; V.pz = V.z0 + Math.floor(c0 / V.nw) * VC; }
+    V.mete = V.mete.filter(arriva); const buone = []; for (let k = 0; k < V.case.length && buone.length < 40; k++) { const m = V.case[(k * 7 + 3) % V.case.length]; if (!buone.includes(m) && arriva(m)) buone.push(m); } V.case = buone; }
+  for (const n of npcs) { const f = NPC[n.id] && NPC[n.id].f, V = f && f.vita && vita[f.vita]; if (!V || !V.mete.length) continue;
+    const h = (vHash(n.id, 7) % 1000) / 1000, bimbo = f.look === 'bimbo';
+    n.vt = { V, st: 'sta', t: h * 6, m: null, via: null, i: 0, ult: -99, fermo: 0, sal: -h * 9, vel: bimbo ? 10.5 : f.look === 'dama' ? 6.2 : 7 + h * 1.6, bimbo, nott: !!f.nott && !bimbo, letto: bimbo ? 19.4 + h * 0.8 : f.nott ? 24.4 + h * 1.4 : 20.8 + h * 2, sveglia: bimbo ? 7.2 + h : 6 + h * 1.4, casa: V.case.length ? V.case[vHash(n.id, 3) % V.case.length] : null, uscito: null, uscitoT: 0 };
+    V.gente.push(n); }
+  // chi si trova dentro una bottega quando l'eroe entra: i passanti che ci sono entrati, più qualche cliente di passaggio (quanti, lo dice l'ora)
+  W.ospiti = (shop, posti) => {
+    const out = [], kind = shop.kind, det = VT.detti.dentro[kind] || VT.detti.giro, liberi = posti.slice(), pref = kind === 'locanda' ? 'ospite' : 'cliente';
+    const prendi = () => { let i = liberi.findIndex(p => p.startsWith(pref)); if (i < 0 && kind === 'locanda') i = liberi.indexOf('bancone'); return i < 0 ? null : liberi.splice(i, 1)[0]; };
+    for (const n of npcs) if (n.vt && n.vt.st === 'dentro' && n.vt.m && n.vt.m.key === shop.key) { const sp = prendi(); if (sp) out.push({ id: n.id, spot: sp, dice: det }); }
+    const lista = (VT.clienti[kind] || []).slice(), h = vHash(shop.key, Math.floor(save.time / 150)), tod = save.tod || 0, sera = tod >= 17 || tod < 1, notte = tod >= 1 && tod < 6;
+    let quanti = kind === 'locanda' ? (notte ? h % 2 : sera ? 3 + h % 2 : 1 + h % 2) : (notte || tod >= 21 ? 0 : (h % 4 === 0 ? 0 : 1 + (h >> 4) % 2));
+    for (let k = 0; k < quanti && lista.length; k++) { const id = lista.splice((h >> (k * 3 + 6)) % lista.length, 1)[0], sp = prendi(); if (!sp) break; out.push({ id, spot: sp }); }
+    return out;
+  };
+}
+// il passo libero più vicino a un punto (entro r passi), o -1
+function vitaCella(V, x, z, r = 2) {
+  const i0 = Math.round((x - V.x0) / VC), j0 = Math.round((z - V.z0) / VC); let best = -1, bd = 1e9;
+  for (let j = j0 - r; j <= j0 + r; j++) for (let i = i0 - r; i <= i0 + r; i++) { if (i < 0 || j < 0 || i >= V.nw || j >= V.nh || !V.ok[j * V.nw + i]) continue; const d = (i - i0) ** 2 + (j - j0) ** 2; if (d < bd) { bd = d; best = j * V.nw + i; } }
+  return best;
+}
+// la strada da un punto all'altro: i passi dove si cambia direzione, fino alla meta (o niente, se non c'è modo)
+const V_H = [];
+function vitaStrada(V, ax, az, bx, bz) {
+  const { nw, nh, ok, gc, da, giro } = V, s = vitaCella(V, ax, az, 4), g = vitaCella(V, bx, bz, 3); if (s < 0 || g < 0) return null; if (s === g) return [[bx, bz]];
+  const gen = ++V.n, gi = g % nw, gj = Math.floor(g / nw), eu = k => { const dx = Math.abs(k % nw - gi), dz = Math.abs(Math.floor(k / nw) - gj); return Math.max(dx, dz) + 0.414 * Math.min(dx, dz); };
+  const H = V_H; H.length = 0; const push = (k, f) => { let i = H.length; H.push([f, k]); while (i > 0) { const p = (i - 1) >> 1; if (H[p][0] <= H[i][0]) break; const t = H[p]; H[p] = H[i]; H[i] = t; i = p; } };
+  const pop = () => { const top = H[0], last = H.pop(); if (H.length) { H[0] = last; let i = 0; for (;;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < H.length && H[l][0] < H[m][0]) m = l; if (r < H.length && H[r][0] < H[m][0]) m = r; if (m === i) break; const t = H[m]; H[m] = H[i]; H[i] = t; i = m; } } return top; };
+  giro[s] = gen; gc[s] = 0; da[s] = -1; push(s, eu(s)); let giri = 0, trovata = false;
+  while (H.length && giri++ < 9000) { const [f, k] = pop(); if (k === g) { trovata = true; break; } if (f > gc[k] + eu(k) + 0.01) continue; const ki = k % nw, kj = Math.floor(k / nw);
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { if (!di && !dj) continue; const i = ki + di, j = kj + dj; if (i < 0 || j < 0 || i >= nw || j >= nh) continue; const q = j * nw + i; if (!ok[q]) continue;
+      if (di && dj && (!ok[kj * nw + i] || !ok[j * nw + ki])) continue;
+      const c = gc[k] + (di && dj ? 1.414 : 1) * (ok[q] === 2 ? 1 : 2.4); if (giro[q] === gen && gc[q] <= c) continue; giro[q] = gen; gc[q] = c; da[q] = k; push(q, c + eu(q)); } }
+  if (!trovata) return null;
+  const celle = []; for (let k = g; k >= 0; k = da[k]) celle.push(k); celle.reverse();
+  const out = []; for (let i = 1; i < celle.length - 1; i++) { const a = celle[i - 1], b = celle[i], c = celle[i + 1]; if (b - a !== c - b) out.push([V.x0 + (b % nw) * VC, V.z0 + Math.floor(b / nw) * VC]); }
+  out.push([bx, bz]); return out;
+}
+// sceglie la prossima meta: di giorno un po' di tutto; verso sera più tavoli e locanda; i bambini solo piazza, fontana e chiacchiere
+function vitaMeta(n) {
+  const T = n.vt, V = T.V, nt = day.night, tod = save.tod || 0, sera = tod >= 17.5 || tod < 4; let tot = 0; const P = [];
+  for (const m of V.mete) { if (m.chi && m.chi !== n || m === T.m) continue; if (m.con && (m.con.via || m.con.moving)) continue;
+    let w = { piazza: 3, fontana: 1.2, bancarella: 3, tavolo: 2, vetrina: 1.6, entra: 1.6, chiacchiera: 2.2, porta: 0.4 }[m.k] || 1;
+    if (T.bimbo) w = m.k === 'piazza' ? 4 : m.k === 'fontana' ? 2 : m.k === 'chiacchiera' ? 1 : 0;
+    else if (sera) w *= m.k === 'tavolo' ? 3 : m.k === 'entra' ? (m.kind === 'locanda' ? 4 : 0.3) : m.k === 'bancarella' ? 0.3 : 1;
+    if (nt > 0.6 && (m.k === 'bancarella' || m.k === 'vetrina' || (m.k === 'entra' && m.kind !== 'locanda'))) w = 0;
+    if (w > 0) { tot += w; P.push([w, m]); } }
+  if (!T.bimbo && T.casa && !sera) { tot += 0.7; P.push([0.7, T.casa]); }
+  let r = Math.random() * tot; for (const [w, m] of P) { r -= w; if (r <= 0) return m; } return P.length ? P[P.length - 1][1] : null;
+}
+function vitaVa(n, m) {
+  const T = n.vt; if (T.m && T.m.chi === n) T.m.chi = null; const via = m && vitaStrada(T.V, n.x, n.z, m.x, m.z);
+  if (!via) { T.m = null; T.st = 'sta'; T.t = 2 + Math.random() * 3; return false; }
+  T.m = m; if (m.k !== 'casa') m.chi = n; T.via = via; T.i = 0; T.st = 'va'; T.fermo = 0; return true;
+}
+// dopo una pausa lunga (l'eroe era lontano) ognuno è dove dovrebbe essere a quell'ora: a letto, o a una meta qualsiasi
+function vitaSalta(n, d) {
+  const T = n.vt, dorme = vitaDorme(T); if (d < 170 && T.ult > 0) return;
+  if (T.m && T.m.chi === n) T.m.chi = null;
+  if (dorme) { n.via = true; T.st = 'casa'; T.m = T.casa; if (T.casa) { n.x = T.casa.x; n.z = T.casa.z; } return; }
+  const m = vitaMeta(n); if (!m || m.k === 'entra' || m.k === 'casa') { n.via = false; T.st = 'sta'; T.t = 1; T.m = null; return; }
+  n.via = false; n.x = m.x; n.z = m.z; n.yaw = m.a; T.m = m; m.chi = n; T.st = 'sta'; T.t = 3 + Math.random() * 8; n.moving = false;
+}
+function vitaPasso(n, dt, d) {
+  const T = n.vt, nt = day.night;
+  if (d > 470) return;
+  if (time - T.ult > 3) vitaSalta(n, d); T.ult = time;
+  if (T.st === 'casa') { n.via = true; n.moving = false;                               // a letto (o in casa per un momento, di giorno)
+    if (T.notte ? !vitaDorme(T) : (T.t -= dt) <= 0) { if (vitaDorme(T)) { T.notte = true; return; } n.via = false; T.notte = false; T.st = 'sta'; T.t = 0.5 + Math.random() * 2; if (T.casa) { n.x = T.casa.x; n.z = T.casa.z; n.yaw = T.casa.a + Math.PI; } } return; }
+  if (T.st === 'dentro') { n.via = true; n.moving = false; if ((T.t -= dt) <= 0 && !(D && D.def.casa)) { n.via = false; T.st = 'sta'; T.t = 1 + Math.random() * 2; n.yaw = T.m ? T.m.a + Math.PI : n.yaw; T.uscito = T.m && T.m.kind; T.uscitoT = time + 45; } return; }
+  // chi gli parla (o gli sta proprio davanti) lo ferma
+  T.sal -= dt; if (d < 6.5 && T.sal < -9 && T.st === 'va') T.sal = 1.6;                 // (un saluto ogni tanto, non a ogni passo)
+  if ((dialog && dialog.id === n.id) || (T.sal > 0 && d < 9)) { n.yaw += angDiff(Math.atan2(hero.z - n.z, hero.x - n.x), n.yaw) * Math.min(1, 6 * dt); n.moving = false; return; }
+  // l'ora di rientrare
+  if (vitaDorme(T) && !(T.st === 'va' && T.m === T.casa)) { if (!T.casa || !vitaVa(n, T.casa)) { n.via = true; T.st = 'casa'; T.notte = true; } return; }
+  if (T.st === 'sta') {
+    n.moving = false; const m = T.m; if (m) n.yaw += angDiff(m.con ? Math.atan2(m.con.z - n.z, m.con.x - n.x) : m.a + Math.sin(time * 0.4 + n.x) * 0.25, n.yaw) * Math.min(1, 4 * dt);
+    if ((T.t -= dt) <= 0) vitaVa(n, vitaMeta(n));
+    return;
+  }
+  // in cammino
+  const p = T.via[T.i], dx = p[0] - n.x, dz = p[1] - n.z, dd = Math.hypot(dx, dz);
+  if (dd < 1.6) { if (++T.i >= T.via.length) {                                          // arrivato
+      const m = T.m; n.moving = false;
+      if (m.k === 'casa') { n.via = true; T.st = 'casa'; T.notte = vitaDorme(T); T.t = 14 + Math.random() * 30; }
+      else if (m.k === 'entra') { n.via = true; T.st = 'dentro'; T.t = 20 + Math.random() * 40; m.chi = null; }
+      else { T.st = 'sta'; T.t = (m.k === 'tavolo' ? 14 : m.k === 'chiacchiera' ? 9 : m.k === 'bancarella' ? 7 : 4) * (0.6 + Math.random()); } }
+    return; }
+  n.yaw += angDiff(Math.atan2(dz, dx), n.yaw) * Math.min(1, 8 * dt); const m = Math.min(dd, T.vel * dt), x0 = n.x, z0 = n.z;
+  n.moving = move(n, dx / dd * m, dz / dd * m, 1.4); n.walk += m;
+  if (Math.hypot(n.x - x0, n.z - z0) < m * 0.3) { if ((T.fermo += dt) > 1.4) { T.fermo = 0; if (!vitaVa(n, T.m)) { T.m = null; } } } else T.fermo = 0;
+}
+// quel che dice un passante: dipende da quel che sta facendo (o da dove è appena uscito)
+function vitaDice(n) {
+  const VT = W.VITA, N = NPC[n.id], f = N.f, T = n.vt, d = VT.detti, nt = day.night; let L;
+  if (n.dice) L = n.dice;
+  else if (!T) L = f.lines;
+  else if (hero.sella && Math.random() < 0.4) L = d.cavallo;
+  else if (T.bimbo) L = d.bimbo;
+  else if (T.uscito && time < T.uscitoT && d.esce[T.uscito]) L = d.esce[T.uscito];
+  else if (nt > 0.45) L = T.nott ? d.notte : (save.tod || 0) > 20 ? d.sera : ((T.st === 'sta' && T.m && d[T.m.k]) || d.giro);
+  else L = (T.st === 'sta' && T.m && d[T.m.k]) || d.giro;
+  n.li = ((n.li === undefined ? vHash(n.id, 1) % 7 : n.li) + 1) % L.length;
+  return L[n.li].replace('{citta}', T ? T.V.nome : (curPlace || 'QUESTO PAESE'));
+}
+// ---------- il Grande Viaggio: il cavallo ----------
+// Si affitta per un giorno o si compra alle scuderie (fuori dal Borgo, a levante; fuori dalla Rocca, davanti alla porta di ponente).
+// Accanto al cavallo, A: MONTA. In sella si va al trotto, e tenendo B al galoppo; A: SMONTA. Non si combatte, non si schiva e non si entra
+// in grotte, case e santuari: lì si smonta e il cavallo aspetta dov'è. Da lontano lo si chiama col fischio (il ferro di cavallo accanto al tasto C).
+let cav = null, sellaRects = [], sellaVecchia = true, sellaK = 0, chipH = null;
+const CAV_AFF = 20, CAV_PREZZO = 350, CAV_POSE = [{}, { hop: 0.85 }, { hop: -0.5 }], SELLA_W = 52, SELLA_H = 62, SELLA_B = 51, CAV_S = 1.8;   // (i cavalli da sella sono più grandi di quelli selvatici)
+const haCavallo = () => !!(MODO && save && save.cav);
+const inGrotta = (x, z) => { const q = W.grotta(x, z); return !!(q && q.f >= 2); };   // sotto la volta (non nello scavo a cielo aperto che ci porta)
+// le parti del cavallo (0 baio, 1 grigio, 2 morello), con o senza sella; «chi» è chi ci sta sopra (le parti di una figura umana)
+function cavParti(pc, manto, sella, chi) {
+  const H0 = SG.fauna.model.HORSE, o = Object.assign({}, H0, { s: CAV_S }, manto === 1 ? { c: '#d8d0c4', c2: '#d8d0c4', leg: '#a8a094', tail: ['horse', 7, '#f0ece0'], mane: ['#f0ece0', 1.25], sn: [2.3, '#b8b0a4', 0.5], ear: ['point', 1.5, '#d8d0c4'] } : manto === 2 ? { c: '#5a4030', c2: '#5a4030', leg: '#3a2a20', sn: [2.3, '#4a3428', 0.5], ear: ['point', 1.5, '#5a4030'] } : {});
+  const P = SG.fauna.model.quad(o, pc), s = o.s, hop = pc.hop || 0, bz = (o.ll + o.hgt * 0.72 + hop * 1.2) * s, top = bz + o.hgt * s, tilt = -hop * 0.12, br = tilt ? [['y', tilt, -o.len * 0.5 * s, 0, bz - o.hgt * 0.5 * s]] : [];
+  if (sella) P.push({ t: 'e', o: [-0.8, 0, top - 3.2], r: [6.2, o.wid * s + 0.4, 3.7], c: '#2a5ab0', rot: br }, { t: 'e', o: [-0.8, 0, top - 0.1], r: [4.2, 3.7, 1.4], c: '#6a3a1e', rot: br }, { t: 'e', o: [3.2, 0, top + 0.7], r: [1.0, 1.4, 1.1], c: '#8a5230', rot: br }, { t: 'e', o: [-5.0, 0, top + 0.5], r: [0.9, 2.8, 1.1], c: '#8a5230', rot: br });
+  if (chi) for (const p of chi) P.push(Object.assign({}, p, { rot: (p.rot || []).concat([['t', -0.8, 0, top - 8.6]], br) }));
+  return P;
+}
+// l'eroe in sella: tre figure (fermo, galoppo disteso, galoppo raccolto) per otto versi. Si ridisegnano quando cambia quel che indossa, poche per volta
+function sellaFigura(p, d) {
+  const L = Object.assign({}, heroLook(), { weapon: null, shield: null }), hs = hsEroe();
+  const pg = { sella: 1, armL: 0.95, armR: 0.95, bob: p === 2 ? 0.3 : 0, vento: p ? 1 : VENTO[0], onda: p === 1 ? 0.5 : p === 2 ? -0.4 : 0 };
+  return A.figure(cavParti(CAV_POSE[p], 0, true, A.human(L, pg)), d / 8 * TAU, sellaRects[p][d].w, sellaRects[p][d].h, { sc: SR * hs / HS, ricco: 1, base: Math.round(SELLA_B * hs / 48) });
+}
+function sellaDisegna(quante) {
+  while (sellaVecchia && quante-- > 0) { const p = Math.floor(sellaK / 8), d = sellaK % 8, r = sellaRects[p][d];
+    if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, sellaFigura(p, d)); }
+    if (++sellaK >= CAV_POSE.length * 8) { sellaK = 0; sellaVecchia = false; } }
+}
+function cavNasce(x, z, k, fine) { const p = fixSpot(x, z, 3); save.cav = { k, x: Math.round(p[0]), z: Math.round(p[1]), fine: k !== 'affitto' ? 0 : fine || save.time + DAYLEN }; cav = null; sellaVecchia = true; sellaK = 0; writeSave(); }
+function cavVia(perche) { if (hero && hero.sella) smonta(); if (cav) puffAt(cav.x, cav.z, 8); cav = null; save.cav = null; if (perche) toast(perche, '#ffd23f'); writeSave(); }
+function monta() {
+  const h = hero, c = cav; if (!c || h.sella || h.dead || D) return;
+  sellaDisegna(99); h.sella = true; h.x = c.x; h.z = c.z; h.y = gH(h.x, h.z); h.yaw = c.yaw; h.vx = h.vz = 0; h.atk = 0; h.chg = 0; h.aim = false; h.aDown = false; h.block = false; h.dash = null; c.st = 'fermo';
+  tone(196, 0.05, 'square', 0.035); tone(262, 0.08, 'square', 0.035, null, 0.06); vib(15);
+  if (!save.flags.sellaTip) { save.flags.sellaTip = 1; toasts.push({ t: 'IN SELLA: TIENI B PER IL GALOPPO. A: SMONTA', c: '#ffd23f', life: 9 }); }
+}
+function smonta() {
+  const h = hero, c = cav; if (!h.sella) return; h.sella = false;
+  if (c) { c.x = h.x; c.z = h.z; c.y = h.y; c.yaw = h.yaw; c.st = 'fermo'; c.moving = false; save.cav.x = Math.round(c.x); save.cav.z = Math.round(c.z);
+    for (const sg of [1, -1]) { const nx = h.x - Math.sin(h.yaw) * 5 * sg, nz = h.z + Math.cos(h.yaw) * 5 * sg; if (canStand(h, nx, nz, 1.6, 1.25)) { h.x = nx; h.z = nz; break; } } }
+  h.vx = h.vz = 0; tone(262, 0.05, 'square', 0.03); tone(196, 0.07, 'square', 0.03, null, 0.05);
+}
+// un posto libero vicino all'eroe, meglio se alle sue spalle (fuori dalla vista): lì compare il cavallo che arriva da lontano
+function cavAccanto(r0 = 46) {
+  const h = hero;
+  for (const r of [r0, r0 * 0.7, r0 * 1.4, 22]) for (const da of [0, 0.5, -0.5, 1, -1, 1.6, -1.6, 2.4, -2.4, Math.PI]) { const a = cam.yaw + Math.PI + da, x = h.x + Math.cos(a) * r, z = h.z + Math.sin(a) * r;
+    if (x < 20 || z < W.Z0 + 20 || x > W.WS - 20 || z > W.WS - 20 || W.blocked(x, z, 2.6) || inGrotta(x, z)) continue; const y = gH(x, z, 1e9); if (y < W.wlAt(x, z) - 1.2 || Math.abs(y - h.y) > r * 0.9) continue;
+    cav.x = x; cav.z = z; cav.y = y; cav.yaw = Math.atan2(h.z - z, h.x - x); cav.fermoT = 0; return true; }
+  return false;
+}
+function fischia() {
+  const h = hero; if (!haCavallo() || !cav || h.sella || D || h.dead || st !== 'play') return;
+  tone(1760, 0.09, 'sine', 0.05, 2350); tone(2350, 0.16, 'sine', 0.05, 1900, 0.1); vib(12);
+  if (inGrotta(h.x, h.z)) { toast('DA QUI SOTTO IL CAVALLO NON TI SENTE', '#a9d8ff'); return; }
+  const d = Math.hypot(cav.x - h.x, cav.z - h.z); if (d < 12) return;
+  if (d > 170 || inGrotta(cav.x, cav.z)) cavAccanto(70);
+  cav.st = 'viene'; cav.fermoT = 0;
+}
+function cavUpdate(dt) {
+  if (!haCavallo() || !hero) { cav = null; return; }
+  const h = hero, S = save.cav, c = cav || (cav = { x: S.x, z: S.z, y: gH(S.x, S.z, 1e9), yaw: 0.6, st: 'fermo', walk: 0, moving: false, fermoT: 0, passo: 0 });
+  if (sellaVecchia && !h.sella) sellaDisegna(2);
+  if (h.dead && h.sella) smonta();
+  if (S.k === 'affitto' && save.time > S.fine) { if (!h.sella) return cavVia('IL GIORNO È PASSATO: IL CAVALLO TORNA ALLA SCUDERIA'); if (!S.avviso) { S.avviso = 1; toast('IL GIORNO È PASSATO: QUANDO SMONTI, IL CAVALLO TORNA ALLA SCUDERIA', '#ffd23f'); } }
+  if (h.sella) {
+    c.x = h.x; c.z = h.z; c.y = h.y; c.yaw = h.yaw; c.moving = h.moving;
+    if (h.moving) { c.passo -= dt; if (c.passo <= 0) { const gal = !!BTN.b; c.passo = gal ? 0.3 : 0.42; if (!h.wade) { tone(gal ? 150 : 130, 0.035, 'square', 0.028, 70); tone(gal ? 135 : 120, 0.035, 'square', 0.022, 60, gal ? 0.09 : 0.14); } } }
+    return;
+  }
+  if (c.st === 'viene') {
+    const rx = -Math.sin(cam.yaw), rz = Math.cos(cam.yaw), sg = (c.x - h.x) * rx + (c.z - h.z) * rz < 0 ? -1 : 1, tx = h.x + rx * 7.5 * sg, tz = h.z + rz * 7.5 * sg;   // la meta: di fianco all'eroe, dal lato da cui arriva
+    const dx = tx - c.x, dz = tz - c.z, d = Math.hypot(h.x - c.x, h.z - c.z), dm = Math.hypot(dx, dz);
+    if (dm < 2.6 || (d < 11 && c.fermoT > 0.25)) { c.st = 'fermo'; c.moving = false; S.x = Math.round(c.x); S.z = Math.round(c.z); tone(110, 0.12, 'sawtooth', 0.03, 180); }
+    else { c.yaw += angDiff(Math.atan2(dz, dx), c.yaw) * Math.min(1, 7 * dt); const m = Math.min(66, 24 + d * 0.8) * dt, ok = move(c, Math.cos(c.yaw) * m, Math.sin(c.yaw) * m, 2.2);
+      c.moving = ok; c.walk += m; c.fermoT = ok ? Math.max(0, c.fermoT - dt) : c.fermoT + dt; c.y += (gH(c.x, c.z, c.y) - c.y) * Math.min(1, 18 * dt);
+      c.passo -= dt; if (ok && c.passo <= 0 && d < 140) { c.passo = 0.3; tone(150, 0.035, 'square', 0.02 * Math.max(0.2, 1 - d / 140), 70); }
+      if (c.fermoT > 0.7 || d > 260) { if (!cavAccanto(d > 60 ? 46 : 20)) { c.st = 'fermo'; c.moving = false; } } }
+  } else { c.moving = false; c.y = gH(c.x, c.z, 1e9); }
+}
+function cavDisegna() {
+  if (!CHR.cavallo) return; const sc = 0.2 / SR;
+  for (const q of W.CAVALLI || []) if (near(q[0], q[1], 420)) pushBB(q[0], gH(q[0], q[1]) - 2.04, q[1], CHR.cavallo[q[3]][0][dirOf(q[0], q[1], q[2] + Math.sin(time * 0.23 + q[0]) * 0.5)], sc);
+  if (cav && !hero.sella && near(cav.x, cav.z, 520)) pushBB(cav.x, cav.y - 2.04, cav.z, CHR.cavallo[0][cav.moving ? 1 + (Math.floor(cav.walk / 9) % 2) : 0][dirOf(cav.x, cav.z, cav.yaw)], sc);
+}
+function cavOmbre() { for (const q of W.CAVALLI || []) if (near(q[0], q[1], 280)) pushShadow(q[0], q[1], 4); if (cav && near(cav.x, cav.z, 280)) pushShadow(cav.x, cav.z, 4.2, hero.sella ? hero.y : cav.y); }
+// lo stalliere: affitta per un giorno, vende, riporta qui il cavallo di chi l'ha lasciato lontano
+function scuderia(n, f) {
+  const id = n.id, S = save.cav, qui = () => cavNasce(f.posto[0], f.posto[1], S.k, S.fine);
+  const paga = (c, poi) => { if (save.coins < c) return say(id, ['SERVONO ' + c + ' MONETE. I CAVALLI MANGIANO, SAI.']); save.coins -= c; poi(); seq([523, 659, 784], 0.07, 0.07); };
+  if (!S) return ask(id, [f.lines[0], 'UN CAVALLO PER UN GIORNO FA ' + CAV_AFF + ' MONETE: DOMANI A QUEST\'ORA TORNA DA SOLO. SE LO VUOI TUO PER SEMPRE, ' + CAV_PREZZO + '.'], ['AFFITTA PER UN GIORNO (' + CAV_AFF + ' MONETE)', 'COMPRA UN CAVALLO (' + CAV_PREZZO + ' MONETE)', 'NIENTE, GRAZIE'], i => {
+    if (i === 0) paga(CAV_AFF, () => { cavNasce(f.posto[0], f.posto[1], 'affitto'); say(id, ['ECCOLO, SELLATO. VAGLI ACCANTO E MONTA. SE LO LASCI LONTANO, FISCHIA: TI RAGGIUNGE.']); });
+    else if (i === 1) paga(CAV_PREZZO, () => { cavNasce(f.posto[0], f.posto[1], 'mio'); jingle(); say(id, ['È TUO. TRATTALO BENE: TI PORTERÀ IN CAPO AL MONDO.', 'SE LO LASCI LONTANO, FISCHIA: TI RAGGIUNGE OVUNQUE, TRANNE SOTTO TERRA.']); }); });
+  if (S.k === 'affitto') { const ore = Math.max(0, Math.round((S.fine - save.time) / DAYLEN * 24));
+    return ask(id, ['IL CAVALLO È TUO ANCORA PER ' + (ore > 1 ? ore + ' ORE' : "UN'ORA SCARSA") + '.'], ['UN ALTRO GIORNO (' + CAV_AFF + ' MONETE)', 'LO COMPRO (' + (CAV_PREZZO - CAV_AFF) + ' MONETE)', 'PORTAMELO QUI', 'TE LO RENDO', 'NIENTE, GRAZIE'], i => {
+      if (i === 0) paga(CAV_AFF, () => { S.fine = Math.max(S.fine, save.time) + DAYLEN; S.avviso = 0; writeSave(); say(id, ['UN ALTRO GIORNO. BUONA STRADA!']); });
+      else if (i === 1) paga(CAV_PREZZO - CAV_AFF, () => { S.k = 'mio'; S.fine = 0; jingle(); writeSave(); say(id, ['AFFARE FATTO: DA OGGI È TUO.']); });
+      else if (i === 2) { if (hero.sella) smonta(); qui(); say(id, ['UN FISCHIO DEI MIEI, ED ECCOLO QUI.']); }
+      else if (i === 3) cavVia('HAI RESO IL CAVALLO'); }); }
+  return ask(id, ['COME STA IL TUO CAVALLO? HA L\'OCCHIO VISPO: SI VEDE CHE LO TRATTI BENE.'], ['PORTAMELO QUI', 'NIENTE, GRAZIE'], i => { if (i === 0) { if (hero.sella) smonta(); qui(); say(id, ['UN FISCHIO DEI MIEI, ED ECCOLO QUI.']); } });
 }
 // ---------- il Grande Viaggio: la luce ricca (prova) ----------
 // Finito il disegno 3D, l'immagine si copia in una tessitura; se ne prende il chiaro (fuochi, finestre, neve al sole, lampi), lo si sfoca
@@ -14200,7 +14563,7 @@ function incParla(n, f) {
 // Restano guardie, sentinelle, frati, elfi, nani e chi sta in una grotta. Nessuno sparisce sotto gli occhi dell'eroe.
 const SVEGLI = ['guardia', 'lanciere', 'spadaccino', 'montanaro', 'capitano', 'vecchia', 'monaco', 'cacciatore', 'nano', 'nano2', 'nano3', 'nana', 'elfo', 'elfa', 'elfoarciere', 'elfosaggio', 'maestro'];
 function abitudini() {
-  for (const n of npcs) { const N = NPC[n.id], f = N && N.f; n.via = false; n.diurno = false; if (!MODO || !f || f.role || f.sveglio || SVEGLI.includes(f.look)) continue;
+  for (const n of npcs) { const N = NPC[n.id], f = N && N.f; n.via = false; n.diurno = false; if (!MODO || !f || f.role || f.sveglio || f.vita || SVEGLI.includes(f.look)) continue;
     const q = W.grotta(n.x, n.z); if (q && q.f) continue;
     const h = Math.abs(Math.sin(n.x * 12.9898 + n.z * 78.233) * 43758.5453) % 1; n.diurno = true; n.sonno = f.look === 'bimbo' ? 0.34 + h * 0.1 : 0.5 + h * 0.3; }
 }
@@ -14287,6 +14650,7 @@ function heroUpdate(dt) {
   let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
+  if (h.sella) sp = (BTN.b && f > 0 ? 64 : 35) * (h.wade ? 0.6 : 1);   // in sella: trotto, e con B galoppo
   const dx = Math.cos(mdir) * f * sp * dt, dz = Math.sin(mdir) * f * sp * dt;
   if (h.dash) dashStep(dt);
   else if (D && cell === DT.ICE) {
@@ -14296,7 +14660,8 @@ function heroUpdate(dt) {
     if (f > 0) heroPush(dt, mdir);
   } else if (f !== 0) {
     h.vx = dx / dt; h.vz = dz / dt;
-    if (move(h, dx, dz, 1.6)) { h.moving = true; h.walk += Math.hypot(dx, dz); if (!(D && f > 0 && D.blocks.length && heroPush(dt, mdir, 6.9))) h.pushT = 0; }
+    if (h.sella && inGrotta(h.x + dx * 6, h.z + dz * 6)) { if (time > (h.hintT || 0)) { h.hintT = time + 4; toast('IL CAVALLO NON ENTRA SOTTO TERRA: SMONTA (A)', '#a9d8ff'); } }
+    else if (move(h, dx, dz, h.sella ? 2.3 : 1.6)) { h.moving = true; h.walk += Math.hypot(dx, dz); if (!(D && f > 0 && D.blocks.length && heroPush(dt, mdir, 6.9))) h.pushT = 0; }
     else if (D && f > 0 && !heroPush(dt, mdir)) {
       const ahead = dCellAt(h.x + Math.cos(h.yaw) * 4, h.z + Math.sin(h.yaw) * 4);
       if (ahead === DT.WATER && !canSwim() && time > (h.hintT || 0)) { h.hintT = time + 4; toast(swimItem() ? 'EQUIPAGGIA ' + swimItem().n + ' (START)' : "L'ACQUA È TROPPO PROFONDA", '#a9d8ff'); }
@@ -14417,7 +14782,7 @@ function aimRelease(full) {
 }
 // A: il colpo della classe (senz'arma si va a pugni, come sempre)
 function heroAttack() {
-  const h = hero; if (MODO && h.atk > 0 && h.hitDone && h.atk < 0.2) h.atk = 0;   // la catena: si riparte sul finire del colpo
+  const h = hero; if (h.sella) return; if (MODO && h.atk > 0 && h.hitDone && h.atk < 0.2) h.atk = 0;   // la catena: si riparte sul finire del colpo
   if (h.atk > 0 || inCasa() || h.dash || h.block || h.fall > 0) return;
   if (freeAim()) { h.aim = true; h.aDown = true; h.aHold = 0; h.aimT = 0; h.chg = 0.02; tone(180, 0.09, 'triangle', 0.02, 260); return; }
   const c = cls(), a = !eqIt('arma') || c === 'cavaliere' ? 'slash' : c === 'arciere' ? 'shot' : c === 'furfante' ? 'stab' : 'bolt';
@@ -14532,7 +14897,7 @@ const SKILL = {
   cura() { const h = hero; h.hp = Math.min(MAXHP(), h.hp + 4); for (let i = 0; i < 10; i++) fx.push({ k: 'glint', x: h.x + (Math.random() - 0.5) * 6, z: h.z + (Math.random() - 0.5) * 6, y: h.y + 1 + Math.random() * 7, vy: 7, t: 0.6, s: 0.3 }); seq([523, 659, 784], 0.07, 0.07); toast('+2 CUORI', '#9af0b0'); },
 };
 function heroSkill() {
-  const h = hero; if (!h || st !== 'play' || inCasa() || h.atk > 0 || h.dash || h.cdC > 0 || h.fall > 0) return;
+  const h = hero; if (!h || st !== 'play' || h.sella || inCasa() || h.atk > 0 || h.dash || h.cdC > 0 || h.fall > 0) return;
   const id = curSkill(), S = SKL[id]; if (id === 'parata') return;
   if (id === 'cura' && h.hp >= MAXHP()) { tone(200, 0.1, 'square', 0.03); return; }
   if (h.en < S.cost) { h.enFl = 0.5; tone(200, 0.1, 'square', 0.03); return; }
@@ -14746,6 +15111,7 @@ function npcsUpdate(dt) {
   for (const n of npcs) {
     n.t -= dt;
     const d = Math.hypot(hero.x - n.x, hero.z - n.z);
+    if (n.vt) { vitaPasso(n, dt, d); continue; }
     if (MODO) { sonno(n, d); if (n.via) continue; }
     if (d > 420 && n.id !== 'biscotto') continue;
     if (n.id === 'biscotto' && save.q.gatto >= 2) { n.x = n.hx = 2032; n.z = n.hz = 2662; }
@@ -14836,9 +15202,13 @@ function findTarget() {
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
   for (const b of botteghe) consider(b.x, b.z, 'shop', b, 10);
   for (const b of W.BOARDS) consider(b.x, b.z, 'board', b, 12);
+  if (MODO && cav) { if (hero.sella) { if (!best) best = { kind: 'smonta', obj: cav, x: hero.x, z: hero.z }; } else { consider(cav.x, cav.z, 'cavallo', cav, 11); if (!best && Math.hypot(cav.x - hero.x, cav.z - hero.z) < 10) best = { kind: 'cavallo', obj: cav, x: cav.x, z: cav.z }; } }   // (al cavallo vicino si monta anche senza guardarlo)
   return best;
 }
 function interact(t) {
+  if (t.kind === 'cavallo') { monta(); return; }
+  if (t.kind === 'smonta') { smonta(); return; }
+  if (hero.sella && t.kind !== 'npc') smonta();   // per aprire, entrare, raccogliere si scende di sella
   if (t.kind === 'npc') { talk(t.obj); tone(660, 0.04); return; }
   if (t.kind === 'chest') { openChest(t.obj); return; }
   if (t.kind === 'racc') { raccogli(t.obj); return; }
@@ -14879,7 +15249,7 @@ function playUpdate(dt) {
   if (D) dungeonUpdate(dt); else { campsUpdate(dt); fauna.update(dt, hero, hero.moving && !!BTN.b, day.night > 0.55); }
   for (const e of foes) foeUpdate(e, dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
-  if (!D) { npcsUpdate(dt); jobsUpdate(); incUpdate(dt); }
+  if (!D) { npcsUpdate(dt); jobsUpdate(); incUpdate(dt); if (MODO) cavUpdate(dt); }
   dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt); thingsUpdate(dt);
   if (!D && quake > 0) quake = Math.max(0, quake - dt * 1.6);
   if (!D) {
@@ -15721,6 +16091,7 @@ function drawHero(R) {
   if (h.inv > 0 && Math.floor(time * 16) % 2 && !h.dead && !h.dash) return;
   const spin = h.atk > 0 && h.act === 'spin' ? (1 - h.atk / h.atkT) * TAU * 1.5 : 0, hop = h.dash && h.dash.k === 'balzo' ? Math.sin(Math.max(0, h.dash.t) / 0.25 * Math.PI) * 2.6 : 0;
   if (MODO) { R *= HS / hsEroe(); lamaLuce(); }
+  if (h.sella && sellaRects.length) { const g = h.moving ? 1 + (Math.floor(h.walk / 9) % 2) : 0; pushBB(h.x, h.y - 2.44 + (g === 1 ? 0.5 : 0), h.z, sellaRects[g][dirOf(h.x, h.z, h.yaw)], R, 1, h.flash > 0 ? 0.7 : 0); return; }
   pushBB(h.x, h.y - 0.5 + hop, h.z, heroRects[heroAnim()][dirOf(h.x, h.z, h.yaw + spin)], R, 1, h.flash > 0 ? 0.7 : h.chg >= 1 ? (Math.floor(time * 12) % 2 ? 0.5 : 0.15) : h.chg > 0 ? h.chg * 0.2 : 0, h.hid > 0 ? [0.5, 0.52, 0.64] : null);
 }
 // la linea di mira: puntini fin dove arriva la freccia (o fino al primo ostacolo); se sulla linea c'è una preda o un nemico, diventa d'oro e lo segna
@@ -15907,6 +16278,7 @@ function render3D() {
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const s of W.bigShadows || []) if (near(s[0], s[1], 520)) pushShadow(s[0], s[1], s[2]);      // l'ombra della chioma dell'Albero Madre
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
+  if (MODO) cavOmbre();
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (st !== 'title') fauna.shadows(cam);
   }
@@ -15965,6 +16337,7 @@ function buildDynamic() {
   if (hero && (st === 'play' || st === 'dead')) {
     drawHero(R);
   }
+  if (MODO) cavDisegna();
   for (const n of npcs) {
     if (!near(n.x, n.z, 520) || npcHidden(n)) continue;
     const sh = CHR[n.id], a = n.moving ? 1 + (Math.floor(n.walk / 4) % (sh.length - 1)) : 0, sc = 0.2 / SR;
@@ -16051,7 +16424,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
+    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
@@ -16078,7 +16451,7 @@ function drawEnergy(x, y) {
 }
 // il riquadro dell'abilità accanto al tasto C (un tocco la cambia) e la barra del colpo caricato
 function drawChip() {
-  chip = null; chipM = null;
+  chip = null; chipM = null; chipH = null;
   if (st !== 'play' || dialog || shop || loot || menu || mapOpen || inCasa() || !hero || hero.dead) return;
   const id = curSkill(), S = SKL[id], L = skillsOf(cls()), cw = 18, col = CC().col;
   const cx = btnC ? Math.round(btnC.x - cw - 4) : Wr - insetR - cw - 4, cy = btnC ? Math.round(btnC.y + btnC.w / 2 - cw / 2) : Hr - cw - 8;
@@ -16096,6 +16469,12 @@ function drawChip() {
     hg.fillRect(mx - 6, mc, 4, 1); hg.fillRect(mx + 3, mc, 4, 1); hg.fillRect(mx, mc - 6, 1, 4); hg.fillRect(mx, mc + 3, 1, 4);
     if (!fr) { hg.fillRect(mx - 1, mc - 1, 3, 3); hg.fillRect(mx - 4, mc - 4, 2, 1); hg.fillRect(mx - 4, mc - 4, 1, 2); hg.fillRect(mx + 3, mc - 4, 2, 1); hg.fillRect(mx + 4, mc - 4, 1, 2); hg.fillRect(mx - 4, mc + 4, 2, 1); hg.fillRect(mx - 4, mc + 3, 1, 2); hg.fillRect(mx + 3, mc + 4, 2, 1); hg.fillRect(mx + 4, mc + 3, 1, 2); }
     T(fr ? 'MIRA LIBERA' : 'MIRA AUTO', cx - 2, my + 6, c2, 1, 'right');
+  }
+  // chi ha un cavallo e ne è lontano ha un terzo riquadro: il fischio che lo chiama
+  if (haCavallo() && cav && !hero.sella && !D && Math.hypot(cav.x - hero.x, cav.z - hero.z) > 14) {
+    const hy = (chipM ? chipM.y : cy) - cw - 9, c3 = cav.st === 'viene' ? '#ffffff' : '#e0a860', mx = cx + 9, mc = hy + 9; chipH = { x: cx, y: hy, w: cw, h: cw }; panel(cx, hy, cw, cw, c3); hg.fillStyle = c3;
+    hg.fillRect(mx - 5, mc - 4, 2, 9); hg.fillRect(mx + 3, mc - 4, 2, 9); hg.fillRect(mx - 4, mc - 6, 2, 2); hg.fillRect(mx + 2, mc - 6, 2, 2); hg.fillRect(mx - 2, mc - 7, 4, 2); hg.fillRect(mx - 6, mc + 4, 3, 2); hg.fillRect(mx + 3, mc + 4, 3, 2);
+    T(cav.st === 'viene' ? 'ARRIVA' : 'FISCHIA', cx - 2, hy + 6, c3, 1, 'right');
   }
   if (hero.chg > 0) { const w = 34, x = Math.round(Wr / 2 - w / 2), y = Hr - 31, full = hero.chg >= 1; hg.fillStyle = '#0b0a12'; hg.fillRect(x - 1, y - 1, w + 2, 5); hg.fillStyle = full && Math.floor(time * 12) % 2 ? '#ffffff' : col; hg.fillRect(x, y, Math.round(w * hero.chg), 3); }
 }
@@ -16350,7 +16729,7 @@ function onKey(name) {
   }
   if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { intro = 0; openClass('new'); } } return; }
   if (st === 'class') return classKey(name);
-  if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
+  if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.sella = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
       hero.en = MAXEN(); hero.atk = 0; hero.dash = null; hero.block = false; hero.chg = 0; hero.aDown = false; hero.hid = 0; things = [];
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
       else { if (MODO) { const p = INIZIO(); hero.x = p.x; hero.z = p.z; } else { hero.x = 2005; hero.z = 2690; } hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
@@ -16481,6 +16860,7 @@ if (window.__SG_DEBUG) window.__sg = {
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
+  get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
   // cammina verso un punto con le stesse regole dell'eroe (pendenza, acqua, ostacoli); restituisce la distanza rimasta
@@ -16543,7 +16923,7 @@ return {
   },
   button(name, down) { if (down) onKey(name); },
   // un tocco sul riquadro dell'abilità la cambia; tutto il resto dello schermo gira la visuale
-  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
+  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y, chipH)) { fischia(); return; } if (type === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
 };
 })());
 

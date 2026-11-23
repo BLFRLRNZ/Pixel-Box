@@ -160,6 +160,7 @@ function bottega(tipo, S) {
   SC.forEach((t, k) => { const pic = t === TL.SCUDI || t === TL.QUADRO || t === TL.PESCI || t === TL.PERGAMENA; s.dec('n', 5 + k * 10, t, pic ? 4.8 : 0.4, pic ? 7 : 11, pic ? 7 : 9.7); });
   // il banco (con il passaggio a destra) e chi ci sta dietro
   s.box(0, 0, X, 24, 0, PED, S.base, S.floor, false).box(0, 24, X, 28.2, 0, BH, TL.BANCO, TL.PIANO).posto('banco', 35, 19.4, SUD, PED);
+  s.posto('cliente1', 23, 32.6, NORD).posto('cliente2', 48, 32.6, NORD).posto('cliente3', 19, 45, OVEST).posto('cliente4', 51, 45, EST);   // i clienti: due al banco, due a guardare la merce
   s.spr('candle', 12, 26.1, { y: BH, r: 0 }).lume(12, BH + 2.1, 26.1, S.lume, 58, { flick: true, halo: 5 });
   s.applique('n', 64.5, 8.6).applique('w', 45).applique('e', 45);
   s.dec('w', 14, TL.FINESTRA, 4.6, 6.6, 7.4, true).dec('e', 14, TL.FINESTRA, 4.6, 6.6, 7.4, true);
@@ -200,7 +201,7 @@ function locanda(S) {
   s.flat(9, 36, 27, 56, S.rug, 1.2, 1.4);
   // tavoli e sgabelli
   for (const [x, z, v] of [[36, 46, 0], [22, 68, 1], [74, 58, 1], [94, 46, 0], [92, 70, 1]]) { s.spr('table', x, z, { v, r: 2.7 }); for (const [dx, dz] of [[-4.6, 0.4], [4.6, -0.4], [0.4, 4.4]]) s.spr('stool', x + dx, z + dz, { r: 0.9 }); }
-  s.posto('ospite1', 36, 41, SUD).posto('ospite2', 94, 41, SUD).posto('ospite3', 74, 53, SUD);
+  s.posto('ospite1', 36, 41, SUD).posto('ospite2', 94, 41, SUD).posto('ospite3', 74, 53, SUD).posto('ospite4', 22, 63, SUD).posto('ospite5', 92, 65, SUD).posto('bancone', 85, 32.4, NORD);
   s.spr('barrel', 105, 74).spr('barrel', 100, 76).spr('crate', 6, 75, { v: 1 }).spr('sack', 105, 62, { v: 1 });
   s.dec('s', 22, TL.FINESTRA, 4.8, 6.4, 7.4, true).dec('s', 88, TL.FINESTRA, 4.8, 6.4, 7.4, true).lume(22, 8, Z - 3, [0.62, 0.74, 0.95], 46, { day: 1, halo: 0 }).lume(88, 8, Z - 3, [0.62, 0.74, 0.95], 46, { day: 1, halo: 0 });
   s.dec('e', 44, TL.QUADRO, 4.8, 7, 7).dec('e', 64, TL.SCUDI, 4.8, 7, 7).dec('w', 68, TL.LIBRI, 0.4, 11, 9.7);
@@ -232,14 +233,17 @@ function piano(shop) {
       R.rects = s.rects.slice(); R.sprs = s.sprs; R.lumi = s.lumi; R.folk = []; R.letto = s.posti.letto || null;
       for (const p of s.sprs) if (p.r > 0) R.solids.push({ x: p.x, z: p.z, r: p.r });
       for (const l of s.lumi) R.lights.push({ x: l.x, y: l.y, z: l.z, r: l.r, c: l.c, flick: l.flick, day: l.day });
-      for (const id of shop.folk) { const f = W.FOLK[id] || {}, sp = s.posti[f.spot || 'banco']; if (!sp) continue; R.folk.push({ id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2] }); if (f.spot && f.spot !== 'banco') R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
+      const presi = {};
+      for (const id of shop.folk) { const f = W.FOLK[id] || {}, sp = s.posti[f.spot || 'banco']; if (!sp) continue; presi[f.spot || 'banco'] = 1; R.folk.push({ id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2] }); if (f.spot && f.spot !== 'banco') R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
+      if (W.ospiti) for (const q of W.ospiti(shop, Object.keys(s.posti).filter(k => !presi[k] && k !== 'banco' && k !== 'letto')) || []) { const sp = s.posti[q.spot]; if (!sp || presi[q.spot]) continue; presi[q.spot] = 1; R.folk.push({ id: q.id, x: sp[0], z: sp[1], y: sp[3], yaw: sp[2], base: sp[2], dice: q.dice }); R.solids.push({ x: sp[0], z: sp[1], r: 2.2 }); }
     } };
   return { name: shop.name, casa, floor: S.floor, wall: S.wall, fog: '#0d0906', amb: 0.6, water: '#2a6a8a', torch: S.lume, glow: '#ffd89a', pot: ['#b8623a', '#8a4224'], foes: {},
     make(m) { m.room(0, 0, cw + 1, ch + 1); m.at(dc, ch + 1, '@'); } };
 }
 // ogni bottega dichiarata dalle città diventa un piano «in_<chiave>»
 W.SHOPS = W.SHOPS || {};
-function registra() { for (const k in W.SHOPS) if (!DS.DEF['in_' + k]) DS.DEF['in_' + k] = piano(W.SHOPS[k]); }
+// (tutte: il gioco, quando il mondo è pronto, rifà anche le stanze che una terra nuova ha ridichiarato con la stessa chiave: altrimenti dentro resterebbe la gente del mondo di prima)
+function registra(tutte) { for (const k in W.SHOPS) { const d = DS.DEF['in_' + k]; if (!d || (tutte && d.casa && d.casa.shop !== W.SHOPS[k])) DS.DEF['in_' + k] = piano(W.SHOPS[k]); } }
 
 // ---------- fuori: l'insegna sopra la porta e quella a bandiera ----------
 // side: da che parte guarda la porta; c: il centro della porta lungo il muro; y0: la soglia
