@@ -140,5 +140,6 @@ function drawIcon(c, rows, pal, x, y, s, bg) {
 const cv = $('scr'), ctx = cv.getContext('2d');
 let W = 320, H = 288, dpr = 1;
 const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, m: false, start: false, select: false };
+const STICK = { x: 0, y: 0, on: false };   // la leva a 360 gradi (solo al tocco, e solo nei giochi che la chiedono con pad360): quanto è spinta, da -1 a 1; on: c'è un dito sopra e non si sta scegliendo in un elenco
 const kbB = {}, tB = {};
 const PF = s => Math.max(6, Math.round(s)) + 'px "Press Start 2P", monospace';

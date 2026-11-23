@@ -15,6 +15,7 @@ function layoutFor(g) {
   document.body.classList.toggle('full', !!(g && g.full));
   document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
   document.body.classList.toggle('otto', !!(g && g.pad8));    // la leva a 8 direzioni al posto della croce
+  document.body.classList.toggle('giro', !!(g && g.pad360));  // ...che in certi giochi è libera, a 360 gradi (i tasti di direzione restano, a spicchi, per i menu)
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -94,19 +95,23 @@ const dpadEl = $('dpad'), dptr = new Map();
 function dpadDir(e) {
   const r = dpadEl.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
   const otto = document.body.classList.contains('otto');
-  if (Math.hypot(dx, dy) < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0 };
+  // la leva libera: da ferma (vicino al centro) a tutta (verso il bordo), in qualunque direzione
+  const R = r.width / 2, m = Math.hypot(dx, dy), k = m < R * 0.16 ? 0 : Math.min(1, (m - R * 0.16) / (R * 0.62)), ax = m ? dx / m * k : 0, ay = m ? dy / m * k : 0, px = m ? dx / m * Math.min(1, m / (R * 0.78)) : 0, py = m ? dy / m * Math.min(1, m / (R * 0.78)) : 0;
+  if (m < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0, ax, ay, px, py };
   let deg = Math.atan2(dy, dx) * 180 / Math.PI; if (deg < 0) deg += 360;
   const axis = Math.round(deg / 90) * 90, dev = Math.abs(deg - axis);
   // la leva: otto spicchi uguali (ma davanti a un menu o a un elenco le diagonali si stringono, per non sbagliare voce); la croce: le diagonali sono più strette
   const elenco = otto && mode === 'game' && cur && cur.padMenu && cur.padMenu();
-  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
-  const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)) };
+  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)), ax, ay, px, py }; }
+  const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)), ax, ay, px, py };
 }
 function syncDpad() {
-  let d = { x: 0, y: 0 }; for (const v of dptr.values()) d = v;
+  let d = { x: 0, y: 0, ax: 0, ay: 0, px: 0, py: 0 }; for (const v of dptr.values()) d = v;
   setT('left', d.x < 0); setT('right', d.x > 0); setT('up', d.y < 0); setT('down', d.y > 0);
-  // il pomello della leva segue il pollice
-  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
+  const giro = document.body.classList.contains('giro');
+  STICK.on = giro && dptr.size > 0 && !(mode === 'game' && cur && cur.padMenu && cur.padMenu()); STICK.x = STICK.on ? d.ax : 0; STICK.y = STICK.on ? d.ay : 0;
+  // il pomello della leva segue il pollice (in quella libera, passo passo fino al bordo)
+  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = giro ? `translate(calc(-50% + ${(d.px || 0) * 64}%), calc(-50% + ${(d.py || 0) * 64}%))` : `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
 }
 dpadEl.addEventListener('pointerdown', e => { e.preventDefault(); audioUnlock(); try { dpadEl.setPointerCapture(e.pointerId); } catch (_) {} dptr.set(e.pointerId, dpadDir(e)); syncDpad(); });
 dpadEl.addEventListener('pointermove', e => { if (dptr.has(e.pointerId)) { dptr.set(e.pointerId, dpadDir(e)); syncDpad(); } });
@@ -126,7 +131,7 @@ function releaseTouch() {
   dptr.clear(); syncDpad();
   for (const n in btnIds) { btnIds[n].clear(); setT(n, false); }
 }
-function releaseAll() { for (const n in BTN) kbB[n] = false; releaseTouch(); for (const n in BTN) syncBtn(n); }
+function releaseAll() { for (const n in BTN) kbB[n] = false; STICK.on = false; STICK.x = STICK.y = 0; releaseTouch(); for (const n in BTN) syncBtn(n); }
 const dropPtr = e => { if (dptr.delete(e.pointerId)) syncDpad(); for (const n in btnIds) if (btnIds[n].delete(e.pointerId) && !btnIds[n].size) setT(n, false); };
 document.addEventListener('pointerup', dropPtr, { capture: true, passive: true });
 document.addEventListener('pointercancel', dropPtr, { capture: true, passive: true });

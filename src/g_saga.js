@@ -661,8 +661,8 @@ function startGame(fresh) {
   if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
   save.flags.nordTip = 1;
   // ...e che i comandi sono cambiati
-  if (!fresh && !save.flags.levaTip) toasts.push({ t: 'NOVITÀ: LEVA A 8 DIREZIONI (PER I COMANDI DI PRIMA: START, OPZIONI)', c: '#7af0ff', life: 14 });
-  save.flags.levaTip = 1;
+  if (!fresh && !save.flags.giroTip) toasts.push({ t: 'NOVITÀ: LA LEVA ORA È LIBERA, A 360 GRADI. POCO: PIANO; FINO IN FONDO: FORTE', c: '#7af0ff', life: 14 });
+  save.flags.levaTip = 1; save.flags.giroTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -1154,7 +1154,7 @@ function schiva() {
   if (h.fi < 0.3) { h.fiFl = 0.5; tone(160, 0.08, 'square', 0.03); return; }
   // nella direzione della leva; senza leva, un passo indietro
   let a = h.yaw + Math.PI;
-  if (ctrl8()) { const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0); if (ix || iy) a = cam.yaw + Math.atan2(ix, -iy); }
+  if (ctrl8()) { const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0); if (STICK.on && (STICK.x || STICK.y)) a = cam.yaw + Math.atan2(STICK.x, -STICK.y); else if (ix || iy) a = cam.yaw + Math.atan2(ix, -iy); }
   else if (BTN.left) a = h.yaw - Math.PI / 2; else if (BTN.right) a = h.yaw + Math.PI / 2; else if (BTN.up) a = h.yaw;
   h.fi -= 0.34; h.fiT = 0; h.atk = 0; h.chg = 0; h.aDown = false; h.aim = false; h.inv = Math.max(h.inv, 0.3);
   h.dash = { k: 'schivata', t: 0.24, vx: Math.cos(a) * 78, vz: Math.sin(a) * 78, hit: new Set() };
@@ -1798,10 +1798,10 @@ function compUpdate(dt) {
     let tx, tz, sp;
     if (e) { const K = COMP_K[M.cls] || COMP_K.cavaliere, r = e === boss ? boss.r : FOE[e.type].r, d = Math.hypot(e.x - f.x, e.z - f.z), giusta = K[2] ? 44 : r + 6;
       if (d <= giusta) { f.moving = false; f.fermo = 0; f.yaw += angDiff(Math.atan2(e.z - f.z, e.x - f.x), f.yaw) * Math.min(1, 10 * dt); if (f.cd <= 0) { f.st = 'carica'; f.t = K[2] ? 0.34 : 0.26; f.cd = K[1] * (0.9 + Math.random() * 0.3); } return; }
-      tx = e.x; tz = e.z; sp = 46; }
+      tx = e.x; tz = e.z; sp = 40; }
     else { const a = h.yaw + Math.PI + (k - (n - 1) / 2) * 0.75, r = 9 + (k % 2) * 4; tx = h.x + Math.cos(a) * r; tz = h.z + Math.sin(a) * r; const d = Math.hypot(tx - f.x, tz - f.z);
       if (d < (f.moving ? 2.2 : 7)) { f.moving = false; f.fermo = 0; return; }
-      sp = Math.min(96, d > 26 ? Math.max(58, hv * 1.3) : d > 10 ? Math.max(44, hv * 1.08) : 30); }
+      sp = Math.min(96, d > 26 ? Math.max(44, hv * 1.3) : d > 10 ? Math.max(31, hv * 1.08) : 21); }
     const a = Math.atan2(tz - f.z, tx - f.x); f.yaw += angDiff(a, f.yaw) * Math.min(1, 10 * dt); const m = sp * dt;
     if (move(f, Math.cos(a) * m, Math.sin(a) * m, 1.6, 1.8)) { f.moving = true; f.walk += m; f.fermo = 0; } else { f.moving = false; if (dh > 26 || e) f.fermo += dt; }
   });
@@ -1957,13 +1957,16 @@ function heroUpdate(dt) {
   if (!busy) {
     if (ctrl8()) {
       // comandi a 8 direzioni: l'eroe va dove punta la leva, rispetto alla visuale (su = avanti, giù = verso di te), e si volta da solo
-      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0);
-      if (ix || iy) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
-    } else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+      // (al tocco la leva è libera, a 360 gradi: va dove la si punta, e piano se la si sposta poco)
+      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0), lm = STICK.on ? Math.hypot(STICK.x, STICK.y) : 0;
+      if (lm > 0) { h.lev = Math.atan2(STICK.x, -STICK.y); ma = cam.yaw + h.lev; f = Math.max(0.35, Math.min(1, lm)); }
+      else if (!STICK.on && (ix || iy)) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
+    } else if (STICK.on) { turn = Math.abs(STICK.x) > 0.25 ? STICK.x : 0; f = STICK.y < -0.25 ? Math.max(0.35, -STICK.y) : STICK.y > 0.25 ? -0.55 * STICK.y : 0; }
+    else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
   }
   if (h.aim && !busy) {
-    const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); h.aimT = ix ? (h.aimT || 0) + dt : 0;
-    h.yaw += ix * (0.4 + Math.min(1, h.aimT / 0.7) * 1.3) * dt; ma = null; turn = 0; f = BTN.up ? 0.5 : BTN.down ? -0.4 : 0;
+    const ix = STICK.on ? (Math.abs(STICK.x) > 0.2 ? STICK.x : 0) : (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); h.aimT = ix ? (h.aimT || 0) + dt : 0;
+    h.yaw += ix * (0.4 + Math.min(1, h.aimT / 0.7) * 1.3) * dt; ma = null; turn = 0; f = STICK.on ? (STICK.y < -0.35 ? 0.5 : STICK.y > 0.35 ? -0.4 : 0) : BTN.up ? 0.5 : BTN.down ? -0.4 : 0;
   }
   heroTick(dt);                                    // energia, colpo caricato, guardia
   if (h.dash) { f = 0; turn = 0; ma = null; }
@@ -1973,7 +1976,8 @@ function heroUpdate(dt) {
   const cell = D ? dCellAt(h.x, h.z) : -1;
   h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.wlAt(h.x, h.z) - 0.35;
   const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
-  let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
+  // a piedi, nel Grande Viaggio, si va più piano (passo 20, corsa 30): la terra è grande e c'è il cavallo (trotto 35, galoppo 64)
+  let sp = (MODO ? 20 : 25) * VEL() * (BTN.b && f > 0 && slow === 1 ? (MODO ? 1.5 : 1.65) : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
   if (h.sella) sp = (BTN.b && f > 0 ? 64 : 35) * (h.wade ? 0.6 : 1);   // in sella: trotto, e con B galoppo
@@ -3832,7 +3836,7 @@ function drawHUD() {
   }
   drawChip();
   if (help > 0) {
-    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(freeAim() ? ['A: PARLA, APRI', 'A TENUTO: TENDI E MIRA (LEVA O DITO)   LASCIA: TIRA', "C: BALZO ALL'INDIETRO"] : CC().help, bowOn() ? ['MIRINO ACCANTO A C: MIRA AUTOMATICA O LIBERA'] : [], ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE LA PUNTI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(freeAim() ? ['A: PARLA, APRI', 'A TENUTO: TENDI E MIRA (LEVA O DITO)   LASCIA: TIRA', "C: BALZO ALL'INDIETRO"] : CC().help, bowOn() ? ['MIRINO ACCANTO A C: MIRA AUTOMATICA O LIBERA'] : [], ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
     panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
@@ -4051,7 +4055,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -4223,7 +4227,7 @@ function menuKey(name) {
     else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
-    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
+    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA LIBERA: L\'EROE VA DOVE LA PUNTI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
     else if (r === 'mira') toggleAim();
     else if (r === 'misure') { menu.mis = true; misApri(); tone(1046, 0.05); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
@@ -4260,7 +4264,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, get STICK() { return STICK; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
   eroeFig(p, d, vecchio) { const L = heroLook(), P = CC().poses; if (vecchio) { const L0 = Object.assign({}, L); for (const k of ['sciarpa', 'cuff', 'buckle', 'bracer']) delete L0[k]; if (L0.hairStyle === 'ciuffi') L0.hairStyle = 'short'; return A.figure(A.human(L0, P[Math.min(p, POSE_N - 1)]), d / 8 * TAU, HS, HS, { sc: SR, ricco: 0 }).toDataURL(); }
     const hs = Math.round(HS * 1.56); return A.figure(A.human(L, Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p] })), d / 8 * TAU, hs, hs, { sc: SR * hs / HS, ricco: 1 }).toDataURL(); },
   figura(look, pose, d, ricco) { const k = ricco ? 1.56 : 1; return A.figure(A.human(look, pose || {}), d / 8 * TAU, Math.round(66 * k), Math.round(78 * k), { sc: SR * k, ricco: ricco ? 1 : 0 }).toDataURL(); }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
@@ -4279,7 +4283,7 @@ if (window.__SG_DEBUG) window.__sg = {
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
 return {
-  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true,
+  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true, pad360: true,
   // la leva serve a scegliere una voce (menu, bottega, dialogo, mappa, titolo) e non a camminare?
   padMenu: () => st !== 'play' || !!(dialog || shop || loot || menu || mapOpen || clsUI), aspect: 0,
   keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['C', 'abilità'], ['START', 'menu']],

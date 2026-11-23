@@ -73,6 +73,9 @@
   body.otto #dpo i.d{border-left-width:4px;border-right-width:4px;border-bottom-width:6px;border-bottom-color:#6e7480;margin:-3px 0 0 -4px}
   body.otto #dpk{display:block;position:absolute;left:50%;top:50%;width:40%;height:40%;border-radius:50%;transform:translate(-50%,-50%);transition:transform .05s;
     background:radial-gradient(circle at 40% 32%,#7a7f8c,#41444c 60%,#2a2c32);box-shadow:0 4px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.3)}
+  body.giro #dpo i{display:none}
+  body.giro #dpo::after{content:'';position:absolute;inset:17%;border-radius:50%;border:2px solid rgba(255,255,255,.07)}
+  body.giro #dpk{transition:transform .03s}
   body.full.otto #cl{opacity:.6}
   #cr{position:absolute;right:4%;top:6%;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75)}
   .bt{position:absolute;width:var(--bs);height:var(--bs);border-radius:50%;background:radial-gradient(circle at 35% 30%,#cf5a8d,#9c2459 58%,#7a1743);
@@ -152,7 +155,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.36", "id": "2.36-ea49bc7f", "date": "23/11/2026", "pwa": true};
+const APP = {"v": "2.37", "id": "2.37-1c8e5e6c", "date": "24/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -295,6 +298,7 @@ function drawIcon(c, rows, pal, x, y, s, bg) {
 const cv = $('scr'), ctx = cv.getContext('2d');
 let W = 320, H = 288, dpr = 1;
 const BTN = { up: false, down: false, left: false, right: false, a: false, b: false, c: false, v: false, m: false, start: false, select: false };
+const STICK = { x: 0, y: 0, on: false };   // la leva a 360 gradi (solo al tocco, e solo nei giochi che la chiedono con pad360): quanto è spinta, da -1 a 1; on: c'è un dito sopra e non si sta scegliendo in un elenco
 const kbB = {}, tB = {};
 const PF = s => Math.max(6, Math.round(s)) + 'px "Press Start 2P", monospace';
 
@@ -11424,6 +11428,10 @@ SG.terre.lumenCompagnia = (m, { BORGO, ROCCA, ELFI }) => {
       'OLTRE IL VALICO DEI GIGANTI CI SONO TRE TERRE CHE NESSUNO DI NOI HA MAI VISTO. VOGLIO CHE SIATE VOI A PORTARE LÀ IL NOME DI LUMEN.',
       "DA OGGI SIETE LA COMPAGNIA DELL'ALBA. PRENDETE QUESTO, E PREPARATEVI: IL GRANDE VIAGGIO COMINCIA DAL VALICO."],
     reDopo: ["LA COMPAGNIA DELL'ALBA! IL VALICO È ANCORA CHIUSO DALLA FRANA, MA I MIEI UOMINI CI LAVORANO. TENETEVI PRONTI."], premio: { monete: 200, cosa: 'cuore' } };
+  // la gilda degli eroi: un maestro al Borgo (sulla via che dal punto di partenza sale alla piazza, sul lato destro: ci si passa accanto) e uno alla Rocca (in piazza, verso la fontana). (Nelle città il maestro nasce accanto alla bacheca degli incarichi; qui la bacheca
+  // non c'è ancora, e senza di lei il maestro non nasceva: la gilda, di cui il gioco parla, non si trovava.) Cambia il mestiere e insegna le abilità.
+  m.city.folk('maestro', 'MAESTRO DELLA GILDA', BORGO[0] + 8, BORGO[1] + 42, 2.2, ['BENVENUTO, VIAGGIATORE. LA GILDA DEGLI EROI HA UN MAESTRO IN OGNI CITTÀ, E UNO ANCHE QUI AL BORGO. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_borgo' });
+  m.city.folk('maestro', 'MAESTRO DELLA GILDA', ROCCA[0] - 36, ROCCA[1] + 30, -0.4, ['BENVENUTO ALLA GILDA DEGLI EROI DELLA ROCCA DI LUMEN. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_rocca' });
   for (const id in W.FOLK) if (W.FOLK[id].n === W.STORIA.apre || W.FOLK[id].n === W.STORIA.chiude) W.FOLK[id].sveglio = 1;   // chi apre e chi chiude l'atto non va a dormire
 };
 })();
@@ -14093,8 +14101,8 @@ function startGame(fresh) {
   if (!fresh && !save.flags.nordTip) toasts.push({ t: 'NOVITÀ: A NORD, OLTRE IL PICCO DEL DRAGO, I GRANDI MONTI E MARMOREA', c: '#bfe6ff', life: 13 });
   save.flags.nordTip = 1;
   // ...e che i comandi sono cambiati
-  if (!fresh && !save.flags.levaTip) toasts.push({ t: 'NOVITÀ: LEVA A 8 DIREZIONI (PER I COMANDI DI PRIMA: START, OPZIONI)', c: '#7af0ff', life: 14 });
-  save.flags.levaTip = 1;
+  if (!fresh && !save.flags.giroTip) toasts.push({ t: 'NOVITÀ: LA LEVA ORA È LIBERA, A 360 GRADI. POCO: PIANO; FINO IN FONDO: FORTE', c: '#7af0ff', life: 14 });
+  save.flags.levaTip = 1; save.flags.giroTip = 1;
   st = 'play';
   if (fresh) { intro = 1; st = 'intro'; }
   else if (!save.cls) openClass(save.time < 3 ? 'new' : 'old');       // chi giocava già sceglie la classe la prima volta che riprende
@@ -14586,7 +14594,7 @@ function schiva() {
   if (h.fi < 0.3) { h.fiFl = 0.5; tone(160, 0.08, 'square', 0.03); return; }
   // nella direzione della leva; senza leva, un passo indietro
   let a = h.yaw + Math.PI;
-  if (ctrl8()) { const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0); if (ix || iy) a = cam.yaw + Math.atan2(ix, -iy); }
+  if (ctrl8()) { const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0); if (STICK.on && (STICK.x || STICK.y)) a = cam.yaw + Math.atan2(STICK.x, -STICK.y); else if (ix || iy) a = cam.yaw + Math.atan2(ix, -iy); }
   else if (BTN.left) a = h.yaw - Math.PI / 2; else if (BTN.right) a = h.yaw + Math.PI / 2; else if (BTN.up) a = h.yaw;
   h.fi -= 0.34; h.fiT = 0; h.atk = 0; h.chg = 0; h.aDown = false; h.aim = false; h.inv = Math.max(h.inv, 0.3);
   h.dash = { k: 'schivata', t: 0.24, vx: Math.cos(a) * 78, vz: Math.sin(a) * 78, hit: new Set() };
@@ -15230,10 +15238,10 @@ function compUpdate(dt) {
     let tx, tz, sp;
     if (e) { const K = COMP_K[M.cls] || COMP_K.cavaliere, r = e === boss ? boss.r : FOE[e.type].r, d = Math.hypot(e.x - f.x, e.z - f.z), giusta = K[2] ? 44 : r + 6;
       if (d <= giusta) { f.moving = false; f.fermo = 0; f.yaw += angDiff(Math.atan2(e.z - f.z, e.x - f.x), f.yaw) * Math.min(1, 10 * dt); if (f.cd <= 0) { f.st = 'carica'; f.t = K[2] ? 0.34 : 0.26; f.cd = K[1] * (0.9 + Math.random() * 0.3); } return; }
-      tx = e.x; tz = e.z; sp = 46; }
+      tx = e.x; tz = e.z; sp = 40; }
     else { const a = h.yaw + Math.PI + (k - (n - 1) / 2) * 0.75, r = 9 + (k % 2) * 4; tx = h.x + Math.cos(a) * r; tz = h.z + Math.sin(a) * r; const d = Math.hypot(tx - f.x, tz - f.z);
       if (d < (f.moving ? 2.2 : 7)) { f.moving = false; f.fermo = 0; return; }
-      sp = Math.min(96, d > 26 ? Math.max(58, hv * 1.3) : d > 10 ? Math.max(44, hv * 1.08) : 30); }
+      sp = Math.min(96, d > 26 ? Math.max(44, hv * 1.3) : d > 10 ? Math.max(31, hv * 1.08) : 21); }
     const a = Math.atan2(tz - f.z, tx - f.x); f.yaw += angDiff(a, f.yaw) * Math.min(1, 10 * dt); const m = sp * dt;
     if (move(f, Math.cos(a) * m, Math.sin(a) * m, 1.6, 1.8)) { f.moving = true; f.walk += m; f.fermo = 0; } else { f.moving = false; if (dh > 26 || e) f.fermo += dt; }
   });
@@ -15389,13 +15397,16 @@ function heroUpdate(dt) {
   if (!busy) {
     if (ctrl8()) {
       // comandi a 8 direzioni: l'eroe va dove punta la leva, rispetto alla visuale (su = avanti, giù = verso di te), e si volta da solo
-      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0);
-      if (ix || iy) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
-    } else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
+      // (al tocco la leva è libera, a 360 gradi: va dove la si punta, e piano se la si sposta poco)
+      const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0), iy = (BTN.down ? 1 : 0) - (BTN.up ? 1 : 0), lm = STICK.on ? Math.hypot(STICK.x, STICK.y) : 0;
+      if (lm > 0) { h.lev = Math.atan2(STICK.x, -STICK.y); ma = cam.yaw + h.lev; f = Math.max(0.35, Math.min(1, lm)); }
+      else if (!STICK.on && (ix || iy)) { h.lev = Math.atan2(ix, -iy); ma = cam.yaw + h.lev; f = 1; }
+    } else if (STICK.on) { turn = Math.abs(STICK.x) > 0.25 ? STICK.x : 0; f = STICK.y < -0.25 ? Math.max(0.35, -STICK.y) : STICK.y > 0.25 ? -0.55 * STICK.y : 0; }
+    else { turn = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); f = BTN.up ? 1 : BTN.down ? -0.55 : 0; }
   }
   if (h.aim && !busy) {
-    const ix = (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); h.aimT = ix ? (h.aimT || 0) + dt : 0;
-    h.yaw += ix * (0.4 + Math.min(1, h.aimT / 0.7) * 1.3) * dt; ma = null; turn = 0; f = BTN.up ? 0.5 : BTN.down ? -0.4 : 0;
+    const ix = STICK.on ? (Math.abs(STICK.x) > 0.2 ? STICK.x : 0) : (BTN.right ? 1 : 0) - (BTN.left ? 1 : 0); h.aimT = ix ? (h.aimT || 0) + dt : 0;
+    h.yaw += ix * (0.4 + Math.min(1, h.aimT / 0.7) * 1.3) * dt; ma = null; turn = 0; f = STICK.on ? (STICK.y < -0.35 ? 0.5 : STICK.y > 0.35 ? -0.4 : 0) : BTN.up ? 0.5 : BTN.down ? -0.4 : 0;
   }
   heroTick(dt);                                    // energia, colpo caricato, guardia
   if (h.dash) { f = 0; turn = 0; ma = null; }
@@ -15405,7 +15416,8 @@ function heroUpdate(dt) {
   const cell = D ? dCellAt(h.x, h.z) : -1;
   h.wade = D ? cell === DT.WATER : gH(h.x, h.z) < W.wlAt(h.x, h.z) - 0.35;
   const slow = h.block ? 0.45 : h.chg > 0 ? 0.6 : 1;
-  let sp = 25 * VEL() * (BTN.b && f > 0 && slow === 1 ? 1.65 : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
+  // a piedi, nel Grande Viaggio, si va più piano (passo 20, corsa 30): la terra è grande e c'è il cavallo (trotto 35, galoppo 64)
+  let sp = (MODO ? 20 : 25) * VEL() * (BTN.b && f > 0 && slow === 1 ? (MODO ? 1.5 : 1.65) : 1) * (h.wade ? (D ? 0.6 : 0.55) : 1) * (h.atk > 0 ? 0.35 : 1) * slow;
   if (h.kb > 0) { h.kb -= dt; move(h, h.kx * dt, h.kz * dt, 1.6); }
   h.moving = false;
   if (h.sella) sp = (BTN.b && f > 0 ? 64 : 35) * (h.wade ? 0.6 : 1);   // in sella: trotto, e con B galoppo
@@ -17264,7 +17276,7 @@ function drawHUD() {
   }
   drawChip();
   if (help > 0) {
-    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE PREMI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(freeAim() ? ['A: PARLA, APRI', 'A TENUTO: TENDI E MIRA (LEVA O DITO)   LASCIA: TIRA', "C: BALZO ALL'INDIETRO"] : CC().help, bowOn() ? ['MIRINO ACCANTO A C: MIRA AUTOMATICA O LIBERA'] : [], ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
+    const L = [ctrl8() ? 'LEVA: L\'EROE VA DOVE LA PUNTI   B: CORRI' : 'CROCE: CAMMINA E GIRA   B: CORRI'].concat(freeAim() ? ['A: PARLA, APRI', 'A TENUTO: TENDI E MIRA (LEVA O DITO)   LASCIA: TIRA', "C: BALZO ALL'INDIETRO"] : CC().help, bowOn() ? ['MIRINO ACCANTO A C: MIRA AUTOMATICA O LIBERA'] : [], ['START: MENU   SELECT: MAPPA', 'DITO SULLO SCHERMO: GIRA LA VISUALE']), w = Math.max(...L.map(l => A.textW(l))) + 16, y0 = Math.round(Hr * 0.27);
     panel(Math.round(Wr / 2 - w / 2), y0, w, 8 + L.length * 10, '#8a96aa'); L.forEach((l, i) => T(l, Wr / 2, y0 + 5 + i * 10, i > 0 && i <= CC().help.length ? CC().col : '#e6e9f2', 1, 'center'));
   }
   if ((D ? dCellAt(hero.x, hero.z) === DT.LAVA : lavaAt(hero.x, hero.z)) && !fireProof() && Math.floor(time * 6) % 2) { hg.fillStyle = 'rgba(255,80,20,.18)'; hg.fillRect(0, 0, Wr, Hr); }
@@ -17483,7 +17495,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -17655,7 +17667,7 @@ function menuKey(name) {
     else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
-    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
+    else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA LIBERA: L\'EROE VA DOVE LA PUNTI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
     else if (r === 'mira') toggleAim();
     else if (r === 'misure') { menu.mis = true; misApri(); tone(1046, 0.05); }
     else if (r === 'salva') { writeSave(); toast('SALVATO!', '#9af0b0'); tone(1046, 0.06); }
@@ -17692,7 +17704,7 @@ function titleCam(dt) {
 }
 if (window.__SG_DEBUG) window.__sg = {
   get st() { return st; }, get prog() { return prog; }, get hero() { return hero; }, get save() { return save; }, get foes() { return foes; }, get npcs() { return npcs; }, get chests() { return chests; },
-  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
+  get dialog() { return dialog; }, get shop() { return shop; }, get loot() { return loot; }, get target() { return target; }, get err() { return errMsg; }, get atlas() { return atlas; }, get BTN() { return BTN; }, get STICK() { return STICK; }, SG, get mapOpen() { return mapOpen; }, get menu() { return menu; }, get MIS() { return MIS; }, STO, get MODO() { return MODO; }, get grK() { return grK; }, get fx() { return fx; }, salaMetti, salaVia, get forza() { return forzaOra; }, hurt(d, e) { hurtHero(d, e); }, get doors() { return doors; }, get musica() { return musicPick(); }, get cam() { return cam; }, get nodi() { return nodi; }, get inc() { return inc; }, get heroRects() { return heroRects; }, scarica, get aloni() { return aloni; }, get NPC() { return NPC; }, heroCharged,
   eroeFig(p, d, vecchio) { const L = heroLook(), P = CC().poses; if (vecchio) { const L0 = Object.assign({}, L); for (const k of ['sciarpa', 'cuff', 'buckle', 'bracer']) delete L0[k]; if (L0.hairStyle === 'ciuffi') L0.hairStyle = 'short'; return A.figure(A.human(L0, P[Math.min(p, POSE_N - 1)]), d / 8 * TAU, HS, HS, { sc: SR, ricco: 0 }).toDataURL(); }
     const hs = Math.round(HS * 1.56); return A.figure(A.human(L, Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p] })), d / 8 * TAU, hs, hs, { sc: SR * hs / HS, ricco: 1 }).toDataURL(); },
   figura(look, pose, d, ricco) { const k = ricco ? 1.56 : 1; return A.figure(A.human(look, pose || {}), d / 8 * TAU, Math.round(66 * k), Math.round(78 * k), { sc: SR * k, ricco: ricco ? 1 : 0 }).toDataURL(); }, incontro(tipo, d) { incVia(); const p = stradaAvanti(d || 60) || { x: hero.x + Math.cos(hero.yaw) * 60, z: hero.z + Math.sin(hero.yaw) * 60, ux: Math.cos(hero.yaw), uz: Math.sin(hero.yaw) }; return incNasce(tipo, p).tipo; }, incVia, raccogli, setDay: t => setDay(t), get day() { return day; }, set incT(v) { incT = v; }, get incT() { return incT; },
@@ -17711,7 +17723,7 @@ if (window.__SG_DEBUG) window.__sg = {
   drive(tx, tz, max = 4000) { let stuck = 0; for (let i = 0; i < max; i++) { const d = Math.hypot(tx - hero.x, tz - hero.z); if (d < 5) return 0; const a = Math.atan2(tz - hero.z, tx - hero.x); hero.yaw = a; const m = 25 / 60; if (!move(hero, Math.cos(a) * m, Math.sin(a) * m, 1.6)) { stuck++; const s2 = (stuck % 2 ? 1 : -1) * 1.2; if (!move(hero, Math.cos(a + s2) * m, Math.sin(a + s2) * m, 1.6) && stuck > 300) return d; } else stuck = Math.max(0, stuck - 1); hero.y = gH(hero.x, hero.z); } return Math.hypot(tx - hero.x, tz - hero.z); }, close() { dialog = null; loot = null; menu = null; shop = null; mapOpen = false; help = 0; banner = null; toasts = []; },
 };
 return {
-  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true,
+  id: 'saga', name: 'PIXEL SAGA', desc: 'AVVENTURA FANTASY 3D', full: true, ownSelect: true, cbtn: true, pad8: true, pad360: true,
   // la leva serve a scegliere una voce (menu, bottega, dialogo, mappa, titolo) e non a camminare?
   padMenu: () => st !== 'play' || !!(dialog || shop || loot || menu || mapOpen || clsUI), aspect: 0,
   keys: [['D', 'cammina'], ['A', 'azione'], ['B', 'corri'], ['C', 'abilità'], ['START', 'menu']],
@@ -17778,7 +17790,7 @@ GAMES.push((() => {
   const S = GAMES.find(g => g.id === 'saga'), G2 = Object.create(S);
   return Object.assign(G2, {
     id: 'viaggio', name: 'IL GRANDE VIAGGIO', desc: 'ANTEPRIMA: LA TERRA NUOVA', terra: 'lumen',
-    full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
+    full: S.full, ownSelect: S.ownSelect, cbtn: S.cbtn, pad8: S.pad8, pad360: S.pad360, padMenu: S.padMenu, aspect: S.aspect, keys: S.keys,
     icon(c, x, y, s) { S.icon(c, x, y, s); },
     enter() { S.enter.call(G2); }, leave() { S.leave(); }, hidden() { S.hidden(); }, update(dt) { S.update(dt); }, draw(c, w, h) { S.draw(c, w, h); },
   });
@@ -17801,6 +17813,7 @@ function layoutFor(g) {
   document.body.classList.toggle('full', !!(g && g.full));
   document.body.classList.toggle('tre', !!(g && g.cbtn));     // il terzo tasto (C) c'è solo nei giochi che lo usano
   document.body.classList.toggle('otto', !!(g && g.pad8));    // la leva a 8 direzioni al posto della croce
+  document.body.classList.toggle('giro', !!(g && g.pad360));  // ...che in certi giochi è libera, a 360 gradi (i tasti di direzione restano, a spicchi, per i menu)
   if (g && g.full) { fitScreen(); return; }
   const asp = g && g.aspect ? g.aspect : 0;
   if (landscape()) {
@@ -17880,19 +17893,23 @@ const dpadEl = $('dpad'), dptr = new Map();
 function dpadDir(e) {
   const r = dpadEl.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
   const otto = document.body.classList.contains('otto');
-  if (Math.hypot(dx, dy) < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0 };
+  // la leva libera: da ferma (vicino al centro) a tutta (verso il bordo), in qualunque direzione
+  const R = r.width / 2, m = Math.hypot(dx, dy), k = m < R * 0.16 ? 0 : Math.min(1, (m - R * 0.16) / (R * 0.62)), ax = m ? dx / m * k : 0, ay = m ? dy / m * k : 0, px = m ? dx / m * Math.min(1, m / (R * 0.78)) : 0, py = m ? dy / m * Math.min(1, m / (R * 0.78)) : 0;
+  if (m < r.width * (otto ? 0.13 : 0.11)) return { x: 0, y: 0, ax, ay, px, py };
   let deg = Math.atan2(dy, dx) * 180 / Math.PI; if (deg < 0) deg += 360;
   const axis = Math.round(deg / 90) * 90, dev = Math.abs(deg - axis);
   // la leva: otto spicchi uguali (ma davanti a un menu o a un elenco le diagonali si stringono, per non sbagliare voce); la croce: le diagonali sono più strette
   const elenco = otto && mode === 'game' && cur && cur.padMenu && cur.padMenu();
-  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)) }; }
-  const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)) };
+  if (dev > (elenco ? 34 : otto ? 22.5 : 30)) { const d = Math.round((deg - 45) / 90) * 90 + 45, a = d * Math.PI / 180; return { x: Math.sign(Math.round(Math.cos(a) * 10)), y: Math.sign(Math.round(Math.sin(a) * 10)), ax, ay, px, py }; }
+  const a = axis * Math.PI / 180; return { x: Math.round(Math.cos(a)), y: Math.round(Math.sin(a)), ax, ay, px, py };
 }
 function syncDpad() {
-  let d = { x: 0, y: 0 }; for (const v of dptr.values()) d = v;
+  let d = { x: 0, y: 0, ax: 0, ay: 0, px: 0, py: 0 }; for (const v of dptr.values()) d = v;
   setT('left', d.x < 0); setT('right', d.x > 0); setT('up', d.y < 0); setT('down', d.y > 0);
-  // il pomello della leva segue il pollice
-  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
+  const giro = document.body.classList.contains('giro');
+  STICK.on = giro && dptr.size > 0 && !(mode === 'game' && cur && cur.padMenu && cur.padMenu()); STICK.x = STICK.on ? d.ax : 0; STICK.y = STICK.on ? d.ay : 0;
+  // il pomello della leva segue il pollice (in quella libera, passo passo fino al bordo)
+  const k = d.x && d.y ? 0.707 : 1; $('dpk').style.transform = giro ? `translate(calc(-50% + ${(d.px || 0) * 64}%), calc(-50% + ${(d.py || 0) * 64}%))` : `translate(calc(-50% + ${d.x * k * 26}%), calc(-50% + ${d.y * k * 26}%))`;
 }
 dpadEl.addEventListener('pointerdown', e => { e.preventDefault(); audioUnlock(); try { dpadEl.setPointerCapture(e.pointerId); } catch (_) {} dptr.set(e.pointerId, dpadDir(e)); syncDpad(); });
 dpadEl.addEventListener('pointermove', e => { if (dptr.has(e.pointerId)) { dptr.set(e.pointerId, dpadDir(e)); syncDpad(); } });
@@ -17912,7 +17929,7 @@ function releaseTouch() {
   dptr.clear(); syncDpad();
   for (const n in btnIds) { btnIds[n].clear(); setT(n, false); }
 }
-function releaseAll() { for (const n in BTN) kbB[n] = false; releaseTouch(); for (const n in BTN) syncBtn(n); }
+function releaseAll() { for (const n in BTN) kbB[n] = false; STICK.on = false; STICK.x = STICK.y = 0; releaseTouch(); for (const n in BTN) syncBtn(n); }
 const dropPtr = e => { if (dptr.delete(e.pointerId)) syncDpad(); for (const n in btnIds) if (btnIds[n].delete(e.pointerId) && !btnIds[n].size) setT(n, false); };
 document.addEventListener('pointerup', dropPtr, { capture: true, passive: true });
 document.addEventListener('pointercancel', dropPtr, { capture: true, passive: true });

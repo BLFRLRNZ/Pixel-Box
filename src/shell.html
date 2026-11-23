@@ -65,6 +65,9 @@
   body.otto #dpo i.d{border-left-width:4px;border-right-width:4px;border-bottom-width:6px;border-bottom-color:#6e7480;margin:-3px 0 0 -4px}
   body.otto #dpk{display:block;position:absolute;left:50%;top:50%;width:40%;height:40%;border-radius:50%;transform:translate(-50%,-50%);transition:transform .05s;
     background:radial-gradient(circle at 40% 32%,#7a7f8c,#41444c 60%,#2a2c32);box-shadow:0 4px 0 #0e0f12,inset 0 1px 0 rgba(255,255,255,.3)}
+  body.giro #dpo i{display:none}
+  body.giro #dpo::after{content:'';position:absolute;inset:17%;border-radius:50%;border:2px solid rgba(255,255,255,.07)}
+  body.giro #dpk{transition:transform .03s}
   body.full.otto #cl{opacity:.6}
   #cr{position:absolute;right:4%;top:6%;width:calc(var(--bs)*2.25);height:calc(var(--bs)*1.75)}
   .bt{position:absolute;width:var(--bs);height:var(--bs);border-radius:50%;background:radial-gradient(circle at 35% 30%,#cf5a8d,#9c2459 58%,#7a1743);
