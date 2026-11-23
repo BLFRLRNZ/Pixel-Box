@@ -1171,6 +1171,39 @@ function mestiere(e, T, dt, d, dx, dz) {
   }
   return false;
 }
+// ---------- il Grande Viaggio: la luce ricca (prova) ----------
+// Finito il disegno 3D, l'immagine si copia in una tessitura; se ne prende il chiaro (fuochi, finestre, neve al sole, lampi), lo si sfoca
+// e lo si rimette sopra; agli angoli una vignetta. Costa poco: l'immagine è quella piccola (240 righe) che poi la console ingrandisce, e la sfocatura si fa a un quarto di quella.
+// Si accende e si spegne dalle opzioni (LUCE: RICCA / SEMPLICE); se il telefono non la regge resta spenta da sé.
+let LUX = null, luxNo = false;
+const luceOn = () => !!MODO && !luxNo && !(save && save.opt.luce === false);
+function luxPrepara() {
+  const w = W3, h = H3, w2 = Math.max(8, w >> 2), h2 = Math.max(8, h >> 2);
+  const tex = (tw, th, fmt) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, fmt, tw, th, 0, fmt, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); return t; };
+  const fbo = t => { const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE; gl.bindFramebuffer(gl.FRAMEBUFFER, null); return ok ? f : null; };
+  if (LUX) { for (const t of [LUX.scena, LUX.ta, LUX.tb]) gl.deleteTexture(t); gl.deleteFramebuffer(LUX.fa); gl.deleteFramebuffer(LUX.fb); }
+  const scena = tex(w, h, gl.RGB), ta = tex(w2, h2, gl.RGBA), tb = tex(w2, h2, gl.RGBA), fa = fbo(ta), fb = fbo(tb);
+  if (!fa || !fb) { luxNo = true; LUX = null; return; }
+  LUX = { w, h, w2, h2, scena, ta, tb, fa, fb };
+}
+function luxPassa() {
+  if (!luceOn() || !G.P.luce) return;
+  if (!LUX || LUX.w !== W3 || LUX.h !== H3) { luxPrepara(); if (!LUX) return; }
+  const P = G.P, L = LUX, dep = gl.isEnabled(gl.DEPTH_TEST), ble = gl.isEnabled(gl.BLEND), cul = gl.isEnabled(gl.CULL_FACE), dm = gl.getParameter(gl.DEPTH_WRITEMASK);
+  gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE); gl.depthMask(false);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, L.scena); gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, L.w, L.h);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.full);
+  const notte = D ? 0.3 : buio();
+  let p = P.lumi; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]); gl.bindFramebuffer(gl.FRAMEBUFFER, L.fa); gl.viewport(0, 0, L.w2, L.h2); gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / L.w, 1 / L.h); gl.uniform1f(p.u.uThr, 0.76 - 0.2 * notte); gl.uniform1f(p.u.uSat, Math.min(1, notte * 1.4)); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  p = P.sfoca; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]); gl.uniform1i(p.u.uT, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, L.fb); gl.bindTexture(gl.TEXTURE_2D, L.ta); gl.uniform2f(p.u.uDir, 1 / L.w2, 0); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, L.fa); gl.bindTexture(gl.TEXTURE_2D, L.tb); gl.uniform2f(p.u.uDir, 0, 1 / L.h2); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, L.w, L.h);
+  p = P.luce; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, L.ta); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, L.scena);
+  gl.uniform1i(p.u.uT, 0); gl.uniform1i(p.u.uB, 1); gl.uniform3f(p.u.uK, D ? 0.62 : 0.8 + 0.6 * notte, 0.24, D ? 0.3 : 0.42 + 0.2 * notte);   // nelle grotte più piano: lì il chiaro è già tutto attorno ai lumi gl.drawArrays(gl.TRIANGLES, 0, 3);
+  if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE); gl.depthMask(dm);
+}
 // ---------- il Grande Viaggio: luce ed effetti (prova del disegno ricco) ----------
 // Gli aloni si sommano al colore come quelli dei lampioni: «aloni» durano un momento e si spengono (lampi, scariche), «aloniOra» valgono per un solo fotogramma (la lama).
 let aloni = [], aloniOra = [], polvT = 0;
@@ -2906,7 +2939,7 @@ function pickLights() {
   for (let k = 0; k < L.length && n < 8; k++, n++) { const g = L[k][1]; WLP[n * 4] = g[0]; WLP[n * 4 + 1] = g[1]; WLP[n * 4 + 2] = g[2]; WLP[n * 4 + 3] = g[3] * 5.5; WLQ[n * 3] = g[4] * 0.9 * ng; WLQ[n * 3 + 1] = g[5] * 0.9 * ng; WLQ[n * 3 + 2] = g[6] * 0.9 * ng; }
 }
 function setWL(p) {
-  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, buio() > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, 0.24 - 0.12 * day.night);
+  gl.uniform4fv(p.u.uLp, WLP); gl.uniform3fv(p.u.uLq, WLQ); gl.uniform1f(p.u.uNt, buio() > 0.02 ? 1 : 0); gl.uniform3fv(p.u.uLc, day.lc); gl.uniform3f(p.u.uCl, (time * 0.021) % 6283.185, (time * 0.013) % 6283.185, (luceOn() ? 1.42 : 0.24) - 0.12 * day.night);
 }
 const dirOf = (x, z, yaw) => ((Math.round(angDiff(Math.atan2(z - cam.z, x - cam.x), yaw) / (TAU / 8)) % 8) + 8) % 8;
 // ---------- le terre vicine: altri mondi nati dalla stessa fabbrica, posati accanto a quello dove si cammina (per ora solo nelle prove) ----------
@@ -3346,7 +3379,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return MODO ? [] : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno', 'vib', 'comandi'].concat(bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
+  return ['vol', 'mus', 'giorno'].concat(MODO ? ['luce'] : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -3387,7 +3420,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA A 8 DIREZIONI' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -3552,6 +3585,7 @@ function menuKey(name) {
   else {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
+    else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA A 8 DIREZIONI: L\'EROE VA DOVE PREMI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
@@ -3654,7 +3688,7 @@ return {
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class')) {
       G.resize(W3, H3);
-      if (st !== 'intro') { render3D(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
+      if (st !== 'intro') { render3D(); luxPassa(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
     }
     drawHUD();
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);

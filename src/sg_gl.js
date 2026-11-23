@@ -43,7 +43,9 @@ vec3 ptLights(vec3 p) { vec3 l = vec3(0.0); if (uNt > 0.5) { for (int i = 0; i <
 const CLD = `
 uniform vec3 uCl;
 float cloudSh(vec2 w) { vec2 q = w * 0.0052 + uCl.xy; float f = sin(q.x + 1.7 * sin(q.y * 0.61)) + sin(q.y * 1.31 - 0.9 * sin(q.x * 0.47 + 2.0)) + 0.6 * sin((q.x + q.y) * 0.73 + 4.0);
-  return 1.0 - uCl.z * (0.45 * step(0.95, f) + 0.55 * step(1.15, f)); }
+  float ric = step(0.9, uCl.z), s = uCl.z - ric, k = 0.45 * step(0.95, f) + 0.55 * step(1.15, f);
+  if (ric > 0.5) { vec2 r = w * 0.0155 + uCl.xy * 2.98 + 7.3; float g = sin(r.x + 1.4 * sin(r.y * 0.67)) + sin(r.y * 1.23 - 1.1 * sin(r.x * 0.53 + 1.0)); k = max(k, 0.5 * step(1.02, g) + 0.3 * step(1.32, g)); }
+  return 1.0 - s * k; }
 `;
 const WLIGHT = PTL + CLD + `
 uniform vec3 uLc;
@@ -169,6 +171,26 @@ void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP 
   vK = vec4(aK.rgb, aK.a * (1.0 - clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0))); }`, PREC + `
 varying vec2 vUV; varying vec4 vK;
 void main() { float r = length(vUV); if (r > 1.0) discard; float a = 1.0 - r; a = floor(a * a * 4.0 + 0.7) / 4.0; gl_FragColor = vec4(vK.rgb * a * vK.a, 1.0); }`],
+  // la luce ricca (solo a richiesta): dall'immagine finita si prende il chiaro, lo si sfoca e lo si rimette sopra; in più una vignetta agli angoli
+  lumi: [`
+attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
+uniform sampler2D uT; uniform vec2 uPx; uniform float uThr, uSat; varying vec2 vUV;
+void main() { vec3 c = (texture2D(uT, vUV + uPx * vec2(-1.0, -1.0)).rgb + texture2D(uT, vUV + uPx * vec2(1.0, -1.0)).rgb + texture2D(uT, vUV + uPx * vec2(-1.0, 1.0)).rgb + texture2D(uT, vUV + uPx * vec2(1.0, 1.0)).rgb) * 0.25;   // un quarto di misura: quattro prese che coprono il quadretto di 4 x 4
+  float l = dot(c, vec3(0.299, 0.587, 0.114)), k = max(0.0, l - uThr) / max(l, 0.001), mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
+  k *= mix(1.0, min(2.2, (mx - mn) / max(mx, 0.001) * 2.6), uSat); gl_FragColor = vec4(c * k * 2.3, 1.0); }`],
+  sfoca: [`
+attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
+uniform sampler2D uT; uniform vec2 uDir; varying vec2 vUV;
+void main() { vec3 c = texture2D(uT, vUV).rgb * 0.2270; c += (texture2D(uT, vUV + uDir * 1.385).rgb + texture2D(uT, vUV - uDir * 1.385).rgb) * 0.3162; c += (texture2D(uT, vUV + uDir * 3.231).rgb + texture2D(uT, vUV - uDir * 3.231).rgb) * 0.0703; gl_FragColor = vec4(c, 1.0); }`],
+  luce: [`
+attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
+uniform sampler2D uT, uB; uniform vec3 uK; varying vec2 vUV;
+void main() { vec3 c = texture2D(uT, vUV).rgb, b = texture2D(uB, vUV).rgb * uK.x;
+  b = floor(b * 16.0 + 0.5) / 16.0;                       // il bagliore a gradini, come il resto della luce
+  float l = dot(c, vec3(0.299, 0.587, 0.114)); c = mix(vec3(l), c, 1.06); c += (c - 0.5) * 0.05 + (l - 0.5) * vec3(0.024, 0.006, -0.03);   // un filo più di colore e di stacco; caldo nei chiari, freddo negli scuri
+  c = clamp(c, 0.0, 1.0); c = 1.0 - (1.0 - c) * (1.0 - min(b, vec3(uK.z)));       // si somma senza bruciare (e mai oltre un certo segno: di notte, accanto a un lampione, la piazza non deve diventare bianca)
+  vec2 q = (vUV - 0.5) * vec2(1.2, 1.0); c *= 1.0 - uK.y * smoothstep(0.38, 0.92, length(q));
+  gl_FragColor = vec4(c, 1.0); }`],
   // acqua e lava dei santuari (luce fissa, niente schiuma)
   dwater: [`
 attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
