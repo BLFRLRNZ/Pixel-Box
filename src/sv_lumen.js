@@ -101,18 +101,19 @@ SG.terre.lumen = m => {
   W.PROPS.push(['well', BORGO[0] + 27, BORGO[1] - 19]);   // il pozzo del Borgo: chi beve si rimette in forze
   // il villaggio degli elfi nel Bosco Antico: case strette di legno dai tetti ripidi e muschiati, tra le querce grandi, con le lanterne
   const TL = m.town.TL, ELFI = [1750, 3180];
-  C.STYLES.elfi = { walls: [3, 3, TL.TIMBER2], roofs: [TL.ROOF_MOSS, TL.ROOF_MOSS, TL.ROOF_GREEN], rt: ['gable'], steep: 0.95, h: [12, 19], wd: [12, 17], chim: 0, win: [8, TL.WIN_PAPER], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_MOSS,
+  C.STYLES.elfi = { walls: [TL.WHITE, 3, TL.TIMBER2], roofs: [TL.ROOF_TEAL, TL.ROOF_MOSS, TL.ROOF_GREEN], rt: ['gable', 'hip'], steep: 1.12, h: [13, 20], wd: [12, 17], chim: 0, win: [8, TL.WIN_PAPER], dr: [7], aw: [], cw: 2, cm: TL.MERL_GREY, tr: TL.ROOF_MOSS,
     pave: 'g', trees: ['oakbig', 'oakbig', 'oak'], lamp: 'lantern', yard: ['pot', 'bench', 'barrel'], flag: 0, ban: TL.BAN_RED };
-  C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 46, d: 40 },
+  const pianoElfi = C.city({ id: 'elfi', name: 'VILLAGGIO DEGLI ELFI', x: ELFI[0], z: ELFI[1], w: 250, d: 210, style: 'elfi', open: true, small: true, center: 'none', plaza: { w: 60, d: 52 },   // (la piazza è larga: in mezzo c'è la vasca dell'Albero d'Argento, e attorno si deve passare)
     people: [['elfosaggio', 'IL CUSTODE DELLA RADURA', ['GLI UOMINI TORNANO NEL BOSCO ANTICO. ERA TEMPO.', "L'ALBERO MADRE È PIÙ A NORD, LUNGO IL SENTIERO. NOI LO CUSTODIAMO DA PRIMA CHE CADESSE SOLIS.", 'ACCANTO ALL\'ALBERO C\'È IL SANTUARIO DEL BOSCO. CHI HA CORAGGIO PUÒ ENTRARE.'], 'p'],
-      ['elfa', 'LIRIEL', ['LE NOSTRE CASE VERE NON SONO ANCORA FINITE: QUESTE LE ABBIAMO TIRATE SU COME FANNO GLI UOMINI.'], 'd'],
+      ['elfa', 'LIRIEL', ['LE CASE TONDE NON LE COSTRUIAMO: LE FACCIAMO CRESCERE, UN ANNO DOPO L\'ALTRO. QUELLE COL TETTO DRITTO SONO PER GLI OSPITI, CHE NON SANNO ASPETTARE.', "L'ALBERO D'ARGENTO IN PIAZZA È FIGLIO DELL'ALBERO MADRE. DI NOTTE FA LUCE DA SOLO."], 'd'],
       ['elfo', 'THALION', ['CAMMINIAMO SENZA RUMORE E PARLIAMO POCO. MA CHI PORTA RISPETTO AL BOSCO È SEMPRE IL BENVENUTO.'], 'p', { walk: 1 }],
       ['elfoarciere', 'LA SENTINELLA', ['DAGLI ALBERI VEDIAMO CHI ARRIVA DAL SENTIERO MOLTO PRIMA CHE LUI VEDA NOI. TI ABBIAMO VISTO GIÀ AL BIVIO.'], 'd'],
       ['elfa', 'LA TESSITRICE DI LANTERNE', ['INTRECCIAMO LE LANTERNE CON LA SETA DEI RAGNI E LA RESINA DELLE QUERCE: NON SI SPENGONO NEMMENO CON LA PIOGGIA.'], 'd'],
       ['elfo', 'UN GIOVANE ELFO', ["HO CENT'ANNI APPENA COMPIUTI. GLI ANZIANI DICONO CHE SONO ANCORA UN RAGAZZINO."], 'p', { walk: 1 }],
       ['elfa', 'LA CANTORA', ["A OGNI LUNA NUOVA CANTIAMO PER L'ALBERO MADRE. LE SUE RADICI ARRIVANO FIN SOTTO IL VILLAGGIO."], 'p'],
       ['elfoarciere', "L'ARCIERE DELLA RADURA", ['UNA FRECCIA SOLA, E SOLO QUANDO SERVE. IL BOSCO NON AMA CHI SPRECA.'], 'd']] });
-  W.PROPS.push(['oakbig', ELFI[0], ELFI[1]], ['lantern', ELFI[0] - 14, ELFI[1] - 10], ['lantern', ELFI[0] + 14, ELFI[1] - 10], ['lantern', ELFI[0] - 14, ELFI[1] + 12], ['lantern', ELFI[0] + 14, ELFI[1] + 12]);
+  SG.terre.lumenElfi(m, { ELFI, piano: pianoElfi });   // le case tonde, i grandi alberi coi ponti sospesi, l'Albero d'Argento: sv_lumen5.js
+  W.PROPS.push(['lantern', ELFI[0] - 14, ELFI[1] - 10], ['lantern', ELFI[0] + 14, ELFI[1] - 10], ['lantern', ELFI[0] - 14, ELFI[1] + 12], ['lantern', ELFI[0] + 14, ELFI[1] + 12]);
   // la Rocca di Lumen: quattro volte quella di oggi, murata, con quattro porte
   W.FLAT.push([ROCCA[0], ROCCA[1], 640, 30]);   // il pianoro della città
   C.city(Object.assign({ id: 'rocca', guild: true, name: 'ROCCA DI LUMEN', x: ROCCA[0], z: ROCCA[1], w: 820, d: 720, y: 30, style: 'lumen', gates: 'nsw', fitto: true, plaza: { w: 130, d: 110 }, reserve: [[222, -126, 410, 126]],
