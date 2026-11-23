@@ -138,7 +138,7 @@ if (screen.orientation && screen.orientation.addEventListener) screen.orientatio
 const KEYS = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
   Digit2: 'up', Numpad2: 'up', Digit8: 'down', Numpad8: 'down', Digit4: 'left', Numpad4: 'left', Digit6: 'right', Numpad6: 'right',
-  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v', KeyM: 'm',
+  KeyX: 'a', KeyK: 'a', Space: 'a', Digit5: 'a', Numpad5: 'a', KeyZ: 'b', KeyJ: 'b', Digit0: 'b', Numpad0: 'b', KeyC: 'c', KeyL: 'c', KeyV: 'v', KeyM: 'm', KeyN: 'n',
   Enter: 'start', KeyP: 'start', Escape: 'select', Backspace: 'select', ShiftRight: 'select'
 };
 addEventListener('keydown', e => { const n = KEYS[e.code]; if (!n) return; e.preventDefault(); audioUnlock(); if (!e.repeat) setKb(n, true); });

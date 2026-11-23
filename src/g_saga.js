@@ -187,6 +187,8 @@ const ATMO = [
 
 // ---------- stato ----------
 let G = null, gl = null, st = 'boot', gen = null, prog = 0, progMsg = '', errMsg = '';
+let atlas2 = null, ATEX2 = null, dynBuf3 = null, bb3 = 0, atlasUse2 = 0;   // il secondo foglio di figure (solo nel Grande Viaggio): la compagnia
+const dynF3 = new Float32Array(260 * 44);
 let atlas = null, ATEX = null, TILES = null, DET = null, PAVT = null, PANO = null, SHORE = null, glowBuf = null, SPR = {}, CHR = {}, heroRects = null;
 let save = null, hero = null, npcs = [], chests = [], foes = [], camps = [], drops = [], fx = [], props = [], doors = [], botteghe = [];
 let time = 0, saveT = 0, seenT = 0, placeT = 0, curPlace = '', placeCand = '', placeHold = 0, banner = null, toasts = [], target = null;
@@ -230,6 +232,7 @@ function newSave() {
 function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); if (s && s.v === 1) { const n = Object.assign(newSave(), s); n.q = Object.assign(newSave().q, s.q); return n; } } catch (e) {} return null; }
 function writeSave() {
   if (!save || !hero) return;
+  compSync();
   if (D) { save.x = D.outX; save.z = D.outZ; save.yaw = D.outYaw; dsave(D.id).seen = b64(D.seen); } else { save.x = hero.x; save.z = hero.z; save.yaw = hero.yaw; }
   save.hp = hero.hp; save.time = Math.round(save.time); if (save.cav && cav) { save.cav.x = Math.round(cav.x); save.cav.z = Math.round(cav.z); }
   save.seen = b64(seen.subarray(MGN * MG)); save.seenN = b64(seen.subarray(0, MGN * MG));
@@ -462,6 +465,10 @@ function* buildCharacters() {
   for (const id in NPC) { const N = NPC[id]; if (!N.as) continue; if (!made[N.as]) made[N.as] = POSE_NPC.slice(0, N.walk ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); CHR[id] = made[N.as]; }
   yield 0.2;
   for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
+  if (MODO && W.COMPAGNI && atlas2) {   // la compagnia: per ognuno cinque pose, cinque direzioni disegnate e tre allo specchio, sul secondo foglio
+    const hs = hsEroe(); compRects = {};
+    for (const id of compOrd()) compRects[id] = COMP_POSE.map(() => { const row = []; for (let d = 0; d < 5; d++) { const r = atlas2.room(hs, hs); r.t2 = 1; row.push(r); } for (let d = 3; d > 0; d--) row.push(Object.assign({}, row[d], { u0: row[d].u1, u1: row[d].u0 })); return row; });
+  }
   if (MODO) {   // il cavallo: sellato (baio) e, nei recinti, due senza sella; e lo spazio per l'eroe in sella
     const hs = hsEroe(), sw = Math.round(SELLA_W * hs / 48), sh = Math.round(SELLA_H * hs / 48); sellaRects = CAV_POSE.map(() => { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(sw, sh))); return row; }); sellaVecchia = true; sellaK = 0;
     CHR.cavallo = [CAV_POSE.map(p => dirs(() => cavParti(p, 0, true), 52, 50, { base: 41 }))];
@@ -503,7 +510,7 @@ function* buildCharacters() {
   yield 1;
 }
 function drawHeroSprites() {
-  const L = heroLook(), P = CC().poses, hs = hsEroe(); sellaVecchia = true; sellaK = 0;
+  const L = heroLook(), P = CC().poses, hs = hsEroe(); sellaVecchia = true; sellaK = 0; if (compOn()) compVecchi[save.comp.chi] = true;
   for (let p = 0; p < nPose(); p++) for (let d = 0; d < 8; d++) {
     const pose = MODO ? Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p], bob: p === 11 ? 0.35 : 0 }) : P[p];
     const c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, MODO ? { sc: SR * hs / HS * (RAZ().sc || 1), ricco: 1 } : { sc: SR }), r = heroRects[p][d];
@@ -567,6 +574,7 @@ function* loader() {
   if (!G) throw new Error('NOGL');
   gl = G.gl;
   { const tx = G.texture.bind(G); G.texture = (src, o) => { MIS.tex += (src.w || src.width || 0) * (src.h || src.height || 0) * (o && o.lum ? 1 : 4); return tx(src, o); }; }
+  atlas2 = MODO ? A.Atlas(2048, 2048) : null;   // il secondo foglio: le figure della compagnia (e il posto per quelle che verranno)
   atlas = A.Atlas(MODO ? 4096 : 2048, 4096);   // (nel Grande Viaggio le figure sono più fitte e occupano più posto: l'atlante è largo il doppio)
   A.ricco = !!MODO;   // nel Grande Viaggio tutto è disegnato col disegno ricco (figure, alberi, rocce, oggetti); in Pixel Saga no
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
@@ -577,6 +585,7 @@ function* loader() {
   for (const p of buildCharacters()) yield 0.66 + p * 0.24;
   progMsg = 'PREPARO IL VIAGGIO'; yield 0.92;
   ATEX = G.texture(atlas.c); atlasUse = atlas.used;
+  if (atlas2) { ATEX2 = G.texture(atlas2.c); atlasUse2 = atlas2.used; atlas2.c.width = atlas2.c.height = 1; dynBuf3 = G.buffer(dynF3, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); }
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
   TILES = G.texture(SG.decor.tilesOn(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31))));
   DET = G.texture(A.detail(rng(3)), { repeat: true }); PAVT = G.texture(A.paving(rng(77)), { repeat: true });
@@ -640,7 +649,7 @@ function startGame(fresh) {
   foes = []; drops = []; fx = []; for (const c of camps) { c.alive = []; c.on = false; c.dead = 0; }
   fauna.reset();
   curPlace = ''; placeCand = ''; banner = null; toasts = []; dialog = null; menu = null; shop = null; loot = null; mapOpen = false; death = 0;
-  drawHeroSprites();
+  drawHeroSprites(); compAvvia();
   help = fresh ? 9 : 0;
   // chi giocava già scopre una volta sola che la visuale ora si gira col dito
   if (!fresh && !save.flags.camTip) toasts.push({ t: 'NOVITÀ: UN DITO SULLO SCHERMO GIRA LA VISUALE', c: '#7af0ff', life: 9 });
@@ -807,6 +816,7 @@ const npcHidden = n => !!n.via || (n.id === 're' && (!save || save.q.main < 4));
 function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1]; hero.y = gH(hero.x, hero.z); hero.yaw = d.yaw; hero.vx = hero.vz = 0; camBehind(); curPlace = ''; placeCand = ''; save.time += 90; toast('SEI ARRIVATO: ' + d.n, '#9af0b0'); }
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
+  if (MODO && storiaParla(n, f)) return;
   if (MODO && (f.vita || f.cliente || n.dice)) return say(id, [vitaDice(n)]);
   if (f.role === 'shop' && MODO && f.aspetto) return ask(id, f.lines, ['GUARDA LA MERCE', 'CAMBIA IL TUO ASPETTO (' + CREA_COSTO + ' MONETE)', 'NIENTE, GRAZIE'], i => { if (i === 0) shop = { sel: 0, top: 0, who: f.shop }; else if (i === 1) apriCrea(2, 'sarta'); });
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
@@ -1675,6 +1685,240 @@ function salaMenu(id) {
 }
 
 // ---------- eroe ----------
+// ===================== la compagnia (solo nel Grande Viaggio) =====================
+// Chi si è unito viaggia con l'eroe: segue, combatte per conto suo, e si può guidare al posto dell'eroe (gli altri seguono), anche nei santuari.
+// Nel salvataggio: save.comp = { chi: chi si guida ('io' è l'eroe creato all'inizio), m: { id: { cls, razza, aspetto, eq, hp, giu } }, casa: { id: 1 } (chi resta al campo) }.
+// Di chi si guida valgono save.cls, save.razza, save.aspetto, save.eq e hero.hp, come sempre: la sua scheda in m si aggiorna quando si cambia guida e quando si salva.
+// La borsa è di tutti: ognuno può indossare quel che c'è (anche la stessa cosa di un altro), ma solo quando lo si guida e glielo si cambia dal menu: da soli non si scambiano niente.
+// Solo chi è guidato può essere ferito. Se cade, la guida passa a un compagno in piedi; chi è a terra si rialza a combattimento finito. Cadono tutti: si ricomincia come sempre.
+// Le figure di chi segue (cinque pose, otto direzioni di cui tre allo specchio) stanno sul secondo foglio (atlas2, ATEX2) e si disegnano quando servono.
+let seguaci = [], attese = [], compRects = {}, compVecchi = {}, compT = 0, compQuiete = 0, chipsC = [];
+const COMP_POSE = [0, 1, 2, 3, 4], COMP_K = { cavaliere: [0.45, 1.3, 0], furfante: [0.38, 0.95, 0], arciere: [0.38, 1.6, 1], mago: [0.45, 2, 1] };   // [quanto del suo attacco, ogni quanti secondi, da lontano]
+const compOn = () => !!(MODO && W.COMPAGNI && save && save.comp);
+const compOrd = () => ['io'].concat(W.COMP_ORD);
+const compNome = id => id === 'io' ? 'TU' : W.COMPAGNI[id].n;
+const compDentro = () => W.COMP_ORD.filter(id => save.comp.m[id]);
+const compBase = id => { const c = W.COMPAGNI[id]; return { cls: c.cls, razza: c.razza, aspetto: c.aspetto, eq: c.eq }; };
+const inLotta = () => foes.some(e => e.st === 'chase' || e.st === 'wind');
+// i numeri e l'aspetto di un membro si calcolano mettendolo un attimo al posto di chi è guidato
+function conMembro(M, fn) { const o = [save.cls, save.razza, save.aspetto, save.eq]; save.cls = M.cls; save.razza = M.razza; save.aspetto = M.aspetto; save.eq = M.eq; try { return fn(); } finally { save.cls = o[0]; save.razza = o[1]; save.aspetto = o[2]; save.eq = o[3]; } }
+function compSync() { if (!compOn()) return; const C = save.comp, M = C.m[C.chi] || (C.m[C.chi] = {}); M.cls = save.cls; M.razza = save.razza; M.aspetto = save.aspetto; M.eq = save.eq; if (hero) M.hp = hero.hp; M.giu = 0; }
+function compAvvia() {
+  seguaci = []; attese = []; chipsC = []; compQuiete = 0; if (!MODO || !W.COMPAGNI) return;
+  const C = save.comp || (save.comp = { chi: 'io', m: {}, casa: {} }); C.m = C.m || {}; C.casa = C.casa || {};
+  if (C.chi !== 'io' && !W.COMPAGNI[C.chi]) C.chi = 'io';
+  compSync(); for (const id of compOrd()) compVecchi[id] = true;
+  compRifai();
+  if (!save.flags.storiaTip && storiaPasso() === 0) { save.flags.storiaTip = 1; toasts.push({ t: "IL SEGNO D'ORO SULLA BUSSOLA PORTA DOVE LA STORIA CONTINUA", c: '#ffd23f', life: 14 }); }
+}
+// chi segue e chi aspetta ancora di essere incontrato
+function compRifai() {
+  const C = save.comp, prima = seguaci; seguaci = []; attese = [];
+  for (const id of compOrd()) {
+    if (id !== 'io' && !C.m[id]) { const c = W.COMPAGNI[id], p = fixSpot(c.casa[0], c.casa[1], 3); attese.push({ id, attesa: 1, x: p[0], z: p[1], y: W.ground(p[0], p[1], -1e9), yaw: c.casa[2], base: c.casa[2] }); continue; }
+    if (id === C.chi || C.casa[id] || !C.m[id]) continue;
+    const v = prima.find(f => f.id === id); if (v) { seguaci.push(v); continue; }
+    const f = { id, x: hero.x, z: hero.z, y: hero.y, yaw: hero.yaw, walk: 0, moving: false, st: 'segue', t: 0, cd: 1, tg: null, flash: 0, fermo: 0, giu: !!C.m[id].giu, luogo: D ? D.id : 0 };
+    compAccanto(f, seguaci.length); seguaci.push(f);
+  }
+}
+function compAccanto(f, k = 0) {
+  const h = hero, da = { x: h.x, z: h.z, y: h.y };
+  for (let r = 8; r <= 26; r += 6) for (let i = 0; i < 8; i++) { const a = h.yaw + Math.PI + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.7 + k * 0.45, x = h.x + Math.cos(a) * r, z = h.z + Math.sin(a) * r;
+    if (canStand(da, x, z, 1.8, 3)) { f.x = x; f.z = z; f.y = D ? 0 : gH(x, z, h.y); f.yaw = h.yaw; f.fermo = 0; f.moving = false; return; } }
+  f.x = h.x; f.z = h.z; f.y = h.y; f.yaw = h.yaw; f.fermo = 0; f.moving = false;
+}
+function compEntra(id, zitto) {
+  const C = save.comp, c = W.COMPAGNI[id]; if (!c || C.m[id]) return false;
+  const M = C.m[id] = { cls: c.cls, razza: c.razza, aspetto: Object.assign({}, c.aspetto), eq: Object.assign({}, c.eq), giu: 0 };
+  for (const s of EQS) { const it = c.eq[s]; if (it && !save.inv.includes(it)) save.inv.push(it); }
+  M.hp = conMembro(M, MAXHP); compVecchi[id] = true; compRifai();
+  if ((save.q.comp || 0) < 1) save.q.comp = 1;
+  if (compDentro().length === W.COMP_ORD.length && save.q.comp < 2) save.q.comp = 2;
+  const p = c.prova; if (p.tipo === 'forziere' && save.chests[p.id]) { save.flags['pv_' + id] = 1; save.coins += c.premio.monete; toasts.push({ t: p.n + ": L'AVEVI GIÀ APERTO. +" + c.premio.monete + ' MONETE', c: '#ffd23f', life: 8 }); }
+  if (!zitto) { banner = { t: c.n + ' SI UNISCE ALLA COMPAGNIA', s: c.chi, life: 4, c: CL[c.cls].col }; fanfare();
+    if (!save.flags.compTip) { save.flags.compTip = 1; toasts.push({ t: 'PER GUIDARE UN COMPAGNO, TOCCA IL SUO RIQUADRO QUI SOPRA', c: '#ffd23f', life: 16 }, { t: 'CON START (COMPAGNIA) SCEGLI CHI PARTE E CHI RESTA', c: '#ffd23f', life: 16 }); } }
+  writeSave(); return true;
+}
+// le figure: una persona per fotogramma, solo chi è cambiato e si vede
+function compFigure() {
+  if (!ATEX2) return; const id = seguaci.map(f => f.id).concat(attese.map(a => a.id)).find(k => compVecchi[k]); if (!id) return;
+  compVecchi[id] = false; const C = save.comp, M = id === C.chi ? null : C.m[id] || compBase(id), hs = hsEroe(), S = compRects[id]; if (!S) return;
+  const disegna = () => { const L = heroLook(), P = CC().poses, sc = SR * hs / HS * (RAZ().sc || 1); gl.bindTexture(gl.TEXTURE_2D, ATEX2);
+    COMP_POSE.forEach((pp, i) => { for (let d = 0; d < 5; d++) { const pose = Object.assign({}, P[pp] || P[0], { vento: VENTO[pp], onda: ONDA[pp] }), c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, { sc, ricco: 1 }), r = S[i][d]; gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); } }); };
+  if (M) conMembro(M, disegna); else disegna();
+}
+// chi attaccare: solo chi ce l'ha già con l'eroe (o è stato appena colpito); il guardiano di un santuario solo quando è scoperto
+function compBersaglio(f) {
+  const h = hero; let best = null, bd = 1e9;
+  for (const e of foes) { if (e.st === 'dead' || altroPiano(e) || (D && e.room !== D.room) || (f.no === e && f.noT > 0)) continue; const T = FOE[e.type]; if (T.fermo && !(e.rage > 0)) continue;
+    const dh = Math.hypot(e.x - h.x, e.z - h.z); if (dh > 75) continue;
+    if (!(e.st === 'chase' || e.st === 'wind' || e.rage > 0 || (T.shoot && dh < T.aggro))) continue;
+    const d = Math.hypot(e.x - f.x, e.z - f.z); if (d < bd) { bd = d; best = e; } }
+  if (!best && D && boss && boss.on && !boss.dead && !boss.hide && boss.st !== 'die' && boss.vuln && Math.hypot(boss.x - h.x, boss.z - h.z) < 80) best = boss;
+  return best;
+}
+function compColpo(f, M) {
+  const e = f.tg, K = COMP_K[M.cls] || COMP_K.cavaliere, dmg = Math.max(1, Math.round((f.att || 1) * K[0]));
+  if (!e || e.st === 'dead' || e.dead) return;
+  const a = Math.atan2(e.z - f.z, e.x - f.x), d = Math.hypot(e.x - f.x, e.z - f.z), mago = M.cls === 'mago';
+  if (K[2]) { const sp = mago ? 120 : 170;
+    shots.push({ k: mago ? 'bolt' : 'arrow', from: 'hero', cls: 1, amico: 1, x: f.x + Math.cos(a) * 4, z: f.z + Math.sin(a) * 4, y: f.y + 4.6, gy: D ? 0 : Math.max(W.ground(f.x, f.z), W.WL), vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, yaw: a, r: 2.2, dmg, life: 0.9, tg: e === boss ? null : e, turn: 3, bossD: 0.5 });
+    tone(mago ? 520 : 880, 0.05, 'triangle', 0.02, mago ? 300 : 440); return; }
+  if (e === boss) { if (d < boss.r + 9 && boss.vuln) bossHit(0.5, true); return; }
+  if (d < FOE[e.type].r + 9) { const fo = forzaOra, v = save.opt.vib; forzaOra = 0; save.opt.vib = false; hitFoe(e, dmg, a); forzaOra = fo; save.opt.vib = v; e.rage = Math.max(e.rage || 0, 3); }
+}
+function compUpdate(dt) {
+  if (!compOn()) return;
+  compFigure();
+  const C = save.comp, h = hero;
+  compQuiete = inLotta() || (boss && boss.on && !boss.dead && !boss.hide) ? 0 : compQuiete + dt;
+  compT -= dt;
+  if (compT <= 0) { compT = 0.5; storiaTick();
+    for (const f of seguaci) { const M = C.m[f.id]; if (!M) continue; f.att = conMembro(M, ATT); f.max = conMembro(M, MAXHP); M.hp = Math.min(M.hp === undefined ? f.max : M.hp, f.max);
+      if (f.giu) { if (compQuiete > 6 && !h.dead) { f.giu = false; M.giu = 0; M.hp = Math.max(2, Math.ceil(f.max / 2)); puffAt(f.x, f.z, 6, f.y + 2); toast(compNome(f.id) + ' SI RIALZA', '#9af0b0'); seq([523, 659, 784], 0.06, 0.06); } }
+      else if (compQuiete > 4 && M.hp < f.max) { f.rip = (f.rip || 0) + 0.5; if (f.rip >= 5) { f.rip = 0; M.hp++; } } } }
+  if (!D) for (const a of attese) { const d = Math.hypot(h.x - a.x, h.z - a.z); if (d < 420) a.yaw += angDiff(d < 34 ? Math.atan2(h.z - a.z, h.x - a.x) : a.base, a.yaw) * Math.min(1, 4 * dt); }
+  if (inCasa()) return;   // nelle case e nelle botteghe la compagnia aspetta fuori
+  const n = seguaci.length, qui = D ? D.id : 0, hv = Math.min(120, Math.hypot(h.x - (compUpdate.px === undefined ? h.x : compUpdate.px), h.z - (compUpdate.pz === undefined ? h.z : compUpdate.pz)) / Math.max(dt, 1e-3)); compUpdate.px = h.x; compUpdate.pz = h.z;   // (hv: quanto corre l'eroe, a piedi o a cavallo)
+  seguaci.forEach((f, k) => {
+    const M = C.m[f.id]; if (!M) return;
+    if (f.flash > 0) f.flash -= dt; if (f.cd > 0) f.cd -= dt; if (f.noT > 0) f.noT -= dt;
+    if (f.fermo > 1.4 && f.tg) { f.no = f.tg; f.noT = 8; }
+    f.pt = (f.pt || 0) + dt; if (f.pt > 1.2) { const d1 = Math.hypot(h.x - f.x, h.z - f.z); if (!f.tg && d1 > 30 && d1 > (f.pd || 0) - 2) f.fermo = 9; f.pd = d1; f.pt = 0; }   // chi gira attorno a un muro senza avvicinarsi   // un nemico che non si riesce a raggiungere si lascia stare per un po'
+    // lontano, su un altro piano, in un altro posto, o bloccato: raggiunge l'eroe
+    const dh = Math.hypot(h.x - f.x, h.z - f.z);
+    if (f.luogo !== qui || dh > (D ? 70 : 120) || (!D && Math.abs(h.y - f.y) > 18) || f.fermo > 1.4) { const salto = f.luogo === qui && dh < 400; f.luogo = qui; compAccanto(f, k); if (salto) puffAt(f.x, f.z, 4, f.y + 2); f.st = 'segue'; f.tg = null; return; }
+    f.y += ((D ? 0 : gH(f.x, f.z, f.y)) - f.y) * Math.min(1, 12 * dt);
+    if (f.giu) { f.moving = false; f.st = 'segue'; return; }
+    // il colpo in corso: prima carica, poi va a segno
+    if (f.st === 'carica' || f.st === 'colpo') { f.t -= dt; const e = f.tg; if (e && e.st !== 'dead' && !e.dead) f.yaw += angDiff(Math.atan2(e.z - f.z, e.x - f.x), f.yaw) * Math.min(1, 10 * dt);
+      if (f.t <= 0) { if (f.st === 'carica') { compColpo(f, M); f.st = 'colpo'; f.t = 0.24; } else f.st = 'segue'; } f.moving = false; return; }
+    const e = h.dead || h.hid > 0 || st !== 'play' ? null : compBersaglio(f); f.tg = e;
+    let tx, tz, sp;
+    if (e) { const K = COMP_K[M.cls] || COMP_K.cavaliere, r = e === boss ? boss.r : FOE[e.type].r, d = Math.hypot(e.x - f.x, e.z - f.z), giusta = K[2] ? 44 : r + 6;
+      if (d <= giusta) { f.moving = false; f.fermo = 0; f.yaw += angDiff(Math.atan2(e.z - f.z, e.x - f.x), f.yaw) * Math.min(1, 10 * dt); if (f.cd <= 0) { f.st = 'carica'; f.t = K[2] ? 0.34 : 0.26; f.cd = K[1] * (0.9 + Math.random() * 0.3); } return; }
+      tx = e.x; tz = e.z; sp = 46; }
+    else { const a = h.yaw + Math.PI + (k - (n - 1) / 2) * 0.75, r = 9 + (k % 2) * 4; tx = h.x + Math.cos(a) * r; tz = h.z + Math.sin(a) * r; const d = Math.hypot(tx - f.x, tz - f.z);
+      if (d < (f.moving ? 2.2 : 7)) { f.moving = false; f.fermo = 0; return; }
+      sp = Math.min(96, d > 26 ? Math.max(58, hv * 1.3) : d > 10 ? Math.max(44, hv * 1.08) : 30); }
+    const a = Math.atan2(tz - f.z, tx - f.x); f.yaw += angDiff(a, f.yaw) * Math.min(1, 10 * dt); const m = sp * dt;
+    if (move(f, Math.cos(a) * m, Math.sin(a) * m, 1.6, 1.8)) { f.moving = true; f.walk += m; f.fermo = 0; } else { f.moving = false; if (dh > 26 || e) f.fermo += dt; }
+  });
+}
+function compDisegna() {
+  if (!compOn() || inCasa() || (st !== 'play' && st !== 'dead')) return; const R = 0.2 / SR * HS / hsEroe();
+  for (const f of seguaci) { const S = compRects[f.id]; if (!S) continue; const p = f.giu ? 0 : f.st === 'carica' ? 3 : f.st === 'colpo' ? 4 : f.moving ? 1 + (Math.floor(f.walk / 5) % 2) : 0;
+    pushBB(f.x, f.y - 0.5, f.z, S[p][dirOf(f.x, f.z, f.yaw)], R, 1, f.flash > 0 ? 0.7 : 0, f.giu ? [0.4, 0.4, 0.48] : null); }
+  if (!D) for (const a of attese) { if (!near(a.x, a.z, 520)) continue; const S = compRects[a.id]; if (S) pushBB(a.x, a.y - 0.5, a.z, S[0][dirOf(a.x, a.z, a.yaw)], R); if (Math.floor(time * 2) % 2) pushBB(a.x, a.y + 11.5, a.z, SPR.bang[0], 0.22, 1.2); }
+}
+function compOmbre() { if (!compOn() || inCasa() || (st !== 'play' && st !== 'dead')) return; for (const f of seguaci) pushShadow(f.x, f.z, 2.4, f.y); if (!D) for (const a of attese) if (near(a.x, a.z, 280)) pushShadow(a.x, a.z, 2.4, a.y); }
+// si prende la guida di un compagno: ci si scambia di posto, e chi si guidava da adesso segue
+function compGuida(id, forza) {
+  if (!compOn() || (st !== 'play' && !forza)) return false; const C = save.comp, h = hero, f = seguaci.find(s => s.id === id), no = () => { tone(200, 0.1, 'square', 0.03); return false; };
+  if (!f || f.giu || id === C.chi) return no();
+  if (!forza && (h.dead || h.atk > 0 || h.dash || h.fall || dialog || shop || loot || fade)) return no();
+  if (h.sella) { if (forza) smonta(); else { toast('PRIMA SCENDI DA CAVALLO', '#ffb070'); return no(); } }
+  compSync(); const prima = C.chi, M = C.m[id];
+  save.cls = M.cls; save.razza = M.razza; save.aspetto = M.aspetto; save.eq = M.eq; C.chi = id;
+  const px = h.x, pz = h.z, py = h.y, pyaw = h.yaw; h.x = f.x; h.z = f.z; h.y = f.y; h.yaw = f.yaw; f.x = px; f.z = pz; f.y = py; f.yaw = pyaw; f.id = prima; f.st = 'segue'; f.tg = null; f.cd = 0.6; f.giu = false; f.att = undefined; f.moving = false;
+  h.hp = Math.max(1, Math.min(M.hp === undefined ? 99 : M.hp, MAXHP())); h.en = MAXEN(); h.block = false; h.chg = 0; h.aDown = false; h.guard = 0; h.nextShot = null; h.castFn = null; h.hid = 0; h.atk = 0; h.hitDone = true; h.dash = null; h.kb = 0; h.vx = h.vz = 0; h.inv = Math.max(h.inv, 0.5); h.burnT = 0;
+  if (!D) { W.rif = h.y; rifX = h.x; rifZ = h.z; }
+  applyClass(); drawHeroSprites(); compVecchi[prima] = true;
+  const ord = compOrd(); seguaci.sort((a, b) => ord.indexOf(a.id) - ord.indexOf(b.id));
+  puffAt(h.x, h.z, 5, h.y + 2); seq([784, 1046], 0.05, 0.05); if (!forza) toast('ORA GUIDI ' + (id === 'io' ? 'IL TUO EROE' : compNome(id)), CC().col);
+  return true;
+}
+function compProssimo() { const f = seguaci.find(s => !s.giu); return f ? compGuida(f.id) : false; }
+// chi è guidato è caduto: se un compagno è in piedi, la guida passa a lui
+function compCade() {
+  if (!compOn()) return false; const f = seguaci.find(s => !s.giu); if (!f) return false;
+  const C = save.comp, giu = C.chi, chi = f.id; hero.hp = 0;
+  if (!compGuida(chi, true)) return false;
+  const v = seguaci.find(s => s.id === giu); if (v) { v.giu = true; v.flash = 0.4; } C.m[giu].giu = 1; C.m[giu].hp = 0; compQuiete = 0;
+  hero.inv = 1.6; hero.flash = 0.25; toast(compNome(giu) + (giu === 'io' ? ' SEI' : ' È') + ' A TERRA! ORA GUIDI ' + (chi === 'io' ? 'IL TUO EROE' : compNome(chi)), '#ff8a8a'); noise(0.3, 0.06); return true;
+}
+function compRialza() { if (!compOn()) return; const C = save.comp; for (const id in C.m) { C.m[id].giu = 0; C.m[id].hp = conMembro(C.m[id], MAXHP); } for (const f of seguaci) { f.giu = false; f.luogo = null; } }
+function compParte(id) {   // parte o resta al campo
+  const C = save.comp; if (!C.m[id] || id === C.chi) { tone(200, 0.1, 'square', 0.03); return false; }
+  if (D || inLotta()) { toast(D ? 'QUI DENTRO NON SI CAMBIA COMPAGNIA' : "NON ADESSO: C'È DA COMBATTERE", '#ffb070'); tone(200, 0.1, 'square', 0.03); return false; }
+  if (C.casa[id]) delete C.casa[id]; else C.casa[id] = 1; compRifai(); tone(1046, 0.05); return true;
+}
+function compParla(o) {
+  const C = save.comp; hero.yaw = Math.atan2(o.z - hero.z, o.x - hero.x);
+  if (o.id === 'io') { say(null, ['IL TUO EROE TI SEGUE. PER TORNARE A GUIDARLO, TOCCA IL SUO RIQUADRO IN ALTO A SINISTRA.']); return; }
+  const c = W.COMPAGNI[o.id];
+  if (o.attesa) { say(null, c.incontro, () => compEntra(o.id)); dialog.name = c.n; return; }
+  o.li = ((o.li === undefined ? -1 : o.li) + 1) % (c.dice.length + 1);
+  say(null, [o.giu ? 'UN MOMENTO... MI RIALZO APPENA È FINITA.' : o.li === c.dice.length || !save.flags['pv_' + o.id] && o.li === 0 ? (save.flags['pv_' + o.id] ? 'SONO CON TE. DOVE SI VA?' : c.incontro[c.incontro.length - 1]) : c.dice[o.li]]); dialog.name = c.n;
+}
+// i riquadri della compagnia, in alto a sinistra: chi si guida (bordo bianco) e chi segue; un tocco su chi segue ne prende la guida
+function drawCompChips(x, y) {
+  chipsC = []; if (!compOn() || inCasa() || !seguaci.length) return false; const C = save.comp;
+  [C.chi].concat(seguaci.map(f => f.id)).forEach((id, i) => { const M = id === C.chi ? null : C.m[id], c = CL[M ? M.cls : cls()] || CL.cavaliere, f = M ? seguaci.find(s => s.id === id) : null, cx = x + i * 21, giu = !!(f && f.giu), max = M ? (f && f.max) || 1 : MAXHP(), hp = M ? Math.min(max, M.hp === undefined ? max : M.hp) : hero.hp;
+    panel(cx, y, 18, 18, !M ? '#ffffff' : giu ? '#5a6478' : c.col); T(compNome(id)[0], cx + 9, y + 4, giu ? '#5a6478' : c.col, 1, 'center');
+    hg.fillStyle = '#0b0a12'; hg.fillRect(cx + 2, y + 13, 14, 3); hg.fillStyle = giu ? '#5a6478' : hp <= max * 0.34 ? '#ff5a5a' : '#ff8aa0'; hg.fillRect(cx + 3, y + 14, Math.max(0, Math.round(12 * hp / max)), 1);
+    if (M) chipsC.push({ id, x: cx, y, w: 18, h: 18 }); });
+  return true;
+}
+// la scheda della compagnia nel menu (START): la missione del momento e, sotto, chi c'è
+function drawComp(x, y, w, h, top, rows) {
+  const C = save.comp; T(W.STORIA.nome, x + 8, top, storiaPasso() >= 3 ? '#9af0b0' : '#ffd23f'); A.wrap(storiaRiga(), w - 20).slice(0, 4).forEach((l, k) => T(l, x + 14, top + 10 + k * 8, '#a9c6e3', 1, 'left', null));
+  const y0 = top + 46;
+  rows.slice(1).forEach((id, i) => { const yy = y0 + i * 19, on = menu.sel === i + 1, M = C.m[id], io = id === C.chi, c = CL[io ? cls() : M.cls] || CL.cavaliere, cd = id === 'io' ? null : W.COMPAGNI[id];
+    if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 18); }
+    const max = io ? MAXHP() : conMembro(M, MAXHP), hp = io ? hero.hp : Math.min(max, M.hp === undefined ? max : M.hp);
+    T(compNome(id), x + 8, yy, c.col); T(cd ? cd.chi : 'IL TUO EROE, ' + c.n, x + 50, yy, '#8a96aa');
+    T(io ? 'LO GUIDI TU' : M.giu ? 'A TERRA' : C.casa[id] ? 'RESTA AL CAMPO' : 'IN VIAGGIO', x + w - 8, yy, io ? '#ffffff' : M.giu ? '#ff8a8a' : C.casa[id] ? '#8a96aa' : '#9af0b0', 1, 'right');
+    T('CUORI ' + Math.ceil(hp) / 2 + '/' + max / 2 + '  ATT ' + (io ? ATT() : conMembro(M, ATT)) + '  DIF ' + (io ? DIF() : conMembro(M, DIF)) + (cd ? '   ' + (save.flags['pv_' + id] ? 'PROVA COMPIUTA' : cd.prova.n) : ''), x + 14, yy + 8, '#a9c6e3', 1, 'left', null); });
+  const r = rows[menu.sel];
+  T(!r || r === 'st' ? 'SU E GIÙ: SCEGLI UN COMPAGNO' : r === C.chi ? 'È CHI STAI GUIDANDO' : 'A: PARTE O RESTA AL CAMPO    C: GUIDALO TU', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
+}
+// ---------- il primo atto: la compagnia si raduna ----------
+// save.q.comp: 0 parla con Mirta, 1 raduna i quattro, 2 dal Re, 3 fatto. Le prove dei compagni: save.flags['pv_' + id] (e 'pk_' + id: il nemico della prova è caduto).
+const storiaPasso = () => (save && save.q.comp) || 0;
+const folkDi = nome => { for (const n of npcs) { const N = NPC[n.id]; if (N && N.n === nome) return n; } return null; };
+function storiaRiga() {
+  const s = storiaPasso(), manca = W.COMP_ORD.filter(id => !save.comp.m[id]), prove = compDentro().filter(id => !save.flags['pv_' + id]).map(id => W.COMPAGNI[id].prova.riga);
+  if (s === 0) return "PARLA CON L'ANZIANA MIRTA, NEL BORGO.";
+  if (s === 1) return 'RADUNA LA COMPAGNIA (' + (W.COMP_ORD.length - manca.length) + '/' + W.COMP_ORD.length + '). ' + manca.map(id => W.COMPAGNI[id].n + ': ' + W.COMPAGNI[id].dove + '.').join(' ');
+  if (s === 2) return 'PORTA LA COMPAGNIA DAL RE ALDRIC, NEL CORTILE DEL MASTIO, ALLA ROCCA.' + (prove.length ? ' RESTANO ' + prove.length + ' PROVE DA FARE INSIEME.' : '');
+  return "ATTO PRIMO COMPIUTO: SIETE LA COMPAGNIA DELL'ALBA. " + (prove.length ? prove[0] : 'IL SEGUITO: IL VALICO DEI GIGANTI.');
+}
+// dove punta la bussola quando non c'è un segnalino: il più vicino tra chi manca, le prove da fare, e chi si deve andare a trovare
+function storiaMeta() {
+  if (!compOn() || D || !W.STORIA) return null; const s = storiaPasso(), L = [], pos = n => { if (n) L.push([n.x, n.z]); };
+  if (s === 0) pos(folkDi(W.STORIA.apre));
+  if (s === 1) for (const a of attese) L.push([a.x, a.z]);
+  if (s === 2) pos(folkDi(W.STORIA.chiude));
+  if (s >= 1) for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (!save.flags['pv_' + id] && p.x !== undefined) L.push([p.x, p.z]); }
+  let best = null, bd = 1e12; for (const q of L) { const d = Math.hypot(q[0] - hero.x, q[1] - hero.z); if (d < bd) { bd = d; best = q; } } return best;
+}
+function storiaParla(n, f) {
+  if (!compOn() || !W.STORIA) return false; const S = W.STORIA, s = storiaPasso(), id = n.id;
+  if (f.n === S.apre) {
+    if (s === 0) { say(id, S.inizio, () => { save.q.comp = Math.max(1, save.q.comp || 0); banner = { t: 'ATTO PRIMO', s: S.nome, life: 4, c: '#ffd23f' }; jingle(); writeSave(); }); return true; }
+    if (s === 1) { say(id, [S.cerca + W.COMP_ORD.filter(k => !save.comp.m[k]).map(k => W.COMPAGNI[k].n + ' È ' + W.COMPAGNI[k].dove + '.').join(' ')]); return true; }
+    say(id, s === 2 ? S.pronti : S.dopo); return true; }
+  if (f.n === S.chiude) {
+    if (s === 2) { say(id, S.re, () => { save.q.comp = 3; save.coins += S.premio.monete; banner = { t: S.titolo, s: 'ATTO PRIMO COMPIUTO', life: 5, c: '#ffd23f' }; toast('+' + S.premio.monete + ' MONETE', '#ffd23f'); openLoot(S.premio.cosa); writeSave(); }); return true; }
+    say(id, s === 3 ? S.reDopo : s >= 1 ? S.reNo : f.lines); return true; }
+  return false;
+}
+function storiaCaduto(e) { if (!compOn()) return; for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (p.tipo === 'nemico' && p.chi === e.type) save.flags['pk_' + id] = 1; } }
+// le prove: si compiono da sole quando la cosa è fatta (e non c'è più da combattere)
+function storiaTick() {
+  if (!compOn() || st !== 'play' || dialog || loot || shop || menu || fade || hero.dead || inLotta()) return;
+  for (const id of compDentro()) { if (save.flags['pv_' + id]) continue; const c = W.COMPAGNI[id], p = c.prova; let ok = false;
+    if (p.tipo === 'luogo') { if (!D && Math.hypot(hero.x - p.x, hero.z - p.z) < p.r) { const q = W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; ok = !p.sotto || !!(q && q.f >= 2 && hero.y < q.ce); } }
+    else if (p.tipo === 'nemico') ok = !!save.flags['pk_' + id];
+    else if (p.tipo === 'forziere') ok = !!save.chests[p.id];
+    else if (p.tipo === 'raccolta') ok = ((save.borsa || {})[p.k] || 0) >= p.quanti;
+    if (!ok) continue;
+    save.flags['pv_' + id] = 1; if (p.tipo === 'raccolta') save.borsa[p.k] -= p.quanti; save.coins += c.premio.monete;
+    say(null, p.fatto, () => { banner = { t: 'PROVA COMPIUTA', s: p.n, life: 4, c: CL[c.cls].col }; toast('+' + c.premio.monete + ' MONETE', '#ffd23f'); openLoot(c.premio.cosa); writeSave(); }); dialog.name = c.n; return; }
+}
+
 function hurtHero(dmg, src, hard) {
   if (hero.inv > 0 || hero.dead || hero.dash) return;
   if (MODO) dmg = Math.max(1, Math.round(dmg * diffK().dmg));
@@ -1695,7 +1939,7 @@ function hurtHero(dmg, src, hard) {
   hero.hp -= d; hero.inv = 0.9; hero.flash = 0.25;
   if (src) { const a = Math.atan2(hero.z - src.z, hero.x - src.x); hero.kx = Math.cos(a) * 46; hero.kz = Math.sin(a) * 46; hero.kb = 0.18; }
   tone(170, 0.18, 'sawtooth', 0.06, 70); vib(60);
-  if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; death = 0; st = 'dead'; noise(0.5, 0.08); }
+  if (hero.hp <= 0) { if (compCade()) return; hero.hp = 0; hero.dead = true; death = 0; st = 'dead'; noise(0.5, 0.08); }
 }
 function heroUpdate(dt) {
   const h = hero;
@@ -1704,7 +1948,7 @@ function heroUpdate(dt) {
   if (D && h.fall > 0) {
     h.fall -= dt; h.y -= 50 * dt; h.moving = false;
     if (h.fall <= 0) { h.fall = 0; h.hp -= 2; h.flash = 0.3; tone(170, 0.18, 'sawtooth', 0.06, 70); vib(60);
-      if (h.hp <= 0) { h.hp = 0; h.dead = true; death = 0; st = 'dead'; noise(0.5, 0.08); }
+      if (h.hp <= 0 && !compCade()) { h.hp = 0; h.dead = true; death = 0; st = 'dead'; noise(0.5, 0.08); }
       else { h.x = D.entry.x; h.z = D.entry.z; h.yaw = D.entry.yaw; h.y = 0; h.vx = h.vz = 0; h.inv = 1.2; camBehind(); toast('SEI CADUTO!', '#ff8a8a'); } }
     return;
   }
@@ -2190,7 +2434,7 @@ function hitFoe(e, dmg, a, soft) {
     if (CC().coins) n = Math.ceil(n * CC().coins);            // il furfante fruga meglio nelle tasche
     for (let i = 0; i < Math.min(5, Math.ceil(n / 2)); i++) drops.push({ k: 'coin', v: Math.ceil(n / Math.min(5, Math.ceil(n / 2))), x: e.x, z: e.z, y: e.y + 2, vx: (Math.random() - 0.5) * 18, vz: (Math.random() - 0.5) * 18, vy: 20, t: 20 });
     if (hero.hp < MAXHP() && Math.random() < 0.3) drops.push({ k: 'heart', x: e.x, z: e.z, y: e.y + 2, vx: 0, vz: 0, vy: 22, t: 20 });
-    jobKill(T.as || e.type);
+    jobKill(T.as || e.type); if (MODO) storiaCaduto(e);
     if (T.job) { e.fade = 0.9; ringFx(e.x, e.z, 8); quake = 0.5; jobReady(T.job); }
     if (e.type === 'slime' && save.q.melme === 1) { save.slimes++; toast('MELME: ' + Math.min(6, save.slimes) + '/6', '#9af0b0'); if (save.slimes >= 6) { save.q.melme = 2; toast('TORNA DA OTTO!', '#ffd23f'); jingle(); } }
   }
@@ -2344,6 +2588,7 @@ function findTarget() {
   }
   for (const n of npcs) if (!npcHidden(n)) consider(n.x, n.z, 'npc', n, n.id === 'nino' || (NPC[n.id] && NPC[n.id].f && NPC[n.id].f.role === 'shop') ? 14 : 11);
   for (const c of chests) if (!save.chests[c.id]) consider(c.x, c.z, 'chest', c, 9);
+  if (compOn()) { for (const a of attese) consider(a.x, a.z, 'comp', a, 12); if (!foes.some(e => e.st !== 'dead' && Math.abs(e.x - hero.x) < 45 && Math.abs(e.z - hero.z) < 45)) for (const f of seguaci) consider(f.x, f.z, 'comp', f, 8); }   // (con un nemico vicino A resta il colpo)
   if (MODO) for (const o of nodi) if (Math.abs(o.x - hero.x) < 20 && !presa(o)) consider(o.x, o.z, 'racc', o, 10);
   for (const p of props) {
     if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
@@ -2358,6 +2603,7 @@ function findTarget() {
 function interact(t) {
   if (t.kind === 'cavallo') { monta(); return; }
   if (t.kind === 'smonta') { smonta(); return; }
+  if (t.kind === 'comp') { compParla(t.obj); tone(660, 0.04); return; }
   if (hero.sella && t.kind !== 'npc') smonta();   // per aprire, entrare, raccogliere si scende di sella
   if (t.kind === 'npc') { talk(t.obj); tone(660, 0.04); return; }
   if (t.kind === 'chest') { openChest(t.obj); return; }
@@ -2384,7 +2630,7 @@ function interact(t) {
   const p = t.obj;
   { const tx = W.TESTI && W.TESTI[p.x + ',' + p.z]; if (tx) { say(null, tx); return; } }
   if (p.k === 'sign') { say(null, [SIGNS[p.x + ',' + p.z] || 'UN CARTELLO ROVINATO DALLA PIOGGIA.']); return; }
-  if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); return; }
+  if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); if (MODO) compRialza(); return; }
   if (p.k === 'kingstatue') { say(null, ['RE AURELIO IL FONDATORE, CON LA SPADA LEVATA VERSO IL PICCO DEL DRAGO.', 'SUL BASAMENTO: «FINCHÉ LA LUCE DURA, LUMEN DURA».']); return; }
   if (p.k === 'statue' && Math.hypot(p.x - 2760, p.z - 2960) < 300) { say(null, ['UNA GUARDIA DI PIETRA VEGLIA SULLA ROCCA DA CENTO ANNI.']); return; }
   say(null, [PROPTXT[p.k] || '...']);
@@ -2398,6 +2644,7 @@ function playUpdate(dt) {
   else hero.moving = false;
   if (D) dungeonUpdate(dt); else { campsUpdate(dt); fauna.update(dt, hero, hero.moving && !!BTN.b, day.night > 0.55); }
   for (const e of foes) foeUpdate(e, dt);
+  if (MODO) compUpdate(dt);
   if (D) foes = foes.filter(e => !(e.st === 'dead' && e.fade <= 0));
   if (!D) { npcsUpdate(dt); jobsUpdate(); incUpdate(dt); if (MODO) cavUpdate(dt); }
   dropsUpdate(dt); fxUpdate(dt); shotsUpdate(dt); thingsUpdate(dt);
@@ -3069,6 +3316,7 @@ function buildDynamicD() {
   if (h && (st === 'play' || st === 'dead')) {
     drawHero(R);
   }
+  if (MODO) compDisegna();
   for (const e of foes) drawFoe(e);
   const b = boss;
   if (b && !b.hide && DCH.boss) {
@@ -3137,6 +3385,7 @@ function renderDungeon() {
   // ombre e segnali rossi a terra
   shN = 0;
   if (st === 'play' || st === 'dead') if (!hero.fall) pushShadow(hero.x, hero.z, 2.6, hero.y);
+  if (MODO) compOmbre();
   for (const e of foes) if (e.st !== 'dead') pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
   if (D.folk) for (const n of D.folk) pushShadow(n.x, n.z, 2.5, n.y);
   if (boss && !boss.hide) pushShadow(boss.x, boss.z, boss.r * 0.9, 0);
@@ -3155,10 +3404,11 @@ function renderDungeon() {
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.08) * ambK);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
-  pushBB.n = 0; pushBB2.n = 0; buildDynamicD();
+  pushBB.n = 0; pushBB2.n = 0; bb3 = 0; buildDynamicD();
   gl.activeTexture(gl.TEXTURE0); gl.uniform1i(p.u.uTex, 0);
   if (pushBB.n) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0); }
   if (pushBB2.n) { gl.bindTexture(gl.TEXTURE_2D, DTEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf2); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF2.subarray(0, pushBB2.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB2.n * 6, gl.UNSIGNED_SHORT, 0); }
+  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }
   // acqua e lava
   p = P.dwater; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time);
@@ -3283,13 +3533,13 @@ function boxVisible(x0, y0, z0, x1, y1, z1) {
 }
 function pushBB(x, y, z, r, s, k = 1, fl = 0, tint) {
   if (!r) return;
-  const n = pushBB.n; if (n >= 3000) return;
+  const due = r.t2 === 1, n = due ? bb3 : pushBB.n, F = due ? dynF3 : dynF; if (n >= (due ? 260 : 3000)) return;   // (due: una figura del secondo foglio, che si disegna a parte)
   const w = r.w * s * (r.f || 1), h = r.h * s * (r.f || 1); let p = n * 44;
   let tr = tint ? tint[0] : k, tg = tint ? tint[1] : k, tb = tint ? tint[2] : k;
   if (tr <= 1.05 && tg <= 1.05 && !D && W.GROTTE.length) { const q = W.grotta(x, z); if (q && q.bu > 0 && y < q.ce + 4) { const f = 1 - 0.56 * q.bu; tr *= f; tg *= f; tb *= f; } }   // sotto la volta di una grotta: in ombra (quel che brilla di suo resta com'è)
   const C = [-w / 2, 0, r.u0, r.v1, w / 2, 0, r.u1, r.v1, w / 2, h, r.u1, r.v0, -w / 2, h, r.u0, r.v0];
-  for (let i = 0; i < 16; i += 4) { dynF[p++] = x; dynF[p++] = y; dynF[p++] = z; dynF[p++] = C[i]; dynF[p++] = C[i + 1]; dynF[p++] = C[i + 2]; dynF[p++] = C[i + 3]; dynF[p++] = tr; dynF[p++] = tg; dynF[p++] = tb; dynF[p++] = fl; }
-  pushBB.n = n + 1;
+  for (let i = 0; i < 16; i += 4) { F[p++] = x; F[p++] = y; F[p++] = z; F[p++] = C[i]; F[p++] = C[i + 1]; F[p++] = C[i + 2]; F[p++] = C[i + 3]; F[p++] = tr; F[p++] = tg; F[p++] = tb; F[p++] = fl; }
+  if (due) bb3 = n + 1; else pushBB.n = n + 1;
 }
 pushBB.n = 0;
 let shN = 0;
@@ -3428,7 +3678,7 @@ function render3D() {
   if (hero && st !== 'title') pushShadow(hero.x, hero.z, 2.6, hero.y);
   for (const s of W.bigShadows || []) if (near(s[0], s[1], 520)) pushShadow(s[0], s[1], s[2]);      // l'ombra della chioma dell'Albero Madre
   for (const e of foes) if (e.st !== 'dead' && near(e.x, e.z, 280)) pushShadow(e.x, e.z, FOE[e.type].r * 0.8, e.y - (FOE[e.type].fly || 0));
-  if (MODO) cavOmbre();
+  if (MODO) { cavOmbre(); compOmbre(); }
   for (const n of npcs) if (near(n.x, n.z, 280) && !npcHidden(n)) pushShadow(n.x, n.z, n.id === 'biscotto' ? 1.5 : 2.4);
   if (st !== 'title') fauna.shadows(cam);
   }
@@ -3452,13 +3702,14 @@ function render3D() {
   }
   if (soloTerra) return;
   // personaggi, forzieri, effetti
-  pushBB.n = 0;
+  pushBB.n = 0; bb3 = 0;
   buildDynamic();
   if (pushBB.n) {
     gl.uniform1f(p.u.uNear, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
     gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0);
   }
+  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }   // le figure del secondo foglio
   // acqua: prima quella delle terre vicine, poi la nostra
   for (const t of TERRE) if (t.ok) passaTerra(t, 2);
   acqua3D(fogC, fogN, fogF);
@@ -3487,7 +3738,7 @@ function buildDynamic() {
   if (hero && (st === 'play' || st === 'dead')) {
     drawHero(R);
   }
-  if (MODO) cavDisegna();
+  if (MODO) { cavDisegna(); compDisegna(); }
   for (const n of npcs) {
     if (!near(n.x, n.z, 520) || npcHidden(n)) continue;
     const sh = CHR[n.id], a = n.moving ? 1 + (Math.floor(n.walk / 4) % (sh.length - 1)) : 0, sc = 0.2 / SR;
@@ -3531,7 +3782,7 @@ function compass() {
   const mark = (a, s, c, k = 1) => { const d = angDiff(a, yaw); if (Math.abs(d) > 1.35) return; const x = cx + d / 1.35 * (w / 2 - 4); T(s, x, y + 2, c, k, 'center'); };
   mark(-Math.PI / 2, 'N', '#ff6a5a'); mark(0, 'E', '#e6e9f2'); mark(Math.PI / 2, 'S', '#e6e9f2'); mark(Math.PI, 'O', '#e6e9f2');
   for (const a of [-Math.PI / 4, Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4]) { const d = angDiff(a, yaw); if (Math.abs(d) < 1.35) { hg.fillStyle = '#8a96aa'; hg.fillRect(Math.round(cx + d / 1.35 * (w / 2 - 4)), y + 5, 1, 2); } }
-  const q = curTrack(), tg = MODO ? (!D && save.segno ? save.segno : null) : q && !D ? questTarget(q) : null, tc = MODO ? '#ff8a2a' : '#ffd23f';
+  const q = curTrack(), tg = MODO ? (!D && save.segno ? save.segno : storiaMeta()) : q && !D ? questTarget(q) : null, tc = MODO && save.segno ? '#ff8a2a' : '#ffd23f';
   if (tg) {
     const a = Math.atan2(tg[1] - hero.z, tg[0] - hero.x), d = angDiff(a, yaw), x = Math.round(cx + Math.max(-1, Math.min(1, d / 1.35)) * (w / 2 - 4));
     hg.fillStyle = '#0b0a12'; hg.fillRect(x - 3, y + 1, 7, 9); hg.fillStyle = tc; hg.fillRect(x - 1, y + 2, 3, 7); hg.fillRect(x - 2, y + 3, 5, 5);
@@ -3560,6 +3811,7 @@ function drawHUD() {
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
   if (D && !D.def.casa) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
+  if (MODO && drawCompChips(5, ty - 3)) ty += 22;
   compass();
   { const ch = D ? (!boss ? foes.find(e => FOE[e.type].champ && e.st !== 'dead' && e.room === D.room) : null) : foes.find(e => FOE[e.type].elite && e.st !== 'dead' && Math.hypot(e.x - hero.x, e.z - hero.z) < 130);
     if (ch) { const T2 = FOE[ch.type], w = Math.min(150, Wr * 0.38), x = Math.round(Wr / 2 - w / 2), y = 19; T(T2.n, Wr / 2, y, '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, ch.hp) / T2.hp), 4); } }
@@ -3575,7 +3827,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
+    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', comp: 'PARLA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
@@ -3744,7 +3996,7 @@ function drawMap() {
   for (const d of doors) if (d.cave ? dsave(d.id).vis : isSeen(d.x, d.z)) dot(d.x, d.z, d.cave ? '#c8a0ff' : '#4ae0e8');
   if (save.flags.mappa) for (const c of chests) if (c.r >= 2 && !save.chests[c.id] && Math.floor(time * 3) % 2) dot(c.x, c.z, '#ffb02e', 2);
   const q = curTrack(), tg = MODO ? null : q ? questTarget(q) : null; if (tg && Math.floor(time * 4) % 2) dot(tg[0], tg[1], '#ffd23f', 3, true);
-  if (MODO) { if (save.segno) dot(save.segno[0], save.segno[1], '#ff8a2a', 3, true); const mx = Math.round(x0 + S / 2), my = Math.round(y0 + S / 2); hg.fillStyle = '#0b0a12'; hg.fillRect(mx - 6, my - 1, 13, 3); hg.fillRect(mx - 1, my - 6, 3, 13); hg.fillStyle = '#ffffff'; hg.fillRect(mx - 5, my, 11, 1); hg.fillRect(mx, my - 5, 1, 11); }
+  if (MODO) { const sm = storiaMeta(); if (sm && Math.floor(time * 4) % 2) dot(sm[0], sm[1], '#ffd23f', 3, true); if (save.segno) dot(save.segno[0], save.segno[1], '#ff8a2a', 3, true); const mx = Math.round(x0 + S / 2), my = Math.round(y0 + S / 2); hg.fillStyle = '#0b0a12'; hg.fillRect(mx - 6, my - 1, 13, 3); hg.fillRect(mx - 1, my - 6, 3, 13); hg.fillStyle = '#ffffff'; hg.fillRect(mx - 5, my, 11, 1); hg.fillRect(mx, my - 5, 1, 11); }
   // freccia dell'eroe
   if (inV(hero.x, hero.z)) { const hx = x0 + (hero.x - wx0) * k, hz = y0 + (hero.z - wz0) * k; for (let i = -1; i <= 5; i++) { const px = hx + Math.cos(hero.yaw) * i, pz = hz + Math.sin(hero.yaw) * i; hg.fillStyle = i > 3 ? '#ff4a3a' : '#ffffff'; hg.fillRect(Math.round(px) - 1, Math.round(pz) - 1, 3, 3); } }
   else if (Math.floor(time * 4) % 2) dot(hero.x, hero.z, '#ff4a3a', 2, true);
@@ -3756,14 +4008,14 @@ const TABS = ['EROE', 'BORSA', 'MISSIONI', 'OPZIONI'];
 function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
-  if (menu.tab === 2) return MODO ? [] : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
+  if (menu.tab === 2) return MODO ? (compOn() ? ['st'].concat(compOrd().filter(id => save.comp.m[id])) : []) : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
   return ['vol', 'mus', 'giorno'].concat(MODO ? ['luce'] : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
   const w = Math.min(300, Wr - insetL - insetR - 4), x = Math.round(Wr / 2 - w / 2), y = 6, h = Hr - 12;
   panel(x, y, w, h);
-  let tx = x + 8; TABS.forEach((t, i) => { const on = i === menu.tab, tw = A.textW(t) + 8; if (on) { hg.fillStyle = '#ffd23f'; hg.fillRect(tx - 2, y + 4, tw, 11); } T(t, tx + 2, y + 6, on ? '#10121c' : '#8a96aa', 1, 'left', on ? null : undefined); tx += tw + 4; });
+  let tx = x + 8; TABS.forEach((t0, i) => { const t = MODO && i === 2 ? 'COMPAGNIA' : t0, on = i === menu.tab, tw = A.textW(t) + 8; if (on) { hg.fillStyle = '#ffd23f'; hg.fillRect(tx - 2, y + 4, tw, 11); } T(t, tx + 2, y + 6, on ? '#10121c' : '#8a96aa', 1, 'left', on ? null : undefined); tx += tw + 4; });
   T('< >', x + w - 8, y + 6, '#5a6478', 1, 'right');
   const rows = menuRows(), top = y + 22;
   if (menu.tab === 0) {
@@ -3790,6 +4042,7 @@ function drawMenu() {
     if (MODO) for (const riga of borsaTxt()) { yy += 12; T(riga, x + 8, yy + 2, '#9af0b0'); }   // quel che si è raccolto per strada
     if (save.q.main >= 4) { yy += 14; T("PIETRE DELL'ALBA", x + 8, yy + 2, '#ffd23f'); DS.ORDER.forEach((id, i) => { hg.globalAlpha = sanctDone(id) ? 1 : 0.22; hg.drawImage(itemIcon(DS.DEF[id].gem), x + 104 + i * 15, yy - 1); hg.globalAlpha = 1; }); }
     T(rows[menu.sel] === 'pozione' ? 'A: BEVI UNA POZIONE (+3 CUORI)' : rows[menu.sel] === 'elisir' ? 'A: BEVI UN ELISIR (TUTTI I CUORI)' : rows[menu.sel] === 'mappa' ? 'I FORZIERI PIÙ RICCHI SONO SULLA MAPPA (SELECT)' : rows[menu.sel] === 'sigillo' ? 'APRE I SANTUARI, UNO ALLA VOLTA' : '', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
+  } else if (menu.tab === 2 && MODO) { if (compOn()) drawComp(x, y, w, h, top, rows);
   } else if (menu.tab === 2) {
     const VIS = Math.max(2, Math.floor((h - 38) / 26)); menu.top = Math.max(0, Math.min(menu.top || 0, rows.length - VIS)); if (menu.sel < menu.top) menu.top = menu.sel; if (menu.sel >= menu.top + VIS) menu.top = menu.sel - VIS + 1;
     rows.slice(menu.top, menu.top + VIS).forEach((q, k0) => { const i = k0 + menu.top, yy = top + 2 + k0 * 26, on = i === menu.sel, done = questDone(q), rdy = isJob(q) && jst(q.slice(2)).s === 2; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 24); } T((curTrack() === q ? '> ' : '') + qName(q), x + 8, yy, done ? '#5a6478' : q === 'main' ? '#ffd23f' : rdy ? '#9af0b0' : isJob(q) ? '#ffe8a0' : '#ffffff'); A.wrap(questLine(q), w - 20).slice(0, 2).forEach((l, k) => T(l, x + 14, yy + 9 + k * 8, done ? '#5a6478' : '#a9c6e3', 1, 'left', null)); });
@@ -3885,6 +4138,7 @@ function onKey(name) {
       hero.en = MAXEN(); hero.atk = 0; hero.dash = null; hero.block = false; hero.chg = 0; hero.aDown = false; hero.hid = 0; things = [];
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
       else { if (MODO) { const p = INIZIO(); hero.x = p.x; hero.z = p.z; } else { hero.x = 2005; hero.z = 2690; } hero.y = gH(hero.x, hero.z); hero.yaw = -Math.PI / 2; }
+      if (MODO) compRialza();
       camBehind(); writeSave(); } return; }
   if (st !== 'play') return;
   if (loot) { if ((name === 'a' || name === 'b') && loot.t > 0.5) { loot = null; tone(880, 0.04); } return; }
@@ -3941,6 +4195,7 @@ function onKey(name) {
   else if (name === 'c') heroSkill();
   else if (name === 'v') cycleSkill();
   else if (name === 'm') toggleAim();
+  else if (name === 'n' && MODO) compProssimo();
 }
 function menuKey(name) {
   if (menu.mis) { if (name === 'a') { save.opt.cnt = !save.opt.cnt; tone(1046, 0.05); } else if (name === 'b' || name === 'start') { menu.mis = false; tone(660, 0.04); } return; }
@@ -3949,6 +4204,7 @@ function menuKey(name) {
   if (name === 'b' && menu.pick) { menu.sel = SLOTS.findIndex(s => s[0] === menu.pick); menu.pick = null; tone(660, 0.04); return; }
   if (name === 'left' || name === 'right') { if (menu.pick) return; menu.tab = (menu.tab + (name === 'right' ? 1 : 3)) % 4; menu.sel = 0; tone(1318, 0.03); return; }
   if (name === 'up' || name === 'down') { if (rows.length) { menu.sel = (menu.sel + (name === 'down' ? 1 : rows.length - 1)) % rows.length; tone(1318, 0.03); } return; }
+  if (name === 'c' && MODO && menu.tab === 2) { const r = rows[menu.sel]; if (r && r !== 'st' && compGuida(r)) menu = null; return; }
   if (name !== 'a') return;
   const r = rows[menu.sel];
   if (menu.tab === 0) {
@@ -3960,7 +4216,7 @@ function menuKey(name) {
     if (r === 'pozione') { if (save.pot > 0 && hero.hp < MAXHP()) { save.pot--; hero.hp = Math.min(MAXHP(), hero.hp + 6); seq([523, 659, 784], 0.07, 0.07); toast('+3 CUORI', '#ff8aa0'); } else tone(200, 0.1, 'square', 0.03); }
     else if (r === 'elisir') { if (save.eli > 0 && hero.hp < MAXHP()) { save.eli--; hero.hp = MAXHP(); seq([523, 659, 784, 1046], 0.07, 0.07); toast('CUORI PIENI!', '#9ac8ff'); if (!save.eli) menu.sel = 0; } else tone(200, 0.1, 'square', 0.03); }
     else if (r === 'mappa') { menu = null; openMap(); }
-  } else if (menu.tab === 2) { trackQuest(r); tone(1046, 0.05); }
+  } else if (menu.tab === 2) { if (MODO) { if (r && r !== 'st') compParte(r); } else { trackQuest(r); tone(1046, 0.05); } }
   else {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
@@ -4014,6 +4270,8 @@ if (window.__SG_DEBUG) window.__sg = {
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   numeri: () => ({ cuori: MAXHP(), energia: MAXEN(), vel: Math.round(VEL() * 100) / 100, dif: DIF(), att: ATT() }), ridisegna: () => drawHeroSprites(),
   shopList: () => shopList(), get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
+  compFig: (id, yaw, k = 2, posa = 0) => conMembro(id === 'io' ? { cls: save.comp.m.io.cls, razza: save.comp.m.io.razza, aspetto: save.comp.m.io.aspetto, eq: save.comp.m.io.eq } : save.comp.m[id] || compBase(id), () => { const hs = Math.round(hsEroe() * k); return A.figure(A.human(heroLook(), CC().poses[posa]), yaw, hs, hs, { sc: SR * hs / HS * (RAZ().sc || 1), ricco: 1 }).toDataURL(); }),
+  get comp() { return { seguaci, attese, chips: chipsC, quiete: compQuiete, rects: compRects, foglio2: atlasUse2 }; }, compEntra, compGuida, compParte, compCade, compRialza, compProssimo, compParla, storiaRiga, storiaMeta, storiaTick,
   get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
@@ -4078,6 +4336,6 @@ return {
   },
   button(name, down) { if (down) onKey(name); },
   // un tocco sul riquadro dell'abilità la cambia; tutto il resto dello schermo gira la visuale
-  pointer(type, x, y, id) { if (type === 'down' && chipHit(x, y, chipH)) { fischia(); return; } if (type === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
+  pointer(type, x, y, id) { if (type === 'down') { const c = chipsC.find(c => chipHit(x, y, c)); if (c) { compGuida(c.id); return; } } if (type === 'down' && chipHit(x, y, chipH)) { fischia(); return; } if (type === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } if (type === 'down' && chipHit(x, y)) { cycleSkill(); return; } camPointer(type, x, y, id); },
 };
 })());

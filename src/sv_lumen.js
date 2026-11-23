@@ -254,5 +254,6 @@ SG.terre.lumen = m => {
   SG.terre.lumenVita(m, { BORGO, ROCCA });
   // il regno dei nani (Fucinafonda, la miniera allargata): sta in sv_lumen4.js
   SG.terre.lumenNani(m);
+  SG.terre.lumenCompagnia(m, { BORGO, ROCCA, ELFI });   // i quattro compagni e il primo atto
 };
 })();
