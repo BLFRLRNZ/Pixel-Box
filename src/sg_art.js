@@ -352,8 +352,18 @@ function human(o, pose = {}) {
     E([ex + 0.1, 0, hc - 1.0], [0.4, 0.5, 0.5], EYE, null, 1, 0.3);
     E([ex - 0.6, 0, hc - 2.3], [0.6, 1.9, 0.45], '#3a3428', null, 1, 0.2);
   } else if (!o.blank) for (const s of [1, -1]) E([ex - 0.05, s * 1.4, hc + 0.35], [0.5, 0.55, 0.9], o.eyes || EYE, null, o.eyes ? 1.35 : 1, 0.25);
+  if (o.paint) E([ex - 0.3, 0, hc + 0.35], [0.5, hs * 0.84, 0.8], o.paint);                                    // la pittura di guerra: una fascia sugli occhi
   if (o.beard) E([fx + 2.4, 0, hc - 2.4], [1.75, 2.75, 2.2], o.beard);
+  if (o.beard && o.beardLong) { E([fx + 2.3, 0, hc - 4.7], [1.7, 2.6, 3.3], o.beard); E([fx + 2.1, 0, hc - 7.5], [1.1, 1.5, 1.7], o.beard); }      // la barba dei nani, fino alla cintura
+  if (o.tusks) for (const s of [1, -1]) C.k([ex - 0.55, s * 1.25, hc - 2.35], [ex + 0.15, s * 1.6, hc - 0.85], 0.52, 0.16, '#f4f0e0', null, 1.2);   // le zanne degli orchi
+  if (o.patch) { E([ex - 0.1, 1.4, hc + 0.35], [0.55, 1.0, 1.05], '#1a1620'); E([fx, 0, hc + 1.15], [hs * 1.03, hs * 1.03, 0.38], '#1a1620'); }      // la benda sull'occhio
+  if (o.earring) E([fx - 0.2, hs * 0.99, hc - 1.4], [0.55, 0.45, 0.62], '#ffd23f', null, 1.3);
   const hcol = o.hair, st = o.hairStyle;
+  if (st === 'rasato' || st === 'cresta') E([fx - 0.5, 0, hc + 0.95], [hs * 1.02, hs * 1.03, hs * 0.74], shade(hcol, 0.72));
+  if (st === 'cresta') for (let i = 0; i < 5; i++) { const a = 0.55 + i * 0.5, ca = Math.cos(a), sa = Math.sin(a); C.k([fx + ca * hs * 0.75, 0, hc + sa * hs * 0.75], [fx + ca * hs * 1.5 - 0.6, 0, hc + sa * hs * 1.5], 1.25, 0.3, hcol, null, 1.06); }
+  if (st === 'coda' || st === 'treccia') { E([fx - 0.7, 0, hc + 1.15], [hs * 1.05, hs * 1.07, hs * 0.82], hcol);
+    if (st === 'coda') { C.k([fx - hs * 0.85, 0, hc + 1.6], [fx - hs * 1.45 - 1.6, 0, hc - 2.6], 1.5, 0.5, hcol); E([fx - hs * 0.95, 0, hc + 1.5], [0.8, 0.95, 0.95], o.tie || '#c8362c', null, 1.15); }
+    else for (let i = 0; i < 4; i++) E([fx - hs - 0.5 + (i % 2) * 0.35, 0, hc - 0.8 - i * 2.3], [1.2 - i * 0.12, 1.25 - i * 0.12, 1.4], hcol, null, i % 2 ? 0.92 : 1.04); }
   if (st === 'short' || st === 'bun' || st === 'tails' || st === 'long') {
     E([fx - 0.7, 0, hc + 1.15], [hs * 1.05, hs * 1.07, hs * 0.82], hcol);
     if (st === 'long') E([fx - 1.8, 0, hc - 1.9], [2.2, hs * 1.02, hs * 1.15], hcol);
@@ -380,6 +390,7 @@ function human(o, pose = {}) {
   if (o.cap) { E([fx - 0.5, 0, hc + hs * 0.6], [hs * 1.06, hs * 1.08, hs * 0.66], o.cap); C.k([fx + hs * 0.4, 0, hc + hs * 0.82], [fx + hs * 1.6, 0, hc + hs * 0.42], 1.7, 0.3, o.cap, null, 0.94); C.k([fx - hs * 0.5, 0, hc + hs * 1.1], [fx - hs * 1.5, 0, hc + hs * 1.0], 1.5, 0.3, o.cap);
     if (o.feather) E([fx - 1.6, hs * 0.72, hc + hs * 1.3], [1.9, 0.45, 0.8], o.feather, [['y', -0.75, fx - 0.4, hs * 0.72, hc + hs]], 1.1); }
   if (o.mask) E([fx + hs * 0.42, 0, hc - hs * 0.42], [hs * 0.72, hs * 0.9, hs * 0.4], o.mask);
+  if (o.circlet) { E([fx, 0, hc + hs * 0.44], [hs * 1.05, hs * 1.05, 0.5], o.circlet, null, 1.2); E([fx + hs * 1.0, 0, hc + hs * 0.44], [0.6, 0.6, 0.7], '#7af0e0', null, 1.3); }       // il cerchietto con la gemma
   // corona (una fascia d'oro con le punte) e turbante (una palla schiacciata con la gemma)
   if (o.crown) { E([fx, 0, hc + hs * 0.72], [hs * 0.9, hs * 0.9, 0.9], o.crown, null, 1.15); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; E([fx + Math.cos(a) * hs * 0.74, Math.sin(a) * hs * 0.74, hc + hs * 0.72 + 1.3], [0.5, 0.5, 0.9], o.crown, null, 1.2); } }
   if (o.turban) { E([fx - 0.2, 0, hc + hs * 0.55], [hs * 1.12, hs * 1.14, hs * 0.7], o.turban); E([fx - 0.3, 0, hc + hs * 1.0], [hs * 0.7, hs * 0.72, hs * 0.5], o.turban, null, 1.08); E([fx + hs * 0.95, 0, hc + hs * 0.6], [0.5, 0.6, 0.6], o.gem || '#e8364e', null, 1.2); }

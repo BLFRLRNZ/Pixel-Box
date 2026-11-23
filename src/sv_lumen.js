@@ -144,7 +144,7 @@ SG.terre.lumen = m => {
       ['donna', 'LA TESSITRICE', ["TESSO GLI STENDARDI DEL RE: IL LEONE D'ORO IN CAMPO AZZURRO. CE NE VUOLE UNO NUOVO PER OGNI TORRE."], 'd'],
       ['borgomastro', 'IL SINISCALCO', ["TENGO I CONTI DEL REGNO. IL PONTE DEI RE COSTERÀ QUANTO TUTTE LE MURA: MA UNIRÀ LUMEN ALL'ORIENTE."], 'd'],
       ['elfa', "UN'ELFA IN VISITA", ['SONO SCESA DAL BOSCO ANTICO PER VEDERE LA CITTÀ DI PIETRA. QUANTO RUMORE FATE, VOI UOMINI!'], 'p', { walk: 1 }],
-      ['dama', 'LA SARTA DELLA ROCCA', ['STOFFE, CAPPUCCI, MANTELLI: QUI SI VESTE MEZZA CORTE. GUARDA PURE, E TOCCA SOLO CON LE MANI PULITE.'], 'in:rocca_sarta', { role: 'shop', shop: 'rocca_sarta' }]],
+      ['dama', 'LA SARTA DELLA ROCCA', ['STOFFE, CAPPUCCI, MANTELLI: QUI SI VESTE MEZZA CORTE. GUARDA PURE, E TOCCA SOLO CON LE MANI PULITE.'], 'in:rocca_sarta', { role: 'shop', shop: 'rocca_sarta', aspetto: 1 }]],
     shops: [['leone', 'locanda', 'LOCANDA DEL LEONE', 'n1', { fw: 34, fd: 22, h: 17, wall: 1, roof: 4 }], ['orafo', 'orafo', "L'OREFICERIA DELLA ROCCA", 'n2', { wall: 2, roof: 5 }],
       ['erbe', 'erboristeria', "L'ERBORISTERIA DELLA ROCCA", 'e1', { fw: 22, wall: 0, roof: 4 }], ['rocca_armi', 'armeria', "L'ARMERIA DEL RE", 'w1', { fw: 22, wall: 16, roof: 5 }],
       ['rocca_sarta', 'sartoria', 'LA SARTORIA DELLA ROCCA', 's1', { wall: 1, roof: 5 }]] }, W.mastio(ROCCA[0] + 210, ROCCA[1])));   // il mastio del Re, contro le mura di levante

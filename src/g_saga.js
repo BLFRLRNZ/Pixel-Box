@@ -239,14 +239,36 @@ function unb64(str, u) { try { const s = atob(str); for (let i = 0; i < s.length
 
 // ---------- statistiche dell'eroe ----------
 const CLS = SG.cls, CL = CLS.CL, SKL = CLS.SK;
+// ---------- il Grande Viaggio: le razze e l'aspetto dell'eroe ----------
+// La razza si sceglie una volta, all'inizio: cambia la figura (orecchie, zanne, statura, larghezza) e un paio di numeri.
+// L'aspetto è fatto di pezzi che si cambiano uno per uno (capelli, colore, barba, pelle, occhi, sciarpa, un segno): qui gli elenchi.
+// Nel salvataggio: save.razza e save.aspetto = { cap, col, bar, pel, occ, sci, seg } (sono posti negli elenchi).
+const RAZZE = {
+  umano: { n: 'UMANO', col: '#e0b060', d: 'GLI UOMINI DI LUMEN: TENACI, ADATTABILI, DI CASA OVUNQUE.', tr: ['UN CUORE IN PIÙ', 'NESSUN DIFETTO'], hp: 2, pelli: ['#f0c49a', '#e0a878', '#c08858', '#8a5a3a'], look: {} },
+  elfo: { n: 'ELFO', col: '#7ad08a', d: 'IL POPOLO DEL BOSCO ANTICO: LEGGERI, RAPIDI, CON LE ORECCHIE A PUNTA.', tr: ['+8% VELOCITÀ', '+1 ENERGIA'], vel: 0.08, en: 1, pelli: ['#f6dcc0', '#e8c8a0', '#c8a888', '#c0d0b0'], look: { ears: 1, wide: -0.35 }, cap: 2 },
+  nano: { n: 'NANO', col: '#d08a4a', d: 'IL POPOLO DI FONDOFERRO, SOTTO I MONTI: BASSI, LARGHI, DURI COME LA ROCCIA.', tr: ['+1 DIFESA', '-5% VELOCITÀ'], dif: 1, vel: -0.05, sc: 0.84, pelli: ['#e8b088', '#d89a70', '#b87a54', '#8a5a3a'], look: { wide: 0.9, head: 3.95 }, bar: 2, cap: 4 },
+  orco: { n: 'ORCO', col: '#8ab04a', d: "VENUTI DA OLTRE IL VALICO: GRANDI, VERDI, CON LE ZANNE. DOVE COLPISCONO, SI SENTE.", tr: ['COLPI PIÙ FORTI (+15%)', '-5% VELOCITÀ'], forza: 0.15, vel: -0.05, pelli: ['#8ab04a', '#6a9a3a', '#7a8a5a', '#a8a868'], look: { wide: 0.75, tusks: 1, head: 3.85 }, cap: 7 } };
+const RAZ_ORD = ['umano', 'elfo', 'nano', 'orco'], RAZ0 = { look: {}, pelli: [SKIN] };
+const RAZ = () => (MODO && save && RAZZE[save.razza]) || (MODO ? RAZZE.umano : RAZ0);
+const ASP = {
+  cap: [['ciuffi', 'A CIUFFI'], ['short', 'CORTI'], ['long', 'LUNGHI'], ['coda', 'CODA'], ['treccia', 'TRECCIA'], ['tails', 'CODINI'], ['bun', 'CHIGNON'], ['cresta', 'CRESTA'], ['rasato', 'RASATI'], ['none', 'NIENTE']],
+  col: [['#6a4024', 'CASTANI'], ['#2a2028', 'NERI'], ['#e0b850', 'BIONDI'], ['#c8502a', 'ROSSI'], ['#f0ece4', 'BIANCHI'], ['#9a9aa4', 'GRIGI'], ['#3a6ac8', 'AZZURRI'], ['#8a3a9a', 'VIOLA'], ['#3a8a4a', 'VERDI']],
+  bar: [[0, 'NIENTE'], [1, 'CORTA'], [2, 'LUNGA']],
+  pel: [[0, 'PRIMA'], [1, 'SECONDA'], [2, 'TERZA'], [3, 'QUARTA']],
+  occ: [[null, 'SCURI'], ['#3a8ae0', 'AZZURRI'], ['#3aa850', 'VERDI'], ['#e0a020', 'AMBRA'], ['#e03a3a', 'ROSSI'], ['#b060e0', 'VIOLA']],
+  sci: [[null, 'DEL MESTIERE'], ['#c8362c', 'ROSSA'], ['#2a6ad0', 'BLU'], ['#3a9a4a', 'VERDE'], ['#e0b040', 'GIALLA'], ['#8a3a9a', 'VIOLA'], ['#f0ece4', 'BIANCA'], ['#2a2630', 'NERA'], ['#e07a2a', 'ARANCIO']],
+  seg: [[null, 'NESSUNO'], ['patch', "BENDA SULL'OCCHIO"], ['paint', 'PITTURA DI GUERRA'], ['earring', 'ORECCHINO'], ['circlet', 'CERCHIETTO']] };
+const ASP_ORD = [['cap', 'CAPELLI'], ['col', 'COLORE'], ['bar', 'BARBA'], ['pel', 'PELLE'], ['occ', 'OCCHI'], ['sci', 'SCIARPA'], ['seg', 'SEGNO']];
+const aspDi = r => { const R = RAZZE[r] || RAZZE.umano; return { cap: R.cap || 0, col: 0, bar: R.bar || 0, pel: 0, occ: 0, sci: 0, seg: 0 }; };
+const aspetto = () => Object.assign(aspDi(save && save.razza), save && save.aspetto);
 const cls = () => (save && CL[save.cls]) ? save.cls : 'cavaliere', CC = () => CL[cls()];
 const eqIt = s => (s === 'scudo' && !CC().shield) || !save.eq[s] ? null : IT[save.eq[s]];      // lo scudo lo porta solo il cavaliere
 const EQS = ['arma', 'armatura', 'elmo', 'scudo', 'acc'], eqSum = f => EQS.reduce((s, k) => s + ((eqIt(k) || {})[f] || 0), 0), eqHas = f => EQS.some(k => (eqIt(k) || {})[f]);
-const ATT = () => { const w = eqIt('arma'); return (w ? w.att : 1) + ((eqIt('acc') || {}).att || 0); };
-const DIF = () => eqSum('dif') + CC().dif;
-const MAXHP = () => 6 + save.hearts * 2 + eqSum('hp') + CC().hp;
-const VEL = () => 1 + eqSum('vel') + CC().vel;
-const MAXEN = () => CC().en;
+const ATT = () => { const w = eqIt('arma'), a = (w ? w.att : 1) + ((eqIt('acc') || {}).att || 0), f = RAZ().forza; return f ? Math.max(a + 1, Math.round(a * (1 + f))) : a; };
+const DIF = () => eqSum('dif') + CC().dif + (RAZ().dif || 0);
+const MAXHP = () => 6 + save.hearts * 2 + eqSum('hp') + CC().hp + (RAZ().hp || 0);
+const VEL = () => 1 + eqSum('vel') + CC().vel + (RAZ().vel || 0);
+const MAXEN = () => CC().en + (RAZ().en || 0);
 // le abilità (C): quelle che la classe sa già e quella scelta
 const skillsOf = c => CL[c].skills.filter(id => !SKL[id].price || (save.sk && save.sk[id]));
 const curSkill = () => { const L = skillsOf(cls()), s = save.skSel && save.skSel[cls()]; return L.includes(s) ? s : L[0]; };
@@ -261,14 +283,21 @@ function heroLook(c = cls(), demo) {
   const arm = E('armatura'); if (arm && arm.look && save.eq.armatura !== 'tunica') { delete L.sleeve; delete L.belt; Object.assign(L, arm.look); if (K.look.robe) L.robe = A.shade(arm.look.pants || arm.look.shirt, 0.92); }
   const el = E('elmo'); if (el && el.look) { for (const k of ['cap', 'feather', 'hat', 'hatPoint', 'hatBand', 'hood', 'mask']) delete L[k]; Object.assign(L, el.look); }
   const sc = E('scudo'); if (sc && sc.look) Object.assign(L, sc.look);
-  if (L.helm || L.hood || L.cap) L.hairStyle = 'none';
+  let asp = null;
+  if (MODO && save) {   // la razza e i pezzi dell'aspetto
+    const R = RAZ(); asp = aspetto(); Object.assign(L, R.look); L.skin = R.pelli[asp.pel] || R.pelli[0]; if (!arm || !arm.look || !arm.look.hand) L.hand = L.skin;
+    L.hairStyle = (ASP.cap[asp.cap] || ASP.cap[0])[0]; L.hair = (ASP.col[asp.col] || ASP.col[0])[0];
+    if (asp.bar) { L.beard = L.hair; if (asp.bar > 1) L.beardLong = 1; } const oc = (ASP.occ[asp.occ] || [])[0]; if (oc) L.eyes = oc;
+    const sg = (ASP.seg[asp.seg] || [])[0]; if (sg) L[sg] = sg === 'paint' ? '#c8362c' : sg === 'circlet' ? '#ffd86a' : 1;
+  }
+  if (L.helm || L.hood || L.cap) { L.hairStyle = 'none'; delete L.circlet; }
   const wid = demo ? 'legno' : save.eq.arma; L.weapon = wid ? weaponOf(wid, c).look : null;
   if (demo) Object.assign(L, K.demo || {});
   if (K.dual && L.weapon) L.weapon2 = L.weapon;
   if (!demo && save.eq.acc === 'vento') L.boots = '#e8eef6';
   if (MODO && !demo) {   // i particolari in più: la sciarpa col colore del mestiere, risvolti, fibbia, bracciali, capelli a ciuffi
     const sc = { cavaliere: ['#c8362c', '#a02820'], arciere: ['#d8a030', '#b07e20'], furfante: ['#8a3a9a', '#6a2a7a'], mago: ['#e0b040', '#b88a28'] }[c] || ['#c8362c', '#a02820'];
-    L.sciarpa = { c: sc[0], c2: sc[1] }; L.cuff = A.shade(L.boots, 1.32); L.buckle = '#ffd86a'; if (!L.robe) L.bracer = A.shade(L.boots, 0.86); if (L.hairStyle === 'short') L.hairStyle = 'ciuffi'; }
+    const sv = asp && (ASP.sci[asp.sci] || [])[0]; L.sciarpa = sv ? { c: sv, c2: A.shade(sv, 0.78) } : { c: sc[0], c2: sc[1] }; L.cuff = A.shade(L.boots, 1.32); L.buckle = '#ffd86a'; if (!L.robe) L.bracer = A.shade(L.boots, 0.86); }
   return L;
 }
 
@@ -472,7 +501,7 @@ function drawHeroSprites() {
   const L = heroLook(), P = CC().poses, hs = hsEroe(); sellaVecchia = true; sellaK = 0;
   for (let p = 0; p < nPose(); p++) for (let d = 0; d < 8; d++) {
     const pose = MODO ? Object.assign({}, P[p] || P[0], { vento: VENTO[p], onda: ONDA[p], bob: p === 11 ? 0.35 : 0 }) : P[p];
-    const c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, MODO ? { sc: SR * hs / HS, ricco: 1 } : { sc: SR }), r = heroRects[p][d];
+    const c = A.figure(A.human(L, pose), d / 8 * TAU, hs, hs, MODO ? { sc: SR * hs / HS * (RAZ().sc || 1), ricco: 1 } : { sc: SR }), r = heroRects[p][d];
     if (ATEX) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); }
   }
 }
@@ -774,6 +803,7 @@ function sail(d) { const p = fixSpot(d.x, d.z, 3); hero.x = p[0]; hero.z = p[1];
 function talkFolk(n, N) {
   const f = N.f, id = n.id, q = save.q;
   if (MODO && (f.vita || f.cliente || n.dice)) return say(id, [vitaDice(n)]);
+  if (f.role === 'shop' && MODO && f.aspetto) return ask(id, f.lines, ['GUARDA LA MERCE', 'CAMBIA IL TUO ASPETTO (' + CREA_COSTO + ' MONETE)', 'NIENTE, GRAZIE'], i => { if (i === 0) shop = { sel: 0, top: 0, who: f.shop }; else if (i === 1) apriCrea(2, 'sarta'); });
   if (f.role === 'shop') return say(id, f.lines, () => { shop = { sel: 0, top: 0, who: f.shop }; });
   // il maestro della gilda: cambia la classe e insegna le abilità
   if (f.role === 'guild') return ask(id, [f.lines[0], 'SE CAMBI, LE ARMI CHE HAI PRENDONO LA FORMA DELLA NUOVA CLASSE. E POSSO INSEGNARTI ABILITÀ CHE ANCORA NON CONOSCI.'], ['CAMBIA CLASSE' + (gildaCost() ? ' (' + gildaCost() + ' MONETE)' : ' (GRATIS)'), "IMPARA UN'ABILITÀ", 'NIENTE, GRAZIE'], i => { if (i === 0) openClass('gilda'); else if (i === 1) { shop = { sk: true, sel: 0 }; tone(660, 0.05); } });
@@ -1986,9 +2016,11 @@ function classKey(name) {
   if (name === 'left' || name === 'up') { U.sel = (U.sel + n - 1) % n; tone(1318, 0.03); }
   else if (name === 'right' || name === 'down') { U.sel = (U.sel + 1) % n; tone(1318, 0.03); }
   else if (name === 'b' && U.mode === 'gilda') { clsUI = null; st = 'play'; tone(660, 0.04); }
+  else if (name === 'b' && crea && U.mode === 'new') { clsUI = null; crea.passo = 0; crea.t = 0; crea.pics = {}; st = 'crea'; tone(660, 0.04); }
   else if (name === 'a' || name === 'start') {
     if (U.t < 0.6) return;                                      // niente scelte fatte per sbaglio, premendo A di corsa
     const id = CLS.ORD[U.sel];
+    if (crea && U.mode === 'new') { setClass(id); clsUI = null; crea.passo = 2; crea.t = 0; crea.riga = 0; crea.pics = {}; st = 'crea'; tone(880, 0.05); return; }
     if (U.mode === 'gilda') {
       if (id === cls()) { tone(200, 0.1, 'square', 0.03); return; }
       const cost = gildaCost(); if (save.coins < cost) { U.msg = 'TI SERVONO ' + cost + ' MONETE'; tone(160, 0.2, 'square', 0.04, 100); return; }
@@ -2001,7 +2033,7 @@ function classKey(name) {
 }
 function clsPic(id) {
   if (!clsPics) clsPics = {};
-  return clsPics[id] || (clsPics[id] = A.figure(A.human(heroLook(id, clsUI.mode === 'new'), CL[id].poses[0]), Math.PI * 0.8, 62, 58, { sc: 1.65 }));
+  return clsPics[id] || (clsPics[id] = A.figure(A.human(heroLook(id, clsUI.mode === 'new'), CL[id].poses[0]), Math.PI * 0.8, 62, 58, { sc: 1.65 * (RAZ().sc || 1) }));
 }
 function drawClass() {
   const U = clsUI, n = CLS.ORD.length, sel = CLS.ORD[U.sel], K = CL[sel];
@@ -2024,6 +2056,72 @@ function drawClass() {
   if (U.msg) T(U.msg, Wr / 2, y + h - 11, '#ff8f8f', 1, 'center');
   else if (two) { const c = gildaCost(); T(sel === cls() ? 'È GIÀ LA TUA CLASSE' : 'A: DIVENTA ' + K.n + (c ? ' PER ' + c + ' MONETE' : ' (PER QUESTA VOLTA È GRATIS)'), Wr / 2, y + h - 20, sel === cls() ? '#8a96aa' : '#ffd23f', 1, 'center'); T('CROCE: CAMBIA   B: INDIETRO', Wr / 2, y + h - 11, '#8a96aa', 1, 'center'); }
   else if (U.t > 0.6 && Math.floor(time * 2.5) % 2) T('CROCE: CAMBIA   A: SCEGLI ' + K.n, Wr / 2, y + h - 11, '#ffd23f', 1, 'center');
+}
+// ---------- il Grande Viaggio: la creazione del personaggio ----------
+// Prima di cominciare si sceglie chi si è: la gente (uomo, elfo, nano, orco), poi la classe (la scheda di sempre), poi l'aspetto, pezzo per pezzo,
+// con la figura che gira lì accanto. L'aspetto si può cambiare anche dopo, dalla sarta della Rocca (modo 'sarta': costa qualche moneta).
+let crea = null;
+const CREA_COSTO = 10;
+function apriCrea(passo, modo = 'new') { crea = { passo, modo, sel: Math.max(0, RAZ_ORD.indexOf(save.razza || 'umano')), riga: 0, t: 0, pics: {}, msg: '', prima: JSON.stringify(save.aspetto || null) }; st = 'crea'; }
+// la figura dell'eroe come sarebbe con una certa gente (e il suo aspetto di partenza), o com'è adesso
+function creaFig(razza, yaw, w, h, sc) {
+  const r0 = save.razza, a0 = save.aspetto; if (razza) { save.razza = razza; save.aspetto = razza === r0 && a0 ? a0 : aspDi(razza); }
+  try { return A.figure(A.human(heroLook(), CC().poses[0]), yaw, w, h, { sc: sc * (RAZ().sc || 1), ricco: 1 }); } finally { save.razza = r0; save.aspetto = a0; }
+}
+function creaFine() {
+  const C = crea, nuovo = C.modo === 'new';
+  if (!nuovo) { const cambiato = JSON.stringify(save.aspetto || null) !== C.prima; if (cambiato && save.coins < CREA_COSTO) { C.msg = 'SERVONO ' + CREA_COSTO + ' MONETE'; tone(160, 0.2, 'square', 0.04, 100); return; } if (cambiato) { save.coins -= CREA_COSTO; toast('ASPETTO NUOVO: -' + CREA_COSTO + ' MONETE', '#ffd23f'); } }
+  crea = null; clsUI = null; st = 'play'; hero.hp = nuovo ? MAXHP() : Math.min(hero.hp, MAXHP()); hero.en = Math.min(hero.en, MAXEN()); drawHeroSprites(); writeSave(); jingle();
+  if (nuovo) { toast("PARLA CON L'ANZIANA MIRTA (A)", '#ffd23f'); help = 11; }
+}
+function creaKey(name) {
+  const C = crea; C.msg = '';
+  if (C.passo === 0) { const n = RAZ_ORD.length;
+    if (name === 'left' || name === 'up') { C.sel = (C.sel + n - 1) % n; tone(1318, 0.03); }
+    else if (name === 'right' || name === 'down') { C.sel = (C.sel + 1) % n; tone(1318, 0.03); }
+    else if ((name === 'a' || name === 'start') && C.t > 0.6) { const id = RAZ_ORD[C.sel]; if (save.razza !== id || !save.aspetto) save.aspetto = aspDi(id); save.razza = id; tone(880, 0.05); C.passo = 1; openClass('new'); }
+    return; }
+  const righe = ASP_ORD.length + 1, k = C.riga < ASP_ORD.length ? ASP_ORD[C.riga][0] : null;
+  if (name === 'up') { C.riga = (C.riga + righe - 1) % righe; tone(1318, 0.03); }
+  else if (name === 'down') { C.riga = (C.riga + 1) % righe; tone(1318, 0.03); }
+  else if ((name === 'left' || name === 'right') && k) { const a = aspetto(), n = ASP[k].length; a[k] = (a[k] + (name === 'right' ? 1 : n - 1)) % n; save.aspetto = a; C.pics = {}; tone(1046, 0.03); }
+  else if (name === 'b') { tone(660, 0.04); if (C.modo === 'new') { C.passo = 1; openClass('new'); } else { save.aspetto = JSON.parse(C.prima); crea = null; st = 'play'; } }
+  else if (name === 'start' || (name === 'a' && !k)) { if (C.t > 0.6) creaFine(); }
+  else if (name === 'a') { C.riga = (C.riga + 1) % righe; tone(1318, 0.03); }
+}
+function drawCrea() {
+  const C = crea; hg.fillStyle = 'rgba(7,8,14,.86)'; hg.fillRect(0, 0, Wr, Hr);
+  if (C.passo === 0) {
+    const n = RAZ_ORD.length, sel = RAZ_ORD[C.sel], R = RAZZE[sel];
+    T('CHI SEI? SCEGLI LA TUA GENTE', Wr / 2, 5, '#ffd23f', 1, 'center');
+    const cw = Math.min(92, Math.floor((Wr - 12) / n)), x0 = Math.round(Wr / 2 - cw * n / 2), cy = 17, chh = 72;
+    RAZ_ORD.forEach((id, i) => { const R2 = RAZZE[id], x = x0 + i * cw, on = i === C.sel;
+      panel(x + 2, cy, cw - 4, chh, on ? R2.col : '#3a4458'); if (on) { hg.fillStyle = 'rgba(255,255,255,.08)'; hg.fillRect(x + 3, cy + 1, cw - 6, chh - 2); }
+      const pic = C.pics[id] || (C.pics[id] = creaFig(id, Math.PI * 0.8, 62, 58, 1.65)); hg.globalAlpha = on ? 1 : 0.6; hg.drawImage(pic, Math.round(x + cw / 2 - pic.width / 2), cy + 3); hg.globalAlpha = 1;
+      T(R2.n, x + cw / 2, cy + chh - 11, on ? R2.col : '#8a96aa', 1, 'center'); });
+    const w = Math.max(190, Math.min(300, Wr - insetL - insetR - 4)), x = Math.round(Wr / 2 - w / 2), y = cy + chh + 3, h = Hr - y - 4; panel(x, y, w, h, R.col);
+    let yy = y + 5; for (const l of A.wrap(R.d, w - 14).slice(0, 2)) { T(l, x + 7, yy, '#ffffff'); yy += 9; }
+    yy += 2; for (const t of R.tr) { hg.fillStyle = R.col; hg.fillRect(x + 8, yy + 2, 3, 3); T(t, x + 15, yy, '#c9d3e6'); yy += 9; }
+    if (yy <= y + h - 21) T('LA GENTE NON SI CAMBIA PIÙ. LA CLASSE E L\'ASPETTO SÌ', x + 7, yy + 1, '#8a96aa', 1, 'left', null);
+    if (C.t > 0.6 && Math.floor(time * 2.5) % 2) T('CROCE: CAMBIA   A: SONO ' + 'UN ' + R.n, Wr / 2, y + h - 11, '#ffd23f', 1, 'center');
+    return; }
+  // l'aspetto: a sinistra la figura che gira, a destra i pezzi da cambiare
+  const R = RAZ(), a = aspetto(), w = Math.max(230, Math.min(330, Wr - insetL - insetR - 4)), x = Math.round(Wr / 2 - w / 2), y = 17, h = Hr - y - 16, fw = 84;
+  T(C.modo === 'new' ? 'COME SEI FATTO? SCEGLI IL TUO ASPETTO' : 'LA SARTA TI SISTEMA: SCEGLI IL TUO ASPETTO', Wr / 2, 5, '#ffd23f', 1, 'center');
+  const ph = Math.max(70, Math.min(118, h - 26)), pk = ph / 34;   // la figura grande quanto ci sta
+  panel(x, y, fw, h, R.col); const d = Math.floor(C.t * 1.1) % 8, pic = C.pics[d] || (C.pics[d] = creaFig(null, 0.9 + d / 8 * TAU, fw - 4, ph, pk)); hg.drawImage(pic, x + 2, y + Math.max(2, Math.round((h - 22 - ph) / 2)));
+  T(R.n, x + fw / 2, y + h - 20, R.col, 1, 'center'); T(CC().n, x + fw / 2, y + h - 11, CC().col, 1, 'center');
+  const rx = x + fw + 3, rw = w - fw - 3, rh = Math.min(15, Math.floor((h - 4) / (ASP_ORD.length + 1))); panel(rx, y, rw, h, '#3a4458');
+  ASP_ORD.forEach(([k, nome], i) => { const yy = y + 3 + i * rh, on = C.riga === i, v = ASP[k][a[k]] || ASP[k][0];
+    if (on) { hg.fillStyle = '#26324a'; hg.fillRect(rx + 2, yy - 1, rw - 4, rh - 1); }
+    T(nome, rx + 6, yy + 2, on ? '#ffffff' : '#a9b4c8');
+    const col = k === 'pel' ? R.pelli[v[0]] : (k === 'col' || k === 'occ' || k === 'sci') ? v[0] : null, vx = rx + rw - 12;
+    if (on) { T('<', rx + 62, yy + 2, '#ffd23f'); T('>', vx + 3, yy + 2, '#ffd23f'); }
+    if (col) { hg.fillStyle = '#0b0a12'; hg.fillRect(vx - 12, yy + 1, 10, 8); hg.fillStyle = col; hg.fillRect(vx - 11, yy + 2, 8, 6); }
+    T(v[1], vx - (col ? 15 : 2), yy + 2, on ? '#ffd23f' : '#c9d3e6', 1, 'right'); });
+  const yy = y + 3 + ASP_ORD.length * rh, on = C.riga === ASP_ORD.length; if (on) { hg.fillStyle = '#26324a'; hg.fillRect(rx + 2, yy - 1, rw - 4, rh - 1); }
+  T(C.modo === 'new' ? 'COMINCIA IL VIAGGIO' : 'FATTO (' + CREA_COSTO + ' MONETE SE CAMBI)', rx + rw / 2, yy + 2, on ? '#ffd23f' : '#9af0b0', 1, 'center');
+  T(C.msg || ('CROCE: SCEGLI E CAMBIA   START: ' + (C.modo === 'new' ? 'COMINCIA' : 'FATTO') + '   B: INDIETRO'), Wr / 2, Hr - 11, C.msg ? '#ff8f8f' : '#8a96aa', 1, 'center');
 }
 // ---------- il maestro della gilda insegna le abilità ----------
 const skIcons = {};
@@ -3430,6 +3528,7 @@ function drawHUD() {
   if (st === 'title') return drawTitle();
   if (st === 'intro') return drawIntro();
   if (st === 'class') return drawClass();
+  if (st === 'crea') return drawCrea();
   // indicatori
   drawHearts(6, 5);
   const hy0 = 6 + Math.ceil(MAXHP() / 2 / 10) * 8, hy = hy0 + (MODO ? 13 : 8);
@@ -3760,8 +3859,9 @@ function onKey(name) {
     }
     return;
   }
-  if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { intro = 0; openClass('new'); } } return; }
+  if (st === 'intro') { if (name === 'a' || name === 'start' || name === 'b') { tone(880, 0.04); intro++; if (intro > INTRO.length) { intro = 0; if (MODO) apriCrea(0); else openClass('new'); } } return; }
   if (st === 'class') return classKey(name);
+  if (st === 'crea') return creaKey(name);
   if (st === 'dead') { if (name === 'a' && death > 1) { hero.dead = false; hero.sella = false; hero.hp = MAXHP(); hero.fall = 0; hero.vx = hero.vz = 0; hero.kb = 0; save.coins = Math.floor(save.coins * 0.8); st = 'play';
       hero.en = MAXEN(); hero.atk = 0; hero.dash = null; hero.block = false; hero.chg = 0; hero.aDown = false; hero.hid = 0; things = [];
       if (D) { hero.x = D.P.spawn.x; hero.z = D.P.spawn.z; hero.y = 0; hero.yaw = D.P.spawn.yaw; shots = []; hazards = []; quake = 0; D.trap = {}; D.room = -1; foes = []; spawnDungeonFoes(); makeBoss(); dRoomCheck(); }
@@ -3893,6 +3993,8 @@ if (window.__SG_DEBUG) window.__sg = {
    set freeze(v) { frozen = !!v; }, canStand: (x, z) => !!D && dCanStand(hero, x, z, 1.6), sight: (x0, z0, x1, z1) => !D || dSight(x0, z0, x1, z1), get things() { return things; }, get clsUI() { return clsUI; }, CLS, setClass: id => setClass(id), skill: id => { save.sk[id] = 1; save.skSel[cls()] = id; }, boom: (x, z, r, d, o) => boom(x, z, r, d, o), aim: r => aimAt(r), W, cam, atm, key: onKey, IT,
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
+  numeri: () => ({ cuori: MAXHP(), energia: MAXEN(), vel: Math.round(VEL() * 100) / 100, dif: DIF(), att: ATT() }), ridisegna: () => drawHeroSprites(),
+  get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
   get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
@@ -3928,6 +4030,7 @@ return {
     }
     if (st === 'title') { titleCam(dt); return; }
     if (st === 'class') { clsUI.t += dt; return; }
+    if (st === 'crea') { crea.t += dt; return; }
     if (frozen) return;                      // (solo per le prove) il gioco avanza soltanto a comando
     if (TERRE.length) terreTick(6);
     if (st === 'play' || st === 'dead') playUpdate(dt);
@@ -3947,7 +4050,7 @@ return {
     measure(w, h); scrW = w; scrH = h;
     misFrame();
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
-    if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class')) {
+    if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class' || st === 'crea')) {
       G.resize(W3, H3);
       if (st !== 'intro') { render3D(); luxPassa(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
     }
