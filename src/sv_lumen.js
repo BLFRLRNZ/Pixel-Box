@@ -251,5 +251,7 @@ SG.terre.lumen = m => {
   SG.terre.lumenLuoghi(m, { via, T, BORGO, ROCCA, SOLIS, ALBERO, AM, GHIACCIO, GRIFONE, PONTE, lago, brace, picco });
   // la vita dei paesi (passanti, clienti, bancarelle) e le scuderie: stanno in sv_lumen3.js
   SG.terre.lumenVita(m, { BORGO, ROCCA });
+  // il regno dei nani (Fucinafonda, la miniera allargata): sta in sv_lumen4.js
+  SG.terre.lumenNani(m);
 };
 })();

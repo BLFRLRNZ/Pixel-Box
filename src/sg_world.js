@@ -451,9 +451,9 @@ function grPrepara() {
       for (let b = 0; b < g.rami.length; b++) { const P = g.rami[b];
         for (let s = 0; s < P.length - 1; s++) { const A = P[s], Q = P[s + 1], dx = Q[0] - A[0], dz = Q[1] - A[1], t = Math.max(0, Math.min(1, ((x - A[0]) * dx + (z - A[1]) * dz) / (dx * dx + dz * dz))), d = Math.hypot(x - A[0] - dx * t, z - A[1] - dz * t) - (A[2] + (Q[2] - A[2]) * t);
           if (d < bd) { bd = d; open = b === 0 && s === 0 && t < 1 ? 1 : 0; dy = (A[3] || 0) + ((Q[3] || 0) - (A[3] || 0)) * t; } } }
-      const d = bd + (open ? 0 : (fbm(x / 26, z / 26, 2) - 0.5) * 9), fl = g.y + dy + (fbm(x / 19, z / 19, 2) - 0.5) * 1.2;   // le pareti non sono dritte, il fondo non è un tavolo
-      FL[k] = fl; CE[k] = fl + Math.max(3.5, 9.5 + (d < 0 ? Math.min(-d, 28) * 0.42 : -d * 0.5) + (fbm(x / 14, z / 14, 2) - 0.5) * 3);   // il soffitto: basso alle pareti, alto in mezzo alle sale
-      if (d < 0) { F[k] = open ? 1 : 2; if (!open) BU[k] = smooth(4, 64, Math.hypot(x - bocca[0], z - bocca[1])); }
+      const d = bd + (open ? 0 : (fbm(x / 26, z / 26, 2) - 0.5) * 9), fl = g.y + dy + (g.liscio ? 0 : (fbm(x / 19, z / 19, 2) - 0.5) * 1.2);   // le pareti non sono dritte, il fondo non è un tavolo (g.liscio: sì, lo è: una città)
+      FL[k] = fl; CE[k] = fl + Math.max(3.5, 9.5 + (d < 0 ? Math.min(-d, g.volta || 28) * 0.42 : -d * 0.5) + (fbm(x / 14, z / 14, 2) - 0.5) * 3);   // il soffitto: basso alle pareti, alto in mezzo alle sale (g.volta: fin dove sale, nelle sale grandi)
+      if (d < 0) { F[k] = open ? 1 : 2; if (!open) BU[k] = smooth(4, 64, Math.hypot(x - bocca[0], z - bocca[1])) * (1 - (g.chiaro || 0)); }   // (g.chiaro: una grotta illuminata, meno buia in fondo)
     }
     // la spalla: i vertici di roccia che toccano il fondo coperto scendono a mezza parete (così la parete che si vede è tutta in ombra)
     const tocca = (i, j, min) => { let b = -1; for (let q = 0; q < 9; q++) { const a = i + q % 3 - 1, c = j + Math.floor(q / 3) - 1; if (a < 0 || c < 0 || a >= nw || c >= nh) continue; const kk = c * nw + a; if (F[kk] >= min && F[kk] < 4) b = Math.max(b, BU[kk]); } return b; };
@@ -528,10 +528,12 @@ function grVolte() {
 // in che punto di una grotta si è (o niente): f come sopra, ce la quota del soffitto, bu il buio. Il risultato va letto subito (è sempre lo stesso oggetto)
 const GQ = { f: 0, ce: 0, bu: 0, g: null };
 W.grotta = (x, z) => {
+  let una = false;
   for (const g of GROTTE) { const b = g.box; if (!b || x <= b[0] || x >= b[2] || z <= b[1] || z >= b[3]) continue;
     const fx = x / CELL - g.i0, fz = (z - Z0) / CELL - g.j0, k = Math.floor(fz) * g.nw + Math.floor(fx), kn = Math.round(fz) * g.nw + Math.round(fx);
-    GQ.g = g; GQ.f = g.F[kn]; GQ.bu = GQ.f >= 2 ? g.BU[kn] : 0; GQ.ce = Math.min(g.CE[k], g.CE[k + 1], g.CE[k + g.nw], g.CE[k + g.nw + 1]); return GQ; }
-  return null;
+    if (una && !g.F[kn]) continue;     // (due grotte vicine: vale quella che lì è scavata)
+    GQ.g = g; GQ.f = g.F[kn]; GQ.bu = GQ.f >= 2 ? g.BU[kn] : 0; GQ.ce = Math.min(g.CE[k], g.CE[k + 1], g.CE[k + g.nw], g.CE[k + g.nw + 1]); if (GQ.f) return GQ; una = true; }
+  return una ? GQ : null;
 };
 W.volte = [];
 

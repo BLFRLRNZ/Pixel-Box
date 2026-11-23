@@ -45,6 +45,11 @@ const IT = {
   // capitolo 2: i tesori dei santuari
   radici: { n: 'SCUDO DELLE RADICI', t: 'scudo', r: 3, dif: 5, reflect: true, d: 'RESPINGE I COLPI MAGICI CHE TI ARRIVANO DI FRONTE (QUANDO NON ATTACCHI).', look: { shield: '#4a7a30', emblem: '#c8f08a' } },
   maree: { n: 'ELMO DELLE MAREE', t: 'elmo', r: 3, dif: 3, hp: 2, swim: true, d: "CON QUESTO ELMO RESPIRI SOTT'ACQUA E CAMMINI SUL FONDO DELL'ACQUA PROFONDA. +1 CUORE.", look: { helm: { c: '#3a8ac8', wings: '#bff0ff' } } },
+  stella: { n: 'LAMA DI FERROSTELLA', t: 'arma', r: 3, att: 19, d: 'FERRO CADUTO DAL CIELO, BATTUTO CENTO VOLTE NELLA GRANDE FUCINA. NON C\'È LAMA MIGLIORE.', look: { col: '#bfe8ff', guard: '#6a7a9a', glow: '#e8f8ff', len: 3 } },
+  corazzaNana: { n: 'CORAZZA DI FERROSTELLA', t: 'armatura', r: 3, dif: 6, d: 'PIASTRE CHIARE COME GHIACCIO, LEGGERE COME CUOIO. IL CAPOLAVORO DEI NANI.', look: { shirt: '#9ab8d8', plate: '#d8ecff', pauldron: '#b8d4f0', belt: '#b89030', pants: '#4a5a78', cape: '#2a4a8a' } },
+  elmoNano: { n: 'ELMO DEI RE SOTTO IL MONTE', t: 'elmo', r: 3, dif: 4, d: 'CON LE ALI D\'ORO: LO PORTAVANO I RE DI FUCINAFONDA IN BATTAGLIA.', look: { helm: { c: '#c8d8ec', wings: '#ffd23f', nose: true } } },
+  scudoNano: { n: "SCUDO DELL'INCUDINE", t: 'scudo', r: 3, dif: 5, d: 'CI SI PUÒ BATTERE SOPRA UN MARTELLO DA FABBRO: NON SI AMMACCA.', look: { shield: '#8aa8c8', emblem: '#ffd23f' } },
+  anelloNano: { n: 'ANELLO DEL MASTRO FABBRO', t: 'acc', r: 3, att: 4, hp: 2, d: 'CHI LO PORTA HA IL BRACCIO DI UN FABBRO E IL FIATO DI UN MANTICE. ATT +4, UN CUORE IN PIÙ.', ico: 'ring' },
   solare: { n: 'LAMA DEL SOLE', t: 'arma', r: 3, att: 16, beam: true, d: 'A OGNI COLPO LANCIA UN RAGGIO DI LUCE CHE ARRIVA LONTANO.', look: { col: '#fff0a0', guard: '#ffb02e', glow: '#ffffff', len: 3 } },
   brina: { n: 'ARMATURA DI BRINA', t: 'armatura', r: 3, dif: 6, fire: true, d: 'IL SUO GELO SPEGNE OGNI FIAMMA: CAMMINI SULLA LAVA SENZA BRUCIARTI.', look: { shirt: '#8ab8e0', plate: '#e8f4ff', pauldron: '#bfe0ff', belt: '#5a7aa8', pants: '#4a6a90', cape: '#e8f4ff' } },
   fenice: { n: 'AMULETO DELLA FENICE', t: 'acc', r: 3, regen: 1, hp: 2, d: '+1 CUORE. LE FERITE SI RIMARGINANO DA SOLE, COME LE PIUME DELLA FENICE.', ico: 'amulet' },
@@ -459,7 +464,7 @@ function* buildCharacters() {
   for (const id of ids) { const N = NPC[id]; CHR[id] = POSE_NPC.slice(0, id === 'contadino' ? 3 : 1).map(p => dirs(() => A.human(N.look, p), 44, 52, { sc: N.sc || 1 })); k++; yield 0.05 + 0.45 * k / ids.length; }
   if (MODO) {   // il cavallo: sellato (baio) e, nei recinti, due senza sella; e lo spazio per l'eroe in sella
     const hs = hsEroe(), sw = Math.round(SELLA_W * hs / 48), sh = Math.round(SELLA_H * hs / 48); sellaRects = CAV_POSE.map(() => { const row = []; for (let d = 0; d < 8; d++) row.push(atlas.add(A.mk(sw, sh))); return row; }); sellaVecchia = true; sellaK = 0;
-    CHR.cavallo = [CAV_POSE.map(p => dirs(() => cavParti(p, 0, true), 52, 50, { base: 41 })), [dirs(() => cavParti({}, 1, false), 52, 50, { base: 41 })], [dirs(() => cavParti({}, 2, false), 52, 50, { base: 41 })]];
+    CHR.cavallo = [CAV_POSE.map(p => dirs(() => cavParti(p, 0, true), 52, 50, { base: 41 }))];
   }
   CHR.biscotto = [{}, { leg: 0.5 }].map(p => dirs(() => A.beast({ c: '#f0a050', c2: '#ffe0b0', eye: '#4ade80', s: 0.45, tailUp: 1.3 }, p), 26, 20));
   CHR.slime = [0, 1].map(f => dirs(() => A.slime({ c: '#5ad070' }, f), 34, 26));
@@ -942,6 +947,10 @@ const SHOPS = {
   orafo: { title: "L'OREFICERIA DELLA ROCCA", list: [['talismano', 90], ['trifoglio', 160], ['anello2', 260], ['anelloForza', 420]] },
   erbe: { title: "L'ERBORISTERIA DELLA ROCCA", list: [['pozione', 20], ['elisir', 100]] },
   rocca_armi: { title: "L'ARMERIA DEL RE", list: [['elmoFerro', 150], ['scudoFerro', 160], ['mazza', 190], ['cotta', 230], ['argento', 250]] },
+  nani_armi: { title: 'LE LAME DELLA GRANDE FUCINA', list: [['mazza', 180], ['martello', 480], ['scimitarra', 450], ['stella', 1200]] },
+  nani_corazze: { title: 'CORAZZE, ELMI E SCUDI DEI NANI', list: [['elmoFerro', 140], ['scudoFerro', 150], ['acciaio', 400], ['torre', 260], ['scaglie', 330], ['elmoNano', 700], ['scudoNano', 800], ['corazzaNana', 1100]] },
+  nani_gemme: { title: "L'ORAFO DELLE GEMME DEL MONTE", list: [['talismano', 85], ['anello2', 250], ['anelloForza', 400], ['anelloNano', 900]] },
+  nani_birra: { title: 'LA BIRRERIA DEL BARILE D\'ORO', list: [['pozione', 18], ['elisir', 95]] },
   rocca_sarta: { title: 'LA SARTORIA DELLA ROCCA', list: [['cappuccio', 40], ['giaco', 60], ['seta', 180], ['mantello', 380]] },
   ambra: { title: 'LA SARTORIA DELLA MERCIAIA', list: [['cappuccio', 40], ['seta', 180], ['mantello', 380]] },
   ambra_armi: { title: "L'ARMERIA DI CASTELROSSO", list: [['lancia', 120], ['mazza', 190], ['cotta', 230], ['torre', 270]] },
@@ -1218,16 +1227,26 @@ const VC = 4;
 let vita = {};
 const vitaDorme = T => { const t = save.tod || 0; return T.letto < 24 ? t >= T.letto || t < T.sveglia : t >= T.letto - 24 && t < T.sveglia; };
 const vHash = (s, k) => { let h = 2166136261 ^ k; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h ^ (h >>> 13)) >>> 0; };
+// un paese (o una zona): la griglia, e «meta», che posa una meta su un passo libero (se non lo è prende il più vicino, entro tre passi; altrimenti niente)
+function vitaZona(id, nome, x0, z0, nw, nh, ok, cx, cz, px, pz) {
+  const V = { id, nome, x0, z0, nw, nh, ok, gc: new Float32Array(nw * nh), da: new Int32Array(nw * nh), giro: new Uint32Array(nw * nh), n: 0, mete: [], case: [], gente: [], cx, cz, px, pz };
+  V.meta = (x, z, k, a, extra) => { const c = vitaCella(V, x, z, 3); if (c < 0) return null; const m = Object.assign({ x: V.x0 + (c % nw) * VC, z: V.z0 + Math.floor(c / nw) * VC, k, a, chi: null }, extra); (k === 'casa' ? V.case : V.mete).push(m); return m; };
+  return V;
+}
 function vitaPrepara() {
   vita = {}; W.ospiti = null; if (!MODO || !W.VITA) return;
   const VT = W.VITA;
+  // le zone senza pianta di città (dentro una grotta): i passi liberi sono quelli del fondo scavato; le mete le dà la terra
+  for (const z of VT.zone || []) { const [x0, z0, x1, z1] = z.box, nw = Math.ceil((x1 - x0) / VC) + 1, nh = Math.ceil((z1 - z0) / VC) + 1, ok = new Uint8Array(nw * nh);
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const x = x0 + i * VC, zz = z0 + j * VC, q = W.grotta(x, zz); if (!q || (q.f !== 1 && q.f !== 2) || W.blocked(x, zz, 1.9)) continue; ok[j * nw + i] = (z.strade || []).some(r => x >= r[0] && x <= r[2] && zz >= r[1] && zz <= r[3]) ? 2 : 1; }
+    const V = vita[z.id] = vitaZona(z.id, z.nome, x0, z0, nw, nh, ok, (x0 + x1) / 2, (z0 + z1) / 2, z.centro[0], z.centro[1]);
+    for (const [mx, mz, k, a, extra] of z.mete) V.meta(mx, mz, k, a, extra); for (const [mx, mz, a] of z.case || []) V.meta(mx, mz, 'casa', a);
+    for (const n of npcs) { const f = NPC[n.id] && NPC[n.id].f; if (!f || f.vita || (f.walk && !f.fermo) || n.x < x0 + 6 || n.x > x1 - 6 || n.z < z0 + 6 || n.z > z1 - 6) continue; V.meta(n.x + Math.cos(n.base) * 5.6, n.z + Math.sin(n.base) * 5.6, 'chiacchiera', n.base + Math.PI, { con: n }); } }
   for (const b of W.BUILD) { if (b.k !== 'city' || !b.plan || !VT.paesi[b.plan.o.id]) continue;
     const pl = b.plan, o = pl.o, id = o.id, big = !o.small, rx = big ? Math.min((pl.x1 - pl.x0) / 2 + 16, 236) : (pl.x1 - pl.x0) / 2 + 16, rz = big ? Math.min((pl.z1 - pl.z0) / 2 + 16, 204) : (pl.z1 - pl.z0) / 2 + 16;
     const cx = big ? pl.px : (pl.x0 + pl.x1) / 2, cz = big ? pl.pz : (pl.z0 + pl.z1) / 2, x0 = cx - rx, z0 = cz - rz, nw = Math.ceil(rx * 2 / VC) + 1, nh = Math.ceil(rz * 2 / VC) + 1, ok = new Uint8Array(nw * nh);
     for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const x = x0 + i * VC, z = z0 + j * VC; if (W.blocked(x, z, 1.9) || gH(x, z) < W.wlAt(x, z) - 0.6) continue; ok[j * nw + i] = W.roadAt(x, z) > 0.3 ? 2 : 1; }
-    const V = vita[id] = { id, nome: o.name, x0, z0, nw, nh, ok, gc: new Float32Array(nw * nh), da: new Int32Array(nw * nh), giro: new Uint32Array(nw * nh), n: 0, mete: [], case: [], gente: [], cx, cz, px: pl.px, pz: pl.pz };
-    // una meta va su un passo libero: se non lo è si prende il più vicino (entro tre passi), altrimenti niente
-    const meta = (x, z, k, a, extra) => { const c = vitaCella(V, x, z, 3); if (c < 0) return null; const m = Object.assign({ x: V.x0 + (c % nw) * VC, z: V.z0 + Math.floor(c / nw) * VC, k, a, chi: null }, extra); (k === 'casa' ? V.case : V.mete).push(m); return m; };
+    const V = vita[id] = vitaZona(id, o.name, x0, z0, nw, nh, ok, cx, cz, pl.px, pl.pz), meta = V.meta;
     const pw = pl.pl.w, pd = pl.pl.d, fontana = o.center !== 'none';
     for (let k = 0; k < (big ? 12 : 6); k++) { const a = k * 2.399 + 0.7, r = 0.62 + 0.38 * ((k * 0.618) % 1), x = pl.px + Math.cos(a) * (pw / 2 - 4) * r, z = pl.pz + Math.sin(a) * (pd / 2 - 4) * r; if (Math.hypot(x - pl.px, z - pl.pz) > (fontana ? 13.5 : 4)) meta(x, z, 'piazza', a + 2.6); }
     if (fontana) for (const a of [0.8, 2.9, 4.6]) meta(pl.px + Math.cos(a) * 13.5, pl.pz + Math.sin(a) * 13.5, 'fontana', a + Math.PI);
@@ -1283,9 +1302,9 @@ function vitaStrada(V, ax, az, bx, bz) {
 function vitaMeta(n) {
   const T = n.vt, V = T.V, nt = day.night, tod = save.tod || 0, sera = tod >= 17.5 || tod < 4; let tot = 0; const P = [];
   for (const m of V.mete) { if (m.chi && m.chi !== n || m === T.m) continue; if (m.con && (m.con.via || m.con.moving)) continue;
-    let w = { piazza: 3, fontana: 1.2, bancarella: 3, tavolo: 2, vetrina: 1.6, entra: 1.6, chiacchiera: 2.2, porta: 0.4 }[m.k] || 1;
+    let w = { piazza: 3, fontana: 1.2, bancarella: 3, tavolo: 2, vetrina: 1.6, entra: 1.6, chiacchiera: 2.2, porta: 0.4, fucina: 2.6, birra: 1.8 }[m.k] || 1;
     if (T.bimbo) w = m.k === 'piazza' ? 4 : m.k === 'fontana' ? 2 : m.k === 'chiacchiera' ? 1 : 0;
-    else if (sera) w *= m.k === 'tavolo' ? 3 : m.k === 'entra' ? (m.kind === 'locanda' ? 4 : 0.3) : m.k === 'bancarella' ? 0.3 : 1;
+    else if (sera) w *= m.k === 'tavolo' || m.k === 'birra' ? 3 : m.k === 'entra' ? (m.kind === 'locanda' ? 4 : 0.3) : m.k === 'bancarella' ? 0.3 : 1;
     if (nt > 0.6 && (m.k === 'bancarella' || m.k === 'vetrina' || (m.k === 'entra' && m.kind !== 'locanda'))) w = 0;
     if (w > 0) { tot += w; P.push([w, m]); } }
   if (!T.bimbo && T.casa && !sera) { tot += 0.7; P.push([0.7, T.casa]); }
@@ -1327,7 +1346,7 @@ function vitaPasso(n, dt, d) {
       const m = T.m; n.moving = false;
       if (m.k === 'casa') { n.via = true; T.st = 'casa'; T.notte = vitaDorme(T); T.t = 14 + Math.random() * 30; }
       else if (m.k === 'entra') { n.via = true; T.st = 'dentro'; T.t = 20 + Math.random() * 40; m.chi = null; }
-      else { T.st = 'sta'; T.t = (m.k === 'tavolo' ? 14 : m.k === 'chiacchiera' ? 9 : m.k === 'bancarella' ? 7 : 4) * (0.6 + Math.random()); } }
+      else { T.st = 'sta'; T.t = (m.k === 'tavolo' || m.k === 'birra' ? 14 : m.k === 'fucina' ? 8 : m.k === 'chiacchiera' ? 9 : m.k === 'bancarella' ? 7 : 4) * (0.6 + Math.random()); } }
     return; }
   n.yaw += angDiff(Math.atan2(dz, dx), n.yaw) * Math.min(1, 8 * dt); const m = Math.min(dd, T.vel * dt), x0 = n.x, z0 = n.z;
   n.moving = move(n, dx / dd * m, dz / dd * m, 1.4); n.walk += m;
@@ -1335,11 +1354,11 @@ function vitaPasso(n, dt, d) {
 }
 // quel che dice un passante: dipende da quel che sta facendo (o da dove è appena uscito)
 function vitaDice(n) {
-  const VT = W.VITA, N = NPC[n.id], f = N.f, T = n.vt, d = VT.detti, nt = day.night; let L;
+  const VT = W.VITA, N = NPC[n.id], f = N.f, T = n.vt, d = (T && VT.dettiDi && VT.dettiDi[T.V.id]) || VT.detti, nt = day.night; let L;   // (una zona può avere frasi tutte sue)
   if (n.dice) L = n.dice;
   else if (!T) L = f.lines;
-  else if (hero.sella && Math.random() < 0.4) L = d.cavallo;
-  else if (T.bimbo) L = d.bimbo;
+  else if (hero.sella && d.cavallo && Math.random() < 0.4) L = d.cavallo;
+  else if (T.bimbo && d.bimbo) L = d.bimbo;
   else if (T.uscito && time < T.uscitoT && d.esce[T.uscito]) L = d.esce[T.uscito];
   else if (nt > 0.45) L = T.nott ? d.notte : (save.tod || 0) > 20 ? d.sera : ((T.st === 'sta' && T.m && d[T.m.k]) || d.giro);
   else L = (T.st === 'sta' && T.m && d[T.m.k]) || d.giro;
@@ -1426,7 +1445,7 @@ function cavUpdate(dt) {
 }
 function cavDisegna() {
   if (!CHR.cavallo) return; const sc = 0.2 / SR;
-  for (const q of W.CAVALLI || []) if (near(q[0], q[1], 420)) pushBB(q[0], gH(q[0], q[1]) - 2.04, q[1], CHR.cavallo[q[3]][0][dirOf(q[0], q[1], q[2] + Math.sin(time * 0.23 + q[0]) * 0.5)], sc);
+  for (const q of W.CAVALLI || []) if (near(q[0], q[1], 420)) pushBB(q[0], gH(q[0], q[1]) - 2.04, q[1], CHR.cavallo[0][0][dirOf(q[0], q[1], q[2] + Math.sin(time * 0.23 + q[0]) * 0.5)], sc);
   if (cav && !hero.sella && near(cav.x, cav.z, 520)) pushBB(cav.x, cav.y - 2.04, cav.z, CHR.cavallo[0][cav.moving ? 1 + (Math.floor(cav.walk / 9) % 2) : 0][dirOf(cav.x, cav.z, cav.yaw)], sc);
 }
 function cavOmbre() { for (const q of W.CAVALLI || []) if (near(q[0], q[1], 280)) pushShadow(q[0], q[1], 4); if (cav && near(cav.x, cav.z, 280)) pushShadow(cav.x, cav.z, 4.2, hero.sella ? hero.y : cav.y); }
@@ -2247,7 +2266,7 @@ function npcsUpdate(dt) {
     if (d > 420 && n.id !== 'biscotto') continue;
     if (n.id === 'biscotto' && save.q.gatto >= 2) { n.x = n.hx = 2032; n.z = n.hz = 2662; }
     if (d < 22 || (dialog && dialog.id === n.id)) { n.yaw += angDiff(Math.atan2(hero.z - n.z, hero.x - n.x), n.yaw) * Math.min(1, 5 * dt); n.moving = false; continue; }
-    if (n.id === 'contadino' || n.id === 'biscotto' || (NPC[n.id] && NPC[n.id].walk)) {
+    if (n.id === 'contadino' || n.id === 'biscotto' || (NPC[n.id] && NPC[n.id].walk && !NPC[n.id].f.fermo)) {
       const wr = NPC[n.id] && NPC[n.id].walk ? 16 : 30;
       if (n.t <= 0) { n.t = 3 + Math.random() * 4; const a = Math.random() * TAU; n.wx = n.hx + Math.cos(a) * wr; n.wz = n.hz + Math.sin(a) * wr; }
       if (n.wx !== undefined && Math.hypot(n.wx - n.x, n.wz - n.z) > 2) { const a = Math.atan2(n.wz - n.z, n.wx - n.x); n.yaw += angDiff(a, n.yaw) * Math.min(1, 6 * dt); const m = (n.id === 'biscotto' ? 9 : 7) * dt; n.moving = move(n, Math.cos(n.yaw) * m, Math.sin(n.yaw) * m, 1.5); n.walk += m; }
@@ -3994,7 +4013,7 @@ if (window.__SG_DEBUG) window.__sg = {
   set camFix(v) { camFix = v; }, get atm() { return atm; }, get atlasUse() { return atlasUse; }, orb, get fauna() { return fauna; }, NPC, FOE, day, openMapAll() { seen.fill(1); openMap(); },
   tp(x, z, yaw) { hero.x = x; hero.z = z; hero.y = gH(x, z); if (yaw !== undefined) hero.yaw = yaw; camBehind(); },
   numeri: () => ({ cuori: MAXHP(), energia: MAXEN(), vel: Math.round(VEL() * 100) / 100, dif: DIF(), att: ATT() }), ridisegna: () => drawHeroSprites(),
-  get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
+  shopList: () => shopList(), get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
   get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
