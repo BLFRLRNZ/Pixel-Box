@@ -78,7 +78,7 @@ SG.terre.lumen = m => {
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
     shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]],
     people: [
-      ['donna', "L'ANZIANA MIRTA", ["CHE TU SIA IL BENVENUTO NEL BORGO NUOVO. È CRESCIUTO, VERO? E ANCHE LA TERRA TUTT'ATTORNO.", 'IL VIAGGIO NON È ANCORA COMINCIATO. PER ORA CAMMINA, GUARDA, E RICORDA QUEL CHE NON VA.'], 'p'],
+      ['donna', "L'ANZIANA MIRTA", ["CHE TU SIA IL BENVENUTO NEL BORGO. SIEDITI UN MOMENTO: HO UNA COSA DA CHIEDERTI."], 'p'],
       ['ostessa', "L'OSTESSA DELL'AURORA", ["UN LETTO PULITO E UNA ZUPPA CALDA. BENVENUTO ALLA LOCANDA DELL'AURORA!"], 'in:aurora', { role: 'inn', cost: 8 }],
       ['mercante', 'NINO', ["POZIONI, CAPPUCCI, QUEL CHE SERVE A CHI PARTE. L'EMPORIO È PICCOLO, MA C'È TUTTO."], 'in:nino', { role: 'shop', shop: 'nino' }],
       ['fabbro', 'BRUNO', ['IL FERRO BUONO SI BATTE DUE VOLTE. GUARDA PURE.'], 'in:bruno', { role: 'shop', shop: 'bruno' }],
@@ -182,8 +182,9 @@ SG.terre.lumen = m => {
     ['bimbo', 'IL PICCOLO NILO', ['IL GIRASOLE PIÙ ALTO DEL PAESE È PIÙ ALTO DI MIO PADRE!'], 'p', { walk: 1 }],
     ['mercante', 'UN MERCANTE DI PASSAGGIO', ['DALLA VIA MAESTRA SI TAGLIA DI QUI PER LA ROCCA. SI RISPARMIA MEZZA GIORNATA, E SI BEVE MEGLIO.'], 'd']]);
   paese('faro', 'APPRODO DEL FARO', 2900, 6990, 'porto', 'ne', [
-    ['traghettatore', 'IL GUARDIANO DEL FARO', ['ACCENDO IL FARO OGNI SERA. DA QUANDO LE NAVI NON PASSANO PIÙ, LO ACCENDO PER ABITUDINE.', 'IL FARO È LÌ, SULLA PUNTA A LIBECCIO. AI SUOI PIEDI QUALCUNO HA DIMENTICATO UN BAULE.'], 'p'],
-    ['pescivendola', 'LA MOGLIE DEL GUARDIANO', ['QUI UNA VOLTA ATTRACCAVANO I VELIERI DEL SUD. IL MOLO SE L\'È PORTATO VIA UNA MAREGGIATA.'], 'd'],
+    // (il guardiano vero, Tullio, è sparito dieci anni fa: è la storia di Vespa, in sv_lumen8.js. Il faro lo accende Tonio)
+    ['traghettatore', 'TONIO, IL BARCAIOLO', ['ACCENDO IO IL FARO, OGNI SERA, DA DIECI ANNI. IN QUESTI GIORNI LA LUCE TREMA, E NON SO PERCHÉ.', 'IL FARO È LÌ, SULLA PUNTA A LIBECCIO. AI SUOI PIEDI QUALCUNO HA DIMENTICATO UN BAULE.'], 'p'],
+    ['pescivendola', 'ROSA, LA MOGLIE DI TONIO', ['QUI UNA VOLTA ATTRACCAVANO I VELIERI DEL SUD. IL MOLO SE L\'È PORTATO VIA UNA MAREGGIATA. E IL GUARDIANO SE L\'È PORTATO VIA LA NOTTE.'], 'd'],
     ['spadaccino', 'UN MARINAIO A TERRA', ['ASPETTO UN IMBARCO PER I MARI DEL SUD. DICONO CHE IL MOLO NUOVO SI FARÀ: IO INTANTO ASPETTO.'], 'p'],
     ['donna', 'LA LOCANDIERA', ['NON HO PIÙ LA LOCANDA, MA UN PIATTO DI ZUPPA PER CHI ARRIVA A PIEDI DAL BORGO C\'È SEMPRE.'], 'd']]);
   // il faro (quello di Pixel Saga), sulla punta a libeccio dell'Approdo
@@ -255,6 +256,7 @@ SG.terre.lumen = m => {
   // il regno dei nani (Fucinafonda, la miniera allargata): sta in sv_lumen4.js
   SG.terre.lumenNani(m);
   SG.terre.lumenGrotte(m);   // le grotte di montagna, più profonde (Via Sepolta, Grotta del Gelo)
-  SG.terre.lumenCompagnia(m, { BORGO, ROCCA, ELFI });   // i quattro compagni e il primo atto
+  SG.terre.lumenCompagnia(m, { BORGO, ROCCA, ELFI });   // i quattro compagni
+  SG.terre.lumenStoria(m, { BORGO, ROCCA, ELFI });      // la storia a capitoli: «La Compagnia dell'Alba»
 };
 })();

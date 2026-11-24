@@ -46,22 +46,9 @@ SG.terre.lumenCompagnia = (m, { BORGO, ROCCA, ELFI }) => {
       premio: { monete: 120, cosa: 'pozione' },
       dice: ['STAMMI DIETRO. NO: PROPRIO DIETRO.', "QUESTO SCUDO HA FERMATO UN TROLL DI GROTTA. IL TROLL NON L'HA PRESA BENE.", 'ALL\'APERTO NON C\'È IL SOFFITTO. MI FA UN CERTO EFFETTO.'] } };
   W.COMP_ORD = ['vespa', 'faela', 'korga', 'dorno'];
-  // il primo atto: chi lo apre, chi lo chiude, e le loro parole
-  W.STORIA = { nome: 'LA COMPAGNIA', apre: "L'ANZIANA MIRTA", chiude: 'RE ALDRIC DI LUMEN', titolo: "LA COMPAGNIA DELL'ALBA",
-    inizio: ['ECCOTI. TI ASPETTAVO: IL RE CERCA QUALCUNO CHE GUIDI UN GRANDE VIAGGIO, OLTRE IL VALICO DEI GIGANTI.',
-      'MA NESSUNO VA LONTANO DA SOLO. PRIMA TROVA CHI CAMMINI CON TE: QUATTRO NOMI MI SONO GIUNTI ALL\'ORECCHIO.',
-      'VESPA, QUI NEL BORGO, CHE HA LE MANI LESTE. FAELA, SENTINELLA DEGLI ELFI, A NORD-OVEST. KORGA LA SCIAMANA, ACCAMPATA A GIRASOLE. E DORNO, GUARDIA ALLA PORTA DI FUCINAFONDA, SUI MONTI A NORD.',
-      'QUANDO SARETE INSIEME, ANDATE DAL RE, ALLA ROCCA. E RICORDA: UN COMPAGNO SI GUIDA TOCCANDO IL SUO RIQUADRO, IN ALTO A SINISTRA. CON START SCEGLI CHI PARTE E CHI RESTA.'],
-    cerca: 'MANCA ANCORA QUALCUNO. ', pronti: ['SIETE TUTTI. CHE STRANA, BELLA COMPAGNIA. ORA ANDATE DAL RE, ALLA ROCCA: VI ASPETTA NEL CORTILE DEL MASTIO.'], dopo: ["LA COMPAGNIA DELL'ALBA. SUONA BENE. ANDATE, E TORNATE A RACCONTARMI."],
-    reNo: ['SI DICE CHE NEL BORGO QUALCUNO STIA RADUNANDO UNA COMPAGNIA. TORNA DA ME QUANDO SARETE AL COMPLETO: HO UN INCARICO DEGNO DI VOI.'],
-    re: ["DUNQUE È VERO: UN'ELFA, UN NANO, UN'ORCHESSA E UNA LADRA, SOTTO LA STESSA BANDIERA. NON SI VEDEVA DAI TEMPI DI RE AURELIO.",
-      'OLTRE IL VALICO DEI GIGANTI CI SONO TRE TERRE CHE NESSUNO DI NOI HA MAI VISTO. VOGLIO CHE SIATE VOI A PORTARE LÀ IL NOME DI LUMEN.',
-      "DA OGGI SIETE LA COMPAGNIA DELL'ALBA. PRENDETE QUESTO, E PREPARATEVI: IL GRANDE VIAGGIO COMINCIA DAL VALICO."],
-    reDopo: ["LA COMPAGNIA DELL'ALBA! IL VALICO È ANCORA CHIUSO DALLA FRANA, MA I MIEI UOMINI CI LAVORANO. TENETEVI PRONTI."], premio: { monete: 200, cosa: 'cuore' } };
   // la gilda degli eroi: un maestro al Borgo (sulla via che dal punto di partenza sale alla piazza, sul lato destro: ci si passa accanto) e uno alla Rocca (in piazza, verso la fontana). (Nelle città il maestro nasce accanto alla bacheca degli incarichi; qui la bacheca
   // non c'è ancora, e senza di lei il maestro non nasceva: la gilda, di cui il gioco parla, non si trovava.) Cambia il mestiere e insegna le abilità.
   m.city.folk('maestro', 'MAESTRO DELLA GILDA', BORGO[0] + 8, BORGO[1] + 42, 2.2, ['BENVENUTO, VIAGGIATORE. LA GILDA DEGLI EROI HA UN MAESTRO IN OGNI CITTÀ, E UNO ANCHE QUI AL BORGO. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_borgo' });
   m.city.folk('maestro', 'MAESTRO DELLA GILDA', ROCCA[0] - 36, ROCCA[1] + 30, -0.4, ['BENVENUTO ALLA GILDA DEGLI EROI DELLA ROCCA DI LUMEN. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_rocca' });
-  for (const id in W.FOLK) if (W.FOLK[id].n === W.STORIA.apre || W.FOLK[id].n === W.STORIA.chiude) W.FOLK[id].sveglio = 1;   // chi apre e chi chiude l'atto non va a dormire
 };
 })();

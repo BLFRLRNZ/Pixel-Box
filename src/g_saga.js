@@ -175,6 +175,9 @@ const FOE = {
   sb: { n: 'BRUTO', k: 'human', as: 'sb', sc: 0.29, mest: 'bruto', hp: 36, dmg: 4, sp: 14, aggro: 110, range: 11, r: 4.2, coins: [0, 0], wind: 0.95, rosso: 1, gd: 4 },
   sv: { n: 'VEDETTA', k: 'human', as: 'sv', mest: 'vedetta', hp: 6, dmg: 1, sp: 33, aggro: 120, range: 7, r: 3, coins: [0, 0], wind: 0.5 },
   grigio: { n: 'IL VECCHIO GRIGIO', k: 'beast', as: 'wolf', sc: 0.34, hp: 70, dmg: 4, sp: 38, aggro: 110, range: 10, r: 5, coins: [60, 90], champ: 1 },
+  // la storia del Grande Viaggio: il capo dei predoni della strada del sud; lo Spento, che per ora compare soltanto (fermo, non si tocca)
+  guercio: { n: 'IL GUERCIO', k: 'human', as: 'bandit', sc: 0.3, hp: 44, dmg: 3, sp: 25, aggro: 130, range: 10, r: 4, coins: [40, 60], champ: 1, elite: 1, storia: 1 },
+  spento: { n: 'LO SPENTO', k: 'human', as: 'wraith', sc: 0.36, hp: 300, dmg: 0, sp: 0, aggro: 0, range: 0, r: 3, coins: [0, 0], fermo: 1 },
   slimeR: { n: 'MELMA DI FUOCO', k: 'slime', hp: 12, dmg: 2, sp: 18, aggro: 60, range: 6, r: 3, coins: [4, 8] },
 };
 // ---------- aria delle regioni: nebbia, cielo, distanza, acqua ----------
@@ -663,6 +666,7 @@ function setupWorld() {
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   inc = null; incT = 45; semina(); abitudini();   // (solo nel Grande Viaggio: altrove non fanno niente)
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
+  for (const q of W.CAMPI_STORIA || []) { const [X, Z] = fixSpot(q.x, q.z, 4); camps.push({ x: X, z: Z, type: q.tipo, n: q.n, r: q.r, alive: [], dead: 0, cool: 0, on: false, storia: q }); }   // (ci sono solo durante le loro tappe: vedi campsUpdate)
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
   for (const id in MODO ? {} : JOBS) { const j = JOBS[id];   // (i lavori della bacheca sono di Pixel Saga: nel Grande Viaggio non ci sono ancora)
@@ -1811,13 +1815,14 @@ function compAvvia() {
   if (C.chi !== 'io' && !W.COMPAGNI[C.chi]) C.chi = 'io';
   compSync(); for (const id of compOrd()) compVecchi[id] = true;
   compRifai();
-  if (!save.flags.storiaTip && storiaPasso() === 0) { save.flags.storiaTip = 1; toasts.push({ t: "IL SEGNO D'ORO SULLA BUSSOLA PORTA DOVE LA STORIA CONTINUA", c: '#ffd23f', life: 14 }); }
+  if (!save.flags.storiaTip && stSt().c === 0 && stSt().t === 0) { save.flags.storiaTip = 1; toasts.push({ t: "IL SEGNO D'ORO SULLA BUSSOLA PORTA DOVE LA STORIA CONTINUA", c: '#ffd23f', life: 14 }); }
 }
 // chi segue e chi aspetta ancora di essere incontrato
 function compRifai() {
   const C = save.comp, prima = seguaci; seguaci = []; attese = [];
   for (const id of compOrd()) {
-    if (id !== 'io' && !C.m[id]) { const c = W.COMPAGNI[id], p = fixSpot(c.casa[0], c.casa[1], 3); attese.push({ id, attesa: 1, x: p[0], z: p[1], y: W.ground(p[0], p[1], -1e9), yaw: c.casa[2], base: c.casa[2] }); continue; }
+    if (id !== 'io' && !C.m[id]) { const c = W.COMPAGNI[id], casa = c.casaSe ? c.casaSe(stSt().c, stSt().t) : c.casa; if (!casa) continue;   // (la storia può tenerlo nascosto, o farlo aspettare altrove)
+      const p = fixSpot(casa[0], casa[1], 3); attese.push({ id, attesa: 1, x: p[0], z: p[1], y: W.ground(p[0], p[1], -1e9), yaw: casa[2], base: casa[2] }); continue; }
     if (id === C.chi || C.casa[id] || !C.m[id]) continue;
     const v = prima.find(f => f.id === id); if (v) { seguaci.push(v); continue; }
     const f = { id, x: hero.x, z: hero.z, y: hero.y, yaw: hero.yaw, walk: 0, moving: false, st: 'segue', t: 0, cd: 1, tg: null, flash: 0, fermo: 0, giu: !!C.m[id].giu, luogo: D ? D.id : 0 };
@@ -1837,7 +1842,7 @@ function compEntra(id, zitto) {
   M.hp = conMembro(M, MAXHP); compVecchi[id] = true; compRifai();
   if ((save.q.comp || 0) < 1) save.q.comp = 1;
   if (compDentro().length === W.COMP_ORD.length && save.q.comp < 2) save.q.comp = 2;
-  const p = c.prova; if (p.tipo === 'forziere' && save.chests[p.id]) { save.flags['pv_' + id] = 1; save.coins += c.premio.monete; toasts.push({ t: p.n + ": L'AVEVI GIÀ APERTO. +" + c.premio.monete + ' MONETE', c: '#ffd23f', life: 8 }); }
+  const p = c.prova; if (p && p.tipo === 'forziere' && save.chests[p.id]) { save.flags['pv_' + id] = 1; save.coins += c.premio.monete; toasts.push({ t: p.n + ": L'AVEVI GIÀ APERTO. +" + c.premio.monete + ' MONETE', c: '#ffd23f', life: 8 }); }
   if (!zitto) { banner = { t: c.n + ' SI UNISCE ALLA COMPAGNIA', s: c.chi, life: 4, c: CL[c.cls].col }; fanfare();
     if (!save.flags.compTip) { save.flags.compTip = 1; toasts.push({ t: 'PER GUIDARE UN COMPAGNO, TOCCA IL SUO RIQUADRO QUI SOPRA', c: '#ffd23f', life: 16 }, { t: 'CON START (COMPAGNIA) SCEGLI CHI PARTE E CHI RESTA', c: '#ffd23f', life: 16 }); } }
   writeSave(); return true;
@@ -1950,9 +1955,10 @@ function compParla(o) {
   const C = save.comp; hero.yaw = Math.atan2(o.z - hero.z, o.x - hero.x);
   if (o.id === 'io') { say(null, ['IL TUO EROE TI SEGUE. PER TORNARE A GUIDARLO, TOCCA IL SUO RIQUADRO IN ALTO A SINISTRA.']); return; }
   const c = W.COMPAGNI[o.id];
-  if (o.attesa) { say(null, c.incontro, () => compEntra(o.id)); dialog.name = c.n; return; }
+  if (o.attesa) { const t = tappaOra(); if (t && t.tipo === 'compagno' && t.chi === o.id) { storiaAvanza(); return; }   // si unisce quando la storia arriva a lui
+    say(null, c.nonAncora || [c.incontro[0]]); dialog.name = c.n; return; }
   o.li = ((o.li === undefined ? -1 : o.li) + 1) % (c.dice.length + 1);
-  say(null, [o.giu ? 'UN MOMENTO... MI RIALZO APPENA È FINITA.' : o.li === c.dice.length || !save.flags['pv_' + o.id] && o.li === 0 ? (save.flags['pv_' + o.id] ? 'SONO CON TE. DOVE SI VA?' : c.incontro[c.incontro.length - 1]) : c.dice[o.li]]); dialog.name = c.n;
+  say(null, [o.giu ? 'UN MOMENTO... MI RIALZO APPENA È FINITA.' : o.li === c.dice.length || !pvFatta(o.id) && o.li === 0 ? (pvFatta(o.id) ? 'SONO CON TE. DOVE SI VA?' : c.incontro[c.incontro.length - 1]) : c.dice[o.li]]); dialog.name = c.n;
 }
 // i riquadri della compagnia, in alto a sinistra: chi si guida (bordo bianco) e chi segue; un tocco su chi segue ne prende la guida
 function drawCompChips(x, y) {
@@ -1965,54 +1971,141 @@ function drawCompChips(x, y) {
 }
 // la scheda della compagnia nel menu (START): la missione del momento e, sotto, chi c'è
 function drawComp(x, y, w, h, top, rows) {
-  const C = save.comp; T(W.STORIA.nome, x + 8, top, storiaPasso() >= 3 ? '#9af0b0' : '#ffd23f'); A.wrap(storiaRiga(), w - 20).slice(0, 4).forEach((l, k) => T(l, x + 14, top + 10 + k * 8, '#a9c6e3', 1, 'left', null));
+  const C = save.comp; T(storiaTitolo(), x + 8, top, '#ffd23f'); if (save.flags.lanterna) { storiaLanterna(x + w - 44, top - 2); T((save.fiamme || 0) + '/4', x + w - 8, top, '#ffd23f', 1, 'right'); } A.wrap(storiaRiga(), w - 20).slice(0, 4).forEach((l, k) => T(l, x + 14, top + 10 + k * 8, '#a9c6e3', 1, 'left', null));
   const y0 = top + 46;
   rows.slice(1).forEach((id, i) => { const yy = y0 + i * 19, on = menu.sel === i + 1, M = C.m[id], io = id === C.chi, c = CL[io ? cls() : M.cls] || CL.cavaliere, cd = id === 'io' ? null : W.COMPAGNI[id];
     if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 18); }
     const max = io ? MAXHP() : conMembro(M, MAXHP), hp = io ? hero.hp : Math.min(max, M.hp === undefined ? max : M.hp);
     T(compNome(id), x + 8, yy, c.col); T(cd ? cd.chi : 'IL TUO EROE, ' + c.n, x + 50, yy, '#8a96aa');
     T(io ? 'LO GUIDI TU' : M.giu ? 'A TERRA' : C.casa[id] ? 'RESTA AL CAMPO' : 'IN VIAGGIO', x + w - 8, yy, io ? '#ffffff' : M.giu ? '#ff8a8a' : C.casa[id] ? '#8a96aa' : '#9af0b0', 1, 'right');
-    T('CUORI ' + Math.ceil(hp) / 2 + '/' + max / 2 + '  ATT ' + (io ? ATT() : conMembro(M, ATT)) + '  DIF ' + (io ? DIF() : conMembro(M, DIF)) + (cd ? '   ' + (save.flags['pv_' + id] ? 'PROVA COMPIUTA' : cd.prova.n) : ''), x + 14, yy + 8, '#a9c6e3', 1, 'left', null); });
+    T('CUORI ' + Math.ceil(hp) / 2 + '/' + max / 2 + '  ATT ' + (io ? ATT() : conMembro(M, ATT)) + '  DIF ' + (io ? DIF() : conMembro(M, DIF)) + (cd && cd.prova ? '   ' + (save.flags['pv_' + id] ? 'PROVA COMPIUTA' : cd.prova.n) : ''), x + 14, yy + 8, '#a9c6e3', 1, 'left', null); });
   const r = rows[menu.sel];
   T(!r || r === 'st' ? 'SU E GIÙ: SCEGLI UN COMPAGNO' : r === C.chi ? 'È CHI STAI GUIDANDO' : 'A: PARTE O RESTA AL CAMPO    C: GUIDALO TU', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
 }
-// ---------- il primo atto: la compagnia si raduna ----------
-// save.q.comp: 0 parla con Mirta, 1 raduna i quattro, 2 dal Re, 3 fatto. Le prove dei compagni: save.flags['pv_' + id] (e 'pk_' + id: il nemico della prova è caduto).
-const storiaPasso = () => (save && save.q.comp) || 0;
+// ---------- la storia a capitoli (Il Grande Viaggio) ----------
+// W.LIBRO.capitoli[c].tappe[t]: si fa una tappa alla volta; save.st = { c, t } dice dove si è. I tipi di tappa:
+//   parla (chi: il nome di chi si va a trovare) · compagno (chi: un compagno che aspetta; se è già della compagnia basta arrivare lì) · luogo (x, z, r, sotto) ·
+//   nemico (chi: il tipo che deve cadere) · campo (campo: la chiave di un accampamento della storia, da sgombrare) · esamina (x, z di un oggetto) · forziere (id)
+// Compiuta la tappa parte la sua scena (a più voci), poi le sue conseguenze («fa»: un compagno entra, una fiamma nella Lanterna, monete, un dono), poi si passa alla tappa dopo.
+// Attorno alla storia: le soste al fuoco (ogni compagno ha dei racconti, che si aprono via via), le voci dei compagni entrando in un luogo (un fumetto, senza fermare il gioco),
+// le parole di chi si incontra fuori tappa (cambiano con la storia), gli accampamenti che ci sono solo nella loro tappa.
+// Le vecchie prove (W.COMPAGNI[id].prova) restano per chi ce l'ha ancora: i compagni dei capitoli non ancora scritti, nei salvataggi di prima.
+let fumetto = null, stOccupata = false, stFuocoT = 0;
+const libro = () => (MODO && W.LIBRO) || null;
+const stSt = () => save.st || (save.st = { c: 0, t: 0 });
+const capOra = () => { const L = libro(); return L ? L.capitoli[stSt().c] || null : null; };
+const tappaOra = () => { const c = capOra(); return c ? c.tappe[stSt().t] || null : null; };
+const haComp = id => !!(save.comp && save.comp.m[id]);
+const pvFatta = id => !W.COMPAGNI[id].prova || !!save.flags['pv_' + id];
+const stDopo = da => { const s = stSt(); return s.c > da[0] || (s.c === da[0] && s.t >= da[1]); };   // la storia è arrivata almeno a [capitolo, tappa]?
+const stScegli = lista => { let r = null; for (const v of lista || []) if (stDopo(v.da)) r = v; return r; };   // tra più voci, l'ultima a cui la storia è arrivata
 const folkDi = nome => { for (const n of npcs) { const N = NPC[n.id]; if (N && N.n === nome) return n; } return null; };
+const stSotto = () => { const q = W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; return !!(q && q.f >= 2 && hero.y < q.ce); };
+// una scena: battute [chi, riga]; chi è un compagno (per id), un nome qualunque, o '' per la voce che racconta. Le battute di fila della stessa voce stanno nello stesso riquadro
+function scena(battute, poi) {
+  const g = []; for (const [chi, riga] of battute) { const u = g[g.length - 1]; if (u && u.chi === chi) u.righe.push(riga); else g.push({ chi, righe: [riga] }); }
+  const vai = i => { if (i >= g.length) { if (poi) poi(); return; } say(null, g[i].righe, () => vai(i + 1)); dialog.name = g[i].chi && W.COMPAGNI[g[i].chi] ? W.COMPAGNI[g[i].chi].n : g[i].chi || ''; };
+  vai(0);
+}
+function storiaFa(fa) {
+  if (!fa) return;
+  if (fa.flag) save.flags[fa.flag] = 1;
+  if (fa.entra) compEntra(fa.entra);
+  if (fa.monete) { save.coins += fa.monete; toast('+' + fa.monete + ' MONETE', '#ffd23f'); }
+  if (fa.fiamma) { save.fiamme = Math.max(save.fiamme || 0, fa.fiamma); fanfare(); }
+  if (fa.banner) banner = { t: fa.banner[0], s: fa.banner[1], life: 5, c: '#ffd23f' };
+  for (const x of fa.toast || []) toasts.push({ t: x, c: '#ffd23f', life: 12 });
+  if (fa.cosa) openLoot(fa.cosa);
+}
+function storiaAvanza() {
+  const t = tappaOra(); if (!t || stOccupata) return false; const s = stSt(), c = capOra(); stOccupata = true;
+  // una comparsa: qualcuno che c'è solo finché dura la scena (sta fermo, non si tocca), e poi svanisce
+  let fig = null; if (t.comparsa) { const q = t.comparsa, [X, Z] = fixSpot(q.x, q.z, 3); fig = { type: q.tipo, camp: { x: X, z: Z, type: q.tipo, n: 1, r: 10, alive: [], dead: 0 }, x: X, z: Z, y: gH(X, Z, -1e9), yaw: Math.atan2(hero.z - Z, hero.x - X), hp: FOE[q.tipo].hp, st: 'idle', t: 99, cd: 99, flash: 0, kb: 0, walk: 0, hop: 0, wx: X, wz: Z };
+    foes.push(fig); puffAt(X, Z, 10); hero.yaw = Math.atan2(Z - hero.z, X - hero.x); hero.vx = hero.vz = 0; camBehind(); tone(140, 0.5, 'sawtooth', 0.04, 70); }
+  const eraDentro = !!(t.fa && t.fa.entra && haComp(t.fa.entra));
+  const fine = () => { stOccupata = false; if (fig) { fig.gone = true; puffAt(fig.x, fig.z, 14); }
+    storiaFa(t.fa); s.t++;
+    if (s.t >= c.tappe.length) { s.c++; s.t = 0; const n = capOra(); if (n) { toasts.push({ t: n.n + ': ' + n.t, c: '#ffd23f', life: 14 }); if (!t.fa || (!t.fa.banner && (!t.fa.entra || eraDentro))) banner = { t: n.n, s: n.t, life: 5, c: '#ffd23f' }; } }
+    compRifai(); writeSave(); };
+  const sc = t.gia && haComp(t.gia) && t.scenaGia ? t.scenaGia : t.scena;
+  if (sc) scena(sc, fine); else fine(); return true;
+}
+const storiaTitolo = () => { const L = libro(), c = capOra(); return !L ? '' : c ? c.n + ': ' + c.t : L.titolo; };
 function storiaRiga() {
-  const s = storiaPasso(), manca = W.COMP_ORD.filter(id => !save.comp.m[id]), prove = compDentro().filter(id => !save.flags['pv_' + id]).map(id => W.COMPAGNI[id].prova.riga);
-  if (s === 0) return "PARLA CON L'ANZIANA MIRTA, NEL BORGO.";
-  if (s === 1) return 'RADUNA LA COMPAGNIA (' + (W.COMP_ORD.length - manca.length) + '/' + W.COMP_ORD.length + '). ' + manca.map(id => W.COMPAGNI[id].n + ': ' + W.COMPAGNI[id].dove + '.').join(' ');
-  if (s === 2) return 'PORTA LA COMPAGNIA DAL RE ALDRIC, NEL CORTILE DEL MASTIO, ALLA ROCCA.' + (prove.length ? ' RESTANO ' + prove.length + ' PROVE DA FARE INSIEME.' : '');
-  return "ATTO PRIMO COMPIUTO: SIETE LA COMPAGNIA DELL'ALBA. " + (prove.length ? prove[0] : 'IL SEGUITO: IL VALICO DEI GIGANTI.');
+  const L = libro(); if (!L) return ''; const t = tappaOra(), prove = compDentro().filter(id => !pvFatta(id)).map(id => W.COMPAGNI[id].prova.riga);
+  return (t ? t.riga : L.fine) + (prove.length ? ' · ' + prove[0] : '');
 }
-// dove punta la bussola quando non c'è un segnalino: il più vicino tra chi manca, le prove da fare, e chi si deve andare a trovare
+// dove punta la bussola quando non c'è un segnalino: la tappa della storia; se la tappa non ha un posto, la prova più vicina tra quelle rimaste
 function storiaMeta() {
-  if (!compOn() || D || !W.STORIA) return null; const s = storiaPasso(), L = [], pos = n => { if (n) L.push([n.x, n.z]); };
-  if (s === 0) pos(folkDi(W.STORIA.apre));
-  if (s === 1) for (const a of attese) L.push([a.x, a.z]);
-  if (s === 2) pos(folkDi(W.STORIA.chiude));
-  if (s >= 1) for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (!save.flags['pv_' + id] && p.x !== undefined) L.push([p.x, p.z]); }
-  let best = null, bd = 1e12; for (const q of L) { const d = Math.hypot(q[0] - hero.x, q[1] - hero.z); if (d < bd) { bd = d; best = q; } } return best;
+  if (!compOn() || D || !libro()) return null; const t = tappaOra();
+  if (t) { if (t.tipo === 'parla') { const n = folkDi(t.chi); if (n) return [n.x, n.z]; }
+    if (t.tipo === 'compagno' && !(t.ingresso && !stSotto())) { const a = attese.find(o => o.id === t.chi); if (a) return [a.x, a.z]; }
+    if (t.ingresso && !stSotto()) return t.ingresso;   // (la meta è in una grotta: finché si è fuori, la bussola porta all'imbocco)
+    if (t.x !== undefined) return [t.x, t.z]; }
+  let best = null, bd = 1e12; for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (!p || save.flags['pv_' + id] || p.x === undefined) continue; const d = Math.hypot(p.x - hero.x, p.z - hero.z); if (d < bd) { bd = d; best = [p.x, p.z]; } } return best;
 }
+// si parla con qualcuno: se è lui la tappa, la storia va avanti; altrimenti dice quel che ha da dire a questo punto della storia
 function storiaParla(n, f) {
-  if (!compOn() || !W.STORIA) return false; const S = W.STORIA, s = storiaPasso(), id = n.id;
-  if (f.n === S.apre) {
-    if (s === 0) { say(id, S.inizio, () => { save.q.comp = Math.max(1, save.q.comp || 0); banner = { t: 'ATTO PRIMO', s: S.nome, life: 4, c: '#ffd23f' }; jingle(); writeSave(); }); return true; }
-    if (s === 1) { say(id, [S.cerca + W.COMP_ORD.filter(k => !save.comp.m[k]).map(k => W.COMPAGNI[k].n + ' È ' + W.COMPAGNI[k].dove + '.').join(' ')]); return true; }
-    say(id, s === 2 ? S.pronti : S.dopo); return true; }
-  if (f.n === S.chiude) {
-    if (s === 2) { say(id, S.re, () => { save.q.comp = 3; save.coins += S.premio.monete; banner = { t: S.titolo, s: 'ATTO PRIMO COMPIUTO', life: 5, c: '#ffd23f' }; toast('+' + S.premio.monete + ' MONETE', '#ffd23f'); openLoot(S.premio.cosa); writeSave(); }); return true; }
-    say(id, s === 3 ? S.reDopo : s >= 1 ? S.reNo : f.lines); return true; }
+  const L = libro(); if (!L || !compOn()) return false; const t = tappaOra();
+  if (t && t.tipo === 'parla' && f.n === t.chi) { storiaAvanza(); return true; }
+  const v = stScegli(L.attesa && L.attesa[f.n]); if (v) { say(n.id, v.righe); return true; }
   return false;
 }
-function storiaCaduto(e) { if (!compOn()) return; for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (p.tipo === 'nemico' && p.chi === e.type) save.flags['pk_' + id] = 1; } }
-// le prove: si compiono da sole quando la cosa è fatta (e non c'è più da combattere)
+// si guarda un oggetto: la tappa, un fuoco da campo, o quel che c'è da leggere a questo punto della storia
+const storiaTocca = p => { const L = libro(); return !!L && (p.k === 'campfire' || !!(L.oggetti && L.oggetti[p.x + ',' + p.z])); };
+function storiaEsamina(p) {
+  const L = libro(); if (!L) return false; const t = tappaOra();
+  if (p.k === 'campfire') return storiaFuoco();
+  if (t && t.tipo === 'esamina' && t.x === p.x && t.z === p.z) { storiaAvanza(); return true; }
+  const v = stScegli(L.oggetti && L.oggetti[p.x + ',' + p.z]); if (v) { say(null, v.righe); return true; }
+  return false;
+}
+// la sosta al fuoco: il primo compagno in viaggio che ha un racconto non ancora sentito lo racconta (e il fuoco ristora due cuori)
+const stRacconto = id => { const c = W.COMPAGNI[id]; return (c.fuoco || []).findIndex((r, i) => stDopo(r.da) && !save.flags['fu_' + id + i]); };
+function storiaFuoco() {
+  if (!compOn()) return false;
+  if (inLotta()) { say(null, ['NON È IL MOMENTO DI SEDERSI.']); return true; }
+  for (const f of seguaci) { if (f.giu || f.id === 'io') continue; const k = stRacconto(f.id); if (k < 0) continue; const r = W.COMPAGNI[f.id].fuoco[k]; save.flags['fu_' + f.id + k] = 1;
+    scena([['', 'VI SEDETE ACCANTO AL FUOCO. PER UN PO\' NESSUNO PARLA.']].concat(r.scena), () => { hero.hp = Math.min(MAXHP(), hero.hp + 4); toast('IL FUOCO VI HA RISTORATI', '#ffb070'); writeSave(); }); return true; }
+  say(null, [seguaci.some(f => f.id !== 'io') ? 'IL FUOCO SCOPPIETTA. STASERA NESSUNO HA VOGLIA DI RACCONTARE.' : 'UN FUOCO DA CAMPO. FA COMPAGNIA ANCHE A CHI VIAGGIA DA SOLO.']); return true;
+}
+// un compagno dice la sua, senza fermare il gioco
+function dice(id, riga) { const c = W.COMPAGNI[id]; fumetto = { chi: c.n, c: CL[c.cls].col, righe: A.wrap('«' + riga + '»', Math.min(250, dialogW() - 16)), life: 3.5 + riga.length * 0.07 }; tone(620, 0.04); }
+function storiaLuogo(nome) {
+  const L = libro(); if (!L || !L.voci || !compOn() || fumetto) return;
+  for (const [id, riga, da, fino] of L.voci[nome] || []) { const k = 'vo:' + nome + ':' + id; if (save.flags[k] || !seguaci.some(f => f.id === id && !f.giu) || (da && !stDopo(da)) || (fino && stDopo(fino))) continue; save.flags[k] = 1; dice(id, riga); return; }
+}
+function drawFumetto() {
+  const f = fumetto; let w = A.textW(f.chi) + 28; for (const l of f.righe) w = Math.max(w, A.textW(l) + 16); const h = 12 + f.righe.length * 9, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr * 0.24) + 42;   // (sotto il nome del luogo: in basso copriva l'eroe)
+  hg.globalAlpha = Math.max(0, Math.min(1, f.life * 2)); panel(x, y, w, h, f.c); const nw = A.textW(f.chi) + 8; panel(x + 6, y - 6, nw, 11, f.c); T(f.chi, x + 10, y - 4, f.c);
+  f.righe.forEach((l, i) => T(l, x + 8, y + 8 + i * 9, '#ffffff')); hg.globalAlpha = 1;
+}
+// la Lanterna dell'Alba: quattro fiamme, una per capitolo (del Faro, dell'Albero, della Brace, della Fucina); in mezzo il lumino che non si è mai spento
+function storiaLanterna(x, y) {
+  const n = save.fiamme || 0, col = ['#ffd23f', '#9af0b0', '#ff7a3d', '#9ad0ff'];
+  hg.fillStyle = '#c9a23a'; hg.fillRect(x + 3, y, 3, 1); hg.fillRect(x + 2, y + 1, 5, 1); hg.fillRect(x + 1, y + 2, 7, 1); hg.fillRect(x + 1, y + 9, 7, 1); hg.fillRect(x + 2, y + 10, 5, 1); hg.fillRect(x + 1, y + 3, 1, 6); hg.fillRect(x + 7, y + 3, 1, 6);
+  hg.fillStyle = '#16121c'; hg.fillRect(x + 2, y + 3, 5, 6); hg.fillStyle = '#b8742e'; hg.fillRect(x + 4, y + 5, 1, 2);
+  for (let i = 0; i < 4; i++) { const fx = x + 2 + (i % 2) * 3, fy = y + 3 + (i >> 1) * 4; hg.fillStyle = i < n ? col[i] : '#2c2836'; hg.fillRect(fx, fy, 2, 2); if (i < n && Math.floor(time * 6 + i * 1.7) % 3 === 0) { hg.fillStyle = '#ffffff'; hg.fillRect(fx, fy, 1, 1); } }
+}
+function storiaCaduto(e) {
+  if (!compOn()) return; if (FOE[e.type].storia) save.flags['ko_' + e.type] = 1;
+  for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (p && p.tipo === 'nemico' && p.chi === e.type) save.flags['pk_' + id] = 1; }
+}
+// ogni mezzo secondo, a gioco fermo da combattere: la tappa si compie da sola quando la cosa è fatta; poi le vecchie prove
 function storiaTick() {
-  if (!compOn() || st !== 'play' || dialog || loot || shop || menu || fade || hero.dead || inLotta()) return;
-  for (const id of compDentro()) { if (save.flags['pv_' + id]) continue; const c = W.COMPAGNI[id], p = c.prova; let ok = false;
-    if (p.tipo === 'luogo') { if (!D && Math.hypot(hero.x - p.x, hero.z - p.z) < p.r) { const q = W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; ok = !p.sotto || !!(q && q.f >= 2 && hero.y < q.ce); } }
+  if (!compOn() || st !== 'play' || dialog || loot || shop || menu || fade || hero.dead || inLotta() || stOccupata) return;
+  const t = tappaOra();
+  if (t && !D) { const qui = () => Math.hypot(hero.x - t.x, hero.z - t.z) < t.r && (!t.sotto || stSotto()); let ok = false;
+    if (t.tipo === 'luogo') ok = qui();
+    else if (t.tipo === 'compagno') ok = haComp(t.chi) && qui();
+    else if (t.tipo === 'nemico') ok = !!save.flags['ko_' + t.chi];
+    else if (t.tipo === 'campo') ok = !!save.flags['sc_' + t.campo];
+    else if (t.tipo === 'forziere') ok = !!save.chests[t.id];
+    if (ok) { storiaAvanza(); return; } }
+  // chi ha un racconto nuovo lo fa capire, una volta
+  if (!fumetto && (stFuocoT -= 0.5) <= 0) { stFuocoT = 20; for (const f of seguaci) { if (f.giu || f.id === 'io') continue; const k = stRacconto(f.id); if (k >= 0 && !save.flags['fh_' + f.id + k]) { save.flags['fh_' + f.id + k] = 1; dice(f.id, 'AL PROSSIMO FUOCO FERMIAMOCI. HO UNA COSA DA RACCONTARTI.'); break; } } }
+  for (const id of compDentro()) { const c = W.COMPAGNI[id], p = c.prova; if (!p || save.flags['pv_' + id]) continue; let ok = false;
+    if (p.tipo === 'luogo') { if (!D && Math.hypot(hero.x - p.x, hero.z - p.z) < p.r) ok = !p.sotto || stSotto(); }
     else if (p.tipo === 'nemico') ok = !!save.flags['pk_' + id];
     else if (p.tipo === 'forziere') ok = !!save.chests[p.id];
     else if (p.tipo === 'raccolta') ok = ((save.borsa || {})[p.k] || 0) >= p.quanti;
@@ -2559,6 +2652,10 @@ function spawnCamp(c) {
 function campsUpdate(dt) {
   for (const c of camps) {
     if (c.job) { const js = jst(c.job); if (!js || js.s !== 1) { if (c.on) { c.on = false; for (const e of c.alive) e.gone = true; c.alive = []; } continue; } }
+    // gli accampamenti della storia: ci sono solo nelle loro tappe, e una volta sgombrati non tornano
+    if (c.storia) { const q = c.storia, v = stSt(), att = !save.flags['sc_' + q.key] && v.c === q.c && v.t >= q.da && v.t <= q.a;
+      if (!att) { if (c.on) { c.on = false; for (const e of c.alive) e.gone = true; c.alive = []; } continue; }
+      if (c.on && c.dead >= c.n) { save.flags['sc_' + q.key] = 1; continue; } }
     const d = Math.hypot(c.x - hero.x, c.z - hero.z);
     if (c.cool > 0) c.cool -= dt;
     if (!c.on && d < 330) { if (c.dead >= c.n && c.cool <= 0) c.dead = 0; c.on = true; spawnCamp(c); }
@@ -2697,7 +2794,7 @@ function findTarget() {
   if (compOn()) { for (const a of attese) consider(a.x, a.z, 'comp', a, 12); if (!foes.some(e => e.st !== 'dead' && Math.abs(e.x - hero.x) < 45 && Math.abs(e.z - hero.z) < 45)) for (const f of seguaci) consider(f.x, f.z, 'comp', f, 8); }   // (con un nemico vicino A resta il colpo)
   if (MODO) for (const o of nodi) if (Math.abs(o.x - hero.x) < 20 && !presa(o)) consider(o.x, o.z, 'racc', o, 10);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k)) || (MODO && storiaTocca(p))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
@@ -2734,6 +2831,7 @@ function interact(t) {
     return;
   }
   const p = t.obj;
+  if (MODO && storiaEsamina(p)) return;
   { const tx = W.TESTI && W.TESTI[p.x + ',' + p.z]; if (tx) { say(null, tx); return; } }
   if (p.k === 'sign') { say(null, [SIGNS[p.x + ',' + p.z] || 'UN CARTELLO ROVINATO DALLA PIOGGIA.']); return; }
   if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); if (MODO) compRialza(); return; }
@@ -2772,7 +2870,7 @@ function playUpdate(dt) {
     for (let b = 0; b < W.NB; b++) { const w = bw[b], a = ATMO[b]; for (let i = 0; i < 3; i++) { tgt.fog[i] += a[0][i] * w; tgt.zen[i] += a[1][i] * w; tgt.wat[i] += a[4][i] * w; } tgt.near += a[2] * w; tgt.far += a[3] * w; }
     atm.tgt = tgt;
     const name = W.placeName(hero.x, hero.z);
-    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; if (MODO && name) save.flags['v:' + name] = 1; } } else { placeCand = name; placeHold = 0; } }
+    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; if (MODO && name) { save.flags['v:' + name] = 1; storiaLuogo(name); } } } else { placeCand = name; placeHold = 0; } }
   }
   if (atm.tgt) { const k = Math.min(1, dt * 1.5), T = atm.tgt; for (let i = 0; i < 3; i++) { atm.fog[i] += (T.fog[i] - atm.fog[i]) * k; atm.zen[i] += (T.zen[i] - atm.zen[i]) * k; atm.wat[i] += (T.wat[i] - atm.wat[i]) * k; } atm.near += (T.near - atm.near) * k; atm.far += (T.far - atm.far) * k; }
   if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
@@ -2781,6 +2879,7 @@ function playUpdate(dt) {
   if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64) + MGN; for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MGZ && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
   }
   if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
+  if (fumetto) { fumetto.life -= dt; if (fumetto.life <= 0 || dialog) fumetto = null; }   // (una scena lo toglie di mezzo)
   for (const t of toasts) t.life -= dt; toasts = toasts.filter(t => t.life > 0);
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
@@ -3917,6 +4016,7 @@ function drawHUD() {
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
+  if (MODO && save.flags.lanterna && !(D && !D.def.casa)) { storiaLanterna(6, hy + 23); T((save.fiamme || 0) + '/4', 19, hy + 27, '#ffd23f'); ty += 13; }   // la Lanterna dell'Alba e le sue fiamme
   if (D && !D.def.casa) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
   if (MODO && drawCompChips(5, ty - 3)) ty += 22;
   compass();
@@ -3924,6 +4024,7 @@ function drawHUD() {
     if (ch) { const T2 = FOE[ch.type], w = Math.min(150, Wr * 0.38), x = Math.round(Wr / 2 - w / 2), y = 19; T(T2.n, Wr / 2, y, '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, ch.hp) / T2.hp), 4); } }
   if (boss && boss.on && !boss.dead && boss.st !== 'die') { const w = Math.min(170, Wr * 0.42), x = Math.round(Wr / 2 - w / 2), y = 19; T(boss.B.n, Wr / 2, y, '#ff8a5a', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = boss.vuln ? '#ffd23f' : '#ff4a5a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, boss.hp) / boss.max), 4); }
   toasts.forEach((t, i) => T(t.t, 6, ty + i * 10, t.c));
+  if (fumetto && st === 'play' && !dialog && !menu && !shop && !loot) drawFumetto();
   if (banner) {
     const a = Math.min(1, banner.life * 2, (3.2 - banner.life) * 3 + 0.2), y = Math.round(Hr * 0.24);
     hg.globalAlpha = Math.max(0, Math.min(1, a));
@@ -3934,7 +4035,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', comp: 'PARLA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
+    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', comp: 'PARLA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : o.k === 'campfire' ? 'SIEDI AL FUOCO' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
@@ -4381,7 +4482,7 @@ if (window.__SG_DEBUG) window.__sg = {
   numeri: () => ({ cuori: MAXHP(), energia: MAXEN(), vel: Math.round(VEL() * 100) / 100, dif: DIF(), att: ATT() }), ridisegna: () => drawHeroSprites(),
   shopList: () => shopList(), get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
   compFig: (id, yaw, k = 2, posa = 0) => conMembro(id === 'io' ? { cls: save.comp.m.io.cls, razza: save.comp.m.io.razza, aspetto: save.comp.m.io.aspetto, eq: save.comp.m.io.eq } : save.comp.m[id] || compBase(id), () => { const hs = Math.round(hsEroe() * k); return A.figure(A.human(heroLook(), CC().poses[posa]), yaw, hs, hs, { sc: SR * hs / HS * (RAZ().sc || 1), ricco: 1 }).toDataURL(); }),
-  get comp() { return { seguaci, attese, chips: chipsC, quiete: compQuiete, rects: compRects, foglio2: atlasUse2 }; }, compEntra, compGuida, compParte, compCade, compRialza, compProssimo, compParla, storiaRiga, storiaMeta, storiaTick,
+  get comp() { return { seguaci, attese, chips: chipsC, quiete: compQuiete, rects: compRects, foglio2: atlasUse2 }; }, compEntra, compGuida, compParte, compCade, compRialza, compProssimo, compParla, storiaRiga, storiaMeta, storiaTick, storiaAvanza, storiaLuogo, storiaFuoco, get tappa() { return tappaOra(); }, get stSt() { return stSt(); }, get fumetto() { return fumetto; },
   get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),

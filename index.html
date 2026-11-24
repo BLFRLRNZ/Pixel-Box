@@ -155,7 +155,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.40", "id": "2.40-1fe021a2", "date": "24/11/2026", "pwa": true};
+const APP = {"v": "2.41", "id": "2.41-b7db1728", "date": "24/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -10513,7 +10513,7 @@ SG.terre.lumen = m => {
   C.city({ id: 'borgo', name: 'BORGO AURORA', x: BORGO[0], z: BORGO[1], w: 420, d: 340, style: 'ambra', open: true, plaza: { w: 76, d: 64 },
     shops: [['aurora', 'locanda', "LOCANDA DELL'AURORA", 'n1', { fw: 32, fd: 22, h: 17 }], ['nino', 'emporio', "L'EMPORIO DI NINO", 'e1', {}], ['bruno', 'armeria', 'LA FUCINA DI BRUNO', 'w1', {}]],
     people: [
-      ['donna', "L'ANZIANA MIRTA", ["CHE TU SIA IL BENVENUTO NEL BORGO NUOVO. È CRESCIUTO, VERO? E ANCHE LA TERRA TUTT'ATTORNO.", 'IL VIAGGIO NON È ANCORA COMINCIATO. PER ORA CAMMINA, GUARDA, E RICORDA QUEL CHE NON VA.'], 'p'],
+      ['donna', "L'ANZIANA MIRTA", ["CHE TU SIA IL BENVENUTO NEL BORGO. SIEDITI UN MOMENTO: HO UNA COSA DA CHIEDERTI."], 'p'],
       ['ostessa', "L'OSTESSA DELL'AURORA", ["UN LETTO PULITO E UNA ZUPPA CALDA. BENVENUTO ALLA LOCANDA DELL'AURORA!"], 'in:aurora', { role: 'inn', cost: 8 }],
       ['mercante', 'NINO', ["POZIONI, CAPPUCCI, QUEL CHE SERVE A CHI PARTE. L'EMPORIO È PICCOLO, MA C'È TUTTO."], 'in:nino', { role: 'shop', shop: 'nino' }],
       ['fabbro', 'BRUNO', ['IL FERRO BUONO SI BATTE DUE VOLTE. GUARDA PURE.'], 'in:bruno', { role: 'shop', shop: 'bruno' }],
@@ -10617,8 +10617,9 @@ SG.terre.lumen = m => {
     ['bimbo', 'IL PICCOLO NILO', ['IL GIRASOLE PIÙ ALTO DEL PAESE È PIÙ ALTO DI MIO PADRE!'], 'p', { walk: 1 }],
     ['mercante', 'UN MERCANTE DI PASSAGGIO', ['DALLA VIA MAESTRA SI TAGLIA DI QUI PER LA ROCCA. SI RISPARMIA MEZZA GIORNATA, E SI BEVE MEGLIO.'], 'd']]);
   paese('faro', 'APPRODO DEL FARO', 2900, 6990, 'porto', 'ne', [
-    ['traghettatore', 'IL GUARDIANO DEL FARO', ['ACCENDO IL FARO OGNI SERA. DA QUANDO LE NAVI NON PASSANO PIÙ, LO ACCENDO PER ABITUDINE.', 'IL FARO È LÌ, SULLA PUNTA A LIBECCIO. AI SUOI PIEDI QUALCUNO HA DIMENTICATO UN BAULE.'], 'p'],
-    ['pescivendola', 'LA MOGLIE DEL GUARDIANO', ['QUI UNA VOLTA ATTRACCAVANO I VELIERI DEL SUD. IL MOLO SE L\'È PORTATO VIA UNA MAREGGIATA.'], 'd'],
+    // (il guardiano vero, Tullio, è sparito dieci anni fa: è la storia di Vespa, in sv_lumen8.js. Il faro lo accende Tonio)
+    ['traghettatore', 'TONIO, IL BARCAIOLO', ['ACCENDO IO IL FARO, OGNI SERA, DA DIECI ANNI. IN QUESTI GIORNI LA LUCE TREMA, E NON SO PERCHÉ.', 'IL FARO È LÌ, SULLA PUNTA A LIBECCIO. AI SUOI PIEDI QUALCUNO HA DIMENTICATO UN BAULE.'], 'p'],
+    ['pescivendola', 'ROSA, LA MOGLIE DI TONIO', ['QUI UNA VOLTA ATTRACCAVANO I VELIERI DEL SUD. IL MOLO SE L\'È PORTATO VIA UNA MAREGGIATA. E IL GUARDIANO SE L\'È PORTATO VIA LA NOTTE.'], 'd'],
     ['spadaccino', 'UN MARINAIO A TERRA', ['ASPETTO UN IMBARCO PER I MARI DEL SUD. DICONO CHE IL MOLO NUOVO SI FARÀ: IO INTANTO ASPETTO.'], 'p'],
     ['donna', 'LA LOCANDIERA', ['NON HO PIÙ LA LOCANDA, MA UN PIATTO DI ZUPPA PER CHI ARRIVA A PIEDI DAL BORGO C\'È SEMPRE.'], 'd']]);
   // il faro (quello di Pixel Saga), sulla punta a libeccio dell'Approdo
@@ -10690,7 +10691,8 @@ SG.terre.lumen = m => {
   // il regno dei nani (Fucinafonda, la miniera allargata): sta in sv_lumen4.js
   SG.terre.lumenNani(m);
   SG.terre.lumenGrotte(m);   // le grotte di montagna, più profonde (Via Sepolta, Grotta del Gelo)
-  SG.terre.lumenCompagnia(m, { BORGO, ROCCA, ELFI });   // i quattro compagni e il primo atto
+  SG.terre.lumenCompagnia(m, { BORGO, ROCCA, ELFI });   // i quattro compagni
+  SG.terre.lumenStoria(m, { BORGO, ROCCA, ELFI });      // la storia a capitoli: «La Compagnia dell'Alba»
 };
 })();
 
@@ -11547,23 +11549,10 @@ SG.terre.lumenCompagnia = (m, { BORGO, ROCCA, ELFI }) => {
       premio: { monete: 120, cosa: 'pozione' },
       dice: ['STAMMI DIETRO. NO: PROPRIO DIETRO.', "QUESTO SCUDO HA FERMATO UN TROLL DI GROTTA. IL TROLL NON L'HA PRESA BENE.", 'ALL\'APERTO NON C\'È IL SOFFITTO. MI FA UN CERTO EFFETTO.'] } };
   W.COMP_ORD = ['vespa', 'faela', 'korga', 'dorno'];
-  // il primo atto: chi lo apre, chi lo chiude, e le loro parole
-  W.STORIA = { nome: 'LA COMPAGNIA', apre: "L'ANZIANA MIRTA", chiude: 'RE ALDRIC DI LUMEN', titolo: "LA COMPAGNIA DELL'ALBA",
-    inizio: ['ECCOTI. TI ASPETTAVO: IL RE CERCA QUALCUNO CHE GUIDI UN GRANDE VIAGGIO, OLTRE IL VALICO DEI GIGANTI.',
-      'MA NESSUNO VA LONTANO DA SOLO. PRIMA TROVA CHI CAMMINI CON TE: QUATTRO NOMI MI SONO GIUNTI ALL\'ORECCHIO.',
-      'VESPA, QUI NEL BORGO, CHE HA LE MANI LESTE. FAELA, SENTINELLA DEGLI ELFI, A NORD-OVEST. KORGA LA SCIAMANA, ACCAMPATA A GIRASOLE. E DORNO, GUARDIA ALLA PORTA DI FUCINAFONDA, SUI MONTI A NORD.',
-      'QUANDO SARETE INSIEME, ANDATE DAL RE, ALLA ROCCA. E RICORDA: UN COMPAGNO SI GUIDA TOCCANDO IL SUO RIQUADRO, IN ALTO A SINISTRA. CON START SCEGLI CHI PARTE E CHI RESTA.'],
-    cerca: 'MANCA ANCORA QUALCUNO. ', pronti: ['SIETE TUTTI. CHE STRANA, BELLA COMPAGNIA. ORA ANDATE DAL RE, ALLA ROCCA: VI ASPETTA NEL CORTILE DEL MASTIO.'], dopo: ["LA COMPAGNIA DELL'ALBA. SUONA BENE. ANDATE, E TORNATE A RACCONTARMI."],
-    reNo: ['SI DICE CHE NEL BORGO QUALCUNO STIA RADUNANDO UNA COMPAGNIA. TORNA DA ME QUANDO SARETE AL COMPLETO: HO UN INCARICO DEGNO DI VOI.'],
-    re: ["DUNQUE È VERO: UN'ELFA, UN NANO, UN'ORCHESSA E UNA LADRA, SOTTO LA STESSA BANDIERA. NON SI VEDEVA DAI TEMPI DI RE AURELIO.",
-      'OLTRE IL VALICO DEI GIGANTI CI SONO TRE TERRE CHE NESSUNO DI NOI HA MAI VISTO. VOGLIO CHE SIATE VOI A PORTARE LÀ IL NOME DI LUMEN.',
-      "DA OGGI SIETE LA COMPAGNIA DELL'ALBA. PRENDETE QUESTO, E PREPARATEVI: IL GRANDE VIAGGIO COMINCIA DAL VALICO."],
-    reDopo: ["LA COMPAGNIA DELL'ALBA! IL VALICO È ANCORA CHIUSO DALLA FRANA, MA I MIEI UOMINI CI LAVORANO. TENETEVI PRONTI."], premio: { monete: 200, cosa: 'cuore' } };
   // la gilda degli eroi: un maestro al Borgo (sulla via che dal punto di partenza sale alla piazza, sul lato destro: ci si passa accanto) e uno alla Rocca (in piazza, verso la fontana). (Nelle città il maestro nasce accanto alla bacheca degli incarichi; qui la bacheca
   // non c'è ancora, e senza di lei il maestro non nasceva: la gilda, di cui il gioco parla, non si trovava.) Cambia il mestiere e insegna le abilità.
   m.city.folk('maestro', 'MAESTRO DELLA GILDA', BORGO[0] + 8, BORGO[1] + 42, 2.2, ['BENVENUTO, VIAGGIATORE. LA GILDA DEGLI EROI HA UN MAESTRO IN OGNI CITTÀ, E UNO ANCHE QUI AL BORGO. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_borgo' });
   m.city.folk('maestro', 'MAESTRO DELLA GILDA', ROCCA[0] - 36, ROCCA[1] + 30, -0.4, ['BENVENUTO ALLA GILDA DEGLI EROI DELLA ROCCA DI LUMEN. QUI SI CAMBIA MESTIERE E SI IMPARA.'], { role: 'guild', id: 'maestro_rocca' });
-  for (const id in W.FOLK) if (W.FOLK[id].n === W.STORIA.apre || W.FOLK[id].n === W.STORIA.chiude) W.FOLK[id].sveglio = 1;   // chi apre e chi chiude l'atto non va a dormire
 };
 })();
 
@@ -11723,6 +11712,156 @@ SG.terre.lumenGrotte = (m) => {
     W.BUILD.push({ k: 'gr_sala', x: SX, z: SZ });
     P(['rock', SX - 40, SZ - 28, { lit: 0.46, dentro: 1 }], ['rock', SX + 16, SZ + 44, { lit: 0.46, dentro: 1 }], ['rock', SX + 30, SZ - 30, { lit: 0.46, dentro: 1 }]);
   }
+};
+})();
+
+// Il Grande Viaggio: LA STORIA. «La Compagnia dell'Alba», Libro primo: le quattro luci di Lumen (la struttura intera è in STORIA.md).
+// Qui stanno le parole e i luoghi della storia; il motore (tappe, scene, soste al fuoco, voci, Lanterna) è in g_saga.js, «la storia a capitoli».
+// Per ora: il Prologo (la lanterna di Mirta) e il Capitolo primo (Vespa, la figlia del guardiano). Gli altri capitoli si aggiungono in coda a W.LIBRO.capitoli.
+//
+// Come si scrive una tappa: { tipo, riga (quel che dice il diario), ...dove, scena: [[chi, 'BATTUTA'], ...], fa: { ... } }
+//   chi: l'id di un compagno ('vespa'), un nome qualunque ('MIRTA'), oppure '' per la voce che racconta.
+//   scenaGia + gia: 'vespa' → la scena da usare se quel compagno è già della compagnia (i salvataggi di prima della storia nuova).
+(() => {
+SG.terre = SG.terre || {};
+SG.terre.lumenStoria = (m, { BORGO }) => {
+  const W = m.world, P = (...a) => W.PROPS.push(...a);
+  const TANA = [3650, 4400], TORRE = [3410, 6240], FARO = [2790, 7120], TAVOLO = [2816, 7128], BARCA = [5954, 7068];
+  const MIRTA = "L'ANZIANA MIRTA", RE = 'RE ALDRIC DI LUMEN', TONIO = 'TONIO, IL BARCAIOLO', ROSA = 'ROSA, LA MOGLIE DI TONIO';
+
+  // ---------- i compagni nella storia nuova ----------
+  // Vespa non aspetta più al pozzo del Borgo: ruba la borsa dell'olio e la si ritrova in fondo alla Tana del Tasso. La sua vecchia prova (la borsa nella Tana) è diventata la storia.
+  { const v = W.COMPAGNI.vespa; v.prova = null; v.dove = 'IN FONDO ALLA TANA DEL TASSO'; v.casaSe = (c, t) => (c > 0 || t >= 1 ? [TANA[0], TANA[1], Math.PI * 0.5] : null);
+    v.dice = ['SE SENTI TINTINNARE, NON SONO IO. IO NON TINTINNO MAI.', 'MIRTA DICE CHE HO GLI OCCHI DI MIO PADRE. IO DICO CHE HO LE SUE MANI: LUI ACCENDEVA, IO SFILO.', 'DAMMI LE SPALLE DI UN NEMICO E TI FACCIO VEDERE.', 'NON TI HO RUBATO NIENTE, OGGI. SEGNALO SUL CALENDARIO.'];
+    v.fuoco = [
+      { da: [1, 0], scena: [['vespa', 'LA PRIMA COSA CHE HO RUBATO? UNA MELA. A MIRTA.'], ['vespa', 'MI HA VISTA. NON HA DETTO NIENTE. IL GIORNO DOPO, SUL DAVANZALE, DI MELE CE N\'ERANO DUE.'],
+        ['vespa', 'CI HO MESSO ANNI A CAPIRE CHE NON ERA DISTRAZIONE. NON GLIEL\'HO MAI DETTO. NON DIRGLIELO NEANCHE TU.']] },
+      { da: [1, 2], scena: [['vespa', 'MIO PADRE CONTAVA I LAMPI DEL FARO. TRE LUNGHI, UNO CORTO: VUOL DIRE «QUI C\'È CASA». ME LO FACEVA RIPETERE PRIMA DI DORMIRE.'],
+        ['vespa', 'DOPO CHE SPARÌ, LI CONTAVO DAL BORGO OGNI SERA. TRE LUNGHI, UNO CORTO. POI UN GIORNO HO SMESSO, PERCHÉ FACEVA TROPPO MALE.'], ['vespa', 'STANOTTE... NO. NIENTE. PASSAMI IL PANE.']] },
+      { da: [1, 7], scena: [['vespa', 'HO PASSATO DIECI ANNI A PREPARARE QUELLO CHE GLI AVREI DETTO, SE FOSSE TORNATO. ERA TUTTO CATTIVO.'],
+        ['vespa', 'ADESSO NON MI VIENE PIÙ IN MENTE UNA PAROLA. SOLO: «TRE LUNGHI, UNO CORTO, PAPÀ. L\'HO RIACCESO».'], ['vespa', '...SE LO RACCONTI A QUALCUNO, TI SFILO GLI STIVALI MENTRE DORMI.']] }]; }
+  // gli altri tre si uniranno nei loro capitoli: fino ad allora hanno altro per la testa (chi li aveva già con sé, li tiene)
+  W.COMPAGNI.faela.nonAncora = ['FERMO. GLI ELFI NON HANNO TEMPO PER I FORESTIERI, ADESSO.', "L'ALBERO D'ARGENTO PERDE LE FOGLIE. E QUALCUNO, QUI, HA COMINCIATO A DORMIRE. NOI NON DORMIAMO MAI. VA', PER FAVORE."];
+  W.COMPAGNI.korga.nonAncora = ['NON SCAPPI? STRANO. QUI SCAPPANO TUTTI, QUANDO VEDONO LE ZANNE.', 'NON CERCO COMPAGNIA. CERCO UN FUOCO CHE NON SI SPENGA, E IL TUO NON È QUELLO. LASCIAMI ALLE MIE OSSA.'];
+  W.COMPAGNI.dorno.nonAncora = ['ALT! CHI VA LÀ?', "LA PORTA DI FUCINAFONDA È APERTA AI MERCANTI E CHIUSA ALLE DOMANDE. IO STO QUI DA TRENT'ANNI, E NON MI MUOVO. BUONA GIORNATA."];
+
+  // ---------- i luoghi della storia ----------
+  // il tavolo del guardiano, ai piedi del Faro; la barca di Tullio, in fondo alla Grotta delle Maree; i fuochi da campo lungo la strada del sud
+  P(['table', TAVOLO[0], TAVOLO[1]], ['boat', BARCA[0], BARCA[1], { dentro: 1, lit: 0.6 }]);
+  // (uno appena fuori dal Borgo sulla via del sud, uno allo Stagno del Salice, uno tra l'Approdo e il Faro, e uno dentro la Grotta delle Maree, accanto alla barca)
+  P(['campfire', BORGO[0] + 36, BORGO[1] + 228], ['campfire', 3700, 5530], ['campfire', 2900, 7080], ['campfire', 5946, 7104, { dentro: 1, glow: [3, 12, 1, 0.6, 0.25, 1] }]);
+  // gli accampamenti che ci sono solo nella loro tappa: c = capitolo, da..a = le tappe
+  W.CAMPI_STORIA = [
+    { key: 'guercio', c: 1, da: 1, a: 1, x: 3394, z: 6278, tipo: 'guercio', n: 1, r: 14 }, { key: 'guercio2', c: 1, da: 1, a: 1, x: 3404, z: 6262, tipo: 'bandit', n: 2, r: 18 },
+    { key: 'faro_ombre', c: 1, da: 4, a: 4, x: FARO[0], z: FARO[1] - 28, tipo: 'wraith', n: 2, r: 18 }];
+
+  // ---------- il libro ----------
+  const faroTrema = [['MIRTA', "OGNI SERA, DA QUESTA PANCA, GUARDO IL FARO DEL SUD. DA DIECI NOTTI LA SUA LUCE TREMA. IERI, PER UN'ORA, NON L'HO VISTA AFFATTO."],
+    ['MIRTA', "IL CARRETTIERE NON SCENDE PIÙ A MEZZOGIORNO: DICE CHE SULLA STRADA CI SONO I PREDONI. COSÌ L'OLIO DEL FARO È RIMASTO QUI, IN UNA BORSA."]];
+  const lanterna = [['MIRTA', 'È UNA LANTERNA VECCHIA, PIÙ VECCHIA DI ME. NON FA MOLTA LUCE, MA NON SI È MAI SPENTA. TIENILA CON TE.'], ['', "HAI RICEVUTO LA LANTERNA DELL'ALBA."]];
+  const tana = [['', "IN FONDO ALLA TANA CI SONO COPERTE, PANE SECCO, UNA BAMBOLA DI PEZZA. E LA BORSA DELL'OLIO."],
+    ['vespa', "NON GUARDARE COSÌ. I PICCOLI DELLA SCUDERIA NON HANNO NESSUNO, E L'INVERNO ARRIVA ANCHE PER LORO. IO PRENDO A CHI HA, E PORTO QUI."]];
+  W.LIBRO = { titolo: "LA COMPAGNIA DELL'ALBA", fine: 'CAPITOLO PRIMO COMPIUTO. IL SEGUITO: LE TRE FOGLIE, AL VILLAGGIO DEGLI ELFI (ARRIVA CON LA PROSSIMA VERSIONE).', capitoli: [
+    // ===== PROLOGO =====
+    { id: 'prologo', n: 'PROLOGO', t: 'LA LANTERNA DI MIRTA', tappe: [
+      { tipo: 'parla', chi: MIRTA, x: BORGO[0], z: BORGO[1], riga: "PARLA CON L'ANZIANA MIRTA, NEL BORGO.", gia: 'vespa',
+        scena: [['MIRTA', 'ECCOTI. VIENI, SIEDITI: HO LE GAMBE VECCHIE E UNA COSA DA CHIEDERTI CHE NON PUÒ ASPETTARE.']].concat(faroTrema, [['MIRTA', 'PORTALO TU, QUELL\'OLIO. E PRENDI ANCHE QUESTA.']], lanterna, [
+          ['', "UN'OMBRA TI SFIORA IL FIANCO. LA BORSA DELL'OLIO NON C'È PIÙ."], ['UNA RAGAZZA', 'GRAZIE, FORESTIERO! PESA MENO DI QUEL CHE SEMBRA!'],
+          ['MIRTA', 'VESPA! TORNA QUI! ...NIENTE. È GIÀ SUI TETTI.'], ['MIRTA', 'NON È CATTIVA. È CHE NESSUNO, QUI, LE HA MAI DATO UN MOTIVO PER RESTARE CON I PIEDI PER TERRA.'],
+          ['MIRTA', "SI NASCONDE NELLA TANA DEL TASSO, A NORD-OVEST DEL BORGO. VA' A RIPRENDERE L'OLIO. E SE PUOI... NON ESSERE DURO CON LEI."]]),
+        scenaGia: [['MIRTA', 'ECCOVI. TUTTI E DUE: BENE. HO UNA COSA DA CHIEDERVI CHE NON PUÒ ASPETTARE.']].concat(faroTrema, [['MIRTA', 'ERA QUI ACCANTO A ME, QUELLA BORSA. ERA. VERO, VESPA?'],
+          ['vespa', '...ERA UNA BORSA INCUSTODITA. LE BORSE INCUSTODITE MI CHIAMANO. È ALLA TANA DEL TASSO, CON IL RESTO.'], ['MIRTA', 'ALLORA ANDATE A PRENDERLA, E PORTATELA AL FARO. E TU PRENDI QUESTA.']], lanterna),
+        fa: { flag: 'lanterna', toast: ["LA LANTERNA DELL'ALBA È QUI SOPRA, SOTTO LE MONETE"] } },
+      { tipo: 'compagno', chi: 'vespa', x: TANA[0], z: TANA[1], r: 30, sotto: 1, gia: 'vespa', ingresso: [3656, 4548], riga: "RIPRENDI L'OLIO DEL FARO: VESPA SI NASCONDE IN FONDO ALLA TANA DEL TASSO, A NORD-OVEST DEL BORGO.",
+        scena: [['vespa', 'FERMO LÌ. COME HAI FATTO A... AH. MIRTA. MIRTA PARLA SEMPRE TROPPO.']].concat(tana, [['vespa', "L'OLIO, PERÒ... NON SAPEVO CHE FOSSE PER IL FARO. TIENI. QUELLO NO."],
+          ['vespa', 'ASPETTA. LA LUCE TREMA DAVVERO? ...ALLORA VENGO ANCH\'IO. NON CHIEDERMI PERCHÉ. CONOSCO LA STRADA DEL SUD MEGLIO DI CHIUNQUE: TI BASTI QUESTO.']]),
+        scenaGia: [['vespa', 'ECCO. IL MIO PALAZZO. NON TOCCARE NIENTE.']].concat(tana, [['vespa', "L'OLIO È LÌ. PRENDILO. ...LA LUCE TREMA DAVVERO? ALLORA SI VA AL FARO. E NON CHIEDERMI PERCHÉ MI IMPORTA."]]),
+        fa: { entra: 'vespa' } }] },
+    // ===== CAPITOLO PRIMO =====
+    { id: 'vespa', n: 'CAPITOLO PRIMO', t: 'LA FIGLIA DEL GUARDIANO', tappe: [
+      { tipo: 'luogo', x: TORRE[0], z: TORRE[1], r: 62, riga: "PORTA L'OLIO AL FARO DEL SUD. LA STRADA SCENDE A MEZZOGIORNO DAL BORGO: STAGNO DEL SALICE, TORRE DI MEZZOGIORNO, APPRODO DEL FARO.",
+        scena: [['IL GUERCIO', 'ALT! LA STRADA DEL SUD HA UN PADRONE, E IL PADRONE VUOLE IL PEDAGGIO.'], ['IL GUERCIO', 'MA GUARDA CHI SI VEDE. LA MIA ALLIEVA MIGLIORE. TI HO INSEGNATO IO A SFILARE UNA BORSA, E ADESSO FAI LA SCORTA?'],
+          ['vespa', 'MI HAI INSEGNATO ANCHE A NON FIDARMI DI TE, GUERCIO. LASCIACI PASSARE.'],
+          ['IL GUERCIO', 'E DOVE ANDATE, AL FARO? AH! LA FIGLIA DEL GUARDIANO CHE TORNA AL FARO. QUELLO CHE LASCIÒ SPEGNERE LA LUCE E SCAPPÒ DI NOTTE. BUON SANGUE NON MENTE.'],
+          ['vespa', '...RIPETILO.'], ['IL GUERCIO', 'PRENDETELI!']] },
+      { tipo: 'nemico', chi: 'guercio', x: 3394, z: 6278, riga: 'SCONFIGGI IL GUERCIO E I SUOI PREDONI, SULLA STRADA SOTTO LA TORRE DI MEZZOGIORNO.',
+        scena: [['vespa', 'SÌ. È VERO. MIO PADRE ERA IL GUARDIANO DEL FARO. TULLIO. UNA NOTTE LA LUCE SI SPENSE, E AL MATTINO LUI NON C\'ERA PIÙ.'],
+          ['vespa', "AVEVO NOVE ANNI. ALL'APPRODO DISSERO CHE ERA SCAPPATO. NESSUNO VOLLE IN CASA LA FIGLIA DI UNO CHE LASCIA LE BARCHE AL BUIO. MI PRESE MIRTA."],
+          ['vespa', 'NON TE L\'HO DETTO PERCHÉ DI SOLITO, QUANDO LO DICO, LA GENTE SI TOCCA LE TASCHE E CAMBIA STRADA. ANDIAMO. L\'APPRODO È VICINO.']],
+        fa: { toast: ['LA STRADA DEL SUD È LIBERA'] } },
+      { tipo: 'parla', chi: TONIO, x: 2900, z: 6990, riga: "ALL'APPRODO DEL FARO, CERCA CHI ACCENDE IL FARO ADESSO: TONIO, IL BARCAIOLO.",
+        scena: [['TONIO', "L'OLIO! ERA ORA. LO ACCENDO IO, IL FARO, DA QUANDO... BE', DA QUANDO SERVE QUALCUNO CHE LO ACCENDA."],
+          ['TONIO', 'MA NON È L\'OLIO, RAGAZZI. IL FUOCO PRENDE, E POI SI PIEGA VERSO TRAMONTANA, COME SE QUALCUNO LO CHIAMASSE. IERI NOTTE SI È SPENTO DA SOLO. NON SONO PIÙ SALITO.'],
+          ['ROSA', 'DILLO, TONIO: È LA DISGRAZIA DI TULLIO. È COMINCIATA CON LUI E... SANTO CIELO. QUEGLI OCCHI. TU SEI LA PICCOLA DI TULLIO.'], ['vespa', 'LA PICCOLA DI TULLIO HA UN NOME.'],
+          ['ROSA', 'E HA ANCHE UNA BELLA FACCIA TOSTA, A FARSI RIVEDERE QUI.'],
+          ['TONIO', 'BASTA, ROSA. ...RAGAZZA, TUO PADRE MI INSEGNÒ A LEGGERE LE MAREE. NON HO MAI CREDUTO CHE FOSSE SCAPPATO. MA NON HO NEMMENO MAI AVUTO IL CORAGGIO DI DIRLO FORTE.'],
+          ['TONIO', 'IL FARO È SULLA PUNTA A LIBECCIO. IL SUO TAVOLO È ANCORA LÌ, AI PIEDI DELLA TORRE. NESSUNO L\'HA PIÙ TOCCATO.']] },
+      { tipo: 'luogo', x: FARO[0], z: FARO[1], r: 50, riga: "SALI AL FARO DEL SUD, SULLA PUNTA A LIBECCIO DELL'APPRODO.", comparsa: { tipo: 'spento', x: FARO[0] - 20, z: FARO[1] + 2 },
+        scena: [['', 'IN CIMA AL FARO IL FUOCO È SPENTO. AI PIEDI DELLA TORRE C\'È QUALCUNO: UNA FIGURA INCAPPUCCIATA, IMMOBILE. NON FA OMBRA.'], ['vespa', 'EHI! TU! CHE COSA HAI FATTO ALLA LUCE?'],
+          ['', 'LA FIGURA SI VOLTA. SOTTO IL CAPPUCCIO NON C\'È UN VOLTO: SOLO BUIO, E DENTRO IL BUIO UN PUNTO FREDDO, COME UNA BRACE SPENTA.'], ['LO SPENTO', '...LE CHIAMA. TUTTE. LE CHIAMA A CASA.'],
+          ['', 'LA LANTERNA CHE PORTI AL FIANCO SI È MESSA A TREMARE. LA FIGURA LA GUARDA A LUNGO. POI SI DISFA COME FUMO, E DAL FUMO ESCONO DELLE OMBRE.']] },
+      { tipo: 'campo', campo: 'faro_ombre', x: FARO[0], z: FARO[1] - 28, riga: 'RESPINGI LE OMBRE CHE LO SPENTO HA LASCIATO AI PIEDI DEL FARO.',
+        scena: [['vespa', 'CHE COS\'ERA? NON AVEVA FACCIA. NON AVEVA... OMBRA.'], ['vespa', 'IL TAVOLO DI MIO PADRE È LÀ, DALL\'ALTRA PARTE DELLA TORRE. ...NON CI SONO PIÙ TORNATA, DA ALLORA. VIENI CON ME?']] },
+      { tipo: 'esamina', x: TAVOLO[0], z: TAVOLO[1], riga: 'AI PIEDI DEL FARO, GUARDA SUL TAVOLO DEL GUARDIANO.',
+        scena: [['', 'SUL TAVOLO, SOTTO DIECI ANNI DI SALE, C\'È IL DIARIO DEL FARO. L\'ULTIMA PAGINA È SCRITTA IN FRETTA.'],
+          ['', '«TERZA NOTTE. IL FUOCO SI PIEGA A TRAMONTANA ANCHE SENZA VENTO. STANOTTE HO VISTO LA FIAMMA STACCARSI DALLO STOPPINO E ANDARSENE SUL MARE, COME UN UCCELLO.»'],
+          ['', '«NON POSSO LASCIARLA ANDARE: SENZA LUCE LE BARCHE FINISCONO SUGLI SCOGLI. PRENDO LA MIA E LE VADO DIETRO. TORNO PRIMA CHE LA PICCOLA SI SVEGLI.»'],
+          ['vespa', '...«PRIMA CHE LA PICCOLA SI SVEGLI».'], ['vespa', 'NON È SCAPPATO. È ANDATO A RIPRENDERLA. DIECI ANNI CHE MI SPUTANO DIETRO, E LUI ERA ANDATO A RIPRENDERE LA LUCE.'],
+          ['', 'TRA LE PAGINE C\'È UNO STOPPINO NUOVO, MAI USATO. VESPA LO PRENDE, SALE LA SCALA A DUE GRADINI ALLA VOLTA, E LO ACCENDE CON LA TUA LANTERNA.'],
+          ['', "IL FARO DEL SUD TORNA A BRILLARE. E NELLA LANTERNA DELL'ALBA, ADESSO, ARDE ANCHE LA FIAMMA DEL FARO."],
+          ['vespa', 'NEL DIARIO C\'È UN DISEGNO: LA GROTTA DELLE MAREE, SULLA COSTA A LEVANTE, OLTRE LA CALA DELLE CONCHIGLIE. LÌ TENEVA LA BARCA. MI CI PORTAVA A CONTARE LE ONDE. ANDIAMO A VEDERE.']],
+        fa: { fiamma: 1, banner: ['LA FIAMMA DEL FARO', 'IL FARO DEL SUD È DI NUOVO ACCESO'] } },
+      { tipo: 'esamina', x: BARCA[0], z: BARCA[1], ingresso: [5940, 7246], riga: 'CERCA LA BARCA DI TULLIO NELLA GROTTA DELLE MAREE, SULLA COSTA A LEVANTE, OLTRE LA CALA DELLE CONCHIGLIE.',
+        scena: [['', 'IN FONDO ALLA GROTTA, TIRATA IN SECCO, C\'È UNA BARCA. SULLA PRUA, DIPINTO A MANO: «VESPA».'], ['vespa', "L'HA CHIAMATA COME ME. NON LO SAPEVO."],
+          ['', 'LA BARCA È TORNATA. LUI NO. SOTTO IL BANCO C\'È UNA LETTERA, CHIUSA IN UNA BOTTIGLIA.'],
+          ['', '«VESPA, PICCOLA MIA. HO SEGUITO LA FIAMMA FINO ALLA COSTA DI TRAMONTANA, E DA LÌ SI VEDE: VA OLTRE IL VALICO DEI GIGANTI. E NON È SOLA. NE VANNO ALTRE.»'],
+          ['', '«RIMANDO LA BARCA CON LA MAREA E PROSEGUO A PIEDI. SE LEGGI QUESTA, VUOL DIRE CHE CI HO MESSO PIÙ DI UNA NOTTE. PERDONAMI. TIENI ACCESO IL FARO. PAPÀ.»'],
+          ['vespa', 'L\'HO TENUTO SPENTO DIECI ANNI, INVECE. E HO FATTO LA LADRA. BELLA FIGLIA.'], ['vespa', 'NO. BASTA. ERA VIVO, QUANDO HA SCRITTO. È ANDATO OLTRE IL VALICO. E IO SO CAMMINARE.'],
+          ['vespa', 'TORNIAMO DA MIRTA. LEI SAPEVA. LEI SA SEMPRE PIÙ DI QUEL CHE DICE.']] },
+      { tipo: 'parla', chi: MIRTA, x: BORGO[0], z: BORGO[1], riga: "TORNA DALL'ANZIANA MIRTA, NEL BORGO.",
+        scena: [['MIRTA', "L'HO VISTO, IL FARO, IERI SERA. FERMO, CHIARO. ERANO DIECI ANNI CHE NON BRILLAVA COSÌ."], ['vespa', 'TU LO SAPEVI. CHE NON ERA SCAPPATO.'],
+          ['MIRTA', "LO SPERAVO. SAPERLO È UN'ALTRA COSA, PICCOLA. E SE TE L'AVESSI DETTO A NOVE ANNI, SARESTI PARTITA A NOVE ANNI."],
+          ['MIRTA', 'ASCOLTATE. QUANDO SOLIS CADDE, LA SUA LUCE FU DIVISA IN QUATTRO, PERCHÉ NON SI SPEGNESSE TUTTA IN UNA VOLTA. UNA AGLI UOMINI: IL FARO. UNA AGLI ELFI, UNA AI NANI, UNA AGLI ORCHI, OLTRE IL VALICO.'],
+          ['MIRTA', 'QUELLA LANTERNA SERVE A PORTARLE. UNA L\'HA GIÀ PRESA: GUARDA. MA SE TREMAVA IL FARO, TREMANO ANCHE LE ALTRE.'],
+          ['MIRTA', "DAL BOSCO ANTICO ARRIVANO VOCI STRANE: L'ALBERO D'ARGENTO PERDE LE FOGLIE. E GLI ELFI, CHE NON DORMONO MAI, HANNO COMINCIATO A DORMIRE."],
+          ['vespa', 'ALLORA SI VA DAGLI ELFI. ...MIRTA. I PICCOLI DELLA SCUDERIA. LA ROBA È NELLA TANA. NON È RUBATA. QUASI NON È RUBATA.'],
+          ['MIRTA', 'CI PENSO IO, AI PICCOLI. TU PENSA A TORNARE. E TU, FORESTIERO: RIPORTAMELA.']],
+        fa: { monete: 120, cosa: 'trifoglio', banner: ['CAPITOLO PRIMO COMPIUTO', 'LA FIGLIA DEL GUARDIANO'] } }] }],
+
+    // quel che dice chi si incontra fuori tappa, a seconda del punto della storia (da: [capitolo, tappa])
+    attesa: {
+      [MIRTA]: [{ da: [0, 1], righe: ["VESPA SI NASCONDE NELLA TANA DEL TASSO, A NORD-OVEST DEL BORGO. VA' A RIPRENDERE L'OLIO. E NON ESSERE DURO CON LEI."] },
+        { da: [1, 0], righe: ["LA STRADA DEL SUD: LO STAGNO DEL SALICE, LA TORRE DI MEZZOGIORNO, L'APPRODO. IL FARO È IN FONDO, SULLA PUNTA.", "E TIENI D'OCCHIO QUELLA LANTERNA. SE TREMA, C'È UN MOTIVO."] },
+        { da: [1, 6], righe: ["L'HO VISTO, IL FARO. TORNATE QUANDO AVRETE FINITO LAGGIÙ: HO DELLE COSE DA DIRVI."] },
+        { da: [2, 0], righe: ["L'ALBERO D'ARGENTO PERDE LE FOGLIE, E GLI ELFI HANNO COMINCIATO A DORMIRE. IL VILLAGGIO È NEL BOSCO ANTICO, A PONENTE.", 'IO RESTO QUI A GUARDARE IL FARO. TRE LUNGHI, UNO CORTO.'] }],
+      [RE]: [{ da: [0, 0], righe: ["IL VALICO DEI GIGANTI È CHIUSO DALLA FRANA, E I MIEI UOMINI CI LAVORANO. NON C'È ALTRO DA SAPERE.", 'GUARDA A LEVANTE, PIUTTOSTO: IL MIO PONTE. È LÀ CHE VA IL FUTURO DI LUMEN.'] }],
+      [TONIO]: [{ da: [1, 3], righe: ['IL FARO È SULLA PUNTA A LIBECCIO. IO... IO VI ASPETTO QUI.'] }, { da: [1, 6], righe: ['BRILLA. COME QUANDO C\'ERA LUI. GRAZIE, RAGAZZI.', 'SE LO TROVATE, DITEGLI CHE TONIO SA ANCORA LEGGERE LE MAREE.'] }],
+      [ROSA]: [{ da: [1, 3], righe: ['NON GUARDARMI COSÌ. DIECI ANNI DI BARCHE CHE NON ARRIVANO NON SI DIMENTICANO IN UN GIORNO.'] },
+        { da: [1, 6], righe: ['...HO DETTO COSE BRUTTE, ALLA RAGAZZA. DIECI ANNI DI COSE BRUTTE. DILLE CHE QUI, PER LEI, UN PIATTO DI ZUPPA C\'È SEMPRE.'] }] },
+    // gli oggetti della storia: quel che c'è da leggere prima e dopo
+    oggetti: {
+      [TAVOLO[0] + ',' + TAVOLO[1]]: [{ da: [0, 0], righe: ['UN TAVOLO INCROSTATO DI SALE. C\'È UN VECCHIO REGISTRO, CHIUSO. NON È ROBA TUA.'] },
+        { da: [1, 6], righe: ['IL DIARIO DEL FARO. L\'ULTIMA PAGINA: «TORNO PRIMA CHE LA PICCOLA SI SVEGLI».'] }],
+      [BARCA[0] + ',' + BARCA[1]]: [{ da: [0, 0], righe: ['UNA BARCA TIRATA IN SECCO. SULLA PRUA C\'È UN NOME DIPINTO A MANO, MEZZO CANCELLATO DAL SALE.'] },
+        { da: [1, 7], righe: ['LA BARCA DI TULLIO. SULLA PRUA: «VESPA». È TORNATA DAL MARE DA SOLA.'] }] },
+    // quel che dicono i compagni entrando in un luogo, una volta sola: [chi, 'BATTUTA', da, fino a]
+    voci: {
+      'STAGNO DEL SALICE': [['vespa', 'DA PICCOLA VENIVO QUI A TIRARE SASSI. IL SALICE NON SI È MAI LAMENTATO.']],
+      'TORRE DI MEZZOGIORNO': [['vespa', 'LA SENTINELLA STA BENE: IL GUERCIO ABBAIA, MA NON SALE LE SCALE.', [1, 2]]],
+      'APPRODO DEL FARO': [['vespa', 'CAMMINA DRITTO E NON GUARDARE NESSUNO. È COSÌ CHE SI PASSA DI QUI.', [0, 0], [1, 6]], ['vespa', 'ADESSO MI GUARDANO. NON SO SE MI PIACE.', [1, 6]]],
+      'FARO DEL SUD': [['vespa', 'TRE LUNGHI, UNO CORTO.', [1, 6]]],
+      'BARACCHE DEI PESCATORI': [['vespa', 'QUI IL PESCE È BUONO, E I PESCATORI NON FANNO DOMANDE.']],
+      'CALA DELLE CONCHIGLIE': [['vespa', 'MIO PADRE DICEVA: OGNI CONCHIGLIA È UNA CASA VUOTA. NON MI È MAI PIACIUTA, QUELLA FRASE.']],
+      'GROTTA DELLE MAREE': [['vespa', 'CONTAVAMO LE ONDE. LA SETTIMA È SEMPRE LA PIÙ GROSSA. CONTA.']],
+      'TANA DEL TASSO': [['vespa', 'CASA DOLCE CASA. ATTENTO ALLA TESTA.', [1, 0]]],
+      'ROCCA DI LUMEN': [['vespa', 'TROPPE GUARDIE. MI PRUDONO LE MANI E NON POSSO GRATTARMI.']],
+      'VILLAGGIO DEGLI ELFI': [['vespa', "QUI NON C'È NIENTE DA SFILARE. È TUTTO ATTACCATO AGLI ALBERI."]],
+      'FUCINAFONDA': [['vespa', "TUTTO QUEST'ORO, E NEANCHE UNA TASCA ALLA MIA ALTEZZA."]],
+      'PRATOLUNGO': [['vespa', 'A PRATOLUNGO HANNO LE GALLINE PIÙ SVEGLIE DEL REGNO. FIDATI.']],
+      'GIRASOLE': [['vespa', 'TUTTI QUESTI FIORI CHE GUARDANO DALLA STESSA PARTE. MI METTONO A DISAGIO.']] } };
+
+  // chi porta la storia non va a dormire
+  for (const id in W.FOLK) if ([MIRTA, RE, TONIO, ROSA].includes(W.FOLK[id].n)) W.FOLK[id].sveglio = 1;
 };
 })();
 
@@ -13770,6 +13909,9 @@ const FOE = {
   sb: { n: 'BRUTO', k: 'human', as: 'sb', sc: 0.29, mest: 'bruto', hp: 36, dmg: 4, sp: 14, aggro: 110, range: 11, r: 4.2, coins: [0, 0], wind: 0.95, rosso: 1, gd: 4 },
   sv: { n: 'VEDETTA', k: 'human', as: 'sv', mest: 'vedetta', hp: 6, dmg: 1, sp: 33, aggro: 120, range: 7, r: 3, coins: [0, 0], wind: 0.5 },
   grigio: { n: 'IL VECCHIO GRIGIO', k: 'beast', as: 'wolf', sc: 0.34, hp: 70, dmg: 4, sp: 38, aggro: 110, range: 10, r: 5, coins: [60, 90], champ: 1 },
+  // la storia del Grande Viaggio: il capo dei predoni della strada del sud; lo Spento, che per ora compare soltanto (fermo, non si tocca)
+  guercio: { n: 'IL GUERCIO', k: 'human', as: 'bandit', sc: 0.3, hp: 44, dmg: 3, sp: 25, aggro: 130, range: 10, r: 4, coins: [40, 60], champ: 1, elite: 1, storia: 1 },
+  spento: { n: 'LO SPENTO', k: 'human', as: 'wraith', sc: 0.36, hp: 300, dmg: 0, sp: 0, aggro: 0, range: 0, r: 3, coins: [0, 0], fermo: 1 },
   slimeR: { n: 'MELMA DI FUOCO', k: 'slime', hp: 12, dmg: 2, sp: 18, aggro: 60, range: 6, r: 3, coins: [4, 8] },
 };
 // ---------- aria delle regioni: nebbia, cielo, distanza, acqua ----------
@@ -14258,6 +14400,7 @@ function setupWorld() {
   for (const c of chests) W.addCircle(c.x, c.z, 3);
   inc = null; incT = 45; semina(); abitudini();   // (solo nel Grande Viaggio: altrove non fanno niente)
   camps = W.CAMPS.map(([x, z, type, n, r]) => { const [X, Z] = fixSpot(x, z, 4); return { x: X, z: Z, type, n, r, alive: [], dead: 0, cool: 0, on: false }; });
+  for (const q of W.CAMPI_STORIA || []) { const [X, Z] = fixSpot(q.x, q.z, 4); camps.push({ x: X, z: Z, type: q.tipo, n: q.n, r: q.r, alive: [], dead: 0, cool: 0, on: false, storia: q }); }   // (ci sono solo durante le loro tappe: vedi campsUpdate)
   props = W.PROPS.map(([k, x, z]) => ({ k, x, z })).concat(W.LATE.props.filter(p => PROPTXT[p[0]]).map(([k, x, z]) => ({ k, x, z })));
   picks = [];
   for (const id in MODO ? {} : JOBS) { const j = JOBS[id];   // (i lavori della bacheca sono di Pixel Saga: nel Grande Viaggio non ci sono ancora)
@@ -15406,13 +15549,14 @@ function compAvvia() {
   if (C.chi !== 'io' && !W.COMPAGNI[C.chi]) C.chi = 'io';
   compSync(); for (const id of compOrd()) compVecchi[id] = true;
   compRifai();
-  if (!save.flags.storiaTip && storiaPasso() === 0) { save.flags.storiaTip = 1; toasts.push({ t: "IL SEGNO D'ORO SULLA BUSSOLA PORTA DOVE LA STORIA CONTINUA", c: '#ffd23f', life: 14 }); }
+  if (!save.flags.storiaTip && stSt().c === 0 && stSt().t === 0) { save.flags.storiaTip = 1; toasts.push({ t: "IL SEGNO D'ORO SULLA BUSSOLA PORTA DOVE LA STORIA CONTINUA", c: '#ffd23f', life: 14 }); }
 }
 // chi segue e chi aspetta ancora di essere incontrato
 function compRifai() {
   const C = save.comp, prima = seguaci; seguaci = []; attese = [];
   for (const id of compOrd()) {
-    if (id !== 'io' && !C.m[id]) { const c = W.COMPAGNI[id], p = fixSpot(c.casa[0], c.casa[1], 3); attese.push({ id, attesa: 1, x: p[0], z: p[1], y: W.ground(p[0], p[1], -1e9), yaw: c.casa[2], base: c.casa[2] }); continue; }
+    if (id !== 'io' && !C.m[id]) { const c = W.COMPAGNI[id], casa = c.casaSe ? c.casaSe(stSt().c, stSt().t) : c.casa; if (!casa) continue;   // (la storia può tenerlo nascosto, o farlo aspettare altrove)
+      const p = fixSpot(casa[0], casa[1], 3); attese.push({ id, attesa: 1, x: p[0], z: p[1], y: W.ground(p[0], p[1], -1e9), yaw: casa[2], base: casa[2] }); continue; }
     if (id === C.chi || C.casa[id] || !C.m[id]) continue;
     const v = prima.find(f => f.id === id); if (v) { seguaci.push(v); continue; }
     const f = { id, x: hero.x, z: hero.z, y: hero.y, yaw: hero.yaw, walk: 0, moving: false, st: 'segue', t: 0, cd: 1, tg: null, flash: 0, fermo: 0, giu: !!C.m[id].giu, luogo: D ? D.id : 0 };
@@ -15432,7 +15576,7 @@ function compEntra(id, zitto) {
   M.hp = conMembro(M, MAXHP); compVecchi[id] = true; compRifai();
   if ((save.q.comp || 0) < 1) save.q.comp = 1;
   if (compDentro().length === W.COMP_ORD.length && save.q.comp < 2) save.q.comp = 2;
-  const p = c.prova; if (p.tipo === 'forziere' && save.chests[p.id]) { save.flags['pv_' + id] = 1; save.coins += c.premio.monete; toasts.push({ t: p.n + ": L'AVEVI GIÀ APERTO. +" + c.premio.monete + ' MONETE', c: '#ffd23f', life: 8 }); }
+  const p = c.prova; if (p && p.tipo === 'forziere' && save.chests[p.id]) { save.flags['pv_' + id] = 1; save.coins += c.premio.monete; toasts.push({ t: p.n + ": L'AVEVI GIÀ APERTO. +" + c.premio.monete + ' MONETE', c: '#ffd23f', life: 8 }); }
   if (!zitto) { banner = { t: c.n + ' SI UNISCE ALLA COMPAGNIA', s: c.chi, life: 4, c: CL[c.cls].col }; fanfare();
     if (!save.flags.compTip) { save.flags.compTip = 1; toasts.push({ t: 'PER GUIDARE UN COMPAGNO, TOCCA IL SUO RIQUADRO QUI SOPRA', c: '#ffd23f', life: 16 }, { t: 'CON START (COMPAGNIA) SCEGLI CHI PARTE E CHI RESTA', c: '#ffd23f', life: 16 }); } }
   writeSave(); return true;
@@ -15545,9 +15689,10 @@ function compParla(o) {
   const C = save.comp; hero.yaw = Math.atan2(o.z - hero.z, o.x - hero.x);
   if (o.id === 'io') { say(null, ['IL TUO EROE TI SEGUE. PER TORNARE A GUIDARLO, TOCCA IL SUO RIQUADRO IN ALTO A SINISTRA.']); return; }
   const c = W.COMPAGNI[o.id];
-  if (o.attesa) { say(null, c.incontro, () => compEntra(o.id)); dialog.name = c.n; return; }
+  if (o.attesa) { const t = tappaOra(); if (t && t.tipo === 'compagno' && t.chi === o.id) { storiaAvanza(); return; }   // si unisce quando la storia arriva a lui
+    say(null, c.nonAncora || [c.incontro[0]]); dialog.name = c.n; return; }
   o.li = ((o.li === undefined ? -1 : o.li) + 1) % (c.dice.length + 1);
-  say(null, [o.giu ? 'UN MOMENTO... MI RIALZO APPENA È FINITA.' : o.li === c.dice.length || !save.flags['pv_' + o.id] && o.li === 0 ? (save.flags['pv_' + o.id] ? 'SONO CON TE. DOVE SI VA?' : c.incontro[c.incontro.length - 1]) : c.dice[o.li]]); dialog.name = c.n;
+  say(null, [o.giu ? 'UN MOMENTO... MI RIALZO APPENA È FINITA.' : o.li === c.dice.length || !pvFatta(o.id) && o.li === 0 ? (pvFatta(o.id) ? 'SONO CON TE. DOVE SI VA?' : c.incontro[c.incontro.length - 1]) : c.dice[o.li]]); dialog.name = c.n;
 }
 // i riquadri della compagnia, in alto a sinistra: chi si guida (bordo bianco) e chi segue; un tocco su chi segue ne prende la guida
 function drawCompChips(x, y) {
@@ -15560,54 +15705,141 @@ function drawCompChips(x, y) {
 }
 // la scheda della compagnia nel menu (START): la missione del momento e, sotto, chi c'è
 function drawComp(x, y, w, h, top, rows) {
-  const C = save.comp; T(W.STORIA.nome, x + 8, top, storiaPasso() >= 3 ? '#9af0b0' : '#ffd23f'); A.wrap(storiaRiga(), w - 20).slice(0, 4).forEach((l, k) => T(l, x + 14, top + 10 + k * 8, '#a9c6e3', 1, 'left', null));
+  const C = save.comp; T(storiaTitolo(), x + 8, top, '#ffd23f'); if (save.flags.lanterna) { storiaLanterna(x + w - 44, top - 2); T((save.fiamme || 0) + '/4', x + w - 8, top, '#ffd23f', 1, 'right'); } A.wrap(storiaRiga(), w - 20).slice(0, 4).forEach((l, k) => T(l, x + 14, top + 10 + k * 8, '#a9c6e3', 1, 'left', null));
   const y0 = top + 46;
   rows.slice(1).forEach((id, i) => { const yy = y0 + i * 19, on = menu.sel === i + 1, M = C.m[id], io = id === C.chi, c = CL[io ? cls() : M.cls] || CL.cavaliere, cd = id === 'io' ? null : W.COMPAGNI[id];
     if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, 18); }
     const max = io ? MAXHP() : conMembro(M, MAXHP), hp = io ? hero.hp : Math.min(max, M.hp === undefined ? max : M.hp);
     T(compNome(id), x + 8, yy, c.col); T(cd ? cd.chi : 'IL TUO EROE, ' + c.n, x + 50, yy, '#8a96aa');
     T(io ? 'LO GUIDI TU' : M.giu ? 'A TERRA' : C.casa[id] ? 'RESTA AL CAMPO' : 'IN VIAGGIO', x + w - 8, yy, io ? '#ffffff' : M.giu ? '#ff8a8a' : C.casa[id] ? '#8a96aa' : '#9af0b0', 1, 'right');
-    T('CUORI ' + Math.ceil(hp) / 2 + '/' + max / 2 + '  ATT ' + (io ? ATT() : conMembro(M, ATT)) + '  DIF ' + (io ? DIF() : conMembro(M, DIF)) + (cd ? '   ' + (save.flags['pv_' + id] ? 'PROVA COMPIUTA' : cd.prova.n) : ''), x + 14, yy + 8, '#a9c6e3', 1, 'left', null); });
+    T('CUORI ' + Math.ceil(hp) / 2 + '/' + max / 2 + '  ATT ' + (io ? ATT() : conMembro(M, ATT)) + '  DIF ' + (io ? DIF() : conMembro(M, DIF)) + (cd && cd.prova ? '   ' + (save.flags['pv_' + id] ? 'PROVA COMPIUTA' : cd.prova.n) : ''), x + 14, yy + 8, '#a9c6e3', 1, 'left', null); });
   const r = rows[menu.sel];
   T(!r || r === 'st' ? 'SU E GIÙ: SCEGLI UN COMPAGNO' : r === C.chi ? 'È CHI STAI GUIDANDO' : 'A: PARTE O RESTA AL CAMPO    C: GUIDALO TU', x + 8, y + h - 12, '#5a6478', 1, 'left', null);
 }
-// ---------- il primo atto: la compagnia si raduna ----------
-// save.q.comp: 0 parla con Mirta, 1 raduna i quattro, 2 dal Re, 3 fatto. Le prove dei compagni: save.flags['pv_' + id] (e 'pk_' + id: il nemico della prova è caduto).
-const storiaPasso = () => (save && save.q.comp) || 0;
+// ---------- la storia a capitoli (Il Grande Viaggio) ----------
+// W.LIBRO.capitoli[c].tappe[t]: si fa una tappa alla volta; save.st = { c, t } dice dove si è. I tipi di tappa:
+//   parla (chi: il nome di chi si va a trovare) · compagno (chi: un compagno che aspetta; se è già della compagnia basta arrivare lì) · luogo (x, z, r, sotto) ·
+//   nemico (chi: il tipo che deve cadere) · campo (campo: la chiave di un accampamento della storia, da sgombrare) · esamina (x, z di un oggetto) · forziere (id)
+// Compiuta la tappa parte la sua scena (a più voci), poi le sue conseguenze («fa»: un compagno entra, una fiamma nella Lanterna, monete, un dono), poi si passa alla tappa dopo.
+// Attorno alla storia: le soste al fuoco (ogni compagno ha dei racconti, che si aprono via via), le voci dei compagni entrando in un luogo (un fumetto, senza fermare il gioco),
+// le parole di chi si incontra fuori tappa (cambiano con la storia), gli accampamenti che ci sono solo nella loro tappa.
+// Le vecchie prove (W.COMPAGNI[id].prova) restano per chi ce l'ha ancora: i compagni dei capitoli non ancora scritti, nei salvataggi di prima.
+let fumetto = null, stOccupata = false, stFuocoT = 0;
+const libro = () => (MODO && W.LIBRO) || null;
+const stSt = () => save.st || (save.st = { c: 0, t: 0 });
+const capOra = () => { const L = libro(); return L ? L.capitoli[stSt().c] || null : null; };
+const tappaOra = () => { const c = capOra(); return c ? c.tappe[stSt().t] || null : null; };
+const haComp = id => !!(save.comp && save.comp.m[id]);
+const pvFatta = id => !W.COMPAGNI[id].prova || !!save.flags['pv_' + id];
+const stDopo = da => { const s = stSt(); return s.c > da[0] || (s.c === da[0] && s.t >= da[1]); };   // la storia è arrivata almeno a [capitolo, tappa]?
+const stScegli = lista => { let r = null; for (const v of lista || []) if (stDopo(v.da)) r = v; return r; };   // tra più voci, l'ultima a cui la storia è arrivata
 const folkDi = nome => { for (const n of npcs) { const N = NPC[n.id]; if (N && N.n === nome) return n; } return null; };
+const stSotto = () => { const q = W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; return !!(q && q.f >= 2 && hero.y < q.ce); };
+// una scena: battute [chi, riga]; chi è un compagno (per id), un nome qualunque, o '' per la voce che racconta. Le battute di fila della stessa voce stanno nello stesso riquadro
+function scena(battute, poi) {
+  const g = []; for (const [chi, riga] of battute) { const u = g[g.length - 1]; if (u && u.chi === chi) u.righe.push(riga); else g.push({ chi, righe: [riga] }); }
+  const vai = i => { if (i >= g.length) { if (poi) poi(); return; } say(null, g[i].righe, () => vai(i + 1)); dialog.name = g[i].chi && W.COMPAGNI[g[i].chi] ? W.COMPAGNI[g[i].chi].n : g[i].chi || ''; };
+  vai(0);
+}
+function storiaFa(fa) {
+  if (!fa) return;
+  if (fa.flag) save.flags[fa.flag] = 1;
+  if (fa.entra) compEntra(fa.entra);
+  if (fa.monete) { save.coins += fa.monete; toast('+' + fa.monete + ' MONETE', '#ffd23f'); }
+  if (fa.fiamma) { save.fiamme = Math.max(save.fiamme || 0, fa.fiamma); fanfare(); }
+  if (fa.banner) banner = { t: fa.banner[0], s: fa.banner[1], life: 5, c: '#ffd23f' };
+  for (const x of fa.toast || []) toasts.push({ t: x, c: '#ffd23f', life: 12 });
+  if (fa.cosa) openLoot(fa.cosa);
+}
+function storiaAvanza() {
+  const t = tappaOra(); if (!t || stOccupata) return false; const s = stSt(), c = capOra(); stOccupata = true;
+  // una comparsa: qualcuno che c'è solo finché dura la scena (sta fermo, non si tocca), e poi svanisce
+  let fig = null; if (t.comparsa) { const q = t.comparsa, [X, Z] = fixSpot(q.x, q.z, 3); fig = { type: q.tipo, camp: { x: X, z: Z, type: q.tipo, n: 1, r: 10, alive: [], dead: 0 }, x: X, z: Z, y: gH(X, Z, -1e9), yaw: Math.atan2(hero.z - Z, hero.x - X), hp: FOE[q.tipo].hp, st: 'idle', t: 99, cd: 99, flash: 0, kb: 0, walk: 0, hop: 0, wx: X, wz: Z };
+    foes.push(fig); puffAt(X, Z, 10); hero.yaw = Math.atan2(Z - hero.z, X - hero.x); hero.vx = hero.vz = 0; camBehind(); tone(140, 0.5, 'sawtooth', 0.04, 70); }
+  const eraDentro = !!(t.fa && t.fa.entra && haComp(t.fa.entra));
+  const fine = () => { stOccupata = false; if (fig) { fig.gone = true; puffAt(fig.x, fig.z, 14); }
+    storiaFa(t.fa); s.t++;
+    if (s.t >= c.tappe.length) { s.c++; s.t = 0; const n = capOra(); if (n) { toasts.push({ t: n.n + ': ' + n.t, c: '#ffd23f', life: 14 }); if (!t.fa || (!t.fa.banner && (!t.fa.entra || eraDentro))) banner = { t: n.n, s: n.t, life: 5, c: '#ffd23f' }; } }
+    compRifai(); writeSave(); };
+  const sc = t.gia && haComp(t.gia) && t.scenaGia ? t.scenaGia : t.scena;
+  if (sc) scena(sc, fine); else fine(); return true;
+}
+const storiaTitolo = () => { const L = libro(), c = capOra(); return !L ? '' : c ? c.n + ': ' + c.t : L.titolo; };
 function storiaRiga() {
-  const s = storiaPasso(), manca = W.COMP_ORD.filter(id => !save.comp.m[id]), prove = compDentro().filter(id => !save.flags['pv_' + id]).map(id => W.COMPAGNI[id].prova.riga);
-  if (s === 0) return "PARLA CON L'ANZIANA MIRTA, NEL BORGO.";
-  if (s === 1) return 'RADUNA LA COMPAGNIA (' + (W.COMP_ORD.length - manca.length) + '/' + W.COMP_ORD.length + '). ' + manca.map(id => W.COMPAGNI[id].n + ': ' + W.COMPAGNI[id].dove + '.').join(' ');
-  if (s === 2) return 'PORTA LA COMPAGNIA DAL RE ALDRIC, NEL CORTILE DEL MASTIO, ALLA ROCCA.' + (prove.length ? ' RESTANO ' + prove.length + ' PROVE DA FARE INSIEME.' : '');
-  return "ATTO PRIMO COMPIUTO: SIETE LA COMPAGNIA DELL'ALBA. " + (prove.length ? prove[0] : 'IL SEGUITO: IL VALICO DEI GIGANTI.');
+  const L = libro(); if (!L) return ''; const t = tappaOra(), prove = compDentro().filter(id => !pvFatta(id)).map(id => W.COMPAGNI[id].prova.riga);
+  return (t ? t.riga : L.fine) + (prove.length ? ' · ' + prove[0] : '');
 }
-// dove punta la bussola quando non c'è un segnalino: il più vicino tra chi manca, le prove da fare, e chi si deve andare a trovare
+// dove punta la bussola quando non c'è un segnalino: la tappa della storia; se la tappa non ha un posto, la prova più vicina tra quelle rimaste
 function storiaMeta() {
-  if (!compOn() || D || !W.STORIA) return null; const s = storiaPasso(), L = [], pos = n => { if (n) L.push([n.x, n.z]); };
-  if (s === 0) pos(folkDi(W.STORIA.apre));
-  if (s === 1) for (const a of attese) L.push([a.x, a.z]);
-  if (s === 2) pos(folkDi(W.STORIA.chiude));
-  if (s >= 1) for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (!save.flags['pv_' + id] && p.x !== undefined) L.push([p.x, p.z]); }
-  let best = null, bd = 1e12; for (const q of L) { const d = Math.hypot(q[0] - hero.x, q[1] - hero.z); if (d < bd) { bd = d; best = q; } } return best;
+  if (!compOn() || D || !libro()) return null; const t = tappaOra();
+  if (t) { if (t.tipo === 'parla') { const n = folkDi(t.chi); if (n) return [n.x, n.z]; }
+    if (t.tipo === 'compagno' && !(t.ingresso && !stSotto())) { const a = attese.find(o => o.id === t.chi); if (a) return [a.x, a.z]; }
+    if (t.ingresso && !stSotto()) return t.ingresso;   // (la meta è in una grotta: finché si è fuori, la bussola porta all'imbocco)
+    if (t.x !== undefined) return [t.x, t.z]; }
+  let best = null, bd = 1e12; for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (!p || save.flags['pv_' + id] || p.x === undefined) continue; const d = Math.hypot(p.x - hero.x, p.z - hero.z); if (d < bd) { bd = d; best = [p.x, p.z]; } } return best;
 }
+// si parla con qualcuno: se è lui la tappa, la storia va avanti; altrimenti dice quel che ha da dire a questo punto della storia
 function storiaParla(n, f) {
-  if (!compOn() || !W.STORIA) return false; const S = W.STORIA, s = storiaPasso(), id = n.id;
-  if (f.n === S.apre) {
-    if (s === 0) { say(id, S.inizio, () => { save.q.comp = Math.max(1, save.q.comp || 0); banner = { t: 'ATTO PRIMO', s: S.nome, life: 4, c: '#ffd23f' }; jingle(); writeSave(); }); return true; }
-    if (s === 1) { say(id, [S.cerca + W.COMP_ORD.filter(k => !save.comp.m[k]).map(k => W.COMPAGNI[k].n + ' È ' + W.COMPAGNI[k].dove + '.').join(' ')]); return true; }
-    say(id, s === 2 ? S.pronti : S.dopo); return true; }
-  if (f.n === S.chiude) {
-    if (s === 2) { say(id, S.re, () => { save.q.comp = 3; save.coins += S.premio.monete; banner = { t: S.titolo, s: 'ATTO PRIMO COMPIUTO', life: 5, c: '#ffd23f' }; toast('+' + S.premio.monete + ' MONETE', '#ffd23f'); openLoot(S.premio.cosa); writeSave(); }); return true; }
-    say(id, s === 3 ? S.reDopo : s >= 1 ? S.reNo : f.lines); return true; }
+  const L = libro(); if (!L || !compOn()) return false; const t = tappaOra();
+  if (t && t.tipo === 'parla' && f.n === t.chi) { storiaAvanza(); return true; }
+  const v = stScegli(L.attesa && L.attesa[f.n]); if (v) { say(n.id, v.righe); return true; }
   return false;
 }
-function storiaCaduto(e) { if (!compOn()) return; for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (p.tipo === 'nemico' && p.chi === e.type) save.flags['pk_' + id] = 1; } }
-// le prove: si compiono da sole quando la cosa è fatta (e non c'è più da combattere)
+// si guarda un oggetto: la tappa, un fuoco da campo, o quel che c'è da leggere a questo punto della storia
+const storiaTocca = p => { const L = libro(); return !!L && (p.k === 'campfire' || !!(L.oggetti && L.oggetti[p.x + ',' + p.z])); };
+function storiaEsamina(p) {
+  const L = libro(); if (!L) return false; const t = tappaOra();
+  if (p.k === 'campfire') return storiaFuoco();
+  if (t && t.tipo === 'esamina' && t.x === p.x && t.z === p.z) { storiaAvanza(); return true; }
+  const v = stScegli(L.oggetti && L.oggetti[p.x + ',' + p.z]); if (v) { say(null, v.righe); return true; }
+  return false;
+}
+// la sosta al fuoco: il primo compagno in viaggio che ha un racconto non ancora sentito lo racconta (e il fuoco ristora due cuori)
+const stRacconto = id => { const c = W.COMPAGNI[id]; return (c.fuoco || []).findIndex((r, i) => stDopo(r.da) && !save.flags['fu_' + id + i]); };
+function storiaFuoco() {
+  if (!compOn()) return false;
+  if (inLotta()) { say(null, ['NON È IL MOMENTO DI SEDERSI.']); return true; }
+  for (const f of seguaci) { if (f.giu || f.id === 'io') continue; const k = stRacconto(f.id); if (k < 0) continue; const r = W.COMPAGNI[f.id].fuoco[k]; save.flags['fu_' + f.id + k] = 1;
+    scena([['', 'VI SEDETE ACCANTO AL FUOCO. PER UN PO\' NESSUNO PARLA.']].concat(r.scena), () => { hero.hp = Math.min(MAXHP(), hero.hp + 4); toast('IL FUOCO VI HA RISTORATI', '#ffb070'); writeSave(); }); return true; }
+  say(null, [seguaci.some(f => f.id !== 'io') ? 'IL FUOCO SCOPPIETTA. STASERA NESSUNO HA VOGLIA DI RACCONTARE.' : 'UN FUOCO DA CAMPO. FA COMPAGNIA ANCHE A CHI VIAGGIA DA SOLO.']); return true;
+}
+// un compagno dice la sua, senza fermare il gioco
+function dice(id, riga) { const c = W.COMPAGNI[id]; fumetto = { chi: c.n, c: CL[c.cls].col, righe: A.wrap('«' + riga + '»', Math.min(250, dialogW() - 16)), life: 3.5 + riga.length * 0.07 }; tone(620, 0.04); }
+function storiaLuogo(nome) {
+  const L = libro(); if (!L || !L.voci || !compOn() || fumetto) return;
+  for (const [id, riga, da, fino] of L.voci[nome] || []) { const k = 'vo:' + nome + ':' + id; if (save.flags[k] || !seguaci.some(f => f.id === id && !f.giu) || (da && !stDopo(da)) || (fino && stDopo(fino))) continue; save.flags[k] = 1; dice(id, riga); return; }
+}
+function drawFumetto() {
+  const f = fumetto; let w = A.textW(f.chi) + 28; for (const l of f.righe) w = Math.max(w, A.textW(l) + 16); const h = 12 + f.righe.length * 9, x = Math.round(Wr / 2 - w / 2), y = Math.round(Hr * 0.24) + 42;   // (sotto il nome del luogo: in basso copriva l'eroe)
+  hg.globalAlpha = Math.max(0, Math.min(1, f.life * 2)); panel(x, y, w, h, f.c); const nw = A.textW(f.chi) + 8; panel(x + 6, y - 6, nw, 11, f.c); T(f.chi, x + 10, y - 4, f.c);
+  f.righe.forEach((l, i) => T(l, x + 8, y + 8 + i * 9, '#ffffff')); hg.globalAlpha = 1;
+}
+// la Lanterna dell'Alba: quattro fiamme, una per capitolo (del Faro, dell'Albero, della Brace, della Fucina); in mezzo il lumino che non si è mai spento
+function storiaLanterna(x, y) {
+  const n = save.fiamme || 0, col = ['#ffd23f', '#9af0b0', '#ff7a3d', '#9ad0ff'];
+  hg.fillStyle = '#c9a23a'; hg.fillRect(x + 3, y, 3, 1); hg.fillRect(x + 2, y + 1, 5, 1); hg.fillRect(x + 1, y + 2, 7, 1); hg.fillRect(x + 1, y + 9, 7, 1); hg.fillRect(x + 2, y + 10, 5, 1); hg.fillRect(x + 1, y + 3, 1, 6); hg.fillRect(x + 7, y + 3, 1, 6);
+  hg.fillStyle = '#16121c'; hg.fillRect(x + 2, y + 3, 5, 6); hg.fillStyle = '#b8742e'; hg.fillRect(x + 4, y + 5, 1, 2);
+  for (let i = 0; i < 4; i++) { const fx = x + 2 + (i % 2) * 3, fy = y + 3 + (i >> 1) * 4; hg.fillStyle = i < n ? col[i] : '#2c2836'; hg.fillRect(fx, fy, 2, 2); if (i < n && Math.floor(time * 6 + i * 1.7) % 3 === 0) { hg.fillStyle = '#ffffff'; hg.fillRect(fx, fy, 1, 1); } }
+}
+function storiaCaduto(e) {
+  if (!compOn()) return; if (FOE[e.type].storia) save.flags['ko_' + e.type] = 1;
+  for (const id of compDentro()) { const p = W.COMPAGNI[id].prova; if (p && p.tipo === 'nemico' && p.chi === e.type) save.flags['pk_' + id] = 1; }
+}
+// ogni mezzo secondo, a gioco fermo da combattere: la tappa si compie da sola quando la cosa è fatta; poi le vecchie prove
 function storiaTick() {
-  if (!compOn() || st !== 'play' || dialog || loot || shop || menu || fade || hero.dead || inLotta()) return;
-  for (const id of compDentro()) { if (save.flags['pv_' + id]) continue; const c = W.COMPAGNI[id], p = c.prova; let ok = false;
-    if (p.tipo === 'luogo') { if (!D && Math.hypot(hero.x - p.x, hero.z - p.z) < p.r) { const q = W.GROTTE.length ? W.grotta(hero.x, hero.z) : null; ok = !p.sotto || !!(q && q.f >= 2 && hero.y < q.ce); } }
+  if (!compOn() || st !== 'play' || dialog || loot || shop || menu || fade || hero.dead || inLotta() || stOccupata) return;
+  const t = tappaOra();
+  if (t && !D) { const qui = () => Math.hypot(hero.x - t.x, hero.z - t.z) < t.r && (!t.sotto || stSotto()); let ok = false;
+    if (t.tipo === 'luogo') ok = qui();
+    else if (t.tipo === 'compagno') ok = haComp(t.chi) && qui();
+    else if (t.tipo === 'nemico') ok = !!save.flags['ko_' + t.chi];
+    else if (t.tipo === 'campo') ok = !!save.flags['sc_' + t.campo];
+    else if (t.tipo === 'forziere') ok = !!save.chests[t.id];
+    if (ok) { storiaAvanza(); return; } }
+  // chi ha un racconto nuovo lo fa capire, una volta
+  if (!fumetto && (stFuocoT -= 0.5) <= 0) { stFuocoT = 20; for (const f of seguaci) { if (f.giu || f.id === 'io') continue; const k = stRacconto(f.id); if (k >= 0 && !save.flags['fh_' + f.id + k]) { save.flags['fh_' + f.id + k] = 1; dice(f.id, 'AL PROSSIMO FUOCO FERMIAMOCI. HO UNA COSA DA RACCONTARTI.'); break; } } }
+  for (const id of compDentro()) { const c = W.COMPAGNI[id], p = c.prova; if (!p || save.flags['pv_' + id]) continue; let ok = false;
+    if (p.tipo === 'luogo') { if (!D && Math.hypot(hero.x - p.x, hero.z - p.z) < p.r) ok = !p.sotto || stSotto(); }
     else if (p.tipo === 'nemico') ok = !!save.flags['pk_' + id];
     else if (p.tipo === 'forziere') ok = !!save.chests[p.id];
     else if (p.tipo === 'raccolta') ok = ((save.borsa || {})[p.k] || 0) >= p.quanti;
@@ -16154,6 +16386,10 @@ function spawnCamp(c) {
 function campsUpdate(dt) {
   for (const c of camps) {
     if (c.job) { const js = jst(c.job); if (!js || js.s !== 1) { if (c.on) { c.on = false; for (const e of c.alive) e.gone = true; c.alive = []; } continue; } }
+    // gli accampamenti della storia: ci sono solo nelle loro tappe, e una volta sgombrati non tornano
+    if (c.storia) { const q = c.storia, v = stSt(), att = !save.flags['sc_' + q.key] && v.c === q.c && v.t >= q.da && v.t <= q.a;
+      if (!att) { if (c.on) { c.on = false; for (const e of c.alive) e.gone = true; c.alive = []; } continue; }
+      if (c.on && c.dead >= c.n) { save.flags['sc_' + q.key] = 1; continue; } }
     const d = Math.hypot(c.x - hero.x, c.z - hero.z);
     if (c.cool > 0) c.cool -= dt;
     if (!c.on && d < 330) { if (c.dead >= c.n && c.cool <= 0) c.dead = 0; c.on = true; spawnCamp(c); }
@@ -16292,7 +16528,7 @@ function findTarget() {
   if (compOn()) { for (const a of attese) consider(a.x, a.z, 'comp', a, 12); if (!foes.some(e => e.st !== 'dead' && Math.abs(e.x - hero.x) < 45 && Math.abs(e.z - hero.z) < 45)) for (const f of seguaci) consider(f.x, f.z, 'comp', f, 8); }   // (con un nemico vicino A resta il colpo)
   if (MODO) for (const o of nodi) if (Math.abs(o.x - hero.x) < 20 && !presa(o)) consider(o.x, o.z, 'racc', o, 10);
   for (const p of props) {
-    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
+    if (p.k === 'sign' || p.k === 'statue' || p.k === 'kingstatue' || p.k === 'menhir' || p.k === 'well' || p.k === 'snowman' || p.k === 'giant' || p.k === 'anvil' || p.k === 'tent' || p.k === 'custode' || p.k === 'cervopietra' || p.k === 'cervopietra2' || p.k === 'runa' || (PROPTXT[p.k] && /pietra|custode/.test(p.k)) || (MODO && storiaTocca(p))) consider(p.x, p.z, 'prop', p, p.k === 'giant' ? 26 : p.k === 'well' ? 11 : 9);
     if (p.k === 'ore' && !save.oreTaken[p.x + ',' + p.z]) consider(p.x, p.z, 'ore', p, 9);
   }
   for (const d of doors) consider(d.x, d.z, 'door', d, 12);
@@ -16329,6 +16565,7 @@ function interact(t) {
     return;
   }
   const p = t.obj;
+  if (MODO && storiaEsamina(p)) return;
   { const tx = W.TESTI && W.TESTI[p.x + ',' + p.z]; if (tx) { say(null, tx); return; } }
   if (p.k === 'sign') { say(null, [SIGNS[p.x + ',' + p.z] || 'UN CARTELLO ROVINATO DALLA PIOGGIA.']); return; }
   if (p.k === 'well') { say(null, [PROPTXT.well, hero.hp < MAXHP() ? 'TI SENTI RINVIGORITO! TUTTI I CUORI SONO PIENI.' : 'È FRESCA E LIMPIDA.']); hero.hp = MAXHP(); if (MODO) compRialza(); return; }
@@ -16367,7 +16604,7 @@ function playUpdate(dt) {
     for (let b = 0; b < W.NB; b++) { const w = bw[b], a = ATMO[b]; for (let i = 0; i < 3; i++) { tgt.fog[i] += a[0][i] * w; tgt.zen[i] += a[1][i] * w; tgt.wat[i] += a[4][i] * w; } tgt.near += a[2] * w; tgt.far += a[3] * w; }
     atm.tgt = tgt;
     const name = W.placeName(hero.x, hero.z);
-    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; if (MODO && name) save.flags['v:' + name] = 1; } } else { placeCand = name; placeHold = 0; } }
+    if (name !== curPlace) { if (name === placeCand) { placeHold += 0.35; if (placeHold > 0.7) { curPlace = name; banner = { t: name, life: 3.2, c: '#ffffff' }; if (MODO && name) { save.flags['v:' + name] = 1; storiaLuogo(name); } } } else { placeCand = name; placeHold = 0; } }
   }
   if (atm.tgt) { const k = Math.min(1, dt * 1.5), T = atm.tgt; for (let i = 0; i < 3; i++) { atm.fog[i] += (T.fog[i] - atm.fog[i]) * k; atm.zen[i] += (T.zen[i] - atm.zen[i]) * k; atm.wat[i] += (T.wat[i] - atm.wat[i]) * k; } atm.near += (T.near - atm.near) * k; atm.far += (T.far - atm.far) * k; }
   if (mapOpen && !D) { const sp = mapV.span * 0.55 * dt; mapV.x += ((BTN.right ? 1 : 0) - (BTN.left ? 1 : 0)) * sp; mapV.z += ((BTN.down ? 1 : 0) - (BTN.up ? 1 : 0)) * sp; clampMap(); }
@@ -16376,6 +16613,7 @@ function playUpdate(dt) {
   if (seenT <= 0) { seenT = 0.5; const ci = Math.floor(hero.x / 64), cj = Math.floor(hero.z / 64) + MGN; for (let j = cj - 3; j <= cj + 3; j++) for (let i = ci - 3; i <= ci + 3; i++) if (i >= 0 && j >= 0 && i < MG && j < MGZ && (i - ci) ** 2 + (j - cj) ** 2 <= 10) seen[j * MG + i] = 1; }
   }
   if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
+  if (fumetto) { fumetto.life -= dt; if (fumetto.life <= 0 || dialog) fumetto = null; }   // (una scena lo toglie di mezzo)
   for (const t of toasts) t.life -= dt; toasts = toasts.filter(t => t.life > 0);
   if (help > 0) help -= dt;
   target = (!dialog && !shop && !loot && !menu && !mapOpen && !fade && !hero.fall) ? findTarget() : null;
@@ -17512,6 +17750,7 @@ function drawHUD() {
   hg.drawImage(ICOIN, 5, hy); T(String(save.coins), 19, hy + 3, '#ffd23f');
   hg.drawImage(IPOT, 5, hy + 12); T(String(save.pot), 19, hy + 15, '#ffb0c0');
   let ty = hy + 30;
+  if (MODO && save.flags.lanterna && !(D && !D.def.casa)) { storiaLanterna(6, hy + 23); T((save.fiamme || 0) + '/4', 19, hy + 27, '#ffd23f'); ty += 13; }   // la Lanterna dell'Alba e le sue fiamme
   if (D && !D.def.casa) { const ds = dsave(D.id), tg = floorTag(D.def); hg.drawImage(IKEY, 5, hy + 24); T('x' + ds.keys, 19, hy + 27, '#ffd86a'); if (droot().big) hg.drawImage(IBKEY, 34, hy + 24); ty += 12; if (tg) { T(tg, 5, hy + 40, '#7af0ff'); ty += 12; } }
   if (MODO && drawCompChips(5, ty - 3)) ty += 22;
   compass();
@@ -17519,6 +17758,7 @@ function drawHUD() {
     if (ch) { const T2 = FOE[ch.type], w = Math.min(150, Wr * 0.38), x = Math.round(Wr / 2 - w / 2), y = 19; T(T2.n, Wr / 2, y, '#ffb070', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = '#ff8a3a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, ch.hp) / T2.hp), 4); } }
   if (boss && boss.on && !boss.dead && boss.st !== 'die') { const w = Math.min(170, Wr * 0.42), x = Math.round(Wr / 2 - w / 2), y = 19; T(boss.B.n, Wr / 2, y, '#ff8a5a', 1, 'center'); hg.fillStyle = '#1a0e14'; hg.fillRect(x - 1, y + 9, w + 2, 6); hg.fillStyle = '#4a1a22'; hg.fillRect(x, y + 10, w, 4); hg.fillStyle = boss.vuln ? '#ffd23f' : '#ff4a5a'; hg.fillRect(x, y + 10, Math.round(w * Math.max(0, boss.hp) / boss.max), 4); }
   toasts.forEach((t, i) => T(t.t, 6, ty + i * 10, t.c));
+  if (fumetto && st === 'play' && !dialog && !menu && !shop && !loot) drawFumetto();
   if (banner) {
     const a = Math.min(1, banner.life * 2, (3.2 - banner.life) * 3 + 0.2), y = Math.round(Hr * 0.24);
     hg.globalAlpha = Math.max(0, Math.min(1, a));
@@ -17529,7 +17769,7 @@ function drawHUD() {
   }
   if (target && st === 'play') {
     const o = target.obj, ds2 = D ? dsave(D.id) : null;
-    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', comp: 'PARLA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
+    const lbl = { cavallo: 'MONTA', smonta: 'SMONTA', comp: 'PARLA', npc: 'PARLA', chest: 'APRI', door: o.cave || (save.q.main >= 4 && (o.id === nextSanct() || sanctDone(o.id))) ? 'ENTRA' : 'ESAMINA', shop: 'ENTRA', board: 'LEGGI GLI INCARICHI', ore: 'RACCOGLI', racc: 'RACCOGLI', prop: o.k === 'sign' ? 'LEGGI' : o.k === 'well' ? 'BEVI' : o.k === 'campfire' ? 'SIEDI AL FUOCO' : 'GUARDA', dchest: 'APRI', ddoor: (o.kind === 'lock' && ds2 && ds2.keys > 0) || (o.kind === 'boss' && ds2 && ds2.big) ? 'APRI' : 'ESAMINA', sign: 'LEGGI', gem: 'PRENDI', block: 'SPINGI' }[target.kind];
     const s = 'A: ' + lbl, w = A.textW(s) + 10; panel(Math.round(Wr / 2 - w / 2), Hr - 22, w, 13, '#8a96aa'); T(s, Wr / 2, Hr - 19, '#ffffff', 1, 'center');
   }
   drawChip();
@@ -17976,7 +18216,7 @@ if (window.__SG_DEBUG) window.__sg = {
   numeri: () => ({ cuori: MAXHP(), energia: MAXEN(), vel: Math.round(VEL() * 100) / 100, dif: DIF(), att: ATT() }), ridisegna: () => drawHeroSprites(),
   shopList: () => shopList(), get crea() { return crea; }, apriCrea, RAZZE, ASP, creaFig, get razza() { return save && save.razza; },
   compFig: (id, yaw, k = 2, posa = 0) => conMembro(id === 'io' ? { cls: save.comp.m.io.cls, razza: save.comp.m.io.razza, aspetto: save.comp.m.io.aspetto, eq: save.comp.m.io.eq } : save.comp.m[id] || compBase(id), () => { const hs = Math.round(hsEroe() * k); return A.figure(A.human(heroLook(), CC().poses[posa]), yaw, hs, hs, { sc: SR * hs / HS * (RAZ().sc || 1), ricco: 1 }).toDataURL(); }),
-  get comp() { return { seguaci, attese, chips: chipsC, quiete: compQuiete, rects: compRects, foglio2: atlasUse2 }; }, compEntra, compGuida, compParte, compCade, compRialza, compProssimo, compParla, storiaRiga, storiaMeta, storiaTick,
+  get comp() { return { seguaci, attese, chips: chipsC, quiete: compQuiete, rects: compRects, foglio2: atlasUse2 }; }, compEntra, compGuida, compParte, compCade, compRialza, compProssimo, compParla, storiaRiga, storiaMeta, storiaTick, storiaAvanza, storiaLuogo, storiaFuoco, get tappa() { return tappaOra(); }, get stSt() { return stSt(); }, get fumetto() { return fumetto; },
   get vita() { return vita; }, vitaStrada, vitaPrepara, vitaDice, get cav() { return cav; }, monta, smonta, fischia, cavNasce, esci() { if (D) exitDungeon(); }, get chipH() { return chipH; }, get sellaVecchia() { return sellaVecchia; },
   step(n) { for (let i = 0; i < n; i++) playUpdate(1 / 60); }, give: id => give(id), dragon, get botteghe() { return botteghe; }, shopIn(k) { if (D) exitDungeon(); enterShop(W.SHOPS[k]); },
   get picks() { return picks; }, get camps() { return camps; }, get banner() { return banner; }, get toasts() { return toasts; }, JOBS, get aimFree() { return freeAim(); }, toggleAim, get chipM() { return chipM; }, get hud() { return { OX, OY, K }; }, get camYaw() { return cam.yaw; }, get menuRows() { return menu ? menuRows() : []; }, ptr: (t, x, y, id) => { if (t === 'down' && chipHit(x, y, chipM)) { toggleAim(); return; } camPointer(t, x, y, id); }, get shots() { return shots; }, get drops() { return drops; }, jobs: { hunt: huntOf, ids: boardIds, ground: huntGround, st: jst, accept: jobAccept, kill: jobKill, ready: jobReady, pay: jobPay, mark: boardMark, target: (id) => questTarget('J:' + id), line: jobLine, done: jobsDone }, hit: (e, d) => hitFoe(e, d, 0), track: () => curTrack(),
