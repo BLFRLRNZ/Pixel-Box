@@ -55,7 +55,7 @@ SG.terre.lumenLuoghi = (m, L) => {
     W.PROPS.push(['cart', 4902, 1004, { lit: 0.6, dentro: 1 }], ['cart', 4662, 1006, { lit: 0.6, dentro: 1 }], ['crate', 4808, 1022, { lit: 0.6, dentro: 1 }], ['crate', 4814, 1028, { lit: 0.6, dentro: 1 }], ['barrel', 4772, 976, { lit: 0.6, dentro: 1 }],
       ['anvil', 4768, 862], ['campfire', 4754, 846, { dentro: 1, glow: [3, 12, 1, 0.6, 0.25, 1] }], ['keg', 4744, 858, { lit: 0.6, dentro: 1 }], ['table', 4772, 842, { lit: 0.6, dentro: 1 }], ['stool', 4778, 848, { lit: 0.6, dentro: 1 }],
       ['crate', 4842, 1152, { lit: 0.6, dentro: 1 }], ['crate', 4858, 1158, { lit: 0.6, dentro: 1 }], ['barrel', 4860, 1144, { lit: 0.6, dentro: 1 }], ['sack', 4850, 1162, { lit: 0.6, dentro: 1 }],
-      ['crystal', 4528, 1000, lume(...GIA)], ['crystal', 4548, 1028, lume(...GIA)], ['crystal', 4522, 1016, { dentro: 1 }], ['rock', 4560, 1024, { lit: 0.46, dentro: 1 }], ['rock', 4712, 1010, { lit: 0.46, dentro: 1 }]);
+      ['rock', 4560, 1024, { lit: 0.46, dentro: 1 }], ['rock', 4712, 1010, { lit: 0.46, dentro: 1 }]);
     testo(4768, 862, ["L'INCUDINE DEI NANI. È PIÙ BASSA DI QUELLE DEGLI UOMINI, E SUONA UNA NOTA PIÙ GRAVE."]);
     // il campo dei nani davanti all'imbocco, sulla via del Valico
     W.FLAT.push([5078, 1000, 46, null]); W.CLEAR.push([5020, 950, 5130, 1052]);

@@ -155,7 +155,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.39", "id": "2.39-8df40de8", "date": "24/11/2026", "pwa": true};
+const APP = {"v": "2.40", "id": "2.40-1fe021a2", "date": "24/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -8280,7 +8280,7 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
   BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199,
   // gli altri santuari: otto riquadri a tema (muro, colonna, fregio, portale, stemma, rune, pendagli, stendardo) a partire da questi numeri
-  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237, BASOLATO: 238 };
+  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237, BASOLATO: 238, CRYSTAL_AZ: 239 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -8430,6 +8430,8 @@ function tilesOn(c, R) {
     // il selciato antico dei ponti: gli stessi pietroni delle strade maestre
     at(TL.BASOLATO, () => { const pv = SG.art.paving(rng(78), T, 3); for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const i = (y * T + x) * 4; P('rgb(' + pv.data[i] + ',' + pv.data[i + 1] + ',' + pv.data[i + 2] + ')', x, y, 1, 1); } });
     at(TL.ICE, () => { P('#bfe6ff', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#ffffff' : '#8fd0f6', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
+    // il cristallo azzurro delle grotte di Lumen (ultimo del gruppo: non sposta i numeri a caso di chi viene prima)
+    at(TL.CRYSTAL_AZ, () => { P('#3fc4e6', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#c4f4ff' : '#1c8cb4', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
   }
   return c;
 }
@@ -10749,7 +10751,7 @@ SG.terre.lumenLuoghi = (m, L) => {
     W.PROPS.push(['cart', 4902, 1004, { lit: 0.6, dentro: 1 }], ['cart', 4662, 1006, { lit: 0.6, dentro: 1 }], ['crate', 4808, 1022, { lit: 0.6, dentro: 1 }], ['crate', 4814, 1028, { lit: 0.6, dentro: 1 }], ['barrel', 4772, 976, { lit: 0.6, dentro: 1 }],
       ['anvil', 4768, 862], ['campfire', 4754, 846, { dentro: 1, glow: [3, 12, 1, 0.6, 0.25, 1] }], ['keg', 4744, 858, { lit: 0.6, dentro: 1 }], ['table', 4772, 842, { lit: 0.6, dentro: 1 }], ['stool', 4778, 848, { lit: 0.6, dentro: 1 }],
       ['crate', 4842, 1152, { lit: 0.6, dentro: 1 }], ['crate', 4858, 1158, { lit: 0.6, dentro: 1 }], ['barrel', 4860, 1144, { lit: 0.6, dentro: 1 }], ['sack', 4850, 1162, { lit: 0.6, dentro: 1 }],
-      ['crystal', 4528, 1000, lume(...GIA)], ['crystal', 4548, 1028, lume(...GIA)], ['crystal', 4522, 1016, { dentro: 1 }], ['rock', 4560, 1024, { lit: 0.46, dentro: 1 }], ['rock', 4712, 1010, { lit: 0.46, dentro: 1 }]);
+      ['rock', 4560, 1024, { lit: 0.46, dentro: 1 }], ['rock', 4712, 1010, { lit: 0.46, dentro: 1 }]);
     testo(4768, 862, ["L'INCUDINE DEI NANI. È PIÙ BASSA DI QUELLE DEGLI UOMINI, E SUONA UNA NOTA PIÙ GRAVE."]);
     // il campo dei nani davanti all'imbocco, sulla via del Valico
     W.FLAT.push([5078, 1000, 46, null]); W.CLEAR.push([5020, 950, 5130, 1052]);
@@ -11261,7 +11263,7 @@ SG.terre.lumenNani = (m) => {
   { const B = W.GROTTE.find(g => g.id === 'barbarossa'); if (B) { B.volta = 70;
       B.rami.push([[4790, 1000, 56], [4786, 1004, 56]], [[4760, 850, 42], [4756, 856, 42]], [[4540, 1010, 28], [4470, 1016, 62]], [[4470, 1016, 62], [4424, 1088, 15, -5], [4384, 1156, 44, -9]], [[4850, 1150, 22], [4900, 1196, 40, -4]]);
       W.PLACES.push([4470, 1016, 66, 'SALA DEI CRISTALLI', 0], [4384, 1156, 50, "VENA D'ORO", 0]);
-      for (let k = 0; k < 16; k++) { const a = k * 2.4, r = 22 + (k * 7) % 34, col = k % 3 ? [0.5, 0.85, 1] : [0.8, 0.6, 1]; P([k % 4 === 3 ? 'icecrystal' : 'crystal', Math.round(4470 + Math.cos(a) * r), Math.round(1016 + Math.sin(a) * r), { dentro: 1, glow: [5, 9, col[0], col[1], col[2], 1], s: k % 5 === 0 ? 1.5 : 1 }]); }
+      // (i cristalli della Sala sono costruiti a pezzi in sv_lumen7.js: come figure piatte, grandi com'erano, giravano con lo sguardo e non si capiva più da che parte si guardava)
       for (let k = 0; k < 9; k++) { const a = k * 2.1 + 0.4, r = 14 + (k * 5) % 24; P(['rock', Math.round(4384 + Math.cos(a) * r), Math.round(1156 + Math.sin(a) * r), { dentro: 1, lit: 0.8, glow: [3, 6, 1, 0.8, 0.3, 1] }]); }
       P(['cart', 4398, 1132, D1], ['crate', 4372, 1140, D1], ['lantern', 4424, 1088, { dentro: 1, lit: 1.15, glow: [5, 10, 1, 0.8, 0.45, 1] }], ['lantern', 4900, 1196, { dentro: 1, lit: 1.15, glow: [5, 10, 1, 0.8, 0.45, 1] }], ['barrel', 4912, 1206, D1], ['crate', 4890, 1210, D1]);
       W.CHESTS.push(['gv_vena', 4372, 1176, 'monete:120', 2], ['gv_cristalli', 4436, 1040, 'elisir', 1]); } }
@@ -11407,6 +11409,7 @@ SG.terre.lumenNani = (m) => {
 // tutt'attorno un giro di dodici grandi alberi con le vedette e i ponti sospesi da uno all'altro; in piazza l'Albero d'Argento
 // nella sua vasca; archi di rami alle quattro uscite; lanterne di tre colori lungo le vie; funghi e cristalli che fanno luce.
 // Tutto è costruito a pezzi (W.kit) da un solo costruttore, 'elfi'. Figure nuove non ce ne sono: sul foglio non c'è posto.
+// Anche i grandi alberi sono a pezzi, tronco e chioma: una figura piatta così grande girava con lo sguardo, e col tronco largo entrava nelle case accanto.
 (() => {
 SG.terre = SG.terre || {};
 SG.terre.lumenElfi = (m, { ELFI, piano }) => {
@@ -11417,9 +11420,13 @@ SG.terre.lumenElfi = (m, { ELFI, piano }) => {
   const tonde = [];
   piano.houses = piano.houses.filter((h, i) => { if (i % 2) return true; tonde.push({ x: h.x, z: h.z, r: Math.max(5.4, Math.min(h.w, h.d) / 2 - 0.3), door: h.door, alta: i % 8 === 0, i }); return false; });
   // il giro dei grandi alberi, appena fuori dalle case (mai sulle quattro vie che escono)
-  const giroAlberi = []; for (let k = 0; k < 12; k++) { const a = (15 + 30 * k) / 360 * TAU; giroAlberi.push([Math.round(EX + Math.cos(a) * 154), Math.round(EZ + Math.sin(a) * 132)]); }
-  for (const [x, z] of giroAlberi) { W.CLEAR.push([x - 9, z - 9, x + 9, z + 9]); P(['oakbig', x, z, { s: 2.5, r: 0.1 }]); W.bigShadows.push([x, z, 22]); }
-  for (const h of tonde) if (h.alta) { P(['oakbig', h.x, h.z, { s: 1.9, r: 0.1 }]); W.bigShadows.push([h.x, h.z, 15]); }
+  // (ai quattro angoli il giro cadeva dentro le case: lì l'albero si sposta in fuori lungo il suo raggio, finché tronco e vedetta stanno liberi)
+  const libero = (x, z) => { let m = 1e9; for (const h of piano.houses.concat(piano.specials || [])) m = Math.min(m, Math.hypot(Math.max(Math.abs(x - h.x) - h.w / 2, 0), Math.max(Math.abs(z - h.z) - h.d / 2, 0))); for (const t of tonde) m = Math.min(m, Math.hypot(x - t.x, z - t.z) - t.r); return m; };
+  const giroAlberi = []; for (let k = 0; k < 12; k++) { const a = (15 + 30 * k) / 360 * TAU; let f = 1, x, z; do { x = Math.round(EX + Math.cos(a) * 154 * f); z = Math.round(EZ + Math.sin(a) * 132 * f); f += 0.02; } while (libero(x, z) < 12.5 && f < 1.5); giroAlberi.push([x, z]); }
+  // le misure delle chiome: [altezza dell'orlo, raggio]. Quelle del giro sono le più grandi; quelle delle case in alto spuntano sopra il tetto
+  const chGiro = k => [62 + (k % 3) * 5, 27 + (k % 2) * 3], chCasa = i => [54 + ((i >> 3) % 3) * 4, 17 + ((i >> 3) % 2) * 3];
+  giroAlberi.forEach(([x, z], k) => { W.CLEAR.push([x - 10, z - 10, x + 10, z + 10]); W.bigShadows.push([x, z, chGiro(k)[1] + 6]); });
+  for (const h of tonde) if (h.alta) W.bigShadows.push([h.x, h.z, chCasa(h.i)[1] + 4]);
 
   W.builders.elfi = (b, g) => {
     const lume = (x, y, z, r, c, sempre = 0) => W.glows.push([x, y, z, r, c[0], c[1], c[2], sempre]);
@@ -11429,6 +11436,18 @@ SG.terre.lumenElfi = (m, { ELFI, piano }) => {
     const punta = (cx, cz, r, y0, y1, tile, n = 8) => { for (let k = 0; k < n; k++) { const a0 = (k - 0.5) / n * TAU, a1 = (k + 0.5) / n * TAU, t = [cx, y1, cz]; K.quad([cx + Math.cos(a1) * r, y0, cz + Math.sin(a1) * r], [cx + Math.cos(a0) * r, y0, cz + Math.sin(a0) * r], t, t, tile, 2, 2); } };
     const sotto = (cx, cz, r, y0, y1, tile, n = 8) => { for (let k = 0; k < n; k++) { const a0 = (k - 0.5) / n * TAU, a1 = (k + 0.5) / n * TAU, t = [cx, y1, cz]; K.quad([cx + Math.cos(a0) * r, y0, cz + Math.sin(a0) * r], [cx + Math.cos(a1) * r, y0, cz + Math.sin(a1) * r], t, t, tile, 2, 2); } };
     const gemma = (cx, cy, cz, r, h, tile) => { punta(cx, cz, r, cy, cy + h, tile); sotto(cx, cz, r, cy, cy - h * 0.55, tile); };
+    // --- i grandi alberi, a pezzi: una fascia (un giro che si stringe o si allarga), un ramo (quattro facce da un punto all'altro), una chioma a cupola col sotto scuro ---
+    const fascia = (cx, cz, r0, y0, r1, y1, tile, n = 8) => { const u = Math.max(1, Math.round(TAU * Math.max(r0, r1) / n / K.T8)), v = Math.max(1, Math.round(Math.hypot(y1 - y0, r1 - r0) / K.T8));
+      for (let k = 0; k < n; k++) { const a0 = (k - 0.5) / n * TAU, a1 = (k + 0.5) / n * TAU; K.quad([cx + Math.cos(a1) * r0, y0, cz + Math.sin(a1) * r0], [cx + Math.cos(a0) * r0, y0, cz + Math.sin(a0) * r0], [cx + Math.cos(a0) * r1, y1, cz + Math.sin(a0) * r1], [cx + Math.cos(a1) * r1, y1, cz + Math.sin(a1) * r1], tile, u, v); } };
+    const ramo = (p, q, r) => { const dx = q[0] - p[0], dz = q[2] - p[2], l = Math.hypot(dx, dz) || 1, ux = -dz / l * r, uz = dx / l * r, c = [[ux, r, uz], [-ux, r, -uz], [-ux, -r, -uz], [ux, -r, uz]], v = Math.max(1, Math.round(Math.hypot(dx, q[1] - p[1], dz) / K.T8));
+      for (let i = 0; i < 4; i++) { const a = c[i], b = c[(i + 1) % 4]; K.quad([p[0] + b[0], p[1] + b[1], p[2] + b[2]], [p[0] + a[0], p[1] + a[1], p[2] + a[2]], [q[0] + a[0] * 0.55, q[1] + a[1] * 0.55, q[2] + a[2] * 0.55], [q[0] + b[0] * 0.55, q[1] + b[1] * 0.55, q[2] + b[2] * 0.55], BARK, 1, v); } };
+    const cupola = (cx, cy, cz, r, tile, rs, giu, n = 8) => {   // cy: l'orlo; il sotto si chiude più in basso di «giu», attorno a un cerchio di raggio rs (il tronco, o quasi una punta)
+      fascia(cx, cz, rs, cy - giu, r * 0.8, cy - r * 0.14, LEAF_D, n); fascia(cx, cz, r * 0.8, cy - r * 0.14, r, cy + r * 0.12, LEAF_D, n); fascia(cx, cz, r, cy + r * 0.12, r * 0.92, cy + r * 0.44, tile, n); fascia(cx, cz, r * 0.92, cy + r * 0.44, r * 0.6, cy + r * 0.76, tile, n); fascia(cx, cz, r * 0.6, cy + r * 0.76, 0, cy + r * 0.94, tile, n); };
+    const FOGLIE = [LEAF_M, LEAF_L, LEAF_D];
+    // la chioma di un grande albero: la cupola di mezzo sul tronco, e attorno i palchi (cupole più piccole in cima a un ramo), ognuno alla sua altezza e del suo verde
+    const chioma = (x, z, y, rt, H, R, k, palchi) => { cupola(x, y + H, z, R, FOGLIE[k % 2], rt, R * 0.4, 10); cupola(x + Math.cos(k * 2.3) * R * 0.22, y + H + R * 0.52, z + Math.sin(k * 2.3) * R * 0.22, R * 0.62, FOGLIE[(k + 1) % 2], 0.7, R * 0.2);
+      for (let j = 0; j < palchi; j++) { const a = k * 1.3 + j * TAU / palchi + 0.4, d = R * 0.74, rl = R * (0.5 + 0.08 * ((k + j) % 3)), lx = x + Math.cos(a) * d, lz = z + Math.sin(a) * d, ly = y + H - R * 0.16 + ((k * 3 + j * 5) % 4) * 2.2;
+        cupola(lx, ly, lz, rl, FOGLIE[(k + j + 1) % 3], 0.7, rl * 0.5); ramo([x, y + H - R * 0.5, z], [lx, ly - rl * 0.4, lz], rt * 0.6); } };
     const casetta = (x, z, r, y0, hh, door, i) => {             // il muro bianco, la porta, le finestre tonde accese, il tetto a due punte
       const ap = r * Math.cos(Math.PI / 8), v = DV[door] || DV.s, tetto = i % 3 === 0 ? LEAF_L : i % 3 === 1 ? LEAF_M : LEAF_D;
       giro(x, z, r, y0, y0 + hh, TL.WHITE); giro(x, z, r + 0.25, y0 + hh - 1.1, y0 + hh, TL.GOLD);
@@ -11439,14 +11458,14 @@ SG.terre.lumenElfi = (m, { ELFI, piano }) => {
     // --- le case tonde: a terra, o in alto attorno a un tronco con la scala a chiocciola ---
     for (const h of tonde) { const y = g(h.x, h.z);
       if (!h.alta) { casetta(h.x, h.z, h.r, y - 1, 10.5, h.door, h.i); W.LATE.circles.push([h.x, h.z, h.r + 0.4]); continue; }
-      const yp = y + 13.5, r = h.r + 1.4; giro(h.x, h.z, 2.7, y - 2, y + 36, BARK); W.LATE.circles.push([h.x, h.z, 3.4]);
+      const yp = y + 13.5, r = h.r + 1.4, [CH, CR] = chCasa(h.i); giro(h.x, h.z, 2.7, y - 2, y + 36, BARK); fascia(h.x, h.z, 2.7, y + 36, 2.1, y + CH - CR * 0.4 + 1, BARK); chioma(h.x, h.z, y, 2.1, CH, CR, h.i >> 3, 3); W.LATE.circles.push([h.x, h.z, 3.4]);
       K.boxTop(h.x - r - 2.4, h.z - r - 2.4, h.x + r + 2.4, h.z + r + 2.4, yp, TL.PLANKS); K.quad([h.x - r - 2.4, yp - 0.05, h.z - r - 2.4], [h.x + r + 2.4, yp - 0.05, h.z - r - 2.4], [h.x + r + 2.4, yp - 0.05, h.z + r + 2.4], [h.x - r - 2.4, yp - 0.05, h.z + r + 2.4], BARK_D, 3, 3);
       K.walls(h.x - r - 2.4, h.z - r - 2.4, h.x + r + 2.4, h.z + r + 2.4, yp - 0.9, yp, BARK_D);
       for (let k = 0; k < 12; k++) { const a = k * 0.6 + 0.8, rr = 4.7, sx = h.x + Math.cos(a) * rr, sz = h.z + Math.sin(a) * rr; K.box(sx - 1.15, sz - 1.15, sx + 1.15, sz + 1.15, y + k * 1.1 - 0.2, y + k * 1.1 + 0.45, TL.PLANKS); }
       casetta(h.x, h.z, r, yp, 9, h.door, h.i); lume(h.x, yp - 1.5, h.z + r + 2, 3, TRE[(h.i >> 3) % 3]); }
     // --- il giro dei grandi alberi: il tronco, la vedetta in alto, e i ponti sospesi dall'uno all'altro ---
     const QP = 25, cime = giroAlberi.map(([x, z]) => [x, g(x, z) + QP, z]);
-    giroAlberi.forEach(([x, z], k) => { const y = g(x, z); giro(x, z, 4.3, y - 2.5, y + 48, BARK); giro(x, z, 5.6, y - 2.5, y + 2.2, BARK_D); W.LATE.circles.push([x, z, 5.2]);
+    giroAlberi.forEach(([x, z], k) => { const y = g(x, z), [CH, CR] = chGiro(k); fascia(x, z, 8, y - 2.5, 5.4, y + 4.5, BARK_D, 10); fascia(x, z, 5.4, y + 4.5, 4.5, y + 27, BARK, 10); fascia(x, z, 4.5, y + 27, 3.4, y + CH - CR * 0.4 + 1, BARK, 10); chioma(x, z, y, 3.4, CH, CR, k, 4); W.LATE.circles.push([x, z, 6.2]);
       K.boxTop(x - 8.5, z - 8.5, x + 8.5, z + 8.5, y + QP, TL.PLANKS); K.quad([x - 8.5, y + QP - 0.05, z - 8.5], [x + 8.5, y + QP - 0.05, z - 8.5], [x + 8.5, y + QP - 0.05, z + 8.5], [x - 8.5, y + QP - 0.05, z + 8.5], BARK_D, 2, 2); K.walls(x - 8.5, z - 8.5, x + 8.5, z + 8.5, y + QP - 0.9, y + QP, BARK_D);
       if (k % 2 === 0) { giro(x, z, 5.9, y + QP, y + QP + 6.5, TL.WHITE); for (const s of ['n', 's', 'e', 'w']) K.onWall(s, x - 5.45, z - 5.45, x + 5.45, z + 5.45, s === 'n' || s === 's' ? x : z, y + QP + 2.4, 2.8, 2.8, TL.WIN_ROUND, true); punta(x, z, 8, y + QP + 6, y + QP + 15, LEAF_M); }
       lume(x, y + QP + 3, z, 4, TRE[k % 3]); });
@@ -11476,7 +11495,7 @@ SG.terre.lumenElfi = (m, { ELFI, piano }) => {
   W.BUILD.push({ k: 'elfi', x: EX, z: EZ });
   // funghi e cristalli che fanno luce: sul bordo della vasca (non in mezzo al passo), ai piedi dei grandi alberi
   for (let k = 0; k < 6; k++) { const a = k / 6 * TAU + 0.5; P([k % 2 ? 'mushroom' : 'crystal', EX + Math.cos(a) * 6.7, EZ + Math.sin(a) * 6.7, { s: k % 2 ? 0.3 : 0.26, r: 0.1, glow: [2.5, 2.4, k % 2 ? 0.5 : 0.3, 0.75, 0.95, 0] }]); }
-  giroAlberi.forEach(([x, z], k) => { const a = k * 2.1; P(['mushroom', Math.round(x + Math.cos(a) * 9), Math.round(z + Math.sin(a) * 9), { s: 0.45, r: 1.4, glow: [3, 2.8, 0.35, 0.85, 0.6, 0] }], ['fern', Math.round(x - Math.cos(a) * 8), Math.round(z - Math.sin(a) * 8)]); });
+  giroAlberi.forEach(([x, z], k) => { const a = k * 2.1; P(['mushroom', Math.round(x + Math.cos(a) * 10.5), Math.round(z + Math.sin(a) * 10.5), { s: 0.45, r: 1.4, glow: [3, 2.8, 0.35, 0.85, 0.6, 0] }], ['fern', Math.round(x - Math.cos(a) * 10), Math.round(z - Math.sin(a) * 10)]); });
 };
 })();
 
@@ -11635,7 +11654,7 @@ SG.terre.lumenGrotte = (m) => {
     W.CAMPS.push([CX, CZ - 16, 'skel', 3, 20], [CX, CZ + 8, 'wraith', 1, 8]);
     // --- il Pozzo dei Cristalli: più in basso; cristalli alti come alberi, e le punte che pendono dal soffitto ---
     const CR = [[0, 0, 4.2, 22, 0], [5, 4, 2.6, 13, 1], [-5, 3, 2.4, 11, 0], [-24, -14, 3, 14, 1], [-20, -18, 1.9, 8, 0], [22, -20, 3.2, 15, 0], [27, -16, 2, 9, 2], [-18, 22, 2.8, 12, 2], [20, 24, 3, 13, 1], [24, 20, 1.8, 7, 0], [-34, 4, 2.2, 9, 1], [34, 2, 2.2, 9, 2]];
-    const CT = [[TL.TURQ, AZZ], [TL.ROOF_PURPLE, VIO], [TL.WHITE, BIA]];
+    const CT = [[TL.CRYSTAL_AZ, AZZ], [TL.CRYSTAL, VIO], [TL.ICE, BIA]];
     W.builders.gr_pozzo = () => { for (const [dx, dz, r, h, k] of CR) cristallo(PX + dx, PZ + dz, r, h, CT[k][0], k === 2 ? 0.6 : 0.8, r > 2.9 ? CT[k][1] : null);
       for (let k = 0; k < 16; k++) { const a = k * 2.399, r = 8 + (k * 9) % 32; stalattite(PX + Math.cos(a) * r, PZ + Math.sin(a) * r, 1.3 + (k % 3) * 0.5, 4 + (k % 4) * 2, TL.DARKSTONE, 0.3); } };
     W.BUILD.push({ k: 'gr_pozzo', x: PX, z: PZ });
@@ -11679,6 +11698,30 @@ SG.terre.lumenGrotte = (m) => {
     W.BUILD.push({ k: 'gr_specchi', x: MX, z: MZ });
     W.CHESTS.push(['gv_g4d', MX, MZ, 'vento', 2]);
     W.CAMPS.push([MX + 10, MZ + 12, 'icewolf', 3, 22], [1760, 712, 'icebat', 2, 12]);
+  }
+
+  // =============== LA SALA DEI CRISTALLI, nella Miniera di Barbarossa: i cristalli a pezzi ===============
+  // Erano sedici figure piatte, alte fino a quaranta passi: una figura piatta guarda sempre chi la guarda, e in una sala piena tutto girava con lo sguardo
+  // (e cinque stavano in mezzo al passo). Ora sono prismi di pietra, fermi: sei facce, la cima a punta, ognuno pende dalla sua parte, a gruppi (uno grande e i piccoli attorno).
+  // I due passi restano sgombri (dall'imbocco di levante al centro, dal centro alla discesa per la Vena d'Oro) e in mezzo, fuori dal passo, sta il Cristallo Grande: si vede da tutta la sala.
+  { const SX = 4470, SZ = 1016, COL = [[TL.CRYSTAL_AZ, AZZ, 1], [TL.CRYSTAL, VIO, 1], [TL.ICE, BIA, 0.58]];   // (il cristallo bianco è già chiarissimo: con la luce piena diventava una macchia bianca)
+    // ogni faccia ha la sua luce (la sala è buia, il sole non c'è): girandoci attorno si vede che è un solido
+    const prisma = (x, z, r, h, lx, lz, tile, L) => { const q = qui(x, z); if (!q) return 0; h = Math.min(h, q[1] - q[0] - 2); if (h < 3) return 0; const y = q[0] - 0.6, n = 6, hs = h * 0.74, f = hs / h, ap = [x + lx, y + h, z + lz];
+      for (let k = 0; k < n; k++) { const a0 = k / n * TAU, a1 = (k + 1) / n * TAU, l = Math.min(0.9, L * (0.6 + 0.4 * (0.5 + 0.5 * Math.cos((a0 + a1) / 2 - 0.9))));
+        const b0 = [x + Math.cos(a0) * r, y, z + Math.sin(a0) * r], b1 = [x + Math.cos(a1) * r, y, z + Math.sin(a1) * r], t0 = [x + lx * f + Math.cos(a0) * r * 0.8, y + hs, z + lz * f + Math.sin(a0) * r * 0.8], t1 = [x + lx * f + Math.cos(a1) * r * 0.8, y + hs, z + lz * f + Math.sin(a1) * r * 0.8];
+        K.quad(b1, b0, t0, t1, tile, 1, Math.max(1, Math.round(hs / K.T8)), l); K.quad(t1, t0, ap, ap, tile, 1, 1, Math.min(0.9, l * 1.15)); }
+      pieno(x, z, r * 0.85); return h; };
+    // un gruppo: [dx, dz, taglia 0..3, colore]. Taglia 3 è il Cristallo Grande
+    const TG = [[1.9, 9, 2.6], [2.8, 15, 3.4], [3.7, 22, 4.4], [5.4, 34, 6.5]];
+    const GRUPPI = [[-14, -9, 3, 0],
+      [3, -37, 2, 0], [-17, -33, 1, 1], [10, -23, 1, 0], [-33, -19, 1, 2], [-49, -9, 2, 1], [-47, 19, 1, 0], [-52, 40, 1, 2], [-8, 44, 1, 0], [9, 30, 1, 1], [26, 34, 2, 0], [41, 16, 1, 2], [-27, 1, 0, 1], [-30, 16, 0, 2],
+      [22, -17, 0, 1], [44, -22, 1, 1], [5, 54, 0, 0], [-36, -40, 0, 0], [34, -38, 0, 2], [52, 14, 0, 0], [58, -18, 0, 0], [78, 12, 0, 1], [-6, -52, 0, 1], [-58, 6, 0, 2]];
+    W.builders.gr_sala = () => { GRUPPI.forEach(([dx, dz, t, c], i) => { const x = SX + dx, z = SZ + dz, [r, h, rl] = TG[t], [tile, luce, kl] = COL[c], a0 = i * 2.1, hh = h * (0.9 + 0.2 * ((i * 7) % 5) / 4);
+        const fatto = prisma(x, z, r, hh, Math.cos(a0) * hh * 0.1, Math.sin(a0) * hh * 0.1, tile, 0.86 * kl); if (!fatto) return;
+        const ns = 2 + t + (i % 2); for (let j = 0; j < ns; j++) { const a = a0 + 1 + j * TAU / ns, rs = r * (0.38 + 0.12 * ((i + j) % 3)), hs = fatto * (0.3 + 0.13 * ((i * 3 + j * 5) % 4)), d = r + rs * 0.55; prisma(x + Math.cos(a) * d, z + Math.sin(a) * d, rs, hs, Math.cos(a) * hs * 0.34, Math.sin(a) * hs * 0.34, COL[(c + (j === 1 ? 1 : 0)) % 3][0], 0.72 * COL[(c + (j === 1 ? 1 : 0)) % 3][2]); }
+        const q = qui(x, z); lume(x, q[0] + fatto * 0.55, z, rl * (c === 2 ? 0.75 : 1), luce); }); };
+    W.BUILD.push({ k: 'gr_sala', x: SX, z: SZ });
+    P(['rock', SX - 40, SZ - 28, { lit: 0.46, dentro: 1 }], ['rock', SX + 16, SZ + 44, { lit: 0.46, dentro: 1 }], ['rock', SX + 30, SZ - 30, { lit: 0.46, dentro: 1 }]);
   }
 };
 })();

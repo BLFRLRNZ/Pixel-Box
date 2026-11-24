@@ -24,7 +24,7 @@ SG.terre.lumenNani = (m) => {
   { const B = W.GROTTE.find(g => g.id === 'barbarossa'); if (B) { B.volta = 70;
       B.rami.push([[4790, 1000, 56], [4786, 1004, 56]], [[4760, 850, 42], [4756, 856, 42]], [[4540, 1010, 28], [4470, 1016, 62]], [[4470, 1016, 62], [4424, 1088, 15, -5], [4384, 1156, 44, -9]], [[4850, 1150, 22], [4900, 1196, 40, -4]]);
       W.PLACES.push([4470, 1016, 66, 'SALA DEI CRISTALLI', 0], [4384, 1156, 50, "VENA D'ORO", 0]);
-      for (let k = 0; k < 16; k++) { const a = k * 2.4, r = 22 + (k * 7) % 34, col = k % 3 ? [0.5, 0.85, 1] : [0.8, 0.6, 1]; P([k % 4 === 3 ? 'icecrystal' : 'crystal', Math.round(4470 + Math.cos(a) * r), Math.round(1016 + Math.sin(a) * r), { dentro: 1, glow: [5, 9, col[0], col[1], col[2], 1], s: k % 5 === 0 ? 1.5 : 1 }]); }
+      // (i cristalli della Sala sono costruiti a pezzi in sv_lumen7.js: come figure piatte, grandi com'erano, giravano con lo sguardo e non si capiva più da che parte si guardava)
       for (let k = 0; k < 9; k++) { const a = k * 2.1 + 0.4, r = 14 + (k * 5) % 24; P(['rock', Math.round(4384 + Math.cos(a) * r), Math.round(1156 + Math.sin(a) * r), { dentro: 1, lit: 0.8, glow: [3, 6, 1, 0.8, 0.3, 1] }]); }
       P(['cart', 4398, 1132, D1], ['crate', 4372, 1140, D1], ['lantern', 4424, 1088, { dentro: 1, lit: 1.15, glow: [5, 10, 1, 0.8, 0.45, 1] }], ['lantern', 4900, 1196, { dentro: 1, lit: 1.15, glow: [5, 10, 1, 0.8, 0.45, 1] }], ['barrel', 4912, 1206, D1], ['crate', 4890, 1210, D1]);
       W.CHESTS.push(['gv_vena', 4372, 1176, 'monete:120', 2], ['gv_cristalli', 4436, 1040, 'elisir', 1]); } }

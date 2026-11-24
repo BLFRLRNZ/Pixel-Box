@@ -16,7 +16,7 @@ const TL = { MERL: 64, MERL_SAND: 65, MERL_DARK: 66, MERL_GREY: 67, ARCH_L: 68, 
   BARK: 180, BARK_D: 181, LEAF_L: 182, LEAF_M: 183, LEAF_D: 184, LEAF_FR: 185, VINE: 186, HOLLOW: 187, RUNE_G: 188, BOSCO_WALL: 189, BOSCO_FLUTE: 190, BOSCO_FRIEZE: 191,
   BOSCO_DOOR: 192, ROOF_MOSS: 193, FUNGUS: 194, LANTERN: 195, RELIEF: 196, MOSS: 197, BAN_GREEN: 198, CREST_G: 199,
   // gli altri santuari: otto riquadri a tema (muro, colonna, fregio, portale, stemma, rune, pendagli, stendardo) a partire da questi numeri
-  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237, BASOLATO: 238 };
+  TEMA: { lago: 200, sole: 208, ghiaccio: 216, fuoco: 224 }, LAVA: 232, SLAB_ICE: 233, SLAB_FIRE: 234, ICE: 235, CRYSTAL: 236, RUNE_V: 237, BASOLATO: 238, CRYSTAL_AZ: 239 };
 
 // ---------- texture ----------
 function tilesOn(c, R) {
@@ -166,6 +166,8 @@ function tilesOn(c, R) {
     // il selciato antico dei ponti: gli stessi pietroni delle strade maestre
     at(TL.BASOLATO, () => { const pv = SG.art.paving(rng(78), T, 3); for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const i = (y * T + x) * 4; P('rgb(' + pv.data[i] + ',' + pv.data[i + 1] + ',' + pv.data[i + 2] + ')', x, y, 1, 1); } });
     at(TL.ICE, () => { P('#bfe6ff', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#ffffff' : '#8fd0f6', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
+    // il cristallo azzurro delle grotte di Lumen (ultimo del gruppo: non sposta i numeri a caso di chi viene prima)
+    at(TL.CRYSTAL_AZ, () => { P('#3fc4e6', 0, 0, T, T); for (let k = 0; k < 16; k++) { let x = q(T), y = q(T); const n = 5 + q(12); for (let i = 0; i < n; i++) { P(k % 3 ? '#c4f4ff' : '#1c8cb4', x, y, 1, 1); y = (y + 1) % T; if (i % 3 === 2) x = (x + 1) % T; } } });
   }
   return c;
 }

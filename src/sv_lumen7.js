@@ -85,7 +85,7 @@ SG.terre.lumenGrotte = (m) => {
     W.CAMPS.push([CX, CZ - 16, 'skel', 3, 20], [CX, CZ + 8, 'wraith', 1, 8]);
     // --- il Pozzo dei Cristalli: più in basso; cristalli alti come alberi, e le punte che pendono dal soffitto ---
     const CR = [[0, 0, 4.2, 22, 0], [5, 4, 2.6, 13, 1], [-5, 3, 2.4, 11, 0], [-24, -14, 3, 14, 1], [-20, -18, 1.9, 8, 0], [22, -20, 3.2, 15, 0], [27, -16, 2, 9, 2], [-18, 22, 2.8, 12, 2], [20, 24, 3, 13, 1], [24, 20, 1.8, 7, 0], [-34, 4, 2.2, 9, 1], [34, 2, 2.2, 9, 2]];
-    const CT = [[TL.TURQ, AZZ], [TL.ROOF_PURPLE, VIO], [TL.WHITE, BIA]];
+    const CT = [[TL.CRYSTAL_AZ, AZZ], [TL.CRYSTAL, VIO], [TL.ICE, BIA]];
     W.builders.gr_pozzo = () => { for (const [dx, dz, r, h, k] of CR) cristallo(PX + dx, PZ + dz, r, h, CT[k][0], k === 2 ? 0.6 : 0.8, r > 2.9 ? CT[k][1] : null);
       for (let k = 0; k < 16; k++) { const a = k * 2.399, r = 8 + (k * 9) % 32; stalattite(PX + Math.cos(a) * r, PZ + Math.sin(a) * r, 1.3 + (k % 3) * 0.5, 4 + (k % 4) * 2, TL.DARKSTONE, 0.3); } };
     W.BUILD.push({ k: 'gr_pozzo', x: PX, z: PZ });
@@ -129,6 +129,30 @@ SG.terre.lumenGrotte = (m) => {
     W.BUILD.push({ k: 'gr_specchi', x: MX, z: MZ });
     W.CHESTS.push(['gv_g4d', MX, MZ, 'vento', 2]);
     W.CAMPS.push([MX + 10, MZ + 12, 'icewolf', 3, 22], [1760, 712, 'icebat', 2, 12]);
+  }
+
+  // =============== LA SALA DEI CRISTALLI, nella Miniera di Barbarossa: i cristalli a pezzi ===============
+  // Erano sedici figure piatte, alte fino a quaranta passi: una figura piatta guarda sempre chi la guarda, e in una sala piena tutto girava con lo sguardo
+  // (e cinque stavano in mezzo al passo). Ora sono prismi di pietra, fermi: sei facce, la cima a punta, ognuno pende dalla sua parte, a gruppi (uno grande e i piccoli attorno).
+  // I due passi restano sgombri (dall'imbocco di levante al centro, dal centro alla discesa per la Vena d'Oro) e in mezzo, fuori dal passo, sta il Cristallo Grande: si vede da tutta la sala.
+  { const SX = 4470, SZ = 1016, COL = [[TL.CRYSTAL_AZ, AZZ, 1], [TL.CRYSTAL, VIO, 1], [TL.ICE, BIA, 0.58]];   // (il cristallo bianco è già chiarissimo: con la luce piena diventava una macchia bianca)
+    // ogni faccia ha la sua luce (la sala è buia, il sole non c'è): girandoci attorno si vede che è un solido
+    const prisma = (x, z, r, h, lx, lz, tile, L) => { const q = qui(x, z); if (!q) return 0; h = Math.min(h, q[1] - q[0] - 2); if (h < 3) return 0; const y = q[0] - 0.6, n = 6, hs = h * 0.74, f = hs / h, ap = [x + lx, y + h, z + lz];
+      for (let k = 0; k < n; k++) { const a0 = k / n * TAU, a1 = (k + 1) / n * TAU, l = Math.min(0.9, L * (0.6 + 0.4 * (0.5 + 0.5 * Math.cos((a0 + a1) / 2 - 0.9))));
+        const b0 = [x + Math.cos(a0) * r, y, z + Math.sin(a0) * r], b1 = [x + Math.cos(a1) * r, y, z + Math.sin(a1) * r], t0 = [x + lx * f + Math.cos(a0) * r * 0.8, y + hs, z + lz * f + Math.sin(a0) * r * 0.8], t1 = [x + lx * f + Math.cos(a1) * r * 0.8, y + hs, z + lz * f + Math.sin(a1) * r * 0.8];
+        K.quad(b1, b0, t0, t1, tile, 1, Math.max(1, Math.round(hs / K.T8)), l); K.quad(t1, t0, ap, ap, tile, 1, 1, Math.min(0.9, l * 1.15)); }
+      pieno(x, z, r * 0.85); return h; };
+    // un gruppo: [dx, dz, taglia 0..3, colore]. Taglia 3 è il Cristallo Grande
+    const TG = [[1.9, 9, 2.6], [2.8, 15, 3.4], [3.7, 22, 4.4], [5.4, 34, 6.5]];
+    const GRUPPI = [[-14, -9, 3, 0],
+      [3, -37, 2, 0], [-17, -33, 1, 1], [10, -23, 1, 0], [-33, -19, 1, 2], [-49, -9, 2, 1], [-47, 19, 1, 0], [-52, 40, 1, 2], [-8, 44, 1, 0], [9, 30, 1, 1], [26, 34, 2, 0], [41, 16, 1, 2], [-27, 1, 0, 1], [-30, 16, 0, 2],
+      [22, -17, 0, 1], [44, -22, 1, 1], [5, 54, 0, 0], [-36, -40, 0, 0], [34, -38, 0, 2], [52, 14, 0, 0], [58, -18, 0, 0], [78, 12, 0, 1], [-6, -52, 0, 1], [-58, 6, 0, 2]];
+    W.builders.gr_sala = () => { GRUPPI.forEach(([dx, dz, t, c], i) => { const x = SX + dx, z = SZ + dz, [r, h, rl] = TG[t], [tile, luce, kl] = COL[c], a0 = i * 2.1, hh = h * (0.9 + 0.2 * ((i * 7) % 5) / 4);
+        const fatto = prisma(x, z, r, hh, Math.cos(a0) * hh * 0.1, Math.sin(a0) * hh * 0.1, tile, 0.86 * kl); if (!fatto) return;
+        const ns = 2 + t + (i % 2); for (let j = 0; j < ns; j++) { const a = a0 + 1 + j * TAU / ns, rs = r * (0.38 + 0.12 * ((i + j) % 3)), hs = fatto * (0.3 + 0.13 * ((i * 3 + j * 5) % 4)), d = r + rs * 0.55; prisma(x + Math.cos(a) * d, z + Math.sin(a) * d, rs, hs, Math.cos(a) * hs * 0.34, Math.sin(a) * hs * 0.34, COL[(c + (j === 1 ? 1 : 0)) % 3][0], 0.72 * COL[(c + (j === 1 ? 1 : 0)) % 3][2]); }
+        const q = qui(x, z); lume(x, q[0] + fatto * 0.55, z, rl * (c === 2 ? 0.75 : 1), luce); }); };
+    W.BUILD.push({ k: 'gr_sala', x: SX, z: SZ });
+    P(['rock', SX - 40, SZ - 28, { lit: 0.46, dentro: 1 }], ['rock', SX + 16, SZ + 44, { lit: 0.46, dentro: 1 }], ['rock', SX + 30, SZ - 30, { lit: 0.46, dentro: 1 }]);
   }
 };
 })();
