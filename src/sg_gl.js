@@ -65,14 +65,15 @@ vec4 xne(vec4 a, vec4 b) { return vec4(notEqual(a, b)); }
 vec4 xwd(vec4 a, vec4 b, vec4 c, vec4 d, vec4 e, vec4 f, vec4 g, vec4 h) { return abs(a - b) + abs(a - c) + abs(d - e) + abs(d - f) + 4.0 * abs(g - h); }
 float xy(vec4 c) { return 48.0 * (c.a * dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)) + (1.0 - c.a) * 2.0); }
 float xcd(vec4 a, vec4 b) { vec4 d = abs(a - b); return d.r + d.g + d.b + d.a; }
-vec4 tex2(sampler2D t, vec2 uv) {
-  if (uVoto < 0.5) return texture2D(t, uv);
-  vec2 s = 1.0 / uTs, q = uv * uTs, fp = fract(q), tc = (floor(q) + 0.5) * s, dx = vec2(s.x, 0.0), dy = vec2(0.0, s.y);
-  vec4 A1 = texture2D(t, tc - dx - 2.0 * dy), B1 = texture2D(t, tc - 2.0 * dy), C1 = texture2D(t, tc + dx - 2.0 * dy);
-  vec4 A0 = texture2D(t, tc - 2.0 * dx - dy), A = texture2D(t, tc - dx - dy), B = texture2D(t, tc - dy), C = texture2D(t, tc + dx - dy), C4 = texture2D(t, tc + 2.0 * dx - dy);
-  vec4 D0 = texture2D(t, tc - 2.0 * dx), D = texture2D(t, tc - dx), E = texture2D(t, tc), F = texture2D(t, tc + dx), F4 = texture2D(t, tc + 2.0 * dx);
-  vec4 G0 = texture2D(t, tc - 2.0 * dx + dy), G = texture2D(t, tc - dx + dy), H = texture2D(t, tc + dy), I = texture2D(t, tc + dx + dy), I4 = texture2D(t, tc + 2.0 * dx + dy);
-  vec4 G5 = texture2D(t, tc - dx + 2.0 * dy), H5 = texture2D(t, tc + 2.0 * dy), I5 = texture2D(t, tc + dx + 2.0 * dy);
+// il riquadro si ripete: o = il suo angolo, n = la sua misura, q = il punto (tutto in pixel del foglio). Per gli sprite è il foglio intero, per muri e tetti la piastrella
+vec4 xbrQ(sampler2D t, vec2 o, vec2 n, vec2 q) {
+  vec2 s = 1.0 / uTs, fp = fract(q), c0 = floor(q);
+#define XF(X, Y) texture2D(t, (o + mod(c0 + vec2(X, Y), n) + 0.5) * s)
+  vec4 A1 = XF(-1.0, -2.0), B1 = XF(0.0, -2.0), C1 = XF(1.0, -2.0);
+  vec4 A0 = XF(-2.0, -1.0), A = XF(-1.0, -1.0), B = XF(0.0, -1.0), C = XF(1.0, -1.0), C4 = XF(2.0, -1.0);
+  vec4 D0 = XF(-2.0, 0.0), D = XF(-1.0, 0.0), E = XF(0.0, 0.0), F = XF(1.0, 0.0), F4 = XF(2.0, 0.0);
+  vec4 G0 = XF(-2.0, 1.0), G = XF(-1.0, 1.0), H = XF(0.0, 1.0), I = XF(1.0, 1.0), I4 = XF(2.0, 1.0);
+  vec4 G5 = XF(-1.0, 2.0), H5 = XF(0.0, 2.0), I5 = XF(1.0, 2.0);
   vec4 b = vec4(xy(B), xy(D), xy(H), xy(F)), c = vec4(xy(C), xy(A), xy(G), xy(I)), e = vec4(xy(E));
   vec4 d = b.yzwx, f = b.wxyz, g = c.zwxy, h = b.zwxy, i = c.wxyz;
   vec4 i4 = vec4(xy(I4), xy(C1), xy(A0), xy(G5)), i5 = vec4(xy(I5), xy(C4), xy(A1), xy(G0)), h5 = vec4(xy(H5), xy(F4), xy(B1), xy(D0)), f4 = h5.yzwx;
@@ -95,6 +96,9 @@ vec4 tex2(sampler2D t, vec2 uv) {
   vec4 r1 = mix(E, mix(H, F, px.x), mx.x); r1 = mix(r1, mix(B, D, px.z), mx.z);
   vec4 r2 = mix(E, mix(F, B, px.y), mx.y); r2 = mix(r2, mix(D, H, px.w), mx.w);
   return mix(r1, r2, step(xcd(E, r1), xcd(E, r2))); }
+vec4 tex2(sampler2D t, vec2 uv) { if (uVoto < 0.5) return texture2D(t, uv); return xbrQ(t, vec2(0.0), uTs, uv * uTs); }
+// le piastrelle di muri, tetti e pavimenti: cell = la piastrella nel foglio, l = il punto (la parte intera conta solo per ripetere), tiles = piastrelle per lato
+vec4 tex2T(sampler2D t, vec2 cell, vec2 l, vec2 tiles) { if (uVoto < 0.5) return texture2D(t, (cell + fract(l)) / tiles); vec2 n = uTs / tiles; return xbrQ(t, cell * n, n, fract(l) * n); }
 `;
 const SRC = {
   terrain: [`
@@ -157,11 +161,11 @@ attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { float f = floor(aSh / 2.0 + 0.01), dec = min(f, 1.0); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * f; vGl = f - 1.0; vP = aPos;
-  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + `
+  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC, uFl; uniform vec2 uTiles; uniform float uNight;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { vec2 l = vL; if (vGl > 2.5) l += vGl > 3.5 ? uFl.yz : vec2(0.0, 1.0 - uFl.x);   // l'acqua che cade (3) e quella che scorre piano (4): uFl porta già le frazioni, piccole e precise
-  vec4 t = texture2D(uTex, (vT + fract(l)) / uTiles); if (t.a < 0.5) discard;
+  vec4 t = tex2T(uTex, vT, l, uTiles); if (t.a < 0.5) discard;
   vec3 c = vSh > 0.99 ? t.rgb : t.rgb * vSh * worldLight(vP);
   // di notte le finestre si accendono: il vetro azzurro diventa luce calda, le vetrate colorate brillano
   if (vGl > 0.5 && uNight > 0.0) { float mx = max(t.r, max(t.g, t.b)), mn = min(t.r, min(t.g, t.b));
@@ -241,10 +245,7 @@ void main() { vec3 c = texture2D(uT, vUV).rgb, b = texture2D(uB, vUV).rgb * uK.x
   // e si ripassano i contorni con un tratto scuro che trema appena, come un disegno fatto a mano
   pastello: [`
 attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
-uniform sampler2D uT; uniform vec2 uPx; uniform float uTime, uBuio, uK; uniform vec4 uP; varying vec2 vUV;
-float h21(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
+uniform sampler2D uT; uniform vec2 uPx; uniform vec4 uP; uniform float uInk; varying vec2 vUV;
 vec3 T(vec2 o) { return texture2D(uT, vUV + o * uPx).rgb; }
 float lu(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 // un quarto della finestra di Kuwahara: media e varietà del colore
@@ -252,16 +253,15 @@ vec4 quarto(vec2 o, vec2 d) { vec3 a = vec3(0.0), b = vec3(0.0);
   for (int j = 0; j <= 1; j++) for (int i = 0; i <= 1; i++) { vec3 c = T(o + d * vec2(float(i), float(j))); a += c; b += c * c; }
   a *= 0.25; vec3 v = b * 0.25 - a * a; return vec4(a, v.r + v.g + v.b); }
 void main() {
-  vec2 f = gl_FragCoord.xy / uK;
-  float bo = floor(uTime * 3.0);   // il tratto si ridisegna tre volte al secondo
-  vec2 wb = (vec2(vn(f * 0.11 + bo * 7.3), vn(f * 0.11 + 31.0 + bo * 5.1)) - 0.5) * 0.9 * uK;
+  // (il tratto non trema più: l'immagine sta ferma, e niente si sfoca)
+  vec2 wb = vec2(0.0);
   // il colore steso a chiazze (Kuwahara morbido: le quattro finestre pesano secondo quanto sono uniformi)
   vec4 q0 = quarto(wb, vec2(-1.0, -1.0)), q1 = quarto(wb, vec2(1.0, -1.0)), q2 = quarto(wb, vec2(-1.0, 1.0)), q3 = quarto(wb, vec2(1.0, 1.0));
   vec4 w = 1.0 / pow(vec4(q0.a, q1.a, q2.a, q3.a) * 60.0 + 1.0, vec4(3.0));
   vec3 c = (q0.rgb * w.x + q1.rgb * w.y + q2.rgb * w.z + q3.rgb * w.w) / (w.x + w.y + w.z + w.w);
-  // i contorni: dove il colore cambia di colpo
-  // (i punti di confronto stanno vicini, a 0,62 pixel invece di 1: il tratto viene più sottile, e un passaggio di tono sfumato non lo fa scattare)
-  const float D = 0.62;
+  // i contorni: dove il colore cambia di colpo. I punti di confronto stanno sui pixel veri (a 0,62 pixel il confronto si sfocava
+  // e il tratto spariva): il tratto è largo un pixel, e lo fanno fine la soglia e il colore, non lo sfocato
+  const float D = 1.0;
   vec3 a1 = T(wb + vec2(-D, D)), a2 = T(wb + vec2(0.0, D)), a3 = T(wb + vec2(D, D)), b1 = T(wb + vec2(-D, 0.0)), b3 = T(wb + vec2(D, 0.0)), c1 = T(wb + vec2(-D, -D)), c2 = T(wb + vec2(0.0, -D)), c3 = T(wb + vec2(D, -D));
   vec3 gx = a3 + 2.0 * b3 + c3 - a1 - 2.0 * b1 - c1, gy = a1 + 2.0 * a2 + a3 - c1 - 2.0 * c2 - c3;
   float e = sqrt(dot(gx, gx) + dot(gy, gy));
@@ -269,7 +269,7 @@ void main() {
   float l = lu(c);
   c = clamp(mix(vec3(l), c, uP.x), 0.0, 1.0); c = clamp(c + (c - 0.5) * uP.y, 0.0, 1.0);
   float ln = smoothstep(uP.z, uP.z + 0.45, e);
-  c = mix(c, mix(vec3(0.16, 0.11, 0.15), c * 0.4, 0.55), ln * uP.w);   // il tratto prende il colore di quel che ripassa, scurito: non è più nero
+  c = mix(c, mix(vec3(0.16, 0.11, 0.15), c * 0.38, uInk), ln * uP.w);   // il tratto prende il colore di quel che ripassa, scurito (uInk: quanto; FINI più chiaro, NETTI quasi nero)
   gl_FragColor = vec4(c, 1.0); }`],
   // A PASTELLI: ingrandisce una volta per tutte le icone e i ritratti dell'interfaccia con lo stesso xBR delle figure del mondo
   xbrsu: [`
@@ -297,10 +297,10 @@ attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vT = aT; vL = aL; vSh = aSh; vP = aPos; vDist = distance(aPos, uCam);
-  vFog = clamp((vDist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + DLIGHT + `
+  vFog = clamp((vDist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + DLIGHT + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform vec4 uCut; uniform float uGhost;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
-void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
+void main() { vec4 t = tex2T(uTex, vT, vL, uTiles); if (t.a < 0.5) discard;
   float a = 1.0;
   if (uCut.z > 0.0) {
     float e = length(gl_FragCoord.xy - uCut.xy) / uCut.z;

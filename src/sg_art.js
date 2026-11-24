@@ -11,8 +11,8 @@ function shade(h, f) {
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
 let RICCO = false;
-// il disegno morbido (lo accende il mondo a pastelli prima di disegnare gli sprite): il contorno cotto nello sprite è appena più scuro di quel che racchiude
-// (il tratto lo ripassa già lo shader dei pastelli: due contorni uno sull'altro facevano un bordo nero e spesso), i toni vicini si fondono, la luce delle figure non va a gradini
+// il disegno morbido (lo accende il mondo a pastelli prima di disegnare gli sprite): il contorno cotto nello sprite è un tono scuro di quel che racchiude,
+// non nero (il tratto lo ripassa già lo shader dei pastelli), e la luce delle figure non va a gradini
 let MORBIDO = false;
 // A PASTELLI: le scritte dell'interfaccia (solo sui fogli segnati con __liscio) si scrivono con lettere disegnate, non a quadretti
 let LISCIO = false;
@@ -23,8 +23,9 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
   if (outline) {
     const o = hex(oc), m = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) m[i] = a[i * 4 + 3] ? 1 : 0;
-    // morbido: i toni vicini si fondono un poco (sulle figure meno: hanno occhi di un pixel), così tra una tonalità e l'altra non resta una riga netta
-    if (ricco && MORBIDO) { const s = a.slice(), pc = bordo ? 8 : 3; for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { const i = y * w + X; if (!m[i]) continue; let r = s[i * 4] * pc, g = s[i * 4 + 1] * pc, b = s[i * 4 + 2] * pc, n = pc;
+    // morbido: sulle figure i toni vicini non si fondono (fondendoli venivano sfocate). Su chiome, cespugli e rocce sì, un poco:
+    // la loro grana fitta, ingrandita a contorni lisci, diventava un labirinto di macchie
+    if (ricco && MORBIDO && !bordo) { const s = a.slice(), pc = 4; for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { const i = y * w + X; if (!m[i]) continue; let r = s[i * 4] * pc, g = s[i * 4 + 1] * pc, b = s[i * 4 + 2] * pc, n = pc;
       for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += s[k * 4]; g += s[k * 4 + 1]; b += s[k * 4 + 2]; n++; }
       a[i * 4] = r / n; a[i * 4 + 1] = g / n; a[i * 4 + 2] = b / n; } }
     if (ricco && bordo) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
@@ -34,7 +35,7 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
       const i = y * w + X; if (m[i]) continue;
       if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) {
         if (ricco) { let r = 0, g = 0, b = 0, n = 0; for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += a[k * 4]; g += a[k * 4 + 1]; b += a[k * 4 + 2]; n++; }
-          if (MORBIDO) { a[i * 4] = r / n * 0.7; a[i * 4 + 1] = g / n * 0.68; a[i * 4 + 2] = b / n * 0.73 + 4; a[i * 4 + 3] = 255; }
+          if (MORBIDO) { a[i * 4] = r / n * 0.48 + 3; a[i * 4 + 1] = g / n * 0.45 + 2; a[i * 4 + 2] = b / n * 0.52 + 9; a[i * 4 + 3] = 255; }   // (morbido: il contorno è un tono scuro del colore che racchiude, fine e netto)
           else { a[i * 4] = r / n * 0.3 + 6; a[i * 4 + 1] = g / n * 0.27 + 4; a[i * 4 + 2] = b / n * 0.36 + 14; a[i * 4 + 3] = 255; } }
         else { a[i * 4] = o[0]; a[i * 4 + 1] = o[1]; a[i * 4 + 2] = o[2]; a[i * 4 + 3] = 255; } }
     }

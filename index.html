@@ -155,7 +155,7 @@
 <script>
 (() => {
 'use strict';
-const APP = {"v": "2.41", "id": "2.41-b7db1728", "date": "24/11/2026", "pwa": true};
+const APP = {"v": "2.42", "id": "2.42-4a2a846c", "date": "24/11/2026", "pwa": true};
 // ===================== PIXEL BOX · sistema comune =====================
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4358,14 +4358,15 @@ vec4 xne(vec4 a, vec4 b) { return vec4(notEqual(a, b)); }
 vec4 xwd(vec4 a, vec4 b, vec4 c, vec4 d, vec4 e, vec4 f, vec4 g, vec4 h) { return abs(a - b) + abs(a - c) + abs(d - e) + abs(d - f) + 4.0 * abs(g - h); }
 float xy(vec4 c) { return 48.0 * (c.a * dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)) + (1.0 - c.a) * 2.0); }
 float xcd(vec4 a, vec4 b) { vec4 d = abs(a - b); return d.r + d.g + d.b + d.a; }
-vec4 tex2(sampler2D t, vec2 uv) {
-  if (uVoto < 0.5) return texture2D(t, uv);
-  vec2 s = 1.0 / uTs, q = uv * uTs, fp = fract(q), tc = (floor(q) + 0.5) * s, dx = vec2(s.x, 0.0), dy = vec2(0.0, s.y);
-  vec4 A1 = texture2D(t, tc - dx - 2.0 * dy), B1 = texture2D(t, tc - 2.0 * dy), C1 = texture2D(t, tc + dx - 2.0 * dy);
-  vec4 A0 = texture2D(t, tc - 2.0 * dx - dy), A = texture2D(t, tc - dx - dy), B = texture2D(t, tc - dy), C = texture2D(t, tc + dx - dy), C4 = texture2D(t, tc + 2.0 * dx - dy);
-  vec4 D0 = texture2D(t, tc - 2.0 * dx), D = texture2D(t, tc - dx), E = texture2D(t, tc), F = texture2D(t, tc + dx), F4 = texture2D(t, tc + 2.0 * dx);
-  vec4 G0 = texture2D(t, tc - 2.0 * dx + dy), G = texture2D(t, tc - dx + dy), H = texture2D(t, tc + dy), I = texture2D(t, tc + dx + dy), I4 = texture2D(t, tc + 2.0 * dx + dy);
-  vec4 G5 = texture2D(t, tc - dx + 2.0 * dy), H5 = texture2D(t, tc + 2.0 * dy), I5 = texture2D(t, tc + dx + 2.0 * dy);
+// il riquadro si ripete: o = il suo angolo, n = la sua misura, q = il punto (tutto in pixel del foglio). Per gli sprite è il foglio intero, per muri e tetti la piastrella
+vec4 xbrQ(sampler2D t, vec2 o, vec2 n, vec2 q) {
+  vec2 s = 1.0 / uTs, fp = fract(q), c0 = floor(q);
+#define XF(X, Y) texture2D(t, (o + mod(c0 + vec2(X, Y), n) + 0.5) * s)
+  vec4 A1 = XF(-1.0, -2.0), B1 = XF(0.0, -2.0), C1 = XF(1.0, -2.0);
+  vec4 A0 = XF(-2.0, -1.0), A = XF(-1.0, -1.0), B = XF(0.0, -1.0), C = XF(1.0, -1.0), C4 = XF(2.0, -1.0);
+  vec4 D0 = XF(-2.0, 0.0), D = XF(-1.0, 0.0), E = XF(0.0, 0.0), F = XF(1.0, 0.0), F4 = XF(2.0, 0.0);
+  vec4 G0 = XF(-2.0, 1.0), G = XF(-1.0, 1.0), H = XF(0.0, 1.0), I = XF(1.0, 1.0), I4 = XF(2.0, 1.0);
+  vec4 G5 = XF(-1.0, 2.0), H5 = XF(0.0, 2.0), I5 = XF(1.0, 2.0);
   vec4 b = vec4(xy(B), xy(D), xy(H), xy(F)), c = vec4(xy(C), xy(A), xy(G), xy(I)), e = vec4(xy(E));
   vec4 d = b.yzwx, f = b.wxyz, g = c.zwxy, h = b.zwxy, i = c.wxyz;
   vec4 i4 = vec4(xy(I4), xy(C1), xy(A0), xy(G5)), i5 = vec4(xy(I5), xy(C4), xy(A1), xy(G0)), h5 = vec4(xy(H5), xy(F4), xy(B1), xy(D0)), f4 = h5.yzwx;
@@ -4388,6 +4389,9 @@ vec4 tex2(sampler2D t, vec2 uv) {
   vec4 r1 = mix(E, mix(H, F, px.x), mx.x); r1 = mix(r1, mix(B, D, px.z), mx.z);
   vec4 r2 = mix(E, mix(F, B, px.y), mx.y); r2 = mix(r2, mix(D, H, px.w), mx.w);
   return mix(r1, r2, step(xcd(E, r1), xcd(E, r2))); }
+vec4 tex2(sampler2D t, vec2 uv) { if (uVoto < 0.5) return texture2D(t, uv); return xbrQ(t, vec2(0.0), uTs, uv * uTs); }
+// le piastrelle di muri, tetti e pavimenti: cell = la piastrella nel foglio, l = il punto (la parte intera conta solo per ripetere), tiles = piastrelle per lato
+vec4 tex2T(sampler2D t, vec2 cell, vec2 l, vec2 tiles) { if (uVoto < 0.5) return texture2D(t, (cell + fract(l)) / tiles); vec2 n = uTs / tiles; return xbrQ(t, cell * n, n, fract(l) * n); }
 `;
 const SRC = {
   terrain: [`
@@ -4450,11 +4454,11 @@ attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { float f = floor(aSh / 2.0 + 0.01), dec = min(f, 1.0); gl_Position = uVP * vec4(aPos, 1.0); gl_Position.z -= dec * 0.0005 * gl_Position.w; vT = aT; vL = aL; vSh = aSh - 2.0 * f; vGl = f - 1.0; vP = aPos;
-  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + `
+  vFog = clamp((distance(aPos, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + WLIGHT + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC, uFl; uniform vec2 uTiles; uniform float uNight;
 varying vec2 vT, vL; varying float vSh, vFog, vGl; varying vec3 vP;
 void main() { vec2 l = vL; if (vGl > 2.5) l += vGl > 3.5 ? uFl.yz : vec2(0.0, 1.0 - uFl.x);   // l'acqua che cade (3) e quella che scorre piano (4): uFl porta già le frazioni, piccole e precise
-  vec4 t = texture2D(uTex, (vT + fract(l)) / uTiles); if (t.a < 0.5) discard;
+  vec4 t = tex2T(uTex, vT, l, uTiles); if (t.a < 0.5) discard;
   vec3 c = vSh > 0.99 ? t.rgb : t.rgb * vSh * worldLight(vP);
   // di notte le finestre si accendono: il vetro azzurro diventa luce calda, le vetrate colorate brillano
   if (vGl > 0.5 && uNight > 0.0) { float mx = max(t.r, max(t.g, t.b)), mn = min(t.r, min(t.g, t.b));
@@ -4534,10 +4538,7 @@ void main() { vec3 c = texture2D(uT, vUV).rgb, b = texture2D(uB, vUV).rgb * uK.x
   // e si ripassano i contorni con un tratto scuro che trema appena, come un disegno fatto a mano
   pastello: [`
 attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
-uniform sampler2D uT; uniform vec2 uPx; uniform float uTime, uBuio, uK; uniform vec4 uP; varying vec2 vUV;
-float h21(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
+uniform sampler2D uT; uniform vec2 uPx; uniform vec4 uP; uniform float uInk; varying vec2 vUV;
 vec3 T(vec2 o) { return texture2D(uT, vUV + o * uPx).rgb; }
 float lu(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 // un quarto della finestra di Kuwahara: media e varietà del colore
@@ -4545,16 +4546,15 @@ vec4 quarto(vec2 o, vec2 d) { vec3 a = vec3(0.0), b = vec3(0.0);
   for (int j = 0; j <= 1; j++) for (int i = 0; i <= 1; i++) { vec3 c = T(o + d * vec2(float(i), float(j))); a += c; b += c * c; }
   a *= 0.25; vec3 v = b * 0.25 - a * a; return vec4(a, v.r + v.g + v.b); }
 void main() {
-  vec2 f = gl_FragCoord.xy / uK;
-  float bo = floor(uTime * 3.0);   // il tratto si ridisegna tre volte al secondo
-  vec2 wb = (vec2(vn(f * 0.11 + bo * 7.3), vn(f * 0.11 + 31.0 + bo * 5.1)) - 0.5) * 0.9 * uK;
+  // (il tratto non trema più: l'immagine sta ferma, e niente si sfoca)
+  vec2 wb = vec2(0.0);
   // il colore steso a chiazze (Kuwahara morbido: le quattro finestre pesano secondo quanto sono uniformi)
   vec4 q0 = quarto(wb, vec2(-1.0, -1.0)), q1 = quarto(wb, vec2(1.0, -1.0)), q2 = quarto(wb, vec2(-1.0, 1.0)), q3 = quarto(wb, vec2(1.0, 1.0));
   vec4 w = 1.0 / pow(vec4(q0.a, q1.a, q2.a, q3.a) * 60.0 + 1.0, vec4(3.0));
   vec3 c = (q0.rgb * w.x + q1.rgb * w.y + q2.rgb * w.z + q3.rgb * w.w) / (w.x + w.y + w.z + w.w);
-  // i contorni: dove il colore cambia di colpo
-  // (i punti di confronto stanno vicini, a 0,62 pixel invece di 1: il tratto viene più sottile, e un passaggio di tono sfumato non lo fa scattare)
-  const float D = 0.62;
+  // i contorni: dove il colore cambia di colpo. I punti di confronto stanno sui pixel veri (a 0,62 pixel il confronto si sfocava
+  // e il tratto spariva): il tratto è largo un pixel, e lo fanno fine la soglia e il colore, non lo sfocato
+  const float D = 1.0;
   vec3 a1 = T(wb + vec2(-D, D)), a2 = T(wb + vec2(0.0, D)), a3 = T(wb + vec2(D, D)), b1 = T(wb + vec2(-D, 0.0)), b3 = T(wb + vec2(D, 0.0)), c1 = T(wb + vec2(-D, -D)), c2 = T(wb + vec2(0.0, -D)), c3 = T(wb + vec2(D, -D));
   vec3 gx = a3 + 2.0 * b3 + c3 - a1 - 2.0 * b1 - c1, gy = a1 + 2.0 * a2 + a3 - c1 - 2.0 * c2 - c3;
   float e = sqrt(dot(gx, gx) + dot(gy, gy));
@@ -4562,7 +4562,7 @@ void main() {
   float l = lu(c);
   c = clamp(mix(vec3(l), c, uP.x), 0.0, 1.0); c = clamp(c + (c - 0.5) * uP.y, 0.0, 1.0);
   float ln = smoothstep(uP.z, uP.z + 0.45, e);
-  c = mix(c, mix(vec3(0.16, 0.11, 0.15), c * 0.4, 0.55), ln * uP.w);   // il tratto prende il colore di quel che ripassa, scurito: non è più nero
+  c = mix(c, mix(vec3(0.16, 0.11, 0.15), c * 0.38, uInk), ln * uP.w);   // il tratto prende il colore di quel che ripassa, scurito (uInk: quanto; FINI più chiaro, NETTI quasi nero)
   gl_FragColor = vec4(c, 1.0); }`],
   // A PASTELLI: ingrandisce una volta per tutte le icone e i ritratti dell'interfaccia con lo stesso xBR delle figure del mondo
   xbrsu: [`
@@ -4590,10 +4590,10 @@ attribute vec3 aPos; attribute vec2 aT; attribute vec2 aL; attribute float aSh;
 uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uFog;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vT = aT; vL = aL; vSh = aSh; vP = aPos; vDist = distance(aPos, uCam);
-  vFog = clamp((vDist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + DLIGHT + `
+  vFog = clamp((vDist - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + DLIGHT + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC; uniform vec2 uTiles; uniform vec4 uCut; uniform float uGhost;
 varying vec2 vT, vL; varying float vSh, vFog, vDist; varying vec3 vP;
-void main() { vec4 t = texture2D(uTex, (vT + fract(vL)) / uTiles); if (t.a < 0.5) discard;
+void main() { vec4 t = tex2T(uTex, vT, vL, uTiles); if (t.a < 0.5) discard;
   float a = 1.0;
   if (uCut.z > 0.0) {
     float e = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
@@ -4686,8 +4686,8 @@ function shade(h, f) {
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
 let RICCO = false;
-// il disegno morbido (lo accende il mondo a pastelli prima di disegnare gli sprite): il contorno cotto nello sprite è appena più scuro di quel che racchiude
-// (il tratto lo ripassa già lo shader dei pastelli: due contorni uno sull'altro facevano un bordo nero e spesso), i toni vicini si fondono, la luce delle figure non va a gradini
+// il disegno morbido (lo accende il mondo a pastelli prima di disegnare gli sprite): il contorno cotto nello sprite è un tono scuro di quel che racchiude,
+// non nero (il tratto lo ripassa già lo shader dei pastelli), e la luce delle figure non va a gradini
 let MORBIDO = false;
 // A PASTELLI: le scritte dell'interfaccia (solo sui fogli segnati con __liscio) si scrivono con lettere disegnate, non a quadretti
 let LISCIO = false;
@@ -4698,8 +4698,9 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
   if (outline) {
     const o = hex(oc), m = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) m[i] = a[i * 4 + 3] ? 1 : 0;
-    // morbido: i toni vicini si fondono un poco (sulle figure meno: hanno occhi di un pixel), così tra una tonalità e l'altra non resta una riga netta
-    if (ricco && MORBIDO) { const s = a.slice(), pc = bordo ? 8 : 3; for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { const i = y * w + X; if (!m[i]) continue; let r = s[i * 4] * pc, g = s[i * 4 + 1] * pc, b = s[i * 4 + 2] * pc, n = pc;
+    // morbido: sulle figure i toni vicini non si fondono (fondendoli venivano sfocate). Su chiome, cespugli e rocce sì, un poco:
+    // la loro grana fitta, ingrandita a contorni lisci, diventava un labirinto di macchie
+    if (ricco && MORBIDO && !bordo) { const s = a.slice(), pc = 4; for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { const i = y * w + X; if (!m[i]) continue; let r = s[i * 4] * pc, g = s[i * 4 + 1] * pc, b = s[i * 4 + 2] * pc, n = pc;
       for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += s[k * 4]; g += s[k * 4 + 1]; b += s[k * 4 + 2]; n++; }
       a[i * 4] = r / n; a[i * 4 + 1] = g / n; a[i * 4 + 2] = b / n; } }
     if (ricco && bordo) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
@@ -4709,7 +4710,7 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
       const i = y * w + X; if (m[i]) continue;
       if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) {
         if (ricco) { let r = 0, g = 0, b = 0, n = 0; for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += a[k * 4]; g += a[k * 4 + 1]; b += a[k * 4 + 2]; n++; }
-          if (MORBIDO) { a[i * 4] = r / n * 0.7; a[i * 4 + 1] = g / n * 0.68; a[i * 4 + 2] = b / n * 0.73 + 4; a[i * 4 + 3] = 255; }
+          if (MORBIDO) { a[i * 4] = r / n * 0.48 + 3; a[i * 4 + 1] = g / n * 0.45 + 2; a[i * 4 + 2] = b / n * 0.52 + 9; a[i * 4 + 3] = 255; }   // (morbido: il contorno è un tono scuro del colore che racchiude, fine e netto)
           else { a[i * 4] = r / n * 0.3 + 6; a[i * 4 + 1] = g / n * 0.27 + 4; a[i * 4 + 2] = b / n * 0.36 + 14; a[i * 4 + 3] = 255; } }
         else { a[i * 4] = o[0]; a[i * 4 + 1] = o[1]; a[i * 4 + 2] = o[2]; a[i * 4 + 3] = 255; } }
     }
@@ -15296,7 +15297,7 @@ function pastTexture() {
   const on = pastelOn(), k = on ? 'L' : 'N';
   if (k === pastTex) return; pastTex = k;
   const f = on ? gl.LINEAR : gl.NEAREST;
-  for (const t of [TILES, DET, PAVT]) if (t) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); }
+  for (const t of [DET, PAVT]) if (t) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); }
 }
 // il foglio di figure in uso e la sua misura (per il voto dei colori)
 function tsU(p, t) { if (p.u.uTs) gl.uniform2f(p.u.uTs, t.w, t.h); if (p.u.uVoto) gl.uniform1f(p.u.uVoto, pastelOn() ? 1 : 0); }
@@ -15313,13 +15314,15 @@ function pastPassa() {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PAST.t); gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, PAST.w, PAST.h);
   gl.bindBuffer(gl.ARRAY_BUFFER, G.full); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, PAST.w, PAST.h);
   const p = P.pastello; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]);
-  gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / PAST.w, 1 / PAST.h); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uK, Math.max(1, PAST.h / 440));
-  gl.uniform4fv(p.u.uP, PASTP);
+  gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / PAST.w, 1 / PAST.h);
+  const ct = CONTORNI[save && save.opt.cont in CONTORNI ? save.opt.cont : 'fini']; PASTP[2] = ct[0]; PASTP[3] = ct[1]; gl.uniform4fv(p.u.uP, PASTP); gl.uniform1f(p.u.uInk, ct[2]);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE); gl.depthMask(dm);
 }
 // le misure del disegno: saturazione, contrasto, soglia e forza dei contorni
-const PASTP = new Float32Array([1.2, 0.07, 0.5, 0.7]);   // (soglia più alta: il tratto segue i contorni delle cose, non ogni cambio di tono; e pesa meno)
+const PASTP = new Float32Array([1.2, 0.07, 0.38, 0.72]);
+// i contorni, dalle opzioni: soglia (più alta, meno righe), forza, e quanto il tratto prende il colore di quel che ripassa (1 = tutto, 0 = quasi nero)
+const CONTORNI = { fini: [0.38, 0.72, 0.6], netti: [0.3, 0.88, 0.3], no: [1, 0, 0] };
 function luxPrepara() {
   const w = W3, h = H3, w2 = Math.max(8, w >> 2), h2 = Math.max(8, h >> 2);
   const tex = (tw, th, fmt) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, fmt, tw, th, 0, fmt, gl.UNSIGNED_BYTE, null);
@@ -17312,7 +17315,7 @@ function renderDungeon() {
   let p = P.dmesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.05) * ambK);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0); tsU(p, TILES);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   gl.uniform1f(p.u.uGhost, 0);
   const drawMesh = (buf, n, cutOn) => { if (!n) return; gl.uniform4f(p.u.uCut, cut[0], cut[1], cutOn ? cut[2] : 0, cut[3]); gl.bindBuffer(gl.ARRAY_BUFFER, buf); for (let q0 = 0; q0 < n; q0 += 16000) { G.attribs(p, [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]], q0 * 4 * 32); gl.drawElements(gl.TRIANGLES, Math.min(16000, n - q0) * 6, gl.UNSIGNED_SHORT, 0); } };
@@ -17605,7 +17608,7 @@ function render3D() {
   // edifici
   p = P.mesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0); tsU(p, TILES);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
     if (Math.hypot(s.x - cam.x, s.z - cam.z) - s.r > far || !boxVisible(s.x0, s.y0, s.z0, s.x1, s.y1, s.z1)) continue;
@@ -17951,7 +17954,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return MODO ? (compOn() ? ['st'].concat(compOrd().filter(id => save.comp.m[id])) : []) : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno'].concat(MODO ? (PASTELLI ? ['stile', 'luce'] : ['luce']) : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
+  return ['vol', 'mus', 'giorno'].concat(MODO ? (PASTELLI ? ['stile', 'cont', 'luce'] : ['luce']) : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -17993,7 +17996,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), stile: 'STILE: ' + (save.opt.stile === 'pixel' ? 'PIXEL' : 'PASTELLI'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), cont: 'CONTORNI: ' + ({ fini: 'FINI', netti: 'NETTI', no: 'NIENTE' }[save.opt.cont] || 'FINI'), stile: 'STILE: ' + (save.opt.stile === 'pixel' ? 'PIXEL' : 'PASTELLI'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -18163,6 +18166,7 @@ function menuKey(name) {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
+    else if (r === 'cont') { const o = ['fini', 'netti', 'no']; save.opt.cont = o[(o.indexOf(save.opt.cont in CONTORNI ? save.opt.cont : 'fini') + 1) % 3]; tone(1046, 0.05); }
     else if (r === 'stile') { save.opt.stile = save.opt.stile === 'pixel' ? 'pastelli' : 'pixel'; lastWH = ''; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
@@ -18274,7 +18278,7 @@ return {
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class' || st === 'crea')) {
       G.resize(W3, H3);
-      if (st !== 'intro') { pastMisura(); pastTexture(); render3D(); luxPassa(); pastPassa(); const sm = pastelOn(); if (sm) { c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; } c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); if (sm) c.imageSmoothingEnabled = false; }
+      if (st !== 'intro') { pastMisura(); pastTexture(); render3D(); luxPassa(); pastPassa(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }   // (a pastelli l'ingrandimento è netto come a pixel: lo sfocato dava fastidio)
     }
     drawHUD();
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);

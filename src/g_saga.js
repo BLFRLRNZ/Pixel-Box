@@ -1562,7 +1562,7 @@ function pastTexture() {
   const on = pastelOn(), k = on ? 'L' : 'N';
   if (k === pastTex) return; pastTex = k;
   const f = on ? gl.LINEAR : gl.NEAREST;
-  for (const t of [TILES, DET, PAVT]) if (t) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); }
+  for (const t of [DET, PAVT]) if (t) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); }
 }
 // il foglio di figure in uso e la sua misura (per il voto dei colori)
 function tsU(p, t) { if (p.u.uTs) gl.uniform2f(p.u.uTs, t.w, t.h); if (p.u.uVoto) gl.uniform1f(p.u.uVoto, pastelOn() ? 1 : 0); }
@@ -1579,13 +1579,15 @@ function pastPassa() {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PAST.t); gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, PAST.w, PAST.h);
   gl.bindBuffer(gl.ARRAY_BUFFER, G.full); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, PAST.w, PAST.h);
   const p = P.pastello; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]);
-  gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / PAST.w, 1 / PAST.h); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uK, Math.max(1, PAST.h / 440));
-  gl.uniform4fv(p.u.uP, PASTP);
+  gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / PAST.w, 1 / PAST.h);
+  const ct = CONTORNI[save && save.opt.cont in CONTORNI ? save.opt.cont : 'fini']; PASTP[2] = ct[0]; PASTP[3] = ct[1]; gl.uniform4fv(p.u.uP, PASTP); gl.uniform1f(p.u.uInk, ct[2]);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE); gl.depthMask(dm);
 }
 // le misure del disegno: saturazione, contrasto, soglia e forza dei contorni
-const PASTP = new Float32Array([1.2, 0.07, 0.5, 0.7]);   // (soglia più alta: il tratto segue i contorni delle cose, non ogni cambio di tono; e pesa meno)
+const PASTP = new Float32Array([1.2, 0.07, 0.38, 0.72]);
+// i contorni, dalle opzioni: soglia (più alta, meno righe), forza, e quanto il tratto prende il colore di quel che ripassa (1 = tutto, 0 = quasi nero)
+const CONTORNI = { fini: [0.38, 0.72, 0.6], netti: [0.3, 0.88, 0.3], no: [1, 0, 0] };
 function luxPrepara() {
   const w = W3, h = H3, w2 = Math.max(8, w >> 2), h2 = Math.max(8, h >> 2);
   const tex = (tw, th, fmt) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, fmt, tw, th, 0, fmt, gl.UNSIGNED_BYTE, null);
@@ -3578,7 +3580,7 @@ function renderDungeon() {
   let p = P.dmesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48);
   gl.uniform4fv(p.u.uLp, LP); gl.uniform3fv(p.u.uLc, LC); gl.uniform1f(p.u.uAmb, (D.def.amb + 0.05) * ambK);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0); tsU(p, TILES);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   gl.uniform1f(p.u.uGhost, 0);
   const drawMesh = (buf, n, cutOn) => { if (!n) return; gl.uniform4f(p.u.uCut, cut[0], cut[1], cutOn ? cut[2] : 0, cut[3]); gl.bindBuffer(gl.ARRAY_BUFFER, buf); for (let q0 = 0; q0 < n; q0 += 16000) { G.attribs(p, [['aPos', 3], ['aT', 2], ['aL', 2], ['aSh', 1]], q0 * 4 * 32); gl.drawElements(gl.TRIANGLES, Math.min(16000, n - q0) * 6, gl.UNSIGNED_SHORT, 0); } };
@@ -3871,7 +3873,7 @@ function render3D() {
   // edifici
   p = P.mesh; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uTiles, 8, 48); gl.uniform1f(p.u.uNight, day.night); gl.uniform3f(p.u.uFl, (time * 1.15) % 1, (time * 0.035) % 1, (time * 0.02) % 1); setWL(p);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TILES); gl.uniform1i(p.u.uTex, 0); tsU(p, TILES);
   gl.bindBuffer(gl.ARRAY_BUFFER, W.meshBuf); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   for (const s of W.sites) {
     if (Math.hypot(s.x - cam.x, s.z - cam.z) - s.r > far || !boxVisible(s.x0, s.y0, s.z0, s.x1, s.y1, s.z1)) continue;
@@ -4217,7 +4219,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return MODO ? (compOn() ? ['st'].concat(compOrd().filter(id => save.comp.m[id])) : []) : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno'].concat(MODO ? (PASTELLI ? ['stile', 'luce'] : ['luce']) : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
+  return ['vol', 'mus', 'giorno'].concat(MODO ? (PASTELLI ? ['stile', 'cont', 'luce'] : ['luce']) : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -4259,7 +4261,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), stile: 'STILE: ' + (save.opt.stile === 'pixel' ? 'PIXEL' : 'PASTELLI'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), cont: 'CONTORNI: ' + ({ fini: 'FINI', netti: 'NETTI', no: 'NIENTE' }[save.opt.cont] || 'FINI'), stile: 'STILE: ' + (save.opt.stile === 'pixel' ? 'PIXEL' : 'PASTELLI'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -4429,6 +4431,7 @@ function menuKey(name) {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
+    else if (r === 'cont') { const o = ['fini', 'netti', 'no']; save.opt.cont = o[(o.indexOf(save.opt.cont in CONTORNI ? save.opt.cont : 'fini') + 1) % 3]; tone(1046, 0.05); }
     else if (r === 'stile') { save.opt.stile = save.opt.stile === 'pixel' ? 'pastelli' : 'pixel'; lastWH = ''; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
@@ -4540,7 +4543,7 @@ return {
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class' || st === 'crea')) {
       G.resize(W3, H3);
-      if (st !== 'intro') { pastMisura(); pastTexture(); render3D(); luxPassa(); pastPassa(); const sm = pastelOn(); if (sm) { c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; } c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); if (sm) c.imageSmoothingEnabled = false; }
+      if (st !== 'intro') { pastMisura(); pastTexture(); render3D(); luxPassa(); pastPassa(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }   // (a pastelli l'ingrandimento è netto come a pixel: lo sfocato dava fastidio)
     }
     drawHUD();
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);
