@@ -624,7 +624,11 @@ function* loader() {
   { const tx = G.texture.bind(G); G.texture = (src, o) => { MIS.tex += (src.w || src.width || 0) * (src.h || src.height || 0) * (o && o.lum ? 1 : 4); return tx(src, o); }; }
   atlas2 = MODO ? A.Atlas(2048, 2048) : null;   // il secondo foglio: le figure della compagnia (e il posto per quelle che verranno)
   atlas = A.Atlas(MODO ? 4096 : 2048, 4096);   // (nel Grande Viaggio le figure sono più fitte e occupano più posto: l'atlante è largo il doppio)
-  A.ricco = !!MODO;   // nel Grande Viaggio tutto è disegnato col disegno ricco (figure, alberi, rocce, oggetti); in Pixel Saga no
+  // a pastelli gli sprite si disegnano morbidi (vedi sg_art.js); chi nelle opzioni ha scelto STILE: PIXEL li ritrova a pixel come nel Grande Viaggio
+  // (si legge il salvataggio perché qui la partita non è ancora aperta; cambiando stile in gioco, gli sprite seguono alla prossima apertura)
+  { let px = false; try { const s = JSON.parse(localStorage.getItem(SAVEKEY)); px = !!(s && s.opt && s.opt.stile === 'pixel'); } catch (e) {} A.morbido = !!PASTELLI && !px; }
+  A.ricco = !!MODO; pastTex = ''; morbOra = null;
+    // nel Grande Viaggio tutto è disegnato col disegno ricco (figure, alberi, rocce, oggetti); in Pixel Saga no
   progMsg = 'DISEGNO ALBERI, ROCCE E FIORI'; yield 0.01;
   buildStatics();
   progMsg = 'MODELLO LE TERRE DI LUMEN';
@@ -635,7 +639,7 @@ function* loader() {
   ATEX = G.texture(atlas.c); atlasUse = atlas.used;
   if (atlas2) { ATEX2 = G.texture(atlas2.c); atlasUse2 = atlas2.used; atlas2.c.width = atlas2.c.height = 1; dynBuf3 = G.buffer(dynF3, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW); }
   atlas.c.width = atlas.c.height = 1;   // la tela non serve più: la memoria torna libera
-  TILES = G.texture(SG.decor.tilesOn(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31))));
+  { const tl = SG.decor.tilesOn(SG.shop.tilesOn(SG.town.tilesOn(SG.dun.tilesOn(A.tiles(rng(5)), rng(11)), rng(21)), rng(31))); TILES = G.texture(A.morbido ? A.schiarisci(tl) : tl); }   // (a pastelli le righe scure di muri e tetti sono meno nere)
   DET = G.texture(A.detail(rng(3)), { repeat: true }); PAVT = G.texture(A.paving(rng(77)), { repeat: true });
   SHORE = G.texture({ w: W.N, h: W.NZ, data: W.shore }, { linear: true, lum: true }); W.shore = null;
   glowBuf = G.buffer(glowF, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
@@ -1544,7 +1548,11 @@ function pastMisura() {
   pastN = 0; pastMs = 0;
 }
 const pastelOn = () => PASTELLI && !!MODO && !pastNo && !(save && save.opt.stile === 'pixel');
+// la luce morbida (uMorb, uMorbC negli shader) va insieme ai pastelli: si accende e si spegne con loro, e negli altri mondi resta spenta
+let morbOra = null;
+function disegnoMorbido(on) { const v = on ? 1 : 0; for (const k in G.P) { const p = G.P[k]; if (!p.u.uMorb && !p.u.uMorbC) continue; gl.useProgram(p.p); if (p.u.uMorb) gl.uniform1f(p.u.uMorb, v); if (p.u.uMorbC) gl.uniform1f(p.u.uMorbC, v); } }
 function pastTexture() {
+  { const m = pastelOn(); if (m !== morbOra) { morbOra = m; disegnoMorbido(m); } }
   if (!PASTELLI) return;
   // le texture morbide (pastelli) o a pixel netti; si cambia solo quando serve
   const on = pastelOn(), k = on ? 'L' : 'N';
@@ -1573,7 +1581,7 @@ function pastPassa() {
   if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE); gl.depthMask(dm);
 }
 // le misure del disegno: saturazione, contrasto, soglia e forza dei contorni
-const PASTP = new Float32Array([1.2, 0.07, 0.3, 0.85]);
+const PASTP = new Float32Array([1.2, 0.07, 0.5, 0.7]);   // (soglia più alta: il tratto segue i contorni delle cose, non ogni cambio di tono; e pesa meno)
 function luxPrepara() {
   const w = W3, h = H3, w2 = Math.max(8, w >> 2), h2 = Math.max(8, h >> 2);
   const tex = (tw, th, fmt) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, fmt, tw, th, 0, fmt, gl.UNSIGNED_BYTE, null);

@@ -15,13 +15,17 @@ const M4 = {
 };
 
 // retinatura ordinata 4x4 e pochi livelli di colore: l'aspetto "a pixel" anche nelle sfumature
+// uMorb (e uMorbC per le nuvole): la luce morbida, che si accende solo col disegno a pastelli. A 1 la luce non va più a gradini e i colori
+// non si riducono a pochi livelli: così il tratto dei pastelli non trova più una riga da ripassare a ogni gradino. A 0 tutto resta com'era.
 const DITHER = `
+uniform float uMorb;
 float bay(vec2 p) { vec2 q = mod(floor(p), 4.0), h = floor(q / 2.0), l = q - 2.0 * h;
   return (4.0 * mod(2.0 * l.x + 3.0 * l.y, 4.0) + mod(2.0 * h.x + 3.0 * h.y, 4.0) + 0.5) / 16.0; }
 vec3 grade(vec3 c) { float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b)), l = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(vec3(l), c, 1.0 + 0.55 * (1.0 - (mx - mn))); c = c + (c - 0.5) * 0.08; return clamp(c, 0.0, 1.0); }
-vec3 dith(vec3 c) { return floor(grade(c) * 40.0 + 0.5) / 40.0; }
-vec3 band(vec3 l, float n) { float m = max(l.r, max(l.g, l.b)); return l * (floor(m * n + 0.5) / n / max(m, 0.001)); }
+vec3 dith(vec3 c) { c = grade(c); return uMorb > 0.5 ? c : floor(c * 40.0 + 0.5) / 40.0; }
+vec3 band(vec3 l, float n) { if (uMorb > 0.5) return l; float m = max(l.r, max(l.g, l.b)); return l * (floor(m * n + 0.5) / n / max(m, 0.001)); }
+float grad(float v, float n) { return uMorb > 0.5 ? v : floor(v * n + 0.5) / n; }
 float fogk(float f) { return f * f * (3.0 - 2.0 * f); }
 `;
 const DLIGHT = `
@@ -41,10 +45,10 @@ uniform vec4 uLp[8]; uniform vec3 uLq[8]; uniform float uNt;
 vec3 ptLights(vec3 p) { vec3 l = vec3(0.0); if (uNt > 0.5) { for (int i = 0; i < 8; i++) { vec3 d = uLp[i].xyz - p; float k = max(0.0, 1.0 - dot(d, d) / (uLp[i].w * uLp[i].w + 0.001)); l += uLq[i] * k * k; } } return l; }
 `;
 const CLD = `
-uniform vec3 uCl;
+uniform vec3 uCl; uniform float uMorbC;
 float cloudSh(vec2 w) { vec2 q = w * 0.0052 + uCl.xy; float f = sin(q.x + 1.7 * sin(q.y * 0.61)) + sin(q.y * 1.31 - 0.9 * sin(q.x * 0.47 + 2.0)) + 0.6 * sin((q.x + q.y) * 0.73 + 4.0);
-  float ric = step(0.9, uCl.z), s = uCl.z - ric, k = 0.45 * step(0.95, f) + 0.55 * step(1.15, f);
-  if (ric > 0.5) { vec2 r = w * 0.0155 + uCl.xy * 2.98 + 7.3; float g = sin(r.x + 1.4 * sin(r.y * 0.67)) + sin(r.y * 1.23 - 1.1 * sin(r.x * 0.53 + 1.0)); k = max(k, 0.5 * step(1.02, g) + 0.3 * step(1.32, g)); }
+  float ric = step(0.9, uCl.z), s = uCl.z - ric, k = 0.45 * mix(step(0.95, f), smoothstep(0.75, 1.15, f), uMorbC) + 0.55 * mix(step(1.15, f), smoothstep(0.95, 1.35, f), uMorbC);   // (morbida: l'ombra delle nuvole ha il bordo sfumato)
+  if (ric > 0.5) { vec2 r = w * 0.0155 + uCl.xy * 2.98 + 7.3; float g = sin(r.x + 1.4 * sin(r.y * 0.67)) + sin(r.y * 1.23 - 1.1 * sin(r.x * 0.53 + 1.0)); k = max(k, 0.5 * mix(step(1.02, g), smoothstep(0.82, 1.22, g), uMorbC) + 0.3 * mix(step(1.32, g), smoothstep(1.12, 1.52, g), uMorbC)); }
   return 1.0 - s * k; }
 `;
 const WLIGHT = PTL + CLD + `
@@ -111,11 +115,12 @@ void main() {
   if (sl > 0.8) { vec2 dir = vG / sl; vec4 d2 = texture2D(uDet, vec2(dot(vW, vec2(-dir.y, dir.x)), vH) * 0.0625); d = mix(d, d2, smoothstep(0.8, 1.5, sl)); }
   // luce a gradini netti, come sui personaggi
   float nk = clamp(1.7 - vD / 75.0, 0.0, 1.0);
-  vec3 base = b.rgb * (0.74 + 0.52 * mix(0.48, dot(d, w), nk));
+  float gr = 0.74 + 0.52 * mix(0.48, dot(d, w), nk);
+  vec3 base = b.rgb * mix(gr, 1.0 + (gr - 1.0) * 0.3, uMorb);   // (morbida: la grana dell'erba e della terra stacca molto meno)
   // il selciato antico delle strade maestre: pietroni che compaiono dove la strada è più forte della soglia di ogni pietra (da lontano, una fascia chiara)
   float pv = texture2D(uPav, uv).r;
   if (pv > 0.2) { vec4 st = texture2D(uPavT, (floor(vW * 4.0) + 0.5) * 0.015625); if (pv > mix(0.5, st.a, nk)) base = mix(vec3(0.62, 0.6, 0.55), st.rgb, nk); }
-  vec3 c = base * ((floor(vSh * 12.0 + 0.5) / 12.0) * uLc * cloudSh(vW) + band(vPL, 5.0));
+  vec3 c = base * (grad(vSh, 12.0) * uLc * cloudSh(vW) + band(vPL, 5.0));
   if (b.a > 0.04) { float g = texture2D(uDet, vW * 0.031 + vec2(uTime * 0.013, uTime * 0.005)).g; c = mix(c, b.rgb * (0.85 + 0.6 * g), b.a); }
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
   bb: [`
@@ -190,9 +195,9 @@ void main() { vec2 f = gl_FragCoord.xy;
     if (h > 0.9935) c += uStars * (0.55 + 0.45 * sin(uTime * 2.2 + h * 900.0)) * vec3(0.85, 0.9, 1.0) * (h > 0.998 ? 1.0 : 0.6); }
   // sole e luna: un disco netto con due aloni a gradini
   float ds = length(floor(f) + 0.5 - uSun.xy);
-  if (uSun.z > 0.0) { if (ds < uSun.z) c = uSunC; else if (ds < uSun.z * 1.7) c = mix(c, uSunC, 0.42); else if (ds < uSun.z * 2.8) c = mix(c, uSunC, 0.16); }
+  if (uSun.z > 0.0) { if (ds < uSun.z) c = uSunC; else if (uMorb > 0.5) { float q = clamp(1.0 - (ds - uSun.z) / (uSun.z * 2.1), 0.0, 1.0); c = mix(c, uSunC, 0.5 * q * q); } else if (ds < uSun.z * 1.7) c = mix(c, uSunC, 0.42); else if (ds < uSun.z * 2.8) c = mix(c, uSunC, 0.16); }
   float dm = length(floor(f) + 0.5 - uMoon.xy);
-  if (uMoon.z > 0.0) { if (dm < uMoon.z) { c = vec3(0.93, 0.95, 1.0); if (length(floor(f) + 0.5 - uMoon.xy - vec2(uMoon.z * 0.3, uMoon.z * 0.25)) < uMoon.z * 0.3 || length(floor(f) + 0.5 - uMoon.xy + vec2(uMoon.z * 0.35, uMoon.z * 0.3)) < uMoon.z * 0.2) c = vec3(0.76, 0.8, 0.9); } else if (dm < uMoon.z * 1.8) c = mix(c, vec3(0.7, 0.8, 1.0), 0.2); }
+  if (uMoon.z > 0.0) { if (dm < uMoon.z) { c = vec3(0.93, 0.95, 1.0); if (length(floor(f) + 0.5 - uMoon.xy - vec2(uMoon.z * 0.3, uMoon.z * 0.25)) < uMoon.z * 0.3 || length(floor(f) + 0.5 - uMoon.xy + vec2(uMoon.z * 0.35, uMoon.z * 0.3)) < uMoon.z * 0.2) c = vec3(0.76, 0.8, 0.9); } else if (uMorb > 0.5) { float q = clamp(1.0 - (dm - uMoon.z) / (uMoon.z * 1.3), 0.0, 1.0); c = mix(c, vec3(0.7, 0.8, 1.0), 0.26 * q * q); } else if (dm < uMoon.z * 1.8) c = mix(c, vec3(0.7, 0.8, 1.0), 0.2); }
   if (v > 0.0 && v < 1.0) { vec4 p = texture2D(uPano, vec2(u + (v > 0.45 ? uTime * 0.002 : 0.0), 1.0 - v)); c = mix(c, mix(p.rgb * uPanoC, uHorC, 0.3 * (1.0 - v)), p.a); }
   // i giganti del nord, oltre la foschia: sagome di cime innevate (x, cima, mezza larghezza in pixel; dal più lontano al più vicino)
   if (f.y > uHor - 1.0) for (int i = 0; i < 10; i++) { vec4 k = uPk[i]; if (k.w <= 0.0) continue;
@@ -210,8 +215,8 @@ uniform mat4 uVP; uniform vec3 uCam, uR; uniform vec2 uFog;
 varying vec2 vUV; varying vec4 vK;
 void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0); vUV = aUV;
   vK = vec4(aK.rgb, aK.a * (1.0 - clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0))); }`, PREC + `
-varying vec2 vUV; varying vec4 vK;
-void main() { float r = length(vUV); if (r > 1.0) discard; float a = 1.0 - r; a = floor(a * a * 4.0 + 0.7) / 4.0; gl_FragColor = vec4(vK.rgb * a * vK.a, 1.0); }`],
+uniform float uMorb; varying vec2 vUV; varying vec4 vK;
+void main() { float r = length(vUV); if (r > 1.0) discard; float a = 1.0 - r; a = uMorb > 0.5 ? a * a * 1.08 : floor(a * a * 4.0 + 0.7) / 4.0; gl_FragColor = vec4(vK.rgb * a * vK.a, 1.0); }`],
   // la luce ricca (solo a richiesta): dall'immagine finita si prende il chiaro, lo si sfoca e lo si rimette sopra; in più una vignetta agli angoli
   lumi: [`
 attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
@@ -225,9 +230,9 @@ uniform sampler2D uT; uniform vec2 uDir; varying vec2 vUV;
 void main() { vec3 c = texture2D(uT, vUV).rgb * 0.2270; c += (texture2D(uT, vUV + uDir * 1.385).rgb + texture2D(uT, vUV - uDir * 1.385).rgb) * 0.3162; c += (texture2D(uT, vUV + uDir * 3.231).rgb + texture2D(uT, vUV - uDir * 3.231).rgb) * 0.0703; gl_FragColor = vec4(c, 1.0); }`],
   luce: [`
 attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
-uniform sampler2D uT, uB; uniform vec3 uK; varying vec2 vUV;
+uniform sampler2D uT, uB; uniform vec3 uK; uniform float uMorb; varying vec2 vUV;
 void main() { vec3 c = texture2D(uT, vUV).rgb, b = texture2D(uB, vUV).rgb * uK.x;
-  b = floor(b * 16.0 + 0.5) / 16.0;                       // il bagliore a gradini, come il resto della luce
+  if (uMorb < 0.5) b = floor(b * 16.0 + 0.5) / 16.0;                       // il bagliore a gradini, come il resto della luce
   float l = dot(c, vec3(0.299, 0.587, 0.114)); c = mix(vec3(l), c, 1.06); c += (c - 0.5) * 0.05 + (l - 0.5) * vec3(0.024, 0.006, -0.03);   // un filo più di colore e di stacco; caldo nei chiari, freddo negli scuri
   c = clamp(c, 0.0, 1.0); c = 1.0 - (1.0 - c) * (1.0 - min(b, vec3(uK.z)));       // si somma senza bruciare (e mai oltre un certo segno: di notte, accanto a un lampione, la piazza non deve diventare bianca)
   vec2 q = (vUV - 0.5) * vec2(1.2, 1.0); c *= 1.0 - uK.y * smoothstep(0.38, 0.92, length(q));
@@ -255,14 +260,16 @@ void main() {
   vec4 w = 1.0 / pow(vec4(q0.a, q1.a, q2.a, q3.a) * 60.0 + 1.0, vec4(3.0));
   vec3 c = (q0.rgb * w.x + q1.rgb * w.y + q2.rgb * w.z + q3.rgb * w.w) / (w.x + w.y + w.z + w.w);
   // i contorni: dove il colore cambia di colpo
-  vec3 a1 = T(wb + vec2(-1.0, 1.0)), a2 = T(wb + vec2(0.0, 1.0)), a3 = T(wb + vec2(1.0, 1.0)), b1 = T(wb + vec2(-1.0, 0.0)), b3 = T(wb + vec2(1.0, 0.0)), c1 = T(wb + vec2(-1.0, -1.0)), c2 = T(wb + vec2(0.0, -1.0)), c3 = T(wb + vec2(1.0, -1.0));
+  // (i punti di confronto stanno vicini, a 0,62 pixel invece di 1: il tratto viene più sottile, e un passaggio di tono sfumato non lo fa scattare)
+  const float D = 0.62;
+  vec3 a1 = T(wb + vec2(-D, D)), a2 = T(wb + vec2(0.0, D)), a3 = T(wb + vec2(D, D)), b1 = T(wb + vec2(-D, 0.0)), b3 = T(wb + vec2(D, 0.0)), c1 = T(wb + vec2(-D, -D)), c2 = T(wb + vec2(0.0, -D)), c3 = T(wb + vec2(D, -D));
   vec3 gx = a3 + 2.0 * b3 + c3 - a1 - 2.0 * b1 - c1, gy = a1 + 2.0 * a2 + a3 - c1 - 2.0 * c2 - c3;
   float e = sqrt(dot(gx, gx) + dot(gy, gy));
   // colori pieni e vivi: un po' più di saturazione e di stacco (niente trama sopra: la grana stava ferma sullo schermo e si vedeva come un'impronta)
   float l = lu(c);
   c = clamp(mix(vec3(l), c, uP.x), 0.0, 1.0); c = clamp(c + (c - 0.5) * uP.y, 0.0, 1.0);
-  float ln = smoothstep(uP.z, uP.z + 0.35, e);
-  c = mix(c, mix(vec3(0.15, 0.1, 0.14), c * 0.25, 0.3), ln * uP.w);
+  float ln = smoothstep(uP.z, uP.z + 0.45, e);
+  c = mix(c, mix(vec3(0.16, 0.11, 0.15), c * 0.4, 0.55), ln * uP.w);   // il tratto prende il colore di quel che ripassa, scurito: non è più nero
   gl_FragColor = vec4(c, 1.0); }`],
   // A PASTELLI: ingrandisce una volta per tutte le icone e i ritratti dell'interfaccia con lo stesso xBR delle figure del mondo
   xbrsu: [`

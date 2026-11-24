@@ -11,6 +11,9 @@ function shade(h, f) {
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
 let RICCO = false;
+// il disegno morbido (lo accende il mondo a pastelli prima di disegnare gli sprite): il contorno cotto nello sprite è appena più scuro di quel che racchiude
+// (il tratto lo ripassa già lo shader dei pastelli: due contorni uno sull'altro facevano un bordo nero e spesso), i toni vicini si fondono, la luce delle figure non va a gradini
+let MORBIDO = false;
 // A PASTELLI: le scritte dell'interfaccia (solo sui fogli segnati con __liscio) si scrivono con lettere disegnate, non a quadretti
 let LISCIO = false;
 const FONTL = '"Chalkboard SE", "Marker Felt", "Comic Sans MS", "Comic Neue", "Trebuchet MS", sans-serif';   // il disegno ricco: lo accende il gioco (nel Grande Viaggio) prima di disegnare gli sprite
@@ -20,6 +23,10 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
   if (outline) {
     const o = hex(oc), m = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) m[i] = a[i * 4 + 3] ? 1 : 0;
+    // morbido: i toni vicini si fondono un poco (sulle figure meno: hanno occhi di un pixel), così tra una tonalità e l'altra non resta una riga netta
+    if (ricco && MORBIDO) { const s = a.slice(), pc = bordo ? 8 : 3; for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { const i = y * w + X; if (!m[i]) continue; let r = s[i * 4] * pc, g = s[i * 4 + 1] * pc, b = s[i * 4 + 2] * pc, n = pc;
+      for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += s[k * 4]; g += s[k * 4 + 1]; b += s[k * 4 + 2]; n++; }
+      a[i * 4] = r / n; a[i * 4 + 1] = g / n; a[i * 4 + 2] = b / n; } }
     if (ricco && bordo) for (let y = 0; y < h; y++) for (let X = 0; X < w - 1; X++) { const i = y * w + X; if (!m[i]) continue;
       const k = !m[i + 1] ? 0.46 : (y > 0 && !m[i - w + 1] && !m[i - w]) ? 0.3 : 0; if (!k) continue;
       a[i * 4] += (226 - a[i * 4]) * k; a[i * 4 + 1] += (241 - a[i * 4 + 1]) * k; a[i * 4 + 2] += (255 - a[i * 4 + 2]) * k; }
@@ -27,7 +34,8 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
       const i = y * w + X; if (m[i]) continue;
       if ((X > 0 && m[i - 1]) || (X < w - 1 && m[i + 1]) || (y > 0 && m[i - w]) || (y < h - 1 && m[i + w])) {
         if (ricco) { let r = 0, g = 0, b = 0, n = 0; for (const k of [X > 0 ? i - 1 : -1, X < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (k >= 0 && m[k]) { r += a[k * 4]; g += a[k * 4 + 1]; b += a[k * 4 + 2]; n++; }
-          a[i * 4] = r / n * 0.3 + 6; a[i * 4 + 1] = g / n * 0.27 + 4; a[i * 4 + 2] = b / n * 0.36 + 14; a[i * 4 + 3] = 255; }
+          if (MORBIDO) { a[i * 4] = r / n * 0.7; a[i * 4 + 1] = g / n * 0.68; a[i * 4 + 2] = b / n * 0.73 + 4; a[i * 4 + 3] = 255; }
+          else { a[i * 4] = r / n * 0.3 + 6; a[i * 4 + 1] = g / n * 0.27 + 4; a[i * 4 + 2] = b / n * 0.36 + 14; a[i * 4 + 3] = 255; } }
         else { a[i * 4] = o[0]; a[i * 4 + 1] = o[1]; a[i * 4 + 2] = o[2]; a[i * 4 + 3] = 255; } }
     }
   }
@@ -257,7 +265,9 @@ function figure(parts, yaw, W, H, o = {}) {
         const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
         const lum = nx * L[0] + ny * L[1] + nz * L[2], face = -(nx * V[0] + ny * V[1] + nz * V[2]);
         if (ricco) {
-          let f = (lum > 0.8 ? 1.32 : lum > 0.52 ? 1.16 : lum > 0.16 ? 1 : lum > -0.14 ? 0.84 : lum > -0.48 ? 0.69 : 0.56) * q.k * (0.87 + 0.13 * Math.min(1, Math.max(0, up) / 9));
+          // (morbido: la luce sale senza gradini; altrimenti sei fasce nette)
+          let f = (MORBIDO ? (lum > 0.8 ? 1.24 + (lum - 0.8) * 0.5 : lum > 0.52 ? 1.08 + (lum - 0.52) * 0.571 : lum > 0.16 ? 0.92 + (lum - 0.16) * 0.444 : lum > -0.14 ? 0.765 + (lum + 0.14) * 0.517 : lum > -0.48 ? 0.625 + (lum + 0.48) * 0.412 : 0.56 + (lum + 1) * 0.125)
+            : lum > 0.8 ? 1.32 : lum > 0.52 ? 1.16 : lum > 0.16 ? 1 : lum > -0.14 ? 0.84 : lum > -0.48 ? 0.69 : 0.56) * q.k * (0.87 + 0.13 * Math.min(1, Math.max(0, up) / 9));
           let r, g, b; const j = idx * 4;
           if (f > 1) { const g2 = Math.min(1, f - 1); r = cr + (255 - cr) * g2; g = cg + (244 - cg) * g2 * 0.92; b = cb + (212 - cb) * g2 * 0.8; }
           else { const sh = 1 - f; r = cr * f * (1 - sh * 0.24); g = cg * f * (1 - sh * 0.1); b = Math.min(255, cb * f * (1 + sh * 0.28) + sh * 24); }
@@ -986,7 +996,11 @@ function Atlas(AW, AH) {
 
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
-SG.art = { get ricco() { return RICCO; }, set ricco(v) { RICCO = !!v; }, get liscio() { return LISCIO; }, set liscio(v) { LISCIO = !!v; }, SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
+// le righe scure delle piastrelle (fughe, travi, bordi) si schiariscono: i neri salgono, i toni medi e chiari restano dove sono
+function schiarisci(c, quanto = 0.15) { const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+  for (let i = 0; i < a.length; i += 4) { if (!a[i + 3]) continue; for (let k = 0; k < 3; k++) { const v = a[i + k] / 255, u = 1 - v; a[i + k] = Math.min(255, Math.round((v + quanto * u * u * u) * 255)); } }
+  x.putImageData(d, 0, 0); return c; }
+SG.art = { schiarisci, get morbido() { return MORBIDO; }, set morbido(v) { MORBIDO = !!v; }, get ricco() { return RICCO; }, set ricco(v) { RICCO = !!v; }, get liscio() { return LISCIO; }, set liscio(v) { LISCIO = !!v; }, SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
   oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, paving, pano, icon, Atlas, TRUNK, BIRCH };
 })();
