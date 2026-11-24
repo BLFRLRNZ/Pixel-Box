@@ -10,7 +10,10 @@ function shade(h, f) {
 }
 const mixc = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 // niente bordi sfumati e un contorno scuro di un pixel: si legge bene anche in mezzo all'erba
-let RICCO = false;   // il disegno ricco: lo accende il gioco (nel Grande Viaggio) prima di disegnare gli sprite
+let RICCO = false;
+// A PASTELLI: le scritte dell'interfaccia (solo sui fogli segnati con __liscio) si scrivono con lettere disegnate, non a quadretti
+let LISCIO = false;
+const FONTL = '"Chalkboard SE", "Marker Felt", "Comic Sans MS", "Comic Neue", "Trebuchet MS", sans-serif';   // il disegno ricco: lo accende il gioco (nel Grande Viaggio) prima di disegnare gli sprite
 function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false) {
   const w = c.width, h = c.height, x = c.getContext('2d'), d = x.getImageData(0, 0, w, h), a = d.data;
   for (let i = 3; i < a.length; i += 4) a[i] = a[i] < 110 ? 0 : 255;
@@ -33,7 +36,7 @@ function finish(c, outline = true, oc = '#16121c', ricco = RICCO, bordo = false)
 function pix(rows, pal) {
   const c = mk(rows[0].length, rows.length), x = c.getContext('2d');
   rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (pal[r[i]]) { x.fillStyle = pal[r[i]]; x.fillRect(i, j, 1, 1); } });
-  return c;
+  c.__icona = true; return c;
 }
 
 // ---------- carattere 5x7 a larghezza variabile ----------
@@ -80,9 +83,19 @@ const up = s => String(s).toUpperCase();
 function textW(s, k = 1) { s = up(s); let w = 0; for (const ch of s) w += ((GL[ch] || GL['?']).w + 1) * k; return Math.max(0, w - k); }
 function text(g, s, x, y, col = '#ffffff', sh = '#0b0a12', k = 1, align = 'left') {
   s = up(s); x = Math.round(align === 'center' ? x - textW(s, k) / 2 : align === 'right' ? x - textW(s, k) : x); y = Math.round(y);
+  if (LISCIO && g.canvas && g.canvas.__liscio) return textL(g, s, x, y, col, sh, k);
   const pass = (c, dx, dy) => { const S = sheet(c); let cx = x; for (const ch of s) { const G = GL[ch] || GL['?'], p = S.pos[GL[ch] ? ch : '?']; g.drawImage(S.c, p, 0, G.w, 7, cx + dx, y + dy, G.w * k, 7 * k); cx += (G.w + 1) * k; } };
   if (sh) { pass(sh, k, 0); pass(sh, 0, k); pass(sh, k, k); }
   pass(col, 0, 0);
+}
+// la scritta disegnata occupa esattamente lo stesso posto di quella a pixel (stessa larghezza, lettere alte 7): l'impaginazione non cambia
+function textL(g, s, x, y, col, sh, k) {
+  const W = textW(s, k); if (W <= 0 || !s.trim()) return;
+  g.save(); g.font = 'bold ' + (9.8 * k) + 'px ' + FONTL; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  const tw = g.measureText(s).width || 1, sx = Math.max(0.55, Math.min(1.35, W / tw));
+  g.translate(x, y + 7 * k); g.scale(sx, 1);
+  if (sh) { g.lineJoin = 'round'; g.miterLimit = 2; g.lineWidth = 2.1 * k; g.strokeStyle = sh; g.strokeText(s, 0, 0); }
+  g.fillStyle = col; g.fillText(s, 0, 0); g.restore();
 }
 function wrap(s, maxW) {
   const out = []; for (const para of up(s).split('\n')) {
@@ -261,7 +274,7 @@ function figure(parts, yaw, W, H, o = {}) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  return finish(c, o.outline !== false, undefined, ricco, true);
+  const fin = finish(c, o.outline !== false, undefined, ricco, true); if (fin) fin.__icona = true; return fin;
 }
 
 // ---------- persone: tonde e tozze ----------
@@ -973,7 +986,7 @@ function Atlas(AW, AH) {
 
 // gli sprite di personaggi, creature e alberi si disegnano 1,5 volte più grandi: stessa densità di pixel del mondo 3D
 const SR = 1.5;
-SG.art = { get ricco() { return RICCO; }, set ricco(v) { RICCO = !!v; }, SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
+SG.art = { get ricco() { return RICCO; }, set ricco(v) { RICCO = !!v; }, get liscio() { return LISCIO; }, set liscio(v) { LISCIO = !!v; }, SR, mk, shade, mixc, finish, pix, text, textW, wrap, figure, human, beast, slime, bat, dragon, chest,
   oak, acacia, giantTree, pine, cypress, sunflower, palm, deadTree, willow, bush, cactus, rock, crystal, mushroom, flower, tuft, reeds, pillar, sign, torch, flame, banner, tent, bones, well, snowman, anvil, campfire, fit, PD, orb, coin, heartBig, puff, shard,
   tiles, detail, paving, pano, icon, Atlas, TRUNK, BIRCH };
 })();

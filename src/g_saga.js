@@ -9,7 +9,7 @@ const RAR = ['#e6e9f2', '#5cb8ff', '#c77dff', '#ffb02e'], RARN = ['COMUNE', 'RAR
 let SAVEKEY = 'sg_save1';
 // Lo stesso motore fa due giochi: Pixel Saga (MODO null) e l'anteprima del Grande Viaggio, sulla terra nuova di Lumen (MODO 'lumen').
 // Il mondo in memoria è uno solo: per passare dall'uno all'altro Pixel Box si ricarica, con il gioco voluto già scelto.
-let MODO = null, modoScelto = false;
+let MODO = null, modoScelto = false, PASTELLI = false;   // PASTELLI: il Grande Viaggio disegnato a pastelli (un mondo a parte nel menu, con la sua partita)
 const INIZIO = () => MODO ? { x: 3944, z: 5078 } : { x: 2005, z: 2700 };
 
 // ---------- oggetti ----------
@@ -200,6 +200,54 @@ let GIANTS = []; const PKS = new Float32Array(40);
 const atm = { fog: [0.74, 0.85, 0.93], zen: [0.3, 0.57, 0.86], near: 380, far: 1250, wat: [0.23, 0.48, 0.78] };
 let Wr = 320, Hr = 180, K = 1, OX = 0, OY = 0, insetL = 70, insetR = 70, W3 = 427, H3 = 240, K3 = 1, OX3 = 0, OY3 = 0;
 const hud = document.createElement('canvas'), hg = hud.getContext('2d');
+// A PASTELLI: l'interfaccia si disegna a piena risoluzione (hudS pixel veri per ogni pixel di prima), con lettere disegnate
+// e icone ingrandite a contorni lisci (xBR con la grafica 3D, o Scale2x tre volte se non si può); negli altri mondi resta com'era
+let hudS = 1; hud.__liscio = true;
+const icoLisce = new WeakMap();
+// con la grafica 3D: l'xBR delle figure, quattro volte più grande, letto indietro in una tela (una volta sola per ogni icona)
+function icoXbr(img) {
+  if (!G || !G.P.xbrsu || gl.isContextLost()) return null;
+  gl.activeTexture(gl.TEXTURE0); const w = img.width, h = img.height, W4 = w * 4, H4 = h * 4, src = G.texture(img);
+  const dst = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, dst); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W4, H4, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, dst, 0);
+  let out = null;
+  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+    const dep = gl.isEnabled(gl.DEPTH_TEST), ble = gl.isEnabled(gl.BLEND), cul = gl.isEnabled(gl.CULL_FACE);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE);
+    gl.viewport(0, 0, W4, H4); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    const p = G.P.xbrsu; gl.useProgram(p.p); gl.bindBuffer(gl.ARRAY_BUFFER, G.full); G.attribs(p, [['aP', 2]]);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, src); gl.uniform1i(p.u.uTex, 0); gl.uniform2f(p.u.uTs, w, h); gl.uniform1f(p.u.uVoto, 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const px = new Uint8ClampedArray(W4 * H4 * 4); gl.readPixels(0, 0, W4, H4, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    out = document.createElement('canvas'); out.width = W4; out.height = H4; out.getContext('2d').putImageData(new ImageData(px, W4, H4), 0, 0);
+    if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W3, H3); gl.deleteFramebuffer(fb); gl.deleteTexture(dst); gl.deleteTexture(src);
+  return out;
+}
+function icoLiscia(img) {
+  let r = icoLisce.get(img); if (r && r.w === img.width && r.h === img.height) return r.c;
+  try { const x = icoXbr(img); if (x) { icoLisce.set(img, { c: x, w: img.width, h: img.height, k: 4 }); return x; } } catch (e) {}
+  let w = img.width, h = img.height, src = img.getContext('2d').getImageData(0, 0, w, h), a = new Uint32Array(src.data.buffer);
+  for (let n = 0; n < 3; n++) {
+    const W2 = w * 2, b = new Uint32Array(W2 * h * 2), P = (x, y) => a[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const E = a[y * w + x], B = P(x, y - 1), D = P(x - 1, y), F = P(x + 1, y), H = P(x, y + 1);
+      let e0 = E, e1 = E, e2 = E, e3 = E;
+      if (B !== H && D !== F) { if (D === B) e0 = D; if (B === F) e1 = F; if (D === H) e2 = D; if (H === F) e3 = F; }
+      const o = y * 2 * W2 + x * 2; b[o] = e0; b[o + 1] = e1; b[o + W2] = e2; b[o + W2 + 1] = e3;
+    }
+    a = b; w *= 2; h *= 2;
+  }
+  const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(a.buffer), w, h), 0, 0);
+  icoLisce.set(img, { c, w: img.width, h: img.height, k: 8 }); return c;
+}
+{ const dI = hg.drawImage.bind(hg);
+  hg.drawImage = function (img, ...q) {
+    if (hudS > 1 && img && img.__icona && img.width && img.width <= 160 && img.height <= 160) { try { const o = img; img = icoLiscia(o); const k = img.width / o.width; if (q.length === 8) { q[0] *= k; q[1] *= k; q[2] *= k; q[3] *= k; } else if (q.length === 2) q.push(img.width / k, img.height / k); } catch (e) {} }
+    return dI(img, ...q);
+  }; }
 let atlasUse = 0, fauna = null;
 let dynF = new Float32Array(3000 * 44), shF = new Float32Array(400 * 20), dynBuf = null, shBuf = null;
 const dragon = { a: 0, x: 2300, y: 600, z: 440, yaw: 0 };
@@ -624,10 +672,11 @@ function setupWorld() {
   // le grandi cime che si vedono da lontano: [x, z, quota vera della vetta, mezza larghezza]
   GIANTS = (W.GIANTS || []).map(([x, z, r]) => { let m = 0; for (let a = -96; a <= 96; a += 16) for (let b = -96; b <= 96; b += 16) m = Math.max(m, W.ground(x + a, z + b)); return [x, z, m, r]; });
 }
-function scegliModo(m) {
-  if (st === 'boot' && !modoScelto) { MODO = m; modoScelto = true; SAVEKEY = m ? 'gv_save1' : 'sg_save1'; return true; }
-  if (MODO === m) return true;
-  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (m ? 'viaggio' : 'saga')))); } catch (e) {}
+function scegliModo(m, p = false) {
+  p = !!(m && p);
+  if (st === 'boot' && !modoScelto) { MODO = m; PASTELLI = p; modoScelto = true; SAVEKEY = !m ? 'sg_save1' : p ? 'gp_save1' : 'gv_save1'; return true; }
+  if (MODO === m && PASTELLI === p) return true;
+  try { localStorage.setItem('px_sel', String(GAMES.findIndex(g => g.id === (!m ? 'saga' : p ? 'pastelli' : 'viaggio')))); } catch (e) {}
   location.reload(); return false;
 }
 function startGame(fresh) {
@@ -1480,6 +1529,51 @@ function scuderia(n, f) {
 // Si accende e si spegne dalle opzioni (LUCE: RICCA / SEMPLICE); se il telefono non la regge resta spenta da sé.
 let LUX = null, luxNo = false;
 const luceOn = () => !!MODO && !luxNo && !(save && save.opt.luce === false);
+// ---------- IL GRANDE VIAGGIO A PASTELLI: lo stile disegnato ----------
+// Solo nel mondo «VIAGGIO A PASTELLI» del menu. Il mondo si disegna con molte più righe, case e terreno con texture morbide,
+// figure e icone con contorni lisci (xBR), e un ultimo passaggio stende il colore a chiazze vive e ripassa i contorni con un tratto scuro.
+// L'interfaccia si scrive con lettere disegnate. Dalle opzioni si può tornare a vederlo a pixel: STILE: PASTELLI / PIXEL.
+let PAST = null, pastNo = false, pastTex = '';
+// quante righe ha il disegno: tante, perché i contorni vengano lisci; se il telefono fatica (sotto i 45 fotogrammi al secondo) si scende un gradino
+let pastRighe = 640, pastT0 = 0, pastN = 0, pastMs = 0;
+function pastMisura() {
+  const now = performance.now(), d = now - pastT0; pastT0 = now;
+  if (!pastelOn() || st !== 'play' || d > 250) { pastN = 0; pastMs = 0; return; }
+  pastMs += d; if (++pastN < 120) return;
+  if (pastMs / pastN > 22 && pastRighe > 360) { pastRighe = pastRighe > 480 ? 480 : 360; lastWH = ''; }
+  pastN = 0; pastMs = 0;
+}
+const pastelOn = () => PASTELLI && !!MODO && !pastNo && !(save && save.opt.stile === 'pixel');
+function pastTexture() {
+  if (!PASTELLI) return;
+  // le texture morbide (pastelli) o a pixel netti; si cambia solo quando serve
+  const on = pastelOn(), k = on ? 'L' : 'N';
+  if (k === pastTex) return; pastTex = k;
+  const f = on ? gl.LINEAR : gl.NEAREST;
+  for (const t of [TILES, DET, PAVT]) if (t) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); }
+}
+// il foglio di figure in uso e la sua misura (per il voto dei colori)
+function tsU(p, t) { if (p.u.uTs) gl.uniform2f(p.u.uTs, t.w, t.h); if (p.u.uVoto) gl.uniform1f(p.u.uVoto, pastelOn() ? 1 : 0); }
+function pastPassa() {
+  if (!pastelOn() || !G.P.pastello) return;
+  if (!PAST || PAST.w !== W3 || PAST.h !== H3) {
+    if (PAST) gl.deleteTexture(PAST.t);
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, W3, H3, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    PAST = { w: W3, h: H3, t };
+  }
+  const P = G.P, dep = gl.isEnabled(gl.DEPTH_TEST), ble = gl.isEnabled(gl.BLEND), cul = gl.isEnabled(gl.CULL_FACE), dm = gl.getParameter(gl.DEPTH_WRITEMASK);
+  gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE); gl.depthMask(false);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, PAST.t); gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, PAST.w, PAST.h);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.full); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, PAST.w, PAST.h);
+  const p = P.pastello; gl.useProgram(p.p); G.attribs(p, [['aP', 2]]);
+  gl.uniform1i(p.u.uT, 0); gl.uniform2f(p.u.uPx, 1 / PAST.w, 1 / PAST.h); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uK, Math.max(1, PAST.h / 440));
+  gl.uniform4fv(p.u.uP, PASTP);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  if (dep) gl.enable(gl.DEPTH_TEST); if (ble) gl.enable(gl.BLEND); if (cul) gl.enable(gl.CULL_FACE); gl.depthMask(dm);
+}
+// le misure del disegno: saturazione, contrasto, soglia e forza dei contorni
+const PASTP = new Float32Array([1.2, 0.07, 0.3, 0.85]);
 function luxPrepara() {
   const w = W3, h = H3, w2 = Math.max(8, w >> 2), h2 = Math.max(8, h >> 2);
   const tex = (tw, th, fmt) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, fmt, tw, th, 0, fmt, gl.UNSIGNED_BYTE, null);
@@ -3410,9 +3504,9 @@ function renderDungeon() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   pushBB.n = 0; pushBB2.n = 0; bb3 = 0; buildDynamicD();
   gl.activeTexture(gl.TEXTURE0); gl.uniform1i(p.u.uTex, 0);
-  if (pushBB.n) { gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0); }
-  if (pushBB2.n) { gl.bindTexture(gl.TEXTURE_2D, DTEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf2); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF2.subarray(0, pushBB2.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB2.n * 6, gl.UNSIGNED_SHORT, 0); }
-  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }
+  if (pushBB.n) { gl.bindTexture(gl.TEXTURE_2D, ATEX); tsU(p, ATEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0); }
+  if (pushBB2.n) { gl.bindTexture(gl.TEXTURE_2D, DTEX); tsU(p, DTEX); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf2); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF2.subarray(0, pushBB2.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, pushBB2.n * 6, gl.UNSIGNED_SHORT, 0); }
+  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); tsU(p, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }
   // acqua e lava
   p = P.dwater; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uTime, time);
@@ -3648,7 +3742,7 @@ function render3D() {
   // terreno
   p = P.terrain; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform1f(p.u.uWS, W.WS); gl.uniform2f(p.u.uInvW, 1 / W.WS, 1 / W.WSZ); gl.uniform2f(p.u.uW0, 0, W.Z0);
-  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p); if (soloTerra) gl.uniform1f(p.u.uNt, 0);
+  gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); gl.uniform1f(p.u.uPast, pastelOn() ? 1 : 0); setWL(p); if (soloTerra) gl.uniform1f(p.u.uNt, 0);
   gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, W.tex.pav); gl.uniform1i(p.u.uPav, 3);
   gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, PAVT); gl.uniform1i(p.u.uPavT, 4);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, W.tex.col); gl.uniform1i(p.u.uCol, 0);
@@ -3696,7 +3790,7 @@ function render3D() {
   // oggetti fissi (alberi, rocce, fiori)
   p = P.bb; gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.u.uVP, false, VP); gl.uniform3f(p.u.uCam, cam.x, cam.y, cam.z); gl.uniform3f(p.u.uR, RX, 0, RZ); gl.uniform2f(p.u.uFog, fogN, fogF); gl.uniform3fv(p.u.uFogC, fogC); gl.uniform1f(p.u.uTime, time); setWL(p); if (soloTerra) gl.uniform1f(p.u.uNt, 0);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.uniform1i(p.u.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.uniform1i(p.u.uTex, 0); tsU(p, ATEX);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
   const ghostOn = !soloTerra && !!hero && (st === 'play' || st === 'dead');
   gl.uniform1f(p.u.uNear, ghostOn ? 6 : 0); if (ghostOn) gl.uniform3f(p.u.uHero, hero.x, hero.y + 4.5, hero.z); gl.uniform1f(p.u.uGhost, 0);
@@ -3713,7 +3807,7 @@ function render3D() {
     gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF.subarray(0, pushBB.n * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]);
     gl.drawElements(gl.TRIANGLES, pushBB.n * 6, gl.UNSIGNED_SHORT, 0);
   }
-  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }   // le figure del secondo foglio
+  if (bb3) { gl.bindTexture(gl.TEXTURE_2D, ATEX2); tsU(p, ATEX2); gl.bindBuffer(gl.ARRAY_BUFFER, dynBuf3); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dynF3.subarray(0, bb3 * 44)); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, bb3 * 6, gl.UNSIGNED_SHORT, 0); gl.bindTexture(gl.TEXTURE_2D, ATEX); }   // le figure del secondo foglio
   // acqua: prima quella delle terre vicine, poi la nostra
   for (const t of TERRE) if (t.ok) passaTerra(t, 2);
   acqua3D(fogC, fogN, fogF);
@@ -3729,7 +3823,7 @@ function render3D() {
   // alberi e rocce che coprono l'eroe: trasparenti e puliti (seconda passata)
   if (ghostOn) {
     p = P.bb; gl.useProgram(p.p); gl.uniform1f(p.u.uGhost, 0.34); gl.uniform1f(p.u.uNear, 6);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, ATEX); tsU(p, ATEX); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, G.quadIdx);
     for (const [c, d] of vis) if (c.big && d < W.CS + 40) { gl.bindBuffer(gl.ARRAY_BUFFER, c.big); G.attribs(p, [['aC', 3], ['aO', 2], ['aUV', 2], ['aK', 4]]); gl.drawElements(gl.TRIANGLES, c.nb * 6, gl.UNSIGNED_SHORT, 0); }
     gl.uniform1f(p.u.uGhost, 0);
   }
@@ -3796,6 +3890,7 @@ function compass() {
   hg.fillStyle = '#ffffff'; hg.fillRect(cx, y + 9, 1, 2);
 }
 function drawHUD() {
+  hg.setTransform(hudS, 0, 0, hudS, 0, 0); hg.imageSmoothingEnabled = hudS > 1; A.liscio = hudS > 1;
   hg.clearRect(0, 0, Wr, Hr);
   if (st === 'loading' || st === 'boot') return drawLoading();
   if (st === 'error') { hg.fillStyle = '#0b0d12'; hg.fillRect(0, 0, Wr, Hr); A.wrap(errMsg, Wr - 40).forEach((l, i) => T(l, Wr / 2, Hr / 2 - 20 + i * 10, '#ff8f8f', 1, 'center')); return; }
@@ -4013,7 +4108,7 @@ function menuRows() {
   if (menu.tab === 0) return menu.pick ? save.inv.filter(id => IT[id].t === menu.pick).concat(['-']) : SLOTS.map(s => s[0]).concat(['abil']);
   if (menu.tab === 1) return ['pozione'].concat(save.eli ? ['elisir'] : [], save.flags.mappa ? ['mappa'] : [], save.flags.sigillo ? ['sigillo'] : []);
   if (menu.tab === 2) return MODO ? (compOn() ? ['st'].concat(compOrd().filter(id => save.comp.m[id])) : []) : QALL.filter(q => q === 'main' || save.q[q] > 0).concat(Object.keys(save.jobs || {}).filter(id => JOBS[id] && save.jobs[id].s < 3).map(id => 'J:' + id));
-  return ['vol', 'mus', 'giorno'].concat(MODO ? ['luce'] : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
+  return ['vol', 'mus', 'giorno'].concat(MODO ? (PASTELLI ? ['stile', 'luce'] : ['luce']) : [], ['vib', 'comandi'], bowOn() ? ['mira'] : [], ['misure', 'salva', 'esci']);
 }
 function drawMenu() {
   hg.fillStyle = 'rgba(8,10,16,.82)'; hg.fillRect(0, 0, Wr, Hr);
@@ -4055,7 +4150,7 @@ function drawMenu() {
   } else if (menu.mis) drawMisure(x, top, w, y + h);
   else {
     const V = ['SPENTO', 'MEDIO', 'ALTO'];
-    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
+    const L = { vol: 'VOLUME: ' + V[volLevel], mus: 'MUSICA: ' + (MU.on ? 'SÌ' : 'NO'), giorno: 'GIORNO E NOTTE: ' + (save.opt.day !== false ? 'SÌ' : 'SEMPRE GIORNO'), stile: 'STILE: ' + (save.opt.stile === 'pixel' ? 'PIXEL' : 'PASTELLI'), luce: 'LUCE: ' + (luxNo ? 'SEMPLICE (LA RICCA QUI NON VA)' : save.opt.luce !== false ? 'RICCA' : 'SEMPLICE'), vib: 'VIBRAZIONE: ' + (save.opt.vib ? 'SÌ' : 'NO'), comandi: 'COMANDI: ' + (ctrl8() ? 'LEVA LIBERA (360 GRADI)' : 'CLASSICI (L\'EROE RUOTA)'), mira: 'ARCO: MIRA ' + (freeAim() ? 'LIBERA (PER LA CACCIA)' : 'AUTOMATICA'), misure: 'MISURE DEL TELEFONO', salva: 'SALVA ORA', esci: 'TORNA AL MENU DI PIXEL BOX' };
     const ph = rows.length > 8 ? 12 : 14;
     rows.forEach((k, i) => { const yy = top + 4 + i * ph, on = i === menu.sel; if (on) { hg.fillStyle = '#26384d'; hg.fillRect(x + 4, yy - 3, w - 8, ph - 1); } T(L[k], x + 10, yy, on ? '#ffffff' : '#c9d3e6'); });
     const hm = Math.floor(save.time / 3600), mm = Math.floor(save.time / 60) % 60;
@@ -4225,6 +4320,7 @@ function menuKey(name) {
     if (r === 'vol') { setVolume((volLevel + 2) % 3); if (volLevel) tone(1318, 0.06); }
     else if (r === 'giorno') { save.opt.day = save.opt.day === false; tone(1046, 0.05); }
     else if (r === 'luce') { save.opt.luce = save.opt.luce === false; tone(1046, 0.05); }
+    else if (r === 'stile') { save.opt.stile = save.opt.stile === 'pixel' ? 'pastelli' : 'pixel'; lastWH = ''; tone(1046, 0.05); }
     else if (r === 'mus') { MU.on = !MU.on; try { localStorage.setItem('sg_mus', MU.on ? '1' : '0'); } catch (e) {} tone(1046, 0.05); }
     else if (r === 'vib') { save.opt.vib = !save.opt.vib; vib(40); }
     else if (r === 'comandi') { save.opt.ctrl = ctrl8() ? 'c' : '8'; orb.a = 0; orb.back = false; tone(1046, 0.05); toast(ctrl8() ? 'LEVA LIBERA: L\'EROE VA DOVE LA PUNTI' : 'COMANDI CLASSICI: SINISTRA E DESTRA GIRANO L\'EROE', '#7af0ff'); }
@@ -4244,9 +4340,11 @@ function measure(w, h) {
   K = Math.max(1, Math.round(h / 182)); Hr = Math.floor(h / K); Wr = Math.floor(w / K);
   OX = Math.floor((w - Wr * K) / 2); OY = Math.floor((h - Hr * K) / 2);
   // il mondo 3D ha pixel più piccoli dell'interfaccia: più dettaglio, scritte sempre leggibili
-  K3 = Math.max(1, Math.round(h / 240)); H3 = Math.floor(h / K3); W3 = Math.floor(w / K3);
+  // a pastelli il mondo ha molte più righe, perché i contorni delle figure vengano lisci
+  K3 = Math.max(1, Math.round(h / (pastelOn() ? pastRighe : 240))); H3 = Math.floor(h / K3); W3 = Math.floor(w / K3);
   OX3 = Math.floor((w - W3 * K3) / 2); OY3 = Math.floor((h - H3 * K3) / 2);
-  if (hud.width !== Wr || hud.height !== Hr) { hud.width = Wr; hud.height = Hr; }
+  hudS = pastelOn() ? Math.max(1, Math.min(K, 8)) : 1;
+  if (hud.width !== Wr * hudS || hud.height !== Hr * hudS) { hud.width = Wr * hudS; hud.height = Hr * hudS; }
   try {
     const cr = $('scr').getBoundingClientRect(), sx = Wr / Math.max(1, cr.width);
     const l = $('cl').getBoundingClientRect(), r = $('cr').getBoundingClientRect();
@@ -4293,7 +4391,7 @@ return {
   },
   modo: scegliModo,
   enter() {
-    if (!scegliModo(this.terra || null)) return;
+    if (!scegliModo(this.terra || null, this.pastelli)) return;
     if (st === 'boot') { st = 'loading'; prog = 0; gen = loader(); MIS.t0 = performance.now(); MIS.calc = 0; MIS.fasi = {}; }
     else if (st === 'play') { menu = null; }
   },
@@ -4333,7 +4431,7 @@ return {
     c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
     if (G && (st === 'title' || st === 'play' || st === 'dead' || st === 'intro' || st === 'class' || st === 'crea')) {
       G.resize(W3, H3);
-      if (st !== 'intro') { render3D(); luxPassa(); c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); }
+      if (st !== 'intro') { pastMisura(); pastTexture(); render3D(); luxPassa(); pastPassa(); const sm = pastelOn(); if (sm) { c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; } c.drawImage(G.canvas, OX3, OY3, W3 * K3, H3 * K3); if (sm) c.imageSmoothingEnabled = false; }
     }
     drawHUD();
     c.drawImage(hud, OX, OY, Wr * K, Hr * K);

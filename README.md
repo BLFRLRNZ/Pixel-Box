@@ -131,6 +131,16 @@ Una voce nuova nel menu di Pixel Box: è il cantiere del gioco che verrà dopo P
 - **Per ora niente storia:** non ci sono ancora missioni (né la bacheca, che è delle missioni). Nelle botteghe si entra.
 - **Salvataggio a parte:** quello di Pixel Saga non viene toccato. Passando da un gioco all'altro Pixel Box si ricarica da solo (il mondo in memoria è uno alla volta), e basta premere di nuovo A.
 
+## Il Grande Viaggio a pastelli
+
+Una voce a parte nel menu, **VIAGGIO A PASTELLI**: è lo stesso Grande Viaggio (stessa terra, stessa gente, stesse grotte), ma disegnato come un'illustrazione a pastelli invece che a pixel.
+
+- **Il disegno:** il mondo si disegna con il triplo delle righe; case, strade e terreno hanno colori morbidi, senza quadretti; un ultimo passaggio stende il colore a chiazze vive e ripassa i contorni con un tratto scuro e netto, che trema appena come un disegno fatto a mano.
+- **Le figure:** personaggi, alberi e oggetti hanno contorni lisci al posto dei gradini dei pixel (xBR: ogni pixel guarda i vicini e taglia in diagonale i bordi a scala).
+- **Le scritte e le icone:** l'interfaccia si disegna a piena risoluzione, con lettere disegnate (sull'iPhone il carattere Chalkboard) e icone e ritratti dai contorni lisci. La mappa resta a pixel.
+- **Se il telefono fatica:** sotto i 45 fotogrammi al secondo il disegno scende da solo a meno righe.
+- **Partita a parte:** ha il suo salvataggio, separato da quello del Grande Viaggio a pixel e da Pixel Saga. Nelle opzioni, **STILE: PASTELLI / PIXEL** fa vedere la stessa partita nei due modi, per confrontarli.
+
 ## Comandi
 
 Croce direzionale (in Pixel Saga una leva a otto direzioni), A, B, START e SELECT (torna al menu; in Pixel Saga apre la mappa). Sotto lo schermo c'è sempre l'elenco dei tasti del gioco in corso.
@@ -144,6 +154,7 @@ Quando il telefono ruota, entra o esce dal tutto schermo, la console si rimisura
 - `index.html`: l'app completa, generata dai sorgenti (non modificarla a mano).
 - `src/`: i sorgenti. `shell.html` è la console con i tasti, `sys_core.js` e `sys_main.js` contengono suoni, carattere a pixel, menu e ciclo di gioco, poi c'è un file per ogni gioco (`g_*.js`).
   Pixel Kart disegna la pista in prospettiva riga per riga e i kart come piccoli modelli 3D visti da 16 angolazioni.
+  Il Grande Viaggio a pastelli (`g_pastelli.js`) è lo stesso gioco con il disegno a pastelli: le sue parti sono in `g_saga.js` (passaggio finale, misure dell'interfaccia), `sg_gl.js` (shader `pastello` e xBR) e `sg_art.js` (lettere disegnate), e si accendono solo in quel mondo.
   Pixel Saga usa WebGL a bassa risoluzione: `sg_gl.js` (shader e matematica 3D), `sg_art.js` (tutta la pixel art, disegnata dal codice), `sg_world.js` (il motore del mondo e l'isola di Lumen: rilievi, regioni, strade, oggetti), `sg_town.js` (kit di architettura: mura, torri, tetti, cupole, ponti, navi), `sg_city.js` (il «geometra» che disegna una città intera da poche righe), `sg_lands.js` (le terre nuove, le città e la Rocca), `sg_nord.js` (i grandi monti del nord e Marmorea, con i suoi gradoni, i colonnati e le cascate), `sg_bosco.js` (l'Albero Madre in rilievo e il Santuario del Bosco col suo sagrato), `sg_santi.js` (gli ingressi a tema degli altri quattro santuari e i portali delle grotte), `sg_decor.js` (l'arredo degli interni: riquadri, muri, pavimenti e le cose piccole), `sg_dun.js` (le mappe dei cinque santuari disegnate a stanze, la loro geometria, i mostri e i guardiani), `sg_deep.js` (i piani profondi: ognuno è descritto da una lista di stanze e un seme, e un generatore ne ricava sempre la stessa mappa), `sg_shop.js` (le botteghe: insegne, bacheche, i riquadri e gli arredi degli interni e la pianta di ogni tipo di stanza, che gira sul motore dei santuari), `sg_jobs.js` (gli incarichi delle bacheche), `sg_class.js` (le quattro classi: statistiche, pose, abilità e le armi come le impugna ognuna), `sg_fauna.js` (gli animali: modellini, specie, chi vive dove e il motore che li fa comparire attorno all'eroe; i loro sprite si disegnano la prima volta che servono, così l'avvio non si allunga), `sg_music.js` (le partiture di tutti i brani, gli strumenti sintetizzati e il lettore che le suona) e `g_saga.js` (il gioco). Il mondo viene costruito all'avvio, in qualche secondo; i pezzi di terreno si caricano sulla scheda grafica solo quando servono.
 - `tools/build.py`: ricostruisce `index.html` dai sorgenti.
 - `tools/rimbalzo_livelli.py`: le mappe ASCII dei livelli 5-15 di Rimbalzo. `tools/rbbot.js` è un bot che verifica che ogni livello si possa finire.

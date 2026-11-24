@@ -51,6 +51,47 @@ const WLIGHT = PTL + CLD + `
 uniform vec3 uLc;
 vec3 worldLight(vec3 p) { return uLc * cloudSh(p.xz) + band(ptLights(p), 5.0); }
 `;
+// A PASTELLI: le figure non si sfocano e non restano a quadretti. Ogni pixel del disegno guarda i vicini (xBR, di Hyllian):
+// dove trova un bordo in diagonale lo taglia con una linea dritta, così scale e gradini diventano contorni puliti e i colori restano pieni.
+const VOTO = `
+uniform vec2 uTs; uniform float uVoto;
+vec4 xdf(vec4 a, vec4 b) { return abs(a - b); }
+vec4 xeq(vec4 a, vec4 b) { return vec4(lessThan(abs(a - b), vec4(15.0))); }
+vec4 xne(vec4 a, vec4 b) { return vec4(notEqual(a, b)); }
+vec4 xwd(vec4 a, vec4 b, vec4 c, vec4 d, vec4 e, vec4 f, vec4 g, vec4 h) { return abs(a - b) + abs(a - c) + abs(d - e) + abs(d - f) + 4.0 * abs(g - h); }
+float xy(vec4 c) { return 48.0 * (c.a * dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)) + (1.0 - c.a) * 2.0); }
+float xcd(vec4 a, vec4 b) { vec4 d = abs(a - b); return d.r + d.g + d.b + d.a; }
+vec4 tex2(sampler2D t, vec2 uv) {
+  if (uVoto < 0.5) return texture2D(t, uv);
+  vec2 s = 1.0 / uTs, q = uv * uTs, fp = fract(q), tc = (floor(q) + 0.5) * s, dx = vec2(s.x, 0.0), dy = vec2(0.0, s.y);
+  vec4 A1 = texture2D(t, tc - dx - 2.0 * dy), B1 = texture2D(t, tc - 2.0 * dy), C1 = texture2D(t, tc + dx - 2.0 * dy);
+  vec4 A0 = texture2D(t, tc - 2.0 * dx - dy), A = texture2D(t, tc - dx - dy), B = texture2D(t, tc - dy), C = texture2D(t, tc + dx - dy), C4 = texture2D(t, tc + 2.0 * dx - dy);
+  vec4 D0 = texture2D(t, tc - 2.0 * dx), D = texture2D(t, tc - dx), E = texture2D(t, tc), F = texture2D(t, tc + dx), F4 = texture2D(t, tc + 2.0 * dx);
+  vec4 G0 = texture2D(t, tc - 2.0 * dx + dy), G = texture2D(t, tc - dx + dy), H = texture2D(t, tc + dy), I = texture2D(t, tc + dx + dy), I4 = texture2D(t, tc + 2.0 * dx + dy);
+  vec4 G5 = texture2D(t, tc - dx + 2.0 * dy), H5 = texture2D(t, tc + 2.0 * dy), I5 = texture2D(t, tc + dx + 2.0 * dy);
+  vec4 b = vec4(xy(B), xy(D), xy(H), xy(F)), c = vec4(xy(C), xy(A), xy(G), xy(I)), e = vec4(xy(E));
+  vec4 d = b.yzwx, f = b.wxyz, g = c.zwxy, h = b.zwxy, i = c.wxyz;
+  vec4 i4 = vec4(xy(I4), xy(C1), xy(A0), xy(G5)), i5 = vec4(xy(I5), xy(C4), xy(A1), xy(G0)), h5 = vec4(xy(H5), xy(F4), xy(B1), xy(D0)), f4 = h5.yzwx;
+  vec4 fx = vec4(1.0, -1.0, -1.0, 1.0) * fp.y + vec4(1.0, 1.0, -1.0, -1.0) * fp.x;
+  vec4 fxl = vec4(1.0, -1.0, -1.0, 1.0) * fp.y + vec4(0.5, 2.0, -0.5, -2.0) * fp.x;
+  vec4 fxu = vec4(1.0, -1.0, -1.0, 1.0) * fp.y + vec4(2.0, 0.5, -2.0, -0.5) * fp.x;
+  vec4 lv0 = xne(e, f) * xne(e, h);
+  vec4 lv1 = lv0 * clamp((1.0 - xeq(f, b)) * (1.0 - xeq(f, c)) + (1.0 - xeq(h, d)) * (1.0 - xeq(h, g)) + xeq(e, i) * ((1.0 - xeq(f, f4)) * (1.0 - xeq(f, i4)) + (1.0 - xeq(h, h5)) * (1.0 - xeq(h, i5))) + xeq(e, g) + xeq(e, c), 0.0, 1.0);
+  vec4 lv2l = xne(e, g) * xne(d, g), lv2u = xne(e, c) * xne(b, c);
+  vec4 dl = vec4(0.12), dL = vec4(0.06, 0.12, 0.06, 0.12), dU = dL.yxwz;
+  vec4 f45i = clamp((fx + dl - vec4(1.5, 0.5, -0.5, 0.5) - 0.25) / (2.0 * dl), 0.0, 1.0);
+  vec4 f45 = clamp((fx + dl - vec4(1.5, 0.5, -0.5, 0.5)) / (2.0 * dl), 0.0, 1.0);
+  vec4 f30 = clamp((fxl + dL - vec4(1.0, 1.0, -0.5, 0.0)) / (2.0 * dL), 0.0, 1.0);
+  vec4 f60 = clamp((fxu + dU - vec4(2.0, 0.0, -1.0, 0.5)) / (2.0 * dU), 0.0, 1.0);
+  vec4 wd1 = xwd(e, c, g, i, h5, f4, h, f), wd2 = xwd(h, d, i5, f, i4, b, e, i);
+  vec4 edri = vec4(lessThanEqual(wd1, wd2)) * lv0, edr = vec4(lessThan(wd1, wd2)) * lv1;
+  vec4 edl = vec4(lessThanEqual(2.0 * xdf(f, g), xdf(h, c))) * lv2l * edr, edu = vec4(greaterThanEqual(xdf(f, g), 2.0 * xdf(h, c))) * lv2u * edr;
+  vec4 px = vec4(lessThanEqual(xdf(e, f), xdf(e, h)));
+  vec4 mx = max(max(edl * f30, edu * f60), max(edr * f45, edri * f45i));
+  vec4 r1 = mix(E, mix(H, F, px.x), mx.x); r1 = mix(r1, mix(B, D, px.z), mx.z);
+  vec4 r2 = mix(E, mix(F, B, px.y), mx.y); r2 = mix(r2, mix(D, H, px.w), mx.w);
+  return mix(r1, r2, step(xcd(E, r1), xcd(E, r2))); }
+`;
 const SRC = {
   terrain: [`
 attribute vec3 aPos; attribute float aSh; attribute vec2 aG;
@@ -59,11 +100,11 @@ varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 ` + PTL + `
 void main() { gl_Position = uVP * vec4(aPos, 1.0); vUV = aPos.xz / uWS; vW = aPos.xz; vSh = aSh; vD = distance(aPos, uCam); vG = aG; vH = aPos.y; vPL = ptLights(aPos + vec3(0.0, 1.5, 0.0));
   vFog = clamp((vD - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + CLD + `
-uniform sampler2D uCol, uMat, uDet, uPav, uPavT; uniform vec3 uFogC, uLc; uniform float uTime; uniform vec2 uInvW, uW0;
+uniform sampler2D uCol, uMat, uDet, uPav, uPavT; uniform vec3 uFogC, uLc; uniform float uTime, uPast; uniform vec2 uInvW, uW0;
 varying vec2 vUV, vW, vG; varying float vSh, vFog, vD, vH; varying vec3 vPL;
 void main() {
   // i colori del terreno cambiano a quadretti allineati ai pixel del dettaglio: passaggi netti, niente sfumature morbide
-  vec2 uv = ((floor(vW * 4.0) + 0.5) * 0.25 - uW0) * uInvW;
+  vec2 uv = ((uPast > 0.5 ? vW : (floor(vW * 4.0) + 0.5) * 0.25) - uW0) * uInvW;   // a pastelli: niente quadretti
   vec4 b = texture2D(uCol, uv), w = texture2D(uMat, uv), d = texture2D(uDet, vW * 0.0625);
   // sulle pareti ripide la grana si proietta di lato (lungo la parete e in altezza): niente strisce stirate
   float sl = length(vG);
@@ -98,10 +139,10 @@ void main() {
     if (length(rel) < uNear) occ = 1.0;
     if (length(rel) < 3.2) occ = 2.0;   // addosso alla telecamera: non si disegna (niente pixel giganti)
   }
-  vOcc = occ; }`, PREC + DITHER + `
+  vOcc = occ; }`, PREC + DITHER + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC, uLc; uniform float uGhost;
 varying vec2 vUV; varying vec4 vK; varying float vFog, vOcc, vCs; varying vec3 vPL;
-void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
+void main() { vec4 t = tex2(uTex, vUV); if (t.a < 0.5) discard;
   if (vOcc > 1.5 || (uGhost > 0.0) != (vOcc > 0.5)) discard;
   vec3 L = vK.r > 1.05 ? vec3(1.0) : uLc * vCs + band(vPL, 5.0);
   vec3 c = mix(t.rgb * vK.rgb * L, vec3(1.0), vK.a);
@@ -191,6 +232,42 @@ void main() { vec3 c = texture2D(uT, vUV).rgb, b = texture2D(uB, vUV).rgb * uK.x
   c = clamp(c, 0.0, 1.0); c = 1.0 - (1.0 - c) * (1.0 - min(b, vec3(uK.z)));       // si somma senza bruciare (e mai oltre un certo segno: di notte, accanto a un lampione, la piazza non deve diventare bianca)
   vec2 q = (vUV - 0.5) * vec2(1.2, 1.0); c *= 1.0 - uK.y * smoothstep(0.38, 0.92, length(q));
   gl_FragColor = vec4(c, 1.0); }`],
+  // A PASTELLI (il Grande Viaggio a pastelli): dall'immagine finita si stende il colore a chiazze morbide e vive
+  // e si ripassano i contorni con un tratto scuro che trema appena, come un disegno fatto a mano
+  pastello: [`
+attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + `
+uniform sampler2D uT; uniform vec2 uPx; uniform float uTime, uBuio, uK; uniform vec4 uP; varying vec2 vUV;
+float h21(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
+vec3 T(vec2 o) { return texture2D(uT, vUV + o * uPx).rgb; }
+float lu(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+// un quarto della finestra di Kuwahara: media e varietà del colore
+vec4 quarto(vec2 o, vec2 d) { vec3 a = vec3(0.0), b = vec3(0.0);
+  for (int j = 0; j <= 1; j++) for (int i = 0; i <= 1; i++) { vec3 c = T(o + d * vec2(float(i), float(j))); a += c; b += c * c; }
+  a *= 0.25; vec3 v = b * 0.25 - a * a; return vec4(a, v.r + v.g + v.b); }
+void main() {
+  vec2 f = gl_FragCoord.xy / uK;
+  float bo = floor(uTime * 3.0);   // il tratto si ridisegna tre volte al secondo
+  vec2 wb = (vec2(vn(f * 0.11 + bo * 7.3), vn(f * 0.11 + 31.0 + bo * 5.1)) - 0.5) * 0.9 * uK;
+  // il colore steso a chiazze (Kuwahara morbido: le quattro finestre pesano secondo quanto sono uniformi)
+  vec4 q0 = quarto(wb, vec2(-1.0, -1.0)), q1 = quarto(wb, vec2(1.0, -1.0)), q2 = quarto(wb, vec2(-1.0, 1.0)), q3 = quarto(wb, vec2(1.0, 1.0));
+  vec4 w = 1.0 / pow(vec4(q0.a, q1.a, q2.a, q3.a) * 60.0 + 1.0, vec4(3.0));
+  vec3 c = (q0.rgb * w.x + q1.rgb * w.y + q2.rgb * w.z + q3.rgb * w.w) / (w.x + w.y + w.z + w.w);
+  // i contorni: dove il colore cambia di colpo
+  vec3 a1 = T(wb + vec2(-1.0, 1.0)), a2 = T(wb + vec2(0.0, 1.0)), a3 = T(wb + vec2(1.0, 1.0)), b1 = T(wb + vec2(-1.0, 0.0)), b3 = T(wb + vec2(1.0, 0.0)), c1 = T(wb + vec2(-1.0, -1.0)), c2 = T(wb + vec2(0.0, -1.0)), c3 = T(wb + vec2(1.0, -1.0));
+  vec3 gx = a3 + 2.0 * b3 + c3 - a1 - 2.0 * b1 - c1, gy = a1 + 2.0 * a2 + a3 - c1 - 2.0 * c2 - c3;
+  float e = sqrt(dot(gx, gx) + dot(gy, gy));
+  // colori pieni e vivi: un po' più di saturazione e di stacco (niente trama sopra: la grana stava ferma sullo schermo e si vedeva come un'impronta)
+  float l = lu(c);
+  c = clamp(mix(vec3(l), c, uP.x), 0.0, 1.0); c = clamp(c + (c - 0.5) * uP.y, 0.0, 1.0);
+  float ln = smoothstep(uP.z, uP.z + 0.35, e);
+  c = mix(c, mix(vec3(0.15, 0.1, 0.14), c * 0.25, 0.3), ln * uP.w);
+  gl_FragColor = vec4(c, 1.0); }`],
+  // A PASTELLI: ingrandisce una volta per tutte le icone e i ritratti dell'interfaccia con lo stesso xBR delle figure del mondo
+  xbrsu: [`
+attribute vec2 aP; varying vec2 vUV; void main() { gl_Position = vec4(aP, 0.0, 1.0); vUV = aP * 0.5 + 0.5; }`, PREC + VOTO + `
+uniform sampler2D uTex; varying vec2 vUV; void main() { gl_FragColor = tex2(uTex, vUV); }`],
   // acqua e lava dei santuari (luce fissa, niente schiuma)
   dwater: [`
 attribute vec2 aP; uniform mat4 uVP; uniform float uY; varying vec3 vP;
@@ -233,10 +310,10 @@ uniform mat4 uVP; uniform vec3 uCam, uR; uniform vec2 uFog;
 varying vec2 vUV; varying vec4 vK; varying float vFog; varying vec3 vLi;
 ` + DLIGHT + `
 void main() { vec3 p = aC + uR * aO.x + vec3(0.0, aO.y, 0.0); gl_Position = uVP * vec4(p, 1.0);
-  vUV = aUV; vK = aK; vLi = lightAt(p + vec3(0.0, 1.0, 0.0)); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + `
+  vUV = aUV; vK = aK; vLi = lightAt(p + vec3(0.0, 1.0, 0.0)); vFog = clamp((distance(p, uCam) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, PREC + DITHER + VOTO + `
 uniform sampler2D uTex; uniform vec3 uFogC;
 varying vec2 vUV; varying vec4 vK; varying float vFog; varying vec3 vLi;
-void main() { vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
+void main() { vec4 t = tex2(uTex, vUV); if (t.a < 0.5) discard;
   vec3 L = (vK.r > 1.05 || vK.g > 1.05) ? vec3(1.0) : min(band(vLi, 6.0), vec3(1.25));
   vec3 c = mix(t.rgb * vK.rgb * L, vec3(1.0), vK.a);
   gl_FragColor = vec4(dith(mix(c, uFogC, fogk(vFog))), 1.0); }`],
@@ -269,6 +346,7 @@ function create() {
       if (lum) { gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, src.w, src.h, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, src.data); }
       else if (src.data) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, src.w, src.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, src.data);
       else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      t.w = src.w || src.width; t.h = src.h || src.height;
       const f = linear ? gl.LINEAR : gl.NEAREST, w = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, w); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, w);
