@@ -14,7 +14,7 @@ Otto giochi in una console tascabile in stile Game Boy: un'unica pagina web che 
 | Snake | Il serpente affamato |
 | Roll Down | Scendi di piattaforma in piattaforma senza cadere |
 | Ovetto | Il cucciolo virtuale da accudire: vive anche quando l'app è chiusa |
-| Pixel Kart | Corse sui kart in prospettiva: Gran Premio a punti, gara singola e prova a tempo col fantasma, 6 piste, 6 piloti (2 da sbloccare) |
+| Pixel Kart | Corse sui kart in prospettiva: Gran Premio a punti, gara singola e prova a tempo col fantasma, 6 piste lunghe, 12 oggetti, 6 piloti (2 da sbloccare) |
 | Pixel Saga | Avventura fantasy in un mondo aperto in 3D a pixel: quattro classi di eroe (cavaliere, arciere, furfante, mago), 12 regioni, città con botteghe, locande e bacheche degli incarichi, missioni, dungeon su più livelli con enigmi, guardiani e tesorerie, equipaggiamento leggendario. Si gioca a schermo intero in orizzontale |
 
 ## Installarla sul telefono
@@ -33,10 +33,12 @@ Premendo SELECT nel menu vedi la versione installata e puoi cercare gli aggiorna
 
 - **Gran Premio:** due coppe (Sole e Luna) da tre piste. Punti 9, 6, 3, 1 a ogni gara, poi il podio. Vincere la Coppa Sole sblocca il Gatto, la Coppa Luna il Robot.
 - **Prova a tempo:** da solo con un turbo. Il giro migliore resta salvato e la volta dopo corre accanto a te come fantasma.
-- **Piste:** Prato, Spiaggia, Ghiaccio, Vulcano, Città (di notte) e Deserto. Ognuna ha una rampa con un fossato da saltare, tre strisce turbo e una scorciatoia sterrata.
+- **Piste (dalla 2.43 lunghe quasi il doppio):** Prato, Spiaggia, Ghiaccio, Vulcano, Città (di notte) e Deserto, ridisegnate in un mondo più grande: un giro dura sui 40-55 secondi invece di 20-25, una gara sui due minuti. Ognuna ha due rampe con un fossato da saltare, quattro strisce turbo, tre file di cristalli e una scorciatoia sterrata. I record di prima non valgono più (le piste sono altre): si riparte da zero.
+- **Grafica più definita (dalla 2.43), sempre a pixel:** lo schermo ha il doppio dei punti per lato; il suolo è disegnato a due texel per unità (cordoli, righe bianche ai margini, grana dell'asfalto e dell'erba più fini) con due copie dimezzate per le righe lontane, che così non sfarfallano; i kart sono modelli più ricchi (alettone, fari, scarichi, cerchioni) visti da 32 angolazioni invece di 16, con un filo scuro attorno; alberi, palme, cactus, lampioni e cristalli sono raddoppiati smussando le scalette; cielo sfumato a fasce e orizzonte rifatto. Prima di ogni gara compare un attimo «PREPARO LA PISTA».
+- **Guida (dalla 2.43):** con la leva lo sterzo è proporzionale (poco spinta: curva larga; a fondo: curva stretta e derapata; tirata indietro: freno). Alla velocità massima lo sterzo è un po' meno pronto, e andare di traverso costa velocità: nelle curve strette conviene alzare il piede o derapare. Contro le barriere si striscia e si rimbalza un poco, senza più piantarsi; tra kart ci si scambia la spinta (il più pesante sposta il più leggero). **La scia:** stando in fila dietro a un altro, dopo un attimo si va più forte. Un salto atterrato dritto e a gas aperto dà una spintarella. La camera si allontana un filo quando si va forte.
 - **Partenza a razzo:** premi A durante l'«1» del via. Se lo premi prima, il kart si pianta.
-- **Derapata:** tieni sterzato a fondo in velocità; le scintille passano da bianche ad azzurre ad arancioni e quando lasci parte il turbo.
-- **Oggetti:** turbo, razzo, olio, scudo, calamita (ti tira verso chi ti precede), inchiostro (sporca la vista a chi ti segue) e molla (salta).
+- **Derapata:** tieni sterzato a fondo in velocità; una volta partita, con la leva la stringi o la allarghi. Le scintille passano da bianche ad azzurre, arancioni e viola (tre gradi): quando lasci parte un turbo tanto più lungo quanto più l'hai tenuta.
+- **Oggetti:** turbo, razzo, olio, scudo, calamita (ti tira verso chi ti precede), inchiostro (sporca la vista a chi ti segue), molla (salta) e, dalla 2.43: **stella** (sei secondi senza danni e più veloce; chi tocchi si gira), **fulmine** (chi ti sta davanti rimpicciolisce e rallenta), **bomba** (la lanci in avanti: scoppia dopo un secondo o se qualcuno la tocca, e prende tutti lì attorno, te compreso), **triplo turbo** (tre spinte, una per volta) e **fantasma** (cinque secondi in cui niente ti tocca, e rubi l'oggetto a chi ti precede). Chi è indietro pesca più spesso le cose forti. Il nome dell'oggetto pescato compare sotto il riquadro.
 - **Avversari:** ognuno ha un carattere: chi prende le scorciatoie, chi spinge, chi usa gli oggetti con giudizio.
 - **Opzioni:** gas automatico (A e B usano l'oggetto), musica, vibrazione. Ogni pista ha il suo motivetto, che accelera all'ultimo giro.
 - In basso le frecce colorate del radar mostrano chi ti arriva dietro; un «!» rosso avvisa di un razzo in arrivo.
